@@ -19,7 +19,8 @@
     yiduobushao2: '4:06', // 04 移多补少（提高篇）
     shuzimi: '3:09', // 06 数字谜问题（基础篇）
     shuzimi2: '4:49', // 07 数字谜问题（提高篇）
-    xulie: '3:13' // 08 数列找规律
+    xulie: '3:13', // 08 数列找规律
+    tuxing: '3:56' // 09 图形找规律
   })
 
   /* 有视频返回 { src, dur }，没有返回 null。hasOwnProperty：别让 'toString' 这类名字查到原型链上 */
