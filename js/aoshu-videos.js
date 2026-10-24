@@ -7,6 +7,7 @@
  * 传之前确认 moov 在 mdat 前面（边下边播），否则要先 ffmpeg -movflags +faststart。
  *
  * 时长手写而不是读视频元数据：首页卡片和目录要在视频加载之前就显示「有讲解视频 3:13」。
+ * 封面（可选）：传到 aoshu/<id>.jpg 后在 POSTER 里登记，播放前显示封面而不是黑屏/第一帧。
  */
 ;(function (root) {
   'use strict'
@@ -23,12 +24,20 @@
     tuxing: '3:56' // 09 图形找规律
   })
 
-  /* 有视频返回 { src, dur }，没有返回 null。hasOwnProperty：别让 'toString' 这类名字查到原型链上 */
+  /* 有封面图的课（aoshu/<id>.jpg） */
+  var POSTER = Object.freeze({})
+
+  function has(obj, id) {
+    return Object.prototype.hasOwnProperty.call(obj, id)
+  }
+
+  /* 有视频返回 { src, dur, poster }（没封面时 poster 为空串），没有返回 null。
+     hasOwnProperty：别让 'toString' 这类名字查到原型链上 */
   function of(id) {
-    if (!Object.prototype.hasOwnProperty.call(LIST, id)) return null
-    return { src: BASE + id + '.mp4', dur: LIST[id] }
+    if (!has(LIST, id)) return null
+    return { src: BASE + id + '.mp4', dur: LIST[id], poster: has(POSTER, id) ? BASE + id + '.jpg' : '' }
   }
 
   root.SumSum = root.SumSum || {}
-  root.SumSum.aoshuVideos = { list: LIST, of: of }
+  root.SumSum.aoshuVideos = { list: LIST, posters: POSTER, of: of }
 })(typeof window !== 'undefined' ? window : globalThis)

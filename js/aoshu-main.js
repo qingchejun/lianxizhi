@@ -354,7 +354,7 @@
       '<div class="video-box" id="video-box">' +
         '<div class="video-top"><span>第 ' + o.no + ' 课 · ' + o.name + ' · 讲解视频</span>' +
           '<button type="button" class="btn" data-act="small">收起（Esc）</button></div>' +
-        '<video controls preload="metadata" playsinline src="' + v.src + '"></video>' +
+        '<video controls preload="metadata" playsinline' + (v.poster ? ' poster="' + v.poster + '"' : '') + ' src="' + v.src + '"></video>' +
         '<p class="video-foot">视频只在屏幕上播放，不会打印。</p>' +
       '</div>' +
       '<button type="button" class="btn btn-sm" data-act="big">' +

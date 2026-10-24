@@ -158,6 +158,9 @@ check(V.of('shuzimi2').src === 'https://video.qingchejun.com/aoshu/shuzimi2.mp4'
   '数字谜提高篇视频：' + JSON.stringify(V.of('shuzimi2')))
 check(V.of('tuxing').src === 'https://video.qingchejun.com/aoshu/tuxing.mp4' && V.of('tuxing').dur === '3:56',
   '图形找规律视频：' + JSON.stringify(V.of('tuxing')))
+check(Object.keys(V.list).every(function (id) { var p = V.of(id).poster; return p === '' || p === 'https://video.qingchejun.com/aoshu/' + id + '.jpg' }),
+  '封面地址要么为空，要么是 aoshu/<id>.jpg')
+Object.keys(V.posters).forEach(function (id) { check(Object.prototype.hasOwnProperty.call(V.list, id), '登记了封面却没有视频：' + id) })
 check(V.of('daxiao') === null, '没视频的课应返回 null')
 check(V.of('__proto__') === null && V.of('toString') === null, '原型链上的名字不能当成有视频')
 Object.keys(V.list).forEach(function (id) {
