@@ -21,11 +21,12 @@
     shuzimi: '3:09', // 06 数字谜问题（基础篇）
     shuzimi2: '4:49', // 07 数字谜问题（提高篇）
     xulie: '3:13', // 08 数列找规律
-    tuxing: '3:56' // 09 图形找规律
+    tuxing: '3:56', // 09 图形找规律
+    dengliang: '3:18' // 10 等量代换
   })
 
   /* 有封面图的课（aoshu/<id>.jpg） */
-  var POSTER = Object.freeze({})
+  var POSTER = Object.freeze({ dengliang: true })
 
   function has(obj, id) {
     return Object.prototype.hasOwnProperty.call(obj, id)
