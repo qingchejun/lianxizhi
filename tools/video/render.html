@@ -1,0 +1,452 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face { font-family: Kai; src: url(fonts/LXGWWenKai-Medium.ttf); }
+@font-face { font-family: KL; src: url(fonts/ZCOOLKuaiLe.ttf); }
+@font-face { font-family: Num; src: url(fonts/Fredoka.ttf); font-weight: 300 700; }
+html, body { margin: 0; padding: 0; }
+#stage { isolation: isolate;
+  position: relative; width: 1920px; height: 1080px; overflow: hidden;
+  background-color: #f2ecdf;
+  background-image:
+    radial-gradient(ellipse at 50% 45%, rgba(255,252,244,0.55) 0%, rgba(255,252,244,0) 60%),
+    radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 62%, rgba(120,95,60,0.13) 100%),
+    linear-gradient(rgba(150,128,96,0.17) 1.5px, transparent 1.5px),
+    linear-gradient(90deg, rgba(150,128,96,0.17) 1.5px, transparent 1.5px);
+  background-size: 100% 100%, 100% 100%, 54px 54px, 54px 54px;
+  background-position: 0 0, 0 0, -2px 12px, 6px 0;
+  font-family: Kai; color: #2b2420;
+}
+.el { position: absolute; left: 0; top: 0; transform-origin: 50% 50%; will-change: transform, opacity; white-space: nowrap; }
+.num { font-family: Num; font-weight: 700; }
+.kai { font-family: Kai; }
+.kl { font-family: KL; }
+.tag { position: absolute; left: 70px; top: 58px; height: 70px; padding: 0 40px;
+  border: 4px solid #2b2420; border-radius: 40px; background: #f7f2e7;
+  font-family: KL; font-size: 36px; line-height: 70px; color: #2b2420; }
+.tag b { font-weight: normal; color: #d9443a; }
+.shp svg { width: 100%; height: 100%; display: block; }
+.slot { display: flex; align-items: center; justify-content: center; }
+.slot .box { position: absolute; inset: 0; border: 5px dashed #d9443a; border-radius: 22px; background: rgba(255,255,255,0.45); }
+.slot .q { position: relative; font-family: Num; font-weight: 700; color: #d9443a; }
+.slot .v { position: absolute; inset: 12%; display: flex; align-items: center; justify-content: center; font-family: Num; font-weight: 700; color: #d9443a; }
+.slot .v svg { width: 100%; height: 100%; }
+.card { width: 300px; height: 170px; background: #fbf8f1; border: 3px solid #3a332d; border-radius: 6px;
+  box-shadow: 6px 8px 0 rgba(80,60,30,0.14); text-align: center; }
+.card .tp { position: absolute; left: 105px; top: -18px; width: 90px; height: 32px; background: rgba(232,190,95,0.85); transform: rotate(-3deg); }
+.card .t1 { font-family: KL; font-size: 34px; margin-top: 30px; }
+.card .t2 { font-family: KL; font-size: 46px; color: #2b2420; margin-top: 12px; }
+.big { text-align: center; }
+.big .t1 { font-family: KL; font-size: 120px; display: inline-block; padding: 6px 50px; background: rgba(232,190,95,0.9); transform: rotate(-2deg); clip-path: polygon(1% 4%, 99% 0, 100% 96%, 0 100%); }
+.big .t2 { font-family: KL; font-size: 56px; margin-top: 26px; }
+.tape { font-family: KL; padding: 14px 60px; background: rgba(232,190,95,0.92); transform: rotate(-2deg);
+  clip-path: polygon(0 6%, 2% 0, 98% 3%, 100% 0, 99% 50%, 100% 97%, 97% 100%, 3% 96%, 0 100%, 1% 50%); }
+.stamp { font-family: KL; border: 4px solid currentColor; border-radius: 14px; padding: 6px 22px; box-shadow: inset 0 0 0 4px #f2ecdf, inset 0 0 0 6px currentColor; background: rgba(255,255,255,0.35); }
+.paper { background: #fbf8f1; border: 3px solid #3a332d; border-radius: 6px; box-shadow: 8px 10px 0 rgba(80,60,30,0.14);
+  background-image: repeating-linear-gradient(transparent 0 74px, rgba(150,128,96,0.18) 74px 76px); background-position: 0 40px; }
+.paper .tp { position: absolute; left: 50%; top: -22px; width: 150px; height: 40px; margin-left: -75px; background: rgba(232,190,95,0.85); transform: rotate(-2deg); }
+.chant { font-family: KL; font-size: 72px; }
+.chant .ul { position: absolute; left: 0; bottom: -10px; height: 6px; border-radius: 3px; background: currentColor; opacity: 0.45; transform-origin: 0 50%; }
+.note { font-family: KL; font-size: 40px; padding: 18px 30px 16px; background: #fffaf0; border: 3px solid #3a332d; border-radius: 4px;
+  box-shadow: 5px 6px 0 rgba(80,60,30,0.13); }
+.note .tp { position: absolute; left: 50%; top: -16px; width: 80px; height: 28px; margin-left: -40px; background: rgba(232,190,95,0.85); transform: rotate(3deg); }
+.badge { width: 76px; height: 76px; border-radius: 38px; border: 5px solid currentColor; background: #fbf8f1;
+  display: flex; align-items: center; justify-content: center; font-family: Num; font-weight: 700; font-size: 44px; }
+.badge small { font-family: Kai; font-weight: 400; font-size: 22px; margin-left: 2px; }
+.pebble { width: 112px; height: 100px; display: flex; align-items: center; justify-content: center; }
+.pebble svg { position: absolute; inset: 0; }
+.pebble span { position: relative; font-family: Num; font-weight: 700; font-size: 48px; }
+.arc .lb { position: absolute; left: 0; right: 0; top: -14px; text-align: center; font-family: Num; font-weight: 700; font-size: 44px; }
+.brace .lb { position: absolute; left: 0; right: 0; top: 42px; text-align: center; font-family: Kai; font-size: 40px; }
+.think { width: 348px; height: 170px; }
+.think .n { position: absolute; left: 0; top: 0; width: 170px; height: 170px; display: flex; align-items: center; justify-content: center; font-family: Num; font-weight: 700; font-size: 76px; color: #2b2420; }
+.think .d { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 13px; border: 3px solid #2b2420; box-sizing: border-box; background: #e8b33a; }
+.think .d.off { background: #cfc4b3; }
+.think .lb { position: absolute; left: 200px; top: 0; height: 170px; line-height: 170px; font-family: KL; font-size: 46px; color: #8a7f72; }
+</style></head>
+<body><div id="stage"></div>
+<script src="scenes.js"></script>
+<script>
+var stage = document.getElementById('stage')
+var SCENE, TIMING, ELS = [], FILLS = {}, SCENE_FADE = 1
+var INK = '#2b2420', SHADOW = 'rgba(80,60,30,0.16)'
+
+/* 手绘感图形，viewBox 0 0 100 100 */
+var SHAPE_FILL = { ci: '#cfe0f2', sq: '#f6d3cf', tri: '#f5e1a4', dot: INK, btri: INK }
+function shapeSVG(k) {
+  var f = SHAPE_FILL[k], sw = 5.5
+  var head = '<svg viewBox="0 0 100 100">'
+  if (k === 'ci' || k === 'dot')
+    return head + '<circle cx="54" cy="55" r="40" fill="' + SHADOW + '"/><path d="M49 8 C75 7 92 26 90 51 C89 76 71 92 47 91 C23 90 8 72 9 48 C10 25 27 9 49 8 Z" fill="' + f + '" stroke="' + INK + '" stroke-width="' + sw + '"/>' +
+      (k === 'dot' ? '<ellipse cx="36" cy="32" rx="9" ry="6" fill="#fff" opacity="0.25"/>' : '') + '</svg>'
+  if (k === 'sq')
+    return head + '<rect x="12" y="13" width="80" height="80" rx="10" fill="' + SHADOW + '"/><path d="M14 8 L86 10 C90 10 92 12 92 16 L90 86 C90 90 88 91 84 91 L13 90 C9 90 8 88 8 84 L9 13 C9 10 11 8 14 8 Z" fill="' + f + '" stroke="' + INK + '" stroke-width="' + sw + '" stroke-linejoin="round"/></svg>'
+  /* tri / btri */
+  return head + '<path d="M54 16 L96 90 L14 91 Z" fill="' + SHADOW + '"/><path d="M50 8 C52 8 53 9 54 11 L92 82 C93 85 92 87 89 87 L10 87 C7 87 6 85 8 82 L46 11 C47 9 48 8 50 8 Z" fill="' + f + '" stroke="' + INK + '" stroke-width="' + sw + '" stroke-linejoin="round"/>' +
+    (k === 'btri' ? '<path d="M40 40 L46 30" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity="0.25"/>' : '') + '</svg>'
+}
+function pebbleSVG(q) {
+  return '<svg viewBox="0 0 112 100"><path d="M18 26 C30 8 82 6 96 22 C108 36 106 70 92 82 C76 96 34 96 18 82 C4 70 6 40 18 26 Z" transform="translate(4,5)" fill="' + SHADOW + '"/>' +
+    '<path d="M18 26 C30 8 82 6 96 22 C108 36 106 70 92 82 C76 96 34 96 18 82 C4 70 6 40 18 26 Z" fill="' + (q ? '#fff7f0' : '#ece4d4') + '" stroke="' + (q ? '#d9443a' : INK) + '" stroke-width="5"' + (q ? ' stroke-dasharray="12 9"' : '') + '/></svg>'
+}
+
+
+/* 10 等量代换：物品图标（viewBox 0 0 100 100） */
+var ICON = {
+  melon: '<ellipse cx="53" cy="60" rx="44" ry="35" fill="' + SHADOW + '"/><defs><clipPath id="mclip"><ellipse cx="50" cy="55" rx="44" ry="35"/></clipPath></defs><ellipse cx="50" cy="55" rx="44" ry="35" fill="#7cc46f"/><g clip-path="url(#mclip)" fill="#2f7d3b"><path d="M14 22 C20 30 12 38 18 46 C24 54 16 62 22 70 C26 78 20 86 24 92 L8 92 L8 22 Z"/><path d="M34 16 C40 24 32 32 38 42 C44 52 36 60 42 70 C48 80 40 88 44 96 L30 96 C26 88 34 80 28 70 C22 60 30 52 24 42 C18 32 26 24 22 16 Z"/><path d="M56 16 C62 24 54 32 60 42 C66 52 58 60 64 70 C70 80 62 88 66 96 L52 96 C48 88 56 80 50 70 C44 60 52 52 46 42 C40 32 48 24 44 16 Z"/><path d="M78 18 C84 26 76 34 82 44 C88 54 80 62 86 72 C90 80 84 88 88 94 L74 96 C70 88 78 80 72 70 C66 60 74 52 68 42 C62 32 70 24 66 18 Z"/></g><ellipse cx="34" cy="36" rx="14" ry="7" fill="#fff" opacity="0.28" transform="rotate(-18 34 36)"/><ellipse cx="50" cy="55" rx="44" ry="35" fill="none" stroke="' + INK + '" stroke-width="5"/><path d="M50 21 C50 15 54 11 59 11" fill="none" stroke="#6b5a2e" stroke-width="4" stroke-linecap="round"/>',
+  apple: '<circle cx="54" cy="60" r="34" fill="' + SHADOW + '"/><path d="M50 30 C62 20 86 26 86 54 C86 78 68 92 50 86 C32 92 14 78 14 54 C14 26 38 20 50 30 Z" fill="#e8574a" stroke="' + INK + '" stroke-width="5" stroke-linejoin="round"/><path d="M50 30 C50 22 52 14 56 8" fill="none" stroke="' + INK + '" stroke-width="5" stroke-linecap="round"/><path d="M56 16 C64 8 76 10 78 14 C70 20 62 20 56 16 Z" fill="#6dbb6a" stroke="' + INK + '" stroke-width="3.5"/><ellipse cx="32" cy="46" rx="6" ry="9" fill="#fff" opacity="0.35"/>',
+  pumpkin: '<ellipse cx="54" cy="62" rx="42" ry="30" fill="' + SHADOW + '"/><ellipse cx="50" cy="58" rx="42" ry="30" fill="#f0a23c" stroke="' + INK + '" stroke-width="5"/><path d="M50 30 C38 44 38 72 50 88 M50 30 C62 44 62 72 50 88 M28 36 C18 50 20 70 30 82 M72 36 C82 50 80 70 70 82" fill="none" stroke="#c9771a" stroke-width="4.5" stroke-linecap="round"/><path d="M47 30 L46 16 C48 13 54 13 55 16 L53 30" fill="#6b8e3a" stroke="' + INK + '" stroke-width="4" stroke-linejoin="round"/>',
+  potato: '<path d="M22 44 C26 26 60 22 78 34 C92 44 88 70 70 78 C52 86 24 82 18 66 C15 58 18 50 22 44 Z" transform="translate(4,5)" fill="' + SHADOW + '"/><path d="M22 44 C26 26 60 22 78 34 C92 44 88 70 70 78 C52 86 24 82 18 66 C15 58 18 50 22 44 Z" fill="#d6ad72" stroke="' + INK + '" stroke-width="5"/><circle cx="40" cy="46" r="3" fill="#9a7444"/><circle cx="62" cy="58" r="3" fill="#9a7444"/><circle cx="50" cy="68" r="2.5" fill="#9a7444"/>',
+  cat: '<ellipse cx="54" cy="64" rx="34" ry="28" fill="' + SHADOW + '"/><path d="M22 44 L20 14 L40 30 C46 28 54 28 60 30 L80 14 L78 44 C86 56 84 80 70 88 C58 94 42 94 30 88 C16 80 14 56 22 44 Z" fill="#f2c27a" stroke="' + INK + '" stroke-width="5" stroke-linejoin="round"/><circle cx="38" cy="56" r="5" fill="' + INK + '"/><circle cx="62" cy="56" r="5" fill="' + INK + '"/><path d="M46 68 L50 72 L54 68" fill="none" stroke="' + INK + '" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 64 L32 66 M14 74 L32 72 M86 64 L68 66 M86 74 L68 72" stroke="' + INK + '" stroke-width="3" stroke-linecap="round"/>',
+  rabbit: '<ellipse cx="54" cy="70" rx="30" ry="24" fill="' + SHADOW + '"/><path d="M34 46 C26 30 26 6 34 6 C42 6 44 28 44 42 M66 46 C74 30 74 6 66 6 C58 6 56 28 56 42" fill="#fbf7f0" stroke="' + INK + '" stroke-width="5" stroke-linejoin="round"/><path d="M50 40 C72 40 82 56 80 70 C78 86 64 92 50 92 C36 92 22 86 20 70 C18 56 28 40 50 40 Z" fill="#fbf7f0" stroke="' + INK + '" stroke-width="5"/><circle cx="40" cy="64" r="4.5" fill="' + INK + '"/><circle cx="60" cy="64" r="4.5" fill="' + INK + '"/><ellipse cx="50" cy="74" rx="4" ry="3" fill="#f29bb0"/><ellipse cx="32" cy="76" rx="5" ry="3" fill="#f29bb0" opacity="0.6"/><ellipse cx="68" cy="76" rx="5" ry="3" fill="#f29bb0" opacity="0.6"/>',
+  chick: '<circle cx="54" cy="60" r="32" fill="' + SHADOW + '"/><circle cx="50" cy="56" r="32" fill="#f7d64a" stroke="' + INK + '" stroke-width="5"/><path d="M44 18 C46 10 52 10 50 20 C56 12 60 16 54 24" fill="none" stroke="' + INK + '" stroke-width="4" stroke-linecap="round"/><circle cx="40" cy="50" r="4.5" fill="' + INK + '"/><circle cx="60" cy="50" r="4.5" fill="' + INK + '"/><path d="M44 60 L56 60 L50 70 Z" fill="#f08a3c" stroke="' + INK + '" stroke-width="3.5" stroke-linejoin="round"/><path d="M78 60 C86 56 88 66 80 70" fill="#f7d64a" stroke="' + INK + '" stroke-width="4"/>'
+}
+function iconSVG(k) { return '<svg viewBox="0 0 100 100" style="width:100%;height:100%;display:block;overflow:visible">' + ICON[k] + '</svg>' }
+/* 天平（重画）：w = 两个托盘中心的距离。元素中心 (x,y)：托盘面在 y-15，支点在 y-195，底座在 y+95。
+ * 横梁可按 tilt 关键帧倾斜，两个托盘跟着上下（盘里物品用 on:[天平id,'L'|'R'] 跟随）。 */
+var WOOD = '#d9a066', WOOD_D = '#b97d45', BRASS = '#e8be5f', PAN = '#f6e6c4'
+function balanceSVG(w) {
+  var W = w + 300, H = 430, c = W / 2, P = 20, S = 200, B = 310
+  function pan(px, cls) {
+    return '<g class="' + cls + '">' +
+      '<path d="M' + px + ' ' + (P + 2) + ' L' + (px - 98) + ' ' + S + ' M' + px + ' ' + (P + 2) + ' L' + (px + 98) + ' ' + S + '" stroke="' + INK + '" stroke-width="3" opacity="0.55"/>' +
+      '<path d="M' + px + ' ' + (P + 2) + ' L' + px + ' ' + (S - 2) + '" stroke="' + INK + '" stroke-width="2.5" opacity="0.3"/>' +
+      '<path d="M' + (px - 112) + ' ' + S + ' L' + (px + 112) + ' ' + S + ' Q' + (px + 104) + ' ' + (S + 40) + ' ' + px + ' ' + (S + 44) + ' Q' + (px - 104) + ' ' + (S + 40) + ' ' + (px - 112) + ' ' + S + ' Z" fill="' + PAN + '" stroke="' + INK + '" stroke-width="5" stroke-linejoin="round"/>' +
+      '<path d="M' + (px - 96) + ' ' + (S + 10) + ' Q' + px + ' ' + (S + 22) + ' ' + (px + 96) + ' ' + (S + 10) + '" fill="none" stroke="#fff" stroke-width="4" opacity="0.6" stroke-linecap="round"/>' +
+      '<circle cx="' + px + '" cy="' + (P + 2) + '" r="7" fill="' + BRASS + '" stroke="' + INK + '" stroke-width="3.5"/></g>'
+  }
+  return '<svg width="' + W + '" height="' + H + '" style="overflow:visible">' +
+    /* 底座、立柱、刻度盘（静止） */
+    '<ellipse cx="' + (c + 6) + '" cy="' + (B + 8) + '" rx="150" ry="14" fill="' + SHADOW + '"/>' +
+    '<path d="M' + (c - 130) + ' ' + B + ' L' + (c + 130) + ' ' + B + ' Q' + (c + 128) + ' ' + (B - 30) + ' ' + (c + 96) + ' ' + (B - 36) + ' L' + (c - 96) + ' ' + (B - 36) + ' Q' + (c - 128) + ' ' + (B - 30) + ' ' + (c - 130) + ' ' + B + ' Z" fill="' + WOOD + '" stroke="' + INK + '" stroke-width="5" stroke-linejoin="round"/>' +
+    '<path d="M' + (c - 80) + ' ' + (B - 26) + ' L' + (c + 80) + ' ' + (B - 26) + '" stroke="' + WOOD_D + '" stroke-width="4" stroke-linecap="round" opacity="0.7"/>' +
+    '<rect x="' + (c - 13) + '" y="' + (P + 6) + '" width="26" height="' + (B - 36 - P - 4) + '" rx="10" fill="' + WOOD + '" stroke="' + INK + '" stroke-width="5"/>' +
+    '<rect x="' + (c - 19) + '" y="' + (B - 70) + '" width="38" height="16" rx="6" fill="' + BRASS + '" stroke="' + INK + '" stroke-width="4"/>' +
+    '<path d="M' + (c - 46) + ' ' + (P - 2) + ' A46 46 0 0 1 ' + (c + 46) + ' ' + (P - 2) + '" fill="#fbf4e3" stroke="' + INK + '" stroke-width="4"/>' +
+    '<path d="M' + c + ' ' + (P - 48) + ' L' + c + ' ' + (P - 36) + ' M' + (c - 24) + ' ' + (P - 40) + ' L' + (c - 20) + ' ' + (P - 30) + ' M' + (c + 24) + ' ' + (P - 40) + ' L' + (c + 20) + ' ' + (P - 30) + '" stroke="' + INK + '" stroke-width="3" stroke-linecap="round"/>' +
+    pan(c - w / 2, 'panL') + pan(c + w / 2, 'panR') +
+    /* 横梁 + 指针（随倾斜转动） */
+    '<g class="beam" style="transform-origin:' + c + 'px ' + P + 'px">' +
+    '<path d="M' + c + ' ' + P + ' L' + c + ' ' + (P - 40) + '" stroke="#d9443a" stroke-width="5" stroke-linecap="round"/>' +
+    '<rect x="' + (c - w / 2 - 14) + '" y="' + (P - 9) + '" width="' + (w + 28) + '" height="18" rx="9" fill="' + WOOD + '" stroke="' + INK + '" stroke-width="5"/>' +
+    '<path d="M' + (c - w / 2 + 8) + ' ' + (P - 2) + ' L' + (c - 30) + ' ' + (P - 2) + ' M' + (c + 30) + ' ' + (P - 2) + ' L' + (c + w / 2 - 8) + ' ' + (P - 2) + '" stroke="#fff" stroke-width="3" opacity="0.35" stroke-linecap="round"/>' +
+    '</g>' +
+    '<circle cx="' + c + '" cy="' + P + '" r="17" fill="' + BRASS + '" stroke="' + INK + '" stroke-width="5"/><circle cx="' + c + '" cy="' + P + '" r="5" fill="' + INK + '"/>' +
+    '</svg>'
+}
+/* 时间锚点：beat 序号 | [beat, 秒] | [beat, '关键词'] | [beat, '关键词', 秒] | '关键词#2' 取第 2 次出现。
+ * 关键词按配音的逐字时间对齐（念到这个词时出现）；没有逐字时间就按字数比例估。 */
+var PUNCT = /[\s，。！？、：；,.!?:;“”"'（）()「」—…·]/g
+function kwTime(b, kw) {
+  var B = TIMING.beats[b], nth = 1, m = /#(\d+)$/.exec(kw)
+  if (m) { nth = +m[1]; kw = kw.slice(0, m.index) }
+  kw = kw.replace(PUNCT, '')
+  var cands = [kw, kw.replace(/数/g, '蜀')]
+  if (B.words && B.words.length) {
+    var cat = '', idx = []
+    B.words.forEach(function (w, i) { var s = w.w.replace(PUNCT, ''); for (var j = 0; j < s.length; j++) idx.push(i); cat += s })
+    for (var c = 0; c < cands.length; c++) {
+      var pos = -1
+      for (var k = 0; k < nth; k++) { pos = cat.indexOf(cands[c], pos + 1); if (pos < 0) break }
+      if (pos >= 0) return B.start + 0.1 + B.words[idx[pos]].t
+    }
+  }
+  var say = (B.say || '').replace(PUNCT, ''), p2 = -1
+  for (var k2 = 0; k2 < nth; k2++) { p2 = say.indexOf(kw, p2 + 1); if (p2 < 0) break }
+  if (p2 < 0) { console.warn('关键词没找到', b, kw); p2 = 0 }
+  return B.start + 0.1 + B.voice * p2 / Math.max(1, say.length)
+}
+function beatTime(spec) {
+  if (spec === undefined || spec === null) return null
+  if (!Array.isArray(spec)) return TIMING.beats[spec].start
+  var b = spec[0], t
+  if (typeof spec[1] === 'string') t = kwTime(b, spec[1]) + (spec[2] || 0)
+  else t = TIMING.beats[b].start + (spec[1] || 0)
+  return Math.max(0, t)
+}
+function mk(cls, html) {
+  var d = document.createElement('div')
+  d.className = 'el ' + (cls || '')
+  d.innerHTML = html || ''
+  stage.appendChild(d)
+  return d
+}
+
+function build(sceneIdx, timing) {
+  SCENE = SCENES[sceneIdx]; TIMING = timing
+  stage.innerHTML = ''; ELS = []; FILLS = {}
+  if (SCENE.tag) {
+    var parts = SCENE.tag.split(' | ')
+    var t = document.createElement('div'); t.className = 'tag'
+    t.innerHTML = parts.length > 1 ? parts[0] + ' <span style="color:#b9ad9c">|</span> <b>' + parts[1] + '</b>' : parts[0]
+    stage.appendChild(t)
+  }
+  var byId = {}
+  SCENE.els.forEach(function (e) {
+    if (e.t === 'fill') { (FILLS[e.id] = FILLS[e.id] || []).push(e); return }
+    var n, anim = e.anim || 'pop'
+    switch (e.t) {
+      case 'txt':
+        n = mk(e.font === 'num' ? 'num' : e.font === 'kl' ? 'kl' : 'kai', e.s)
+        n.style.fontSize = e.size + 'px'; n.style.color = e.color || INK
+        break
+      case 'shp':
+        n = mk('shp', shapeSVG(e.k)); n.style.width = e.size + 'px'; n.style.height = e.size + 'px'
+        break
+      case 'slot':
+        n = mk('slot', '<div class="box"></div><span class="q">?</span><div class="v"></div>')
+        n.style.width = e.size + 'px'; n.style.height = e.size + 'px'
+        n.querySelector('.q').style.fontSize = (e.size * 0.55) + 'px'
+        n.querySelector('.v').style.fontSize = (e.size * 0.6) + 'px'
+        break
+      case 'loop':
+        var W = e.w + 16, H = e.h + 16
+        n = mk('', '<svg width="' + W + '" height="' + H + '"><ellipse class="lp" cx="' + W / 2 + '" cy="' + H / 2 + '" rx="' + e.w / 2 + '" ry="' + e.h / 2 + '" fill="none" stroke="' + e.color + '" stroke-width="6" stroke-linecap="round"' +
+          (e.dashed ? ' stroke-dasharray="18 12"' : ' pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"') + ' transform="rotate(-2 ' + W / 2 + ' ' + H / 2 + ')"/></svg>')
+        anim = e.dashed ? 'fade' : 'loop'
+        break
+      case 'ring':
+        n = mk('', '<svg width="' + (e.r * 2 + 20) + '" height="' + (e.r * 2 + 20) + '"><circle cx="' + (e.r + 10) + '" cy="' + (e.r + 10) + '" r="' + e.r + '" fill="none" stroke="' + (e.color || '#d9443a') + '" stroke-width="6" stroke-dasharray="14 10" stroke-linecap="round"/></svg>')
+        break
+      case 'arc':
+        var aw = Math.abs(e.x2 - e.x1), ah = 70
+        e.x = (e.x1 + e.x2) / 2
+        n = mk('arc', '<svg width="' + (aw + 20) + '" height="' + (ah + 20) + '" style="position:absolute;left:0;top:28px;overflow:visible">' +
+          '<path class="ap" d="M10 ' + (ah + 4) + ' Q' + (aw / 2 + 10) + ' ' + (-ah * 0.55) + ' ' + (aw + 2) + ' ' + (ah - 2) + '" fill="none" stroke="' + e.color + '" stroke-width="5" stroke-linecap="round"' +
+          (e.dashed ? ' stroke-dasharray="12 10"' : ' pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"') + '/>' +
+          '<path class="ah" d="M' + (aw - 18) + ' ' + (ah - 18) + ' L' + (aw + 3) + ' ' + (ah) + ' L' + (aw - 22) + ' ' + (ah + 6) + '" fill="none" stroke="' + e.color + '" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+          '<div class="lb" style="color:' + e.color + '">' + e.s + '</div>')
+        n.style.width = (aw + 20) + 'px'; n.style.height = (ah + 48) + 'px'
+        anim = e.dashed ? 'fade' : 'arc'
+        break
+      case 'note':
+        n = mk('note', '<div class="tp"></div>' + e.s); n.style.color = e.color; e.rot = e.rot || 3
+        break
+      case 'badge':
+        n = mk('badge', e.s); n.style.color = e.color
+        break
+      case 'pebble':
+        n = mk('pebble', pebbleSVG(e.q) + '<span style="color:' + (e.q ? '#d9443a' : INK) + '">' + e.s + '</span>')
+        break
+      case 'card':
+        n = mk('card', '<div class="tp"></div><div class="t1" style="color:' + e.color + '">' + e.title + '</div><div class="t2">' + e.sub + '</div>')
+        break
+      case 'big':
+        n = mk('big', '<div class="t1">' + e.title + '</div><div class="t2" style="color:' + e.color + '">' + e.sub + '</div>')
+        break
+      case 'tape':
+        n = mk('tape', e.s); n.style.fontSize = e.size + 'px'
+        break
+      case 'stamp':
+        n = mk('stamp', e.s); n.style.color = e.color; n.style.fontSize = e.size + 'px'
+        anim = 'stamp'; break
+      case 'check':
+        n = mk('', '<svg width="90" height="80" viewBox="0 0 90 80"><path class="ck" d="M8 42 L32 66 L82 10" fill="none" stroke="#3d9a5c" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg>')
+        anim = 'check'; break
+      case 'paper':
+        n = mk('paper', '<div class="tp"></div>'); n.style.width = e.w + 'px'; n.style.height = e.h + 'px'
+        break
+      case 'chant':
+        n = mk('chant', e.s + '<div class="ul" style="width:100%"></div>'); n.style.color = e.color; if (e.size) n.style.fontSize = e.size + 'px'
+        anim = 'fade'; break
+      case 'brace':
+        var bw = e.w
+        n = mk('brace', '<svg width="' + bw + '" height="40" viewBox="0 0 ' + bw + ' 40"><path d="M4 4 Q4 18 18 18 L' + (bw / 2 - 12) + ' 18 Q' + (bw / 2) + ' 18 ' + (bw / 2) + ' 34 Q' + (bw / 2) + ' 18 ' + (bw / 2 + 12) + ' 18 L' + (bw - 18) + ' 18 Q' + (bw - 4) + ' 18 ' + (bw - 4) + ' 4" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="lb">' + e.label + '</div>')
+        n.style.color = e.color; n.style.width = bw + 'px'; n.style.height = '96px'; anim = 'fade'
+        break
+      case 'mess':
+        /* 乱糟糟的小线团 */
+        n = mk('', '<svg width="200" height="140" viewBox="0 0 200 140"><path class="ck" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" d="M20 80 C40 20 90 20 80 70 C70 120 30 90 60 50 C90 10 150 20 130 80 C110 130 70 100 110 60 C150 20 190 70 160 100 C130 130 120 60 170 40" fill="none" stroke="#8a7f72" stroke-width="7" stroke-linecap="round"/></svg>')
+        anim = 'check'
+        break
+      case 'band':
+        n = mk(''); n.style.width = e.w + 'px'; n.style.height = e.h + 'px'; n.style.borderRadius = '26px'
+        n.style.background = e.color || 'rgba(232,190,95,0.30)'; n.style.zIndex = -1; anim = 'fade'
+        break
+      case 'varrow':
+        var vh = Math.abs(e.y2 - e.y1); e.y = (e.y1 + e.y2) / 2
+        n = mk('arc', '<svg width="40" height="' + (vh + 10) + '" style="position:absolute;left:0;top:0;overflow:visible"><path class="ap" d="M20 4 L20 ' + (vh - 2) + '" fill="none" stroke="' + e.color + '" stroke-width="6" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/><path class="ah" d="M4 ' + (vh - 20) + ' L20 ' + vh + ' L36 ' + (vh - 20) + '" fill="none" stroke="' + e.color + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="lb"></div>')
+        n.style.width = '40px'; n.style.height = (vh + 10) + 'px'; anim = 'arc'
+        break
+      case 'item':
+        n = mk('', iconSVG(e.k)); n.style.width = e.size + 'px'; n.style.height = e.size + 'px'
+        break
+      case 'balance':
+        n = mk('', balanceSVG(e.w)); anim = 'balance'
+        break
+      case 'sym':
+        n = mk('slot', '<div style="position:absolute;inset:0">' + shapeSVG(e.k) + '</div><span class="q" style="color:' + INK + '">?</span><div class="v"></div>')
+        n.style.width = e.size + 'px'; n.style.height = e.size + 'px'
+        n.querySelector('.q').style.fontSize = (e.size * (e.k === 'tri' ? 0.4 : 0.5)) + 'px'
+        n.querySelector('.v').style.fontSize = (e.size * (e.k === 'tri' ? 0.44 : 0.56)) + 'px'
+        if (e.k === 'tri') { n.querySelector('.q').style.top = (e.size * 0.12) + 'px'; n.querySelector('.v').style.top = (e.size * 0.24) + 'px' }
+        break
+      case 'harrow':
+        var hw = Math.abs(e.x2 - e.x1); e.x = (e.x1 + e.x2) / 2
+        n = mk('arc', '<svg width="' + (hw + 20) + '" height="40" style="position:absolute;left:0;top:40px;overflow:visible"><path class="ap" d="M6 20 L' + (hw - 4) + ' 20" fill="none" stroke="' + e.color + '" stroke-width="6" stroke-linecap="round"' + (e.dashed ? ' stroke-dasharray="14 10"' : ' pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"') + '/><path class="ah" d="M' + (hw - 22) + ' 4 L' + (hw) + ' 20 L' + (hw - 22) + ' 36" fill="none" stroke="' + e.color + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="lb" style="color:' + e.color + ';top:-8px;font-family:KL;font-weight:400;font-size:38px">' + (e.s || '') + '</div>')
+        n.style.width = (hw + 20) + 'px'; n.style.height = '90px'; anim = e.dashed ? 'fade' : 'arc'
+        break
+      case 'think':
+        /* 08 同款倒计时：5 个圆点排成五边形，从顶上开始顺时针逐个熄灭 */
+        var dots = ''
+        for (var i = 0; i < 5; i++) {
+          var a = -Math.PI / 2 + i / 5 * Math.PI * 2
+          dots += '<div class="d" style="left:' + (85 + Math.cos(a) * 66) + 'px;top:' + (85 + Math.sin(a) * 66) + 'px"></div>'
+        }
+        n = mk('think', dots + '<div class="n"></div><div class="lb">想一想</div>')
+        anim = 'fade'
+        break
+    }
+    var rec = { e: e, n: n, anim: anim, t0: beatTime(e.at), t1: beatTime(e.out), td: beatTime(e.dim), rot: e.rot || (e.t === 'stamp' ? -6 : 0) }
+    if (e.glow !== undefined) rec.tg = beatTime(e.glow)
+    if (e.t === 'think') { e.from = e.from || 5; if (rec.t1 === null) rec.t1 = rec.t0 + e.from }
+    ELS.push(rec)
+    if (e.id) byId[e.id] = rec
+  })
+  ELS.forEach(function (r) {
+    r.w = r.n.offsetWidth; r.h = r.n.offsetHeight
+    r.n.style.left = (r.e.x - r.w / 2) + 'px'; r.n.style.top = (r.e.y - r.h / 2) + 'px'
+  })
+  ELS.forEach(function (r) {
+    if (r.e.t === 'balance' && r.e.tilt) r.tilts = r.e.tilt.map(function (k) { return { t: k[0] === null ? r.t0 : beatTime(k[0]), a: k[1] } })
+    if (r.e.on) r.onRec = byId[r.e.on[0]]
+    if (r.e.pulse) r.pulseRec = byId[r.e.pulse]
+  })
+  Object.keys(FILLS).forEach(function (id) { byId[id].fills = FILLS[id].map(function (f) { return { t: beatTime(f.at), val: f.val } }) })
+  return document.fonts.ready
+}
+
+function clamp(x) { return x < 0 ? 0 : x > 1 ? 1 : x }
+function easeOut(x) { return 1 - Math.pow(1 - x, 3) }
+function easeBack(x) { var c = 1.9; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2) }
+
+
+/* 天平角度：tilt = [[时间, 角度], ...]；每次变化用 0.8s 带回弹缓动；无 tilt 时只在出现时晃一下 */
+function balanceAngle(r, t) {
+  var bt = t - r.t0
+  if (!r.tilts) return bt < 1.6 ? Math.sin(bt * 7) * 9 * Math.exp(-bt * 2.6) : 0
+  var a = r.tilts[0].a
+  for (var i = 1; i < r.tilts.length; i++) {
+    var k = r.tilts[i]
+    if (t < k.t) break
+    var f = clamp((t - k.t) / 0.8)
+    a = r.tilts[i - 1].a + (k.a - r.tilts[i - 1].a) * easeBack(f)
+    if (f >= 1) a = k.a
+  }
+  return a
+}
+
+function render(t) {
+  SCENE_FADE = Math.min(clamp(t / 0.3), clamp((TIMING.dur - t) / 0.3))
+  var tg = document.querySelector('.tag'); if (tg) tg.style.opacity = SCENE_FADE
+  ELS.forEach(function (r) {
+    var n = r.n, op = 1, sc = 1, extra = '', halo = 0
+    if (r.t0 === null || t < r.t0) { n.style.opacity = 0; return }
+    var p = clamp((t - r.t0) / 0.45)
+    switch (r.anim) {
+      case 'pop': op = clamp(p * 2.5); sc = 0.55 + 0.45 * easeBack(p); break
+      case 'fade': op = easeOut(p); extra = ' translateY(' + (1 - easeOut(p)) * 18 + 'px)'; break
+      case 'stamp': op = clamp(p * 3); sc = 1.6 - 0.6 * easeOut(p); break
+      case 'balance':
+        op = easeOut(p)
+        var ang = balanceAngle(r, t)
+        n.querySelector('.beam').style.transform = 'rotate(' + ang + 'deg)'
+        var dy = Math.sin(ang * Math.PI / 180) * r.e.w / 2
+        r.dy = { L: -dy, R: dy }
+        n.querySelector('.panL').style.transform = 'translateY(' + (-dy) + 'px)'
+        n.querySelector('.panR').style.transform = 'translateY(' + dy + 'px)'
+        break
+      case 'check': n.querySelector('.ck').setAttribute('stroke-dashoffset', 1 - easeOut(clamp((t - r.t0) / 0.5))); break
+      case 'loop': n.querySelector('.lp').setAttribute('stroke-dashoffset', 1 - easeOut(clamp((t - r.t0) / 0.6))); break
+      case 'arc':
+        var ap = easeOut(clamp((t - r.t0) / 0.5))
+        n.querySelector('.ap').setAttribute('stroke-dashoffset', 1 - ap)
+        n.querySelector('.ah').style.opacity = clamp((t - r.t0 - 0.4) / 0.15)
+        n.querySelector('.lb').style.opacity = clamp((t - r.t0 - 0.2) / 0.3)
+        break
+    }
+    if (r.e.t === 'chant') n.querySelector('.ul').style.transform = 'scaleX(' + easeOut(clamp((t - r.t0 - 0.2) / 0.6)) + ')'
+    if (r.td !== null && t > r.td) op *= 1 - 0.7 * easeOut(clamp((t - r.td) / 0.35))
+    if (r.t1 !== null && t > r.t1) op *= 1 - clamp((t - r.t1) / 0.3)
+    if (r.tg !== undefined && r.tg !== null && t > r.tg) {
+      var g = clamp((t - r.tg) / 0.2) * (1 - clamp((t - r.tg - 0.7) / 0.35))
+      sc *= 1 + 0.14 * g
+      halo = Math.max(halo, g)
+    }
+    if (r.pulse) { halo = Math.max(halo, r.pulse); r.pulse = 0 }
+    n.style.filter = halo > 0.01 ? 'drop-shadow(0 0 ' + (6 + 16 * halo) + 'px rgba(232,179,58,' + (0.95 * halo) + ')) drop-shadow(0 0 ' + (3 + 6 * halo) + 'px rgba(232,179,58,' + (0.9 * halo) + '))' : ''
+    /* 待填的空位：未揭晓前轻轻晃动 */
+    if (r.e.t === 'slot' && !(r.fills && t >= r.fills[0].t)) {
+      extra += ' rotate(' + Math.sin(t * 3.2) * 3 + 'deg)'
+    }
+    if (r.e.t === 'think') {
+      var el = t - r.t0, from = r.e.from, k = Math.max(1, from - Math.floor(el))
+      n.querySelector('.n').textContent = k
+      var tick = el - Math.floor(el)
+      n.querySelector('.n').style.transform = 'scale(' + (1 + 0.18 * Math.max(0, 1 - tick / 0.25)) + ')'
+      n.querySelectorAll('.d').forEach(function (d, i) { d.classList.toggle('off', i < from - k) })
+      if (r.pulseRec && el < from) r.pulseRec.pulse = Math.max(0, 1 - tick / 0.7)
+    }
+    if (r.fills) {
+      var cur = null
+      r.fills.forEach(function (f) { if (t >= f.t) cur = f })
+      var q = n.querySelector('.q'), v = n.querySelector('.v')
+      if (cur) {
+        var fp = clamp((t - cur.t) / 0.4)
+        q.style.opacity = 1 - clamp(fp * 3)
+        if (v.dataset.val !== cur.val) {
+          v.dataset.val = cur.val
+          v.innerHTML = SHAPE_FILL[cur.val] ? shapeSVG(cur.val) : cur.val
+        }
+        v.style.opacity = clamp(fp * 2.5)
+        v.style.transform = 'scale(' + (0.4 + 0.6 * easeBack(fp)) + ')'
+      } else { q.style.opacity = 1; v.style.opacity = 0 }
+    }
+    op *= SCENE_FADE
+    if (r.onRec && r.onRec.dy) extra += ' translateY(' + r.onRec.dy[r.e.on[1]] + 'px)'
+    if (r.e.scale) sc *= r.e.scale
+    n.style.opacity = op
+    n.style.transform = 'rotate(' + r.rot + 'deg) scale(' + sc + ')' + extra
+  })
+}
+
+/* 音效时间表：打勾=叮，倒计时=每秒滴答，盖章=啪，揭晓答案=闪亮；元素上 sfx:false 可关掉，sfx:'名字' 可指定 */
+function sfxList() {
+  var ev = []
+  function add(t, k) { if (t !== null && t !== undefined) ev.push({ t: +t.toFixed(3), k: k }) }
+  ELS.forEach(function (r) {
+    var e = r.e
+    if (e.sfx === false) return
+    if (typeof e.sfx === 'string') return add(r.t0, e.sfx)
+    if (e.t === 'check') add(r.t0 + 0.12, 'ding')
+    if (e.t === 'stamp') add(r.t0 + 0.05, 'stamp')
+    if (e.t === 'think') for (var i = 0; i < e.from; i++) add(r.t0 + i, 'tick')
+    if (r.fills && (e.t === 'slot' || e.t === 'sym')) r.fills.forEach(function (f) { add(f.t, 'reveal') })
+  })
+  ev.sort(function (a, b) { return a.t - b.t })
+  return ev.filter(function (x, i) { return !ev.slice(0, i).some(function (y) { return y.k === x.k && Math.abs(y.t - x.t) < 0.2 }) })
+}
+/* 版面自检：返回压字幕区 / 出画 / 实心元素互相重叠的问题 */
+var SOLID = { txt: 1, item: 1, shp: 1, slot: 1, sym: 1, badge: 1, stamp: 1, note: 1, card: 1, tape: 1, pebble: 1, big: 1, think: 1, mess: 1, check: 1 }
+function layoutReport(t) {
+  render(t)
+  var st = stage.getBoundingClientRect(), vis = [], out = []
+  ELS.forEach(function (r) {
+    if (parseFloat(r.n.style.opacity || 1) < 0.4) return
+    var b = r.n.getBoundingClientRect()
+    var box = { x0: b.left - st.left, y0: b.top - st.top, x1: b.right - st.left, y1: b.bottom - st.top, name: r.e.t + ':' + (r.e.id || r.e.s || r.e.k || r.e.title || '') }
+    if (r.e.t !== 'balance' && box.y1 > 905) out.push('压字幕区 ' + box.name + ' 底边 y=' + Math.round(box.y1))
+    if (r.e.t === 'balance' && box.y1 - 120 > 905) out.push('天平压字幕区 底座 y≈' + Math.round(box.y1 - 120))
+    if (box.x0 < -5 || box.x1 > 1925 || box.y0 < -5) out.push('出画 ' + box.name)
+    if (SOLID[r.e.t] && !r.e.overlapOk) vis.push(box)
+  })
+  for (var i = 0; i < vis.length; i++) for (var j = i + 1; j < vis.length; j++) {
+    var a = vis[i], c = vis[j]
+    var w = Math.min(a.x1, c.x1) - Math.max(a.x0, c.x0), h = Math.min(a.y1, c.y1) - Math.max(a.y0, c.y0)
+    if (w <= 0 || h <= 0) continue
+    var small = Math.min((a.x1 - a.x0) * (a.y1 - a.y0), (c.x1 - c.x0) * (c.y1 - c.y0))
+    if (w * h > 0.15 * small) out.push('重叠 ' + a.name + ' × ' + c.name)
+  }
+  return out
+}
+</script></body></html>

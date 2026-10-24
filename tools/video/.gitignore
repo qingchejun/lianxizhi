@@ -1,0 +1,15 @@
+# 生成物不进仓库
+fonts/
+audio/
+clips/
+sfx/
+stills/
+chk/
+*.mp4
+*.wav
+*.jpg
+*.srt
+*.tar
+list.txt
+timing*.json
+sfx.json
