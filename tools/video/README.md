@@ -34,7 +34,9 @@ python3 tts.py && python3 timing.py && python3 check.py timing.json
 
 # 3. 渲染（2 核机器每次最多并行 2 个）→ 音效 → 合成 → 封面
 python3 shoot.py timing.json video 0 clips/scene0.mp4   # 每个场景一次
-python3 sfx.py && python3 sfx_events.py && python3 assemble.py
+python3 sfx.py && python3 sfx_events.py
+SEL=1,6 python3 assemble.py   # 先挑一两个场景出样片 sample.mp4 给人看
+python3 assemble.py           # 确认后出全片 final.mp4
 python3 shoot.py timing.json cover cover.jpg
 ```
 

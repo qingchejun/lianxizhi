@@ -10,7 +10,7 @@ async def main():
         for si, sc in enumerate(T):
             await pg.evaluate('([i,tm]) => build(i, tm)', [si, sc])
             for e in await pg.evaluate('sfxList()'):
-                if e['t'] < sc['dur'] - 0.1: out.append({'t': round(t0 + e['t'], 3), 'k': e['k']})
+                if e['t'] < sc['dur'] - 0.1: out.append({'s': si, 't': round(e['t'], 3), 'k': e['k']})
             t0 += sc['dur']
         json.dump(out, open('sfx.json', 'w'))
         from collections import Counter
