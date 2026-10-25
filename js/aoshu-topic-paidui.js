@@ -28,9 +28,9 @@
   /* 变式①：前面 a 人、后面 b 人，求总数 = a + b + 1 */
   function genBoth(s) {
     var c = U.diff(s).numMax
-    var a = U.randInt(1, c - 2)
-    if (c - a - 1 < 1) return null
-    var b = U.randInt(1, c - a - 1)
+    var a = U.randInt(2, c - 3) // 前后只有 1 个人，一眼就数出来
+    if (c - a - 1 < 2) return null
+    var b = U.randInt(2, c - a - 1)
     var total = a + b + 1
     var name = U.pick(U.NAMES)
     var ta = U.pron(name)
@@ -84,8 +84,8 @@
   /* 变式③：一队共 t 人，从前数第 m，求后面几人 = t − m */
   function genBehind(s) {
     var c = U.diff(s).numMax
-    var t = U.randInt(4, c)
-    var m = U.randInt(2, t - 1)
+    var t = U.randInt(8, c)
+    var m = U.randInt(2, t - 2) // 后面只剩 1 个人的不出
     var name = U.pick(U.NAMES)
     var ta = U.pron(name)
     return {

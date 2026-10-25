@@ -39,8 +39,20 @@
   /* 变式①两数比大小 */
   function genNum(s) {
     var cap = U.diff(s).numMax
-    var a = U.randInt(1, cap)
-    var b = U.rand() < 0.15 ? a : U.randInt(1, cap)
+    /* 不出「20 ○ 10」这种一眼看穿的：两个数要么挨得近，要么数字相同只是位置不同（12 和 21、7 和 17） */
+    var a = U.randInt(10, cap)
+    var b
+    var r = U.rand()
+    var swap = (a % 10) * 10 + Math.floor(a / 10)
+    if (r < 0.15) b = a
+    else if (r < 0.45 && a % 10 !== 0) b = swap <= cap && swap !== a ? swap : a % 10
+    else b = a + U.pick([-3, -2, -1, 1, 2, 3])
+    if (b < 1 || b > cap) return null
+    if (U.rand() < 0.5) {
+      var t = a
+      a = b
+      b = t
+    }
     var sym = symOf(a, b)
     var check =
       sym === '='
@@ -83,7 +95,7 @@
     if (U.rand() < 0.15) {
       r = left
     } else {
-      var delta = U.randInt(1, 5)
+      var delta = U.randInt(1, 2) // 差得多了不用算也能看出来
       r = U.rand() < 0.5 ? left + delta : left - delta
       if (r < 1) r = left + delta
       if (r > cap) r = left - delta

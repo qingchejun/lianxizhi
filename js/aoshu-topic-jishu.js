@@ -19,8 +19,8 @@
 
   /* 各难度档的规模上限（点数/射线数/底边点数/方格数） */
   var RANGE = {
-    L1: { seg: [3, 5], angle: [3, 4], tri: [3, 4], rect: [3, 4] },
-    L2: { seg: [3, 6], angle: [3, 5], tri: [3, 5], rect: [3, 5] },
+    L1: { seg: [4, 6], angle: [4, 5], tri: [4, 5], rect: [3, 4] }, // 3 个点数线段 = 3，一眼就看出来
+    L2: { seg: [4, 6], angle: [4, 6], tri: [4, 6], rect: [3, 5] },
     L3: { seg: [4, 6], angle: [4, 6], tri: [4, 6], rect: [3, 6] }
   }
 
@@ -73,18 +73,21 @@
     return parts.join('')
   }
 
-  /* 从一点引出 n 条射线的 SVG：射线摆在 90° 扇形内，末端标 ①②③ */
+  /*
+   * 从一点引出 n 条射线的 SVG：射线摆在 5°~75° 的扇形内，末端标 ①②③。
+   * 原先摆到 85°、长 88，顶上那一两条连同编号伸出画布被裁掉，孩子数不全。
+   */
   function raySVG(n) {
-    var parts = ['<svg viewBox="0 0 120 84" width="100" height="70" style="vertical-align:middle">']
+    var parts = ['<svg class="fig-tall" viewBox="0 0 120 108" width="110" height="99" style="vertical-align:middle">']
     var ox = 12
-    var oy = 74
+    var oy = 100
     for (var i = 0; i < n; i++) {
-      var deg = (80 / (n - 1)) * i + 5
+      var deg = (70 / (n - 1)) * i + 5
       var rad = (deg * Math.PI) / 180
-      var x = ox + 88 * Math.cos(rad)
-      var y = oy - 88 * Math.sin(rad)
-      var lx = ox + 100 * Math.cos(rad)
-      var ly = oy - 100 * Math.sin(rad)
+      var x = ox + 80 * Math.cos(rad)
+      var y = oy - 80 * Math.sin(rad)
+      var lx = ox + 92 * Math.cos(rad)
+      var ly = oy - 92 * Math.sin(rad)
       parts.push('<line x1="' + ox + '" y1="' + oy + '" x2="' + x.toFixed(1) + '" y2="' + y.toFixed(1) + '" stroke="#000" stroke-width="2"/>')
       parts.push('<text x="' + lx.toFixed(1) + '" y="' + (ly + 5).toFixed(1) + '" font-size="13" text-anchor="middle">' + CIRCLED[i] + '</text>')
     }

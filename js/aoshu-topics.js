@@ -198,20 +198,74 @@
     return on.length ? on : [variants[0]] // sanitize 已兜底，这里再防御一层
   }
 
+  /*
+   * 出题按【5 道一组】排：家长的用法是先做 5 道，错一道就再做下一组 5 道。
+   * 所以每一组都要尽量把勾选的题型轮一遍、互不撞车：
+   *   - 题型轮着出：每组开头把勾选的题型洗一次牌依次出，出完一轮再洗，
+   *     5 道里每种题型至少出现一次（题型不超过 5 种时），也不会同一种连出两道；
+   *     某种题型的题出完了（范围小、题库只有几道），就由别的题型顶上，不缺题；
+   *   - 组内不撞车：同一组里尽量不出答案相同的题，也尽量不出同一个「小主题」
+   *    （生成器可在题目上写 theme，比如同一种规律、同一个情景），
+   *     做不到就退而求其次，不会因此少出题；
+   *   - 第二组重新计算，和第一组题型分布一样、题目不重复（key 全卷去重）。
+   */
+  var GROUP = 5
+  var TRIES_PER_SLOT = 150 // 不少生成器拒绝采样，一种题型要多试几次才出得来
+
+  function shuffled(arr) {
+    var a = arr.slice()
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = randInt(0, i)
+      var t = a[i]
+      a[i] = a[j]
+      a[j] = t
+    }
+    return a
+  }
+
   function generateFrom(variants, s) {
-    var gens = selectedVariants(variants, s).map(function (v) {
-      return v.gen
-    })
+    var vs = selectedVariants(variants, s)
     var seen = new Set()
     var questions = []
-    var maxAttempts = s.count * 300
+    var budget = s.count * 300
+    var tries = 0
+    var order = []
+    var last = null
+    var groupAns = new Set()
+    var groupThemes = new Set()
 
-    for (var i = 0; i < maxAttempts && questions.length < s.count; i++) {
-      var q = pick(gens)(s)
-      if (!q) continue
-      if (seen.has(q.key)) continue
-      seen.add(q.key)
-      questions.push(q)
+    while (questions.length < s.count && tries < budget) {
+      if (questions.length % GROUP === 0) {
+        groupAns.clear()
+        groupThemes.clear()
+        order = [] // 每组从头轮一遍题型，不接着上一组没轮完的
+      }
+      if (!order.length) {
+        order = shuffled(vs)
+        /* 新一轮的第一个别和上一道撞同一种题型 */
+        if (order.length > 1 && order[0] === last) order.push(order.shift())
+      }
+      var v = order.shift()
+      var best = null
+      var bestScore = -1
+      for (var k = 0; k < TRIES_PER_SLOT && tries < budget; k++) {
+        tries++
+        var q = v.gen(s)
+        if (!q || seen.has(q.key)) continue
+        var theme = q.theme == null ? null : q.variant + ':' + q.theme
+        var score = (groupAns.has(JSON.stringify(q.answer)) ? 0 : 2) + (theme && groupThemes.has(theme) ? 0 : 1)
+        if (score > bestScore) {
+          best = q
+          bestScore = score
+          if (score === 3) break
+        }
+      }
+      if (!best) continue // 这种题型实在出不来新题，让给下一种
+      seen.add(best.key)
+      groupAns.add(JSON.stringify(best.answer))
+      if (best.theme != null) groupThemes.add(best.variant + ':' + best.theme)
+      questions.push(best)
+      last = v
     }
     return { questions: questions, shortfall: s.count - questions.length }
   }
@@ -232,9 +286,14 @@
    * 反向构造：先取移动数 m → 差 d = 2m（差必为偶数，否则移不平）→
    * 取小数 b → 大数 a = b + d，天然满足全部数学约束，几乎不拒绝。
    */
+  /* 移 1 个就一样多 = 送分题（8 个和 6 个）；最少移 2 个，难度越高下限越高 */
+  function moveMin(d0) {
+    return Math.max(2, Math.floor(d0.moveMax / 3))
+  }
+
   function genMove(s) {
     var d0 = diff(s)
-    var m = randInt(1, d0.moveMax)
+    var m = randInt(moveMin(d0), d0.moveMax)
     var gap = 2 * m
     if (d0.numMax - gap < 1) return null
     var b = randInt(1, d0.numMax - gap)
@@ -277,7 +336,7 @@
    */
   function genOrigDiff(s) {
     var d0 = diff(s)
-    var n = randInt(1, d0.moveMax)
+    var n = randInt(moveMin(d0), d0.moveMax)
     var gap = 2 * n
     if (d0.numMax - gap < 1) return null
     var b = randInt(1, d0.numMax - gap)
@@ -482,6 +541,9 @@
     ITEMS: ITEMS,
     diff: diff,
     DIFF_LABEL: DIFF_LABEL,
+    shuffled: shuffled,
+    GROUP: GROUP,
+    moveMin: moveMin,
     generateFrom: generateFrom
   }
   root.SumSum.aoshu.topics = { yiduobushao: YIDUOBUSHAO }

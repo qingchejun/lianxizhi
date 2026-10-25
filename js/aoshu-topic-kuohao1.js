@@ -14,7 +14,7 @@
     var cap = U.diff(s).numMax
     var b = U.randInt(1, 9)
     var c = U.randInt(1, 9)
-    if (U.rand() < 0.6) {
+    if (U.rand() < 0.5) {
       /* 减去一个和 */
       if (b + c + 1 > cap) return null
       var a = U.randInt(b + c + 1, cap)
@@ -22,6 +22,7 @@
       return {
         topic: 'kuohao1',
         variant: 'fill',
+        theme: 'remove-paren',
         stem: a + ' − (' + b + ' + ' + c + ') = ' + a + ' − ' + b + ' ○ ' + c + '。○ 里应该填「+」还是「−」？',
         answer: '−',
         unit: '',
@@ -36,25 +37,30 @@
         key: 'fill:sub:' + a + ',' + b + ',' + c
       }
     }
-    /* 加上一个和 */
-    if (cap - b - c - 1 < 1) return null
-    var a2 = U.randInt(1, cap - b - c)
-    var r2 = a2 + b + c
+    /*
+     * 反过来添括号：a − b − c = a − (b ○ c)。
+     * 原先这里出「a + (b + c) = a + b ○ c」—— 全是加号，不用想也知道填 +，是送分题；
+     * 换成添括号，孩子最容易顺手抄个「−」进去，正好考「连着减 = 减去它们的和」。
+     */
+    if (b + c + 1 > cap) return null
+    var a2 = U.randInt(b + c + 1, cap)
+    var r2 = a2 - b - c
     return {
       topic: 'kuohao1',
       variant: 'fill',
-      stem: a2 + ' + (' + b + ' + ' + c + ') = ' + a2 + ' + ' + b + ' ○ ' + c + '。○ 里应该填「+」还是「−」？',
+      theme: 'add-paren',
+      stem: a2 + ' − ' + b + ' − ' + c + ' = ' + a2 + ' − (' + b + ' ○ ' + c + ')。○ 里应该填「+」还是「−」？',
       answer: '+',
       unit: '',
       ansLabel: '答：○ 里填',
       ansSuffix: '。',
       solution: [
-        { tag: '想一想', text: '加上「' + b + ' 和 ' + c + ' 的和」，就是把 ' + b + ' 和 ' + c + ' 都加上。' },
-        { tag: '找规则', text: '加上一个和，可以连着加：先加 ' + b + '，再加 ' + c + '——○ 里是「+」。' },
-        { tag: '验一验', text: '左边：' + b + ' + ' + c + ' = ' + (b + c) + '，' + a2 + ' + ' + (b + c) + ' = ' + r2 + '；右边：' + a2 + ' + ' + b + ' + ' + c + ' = ' + r2 + '。两边相等 ✓' },
+        { tag: '想一想', text: '先减 ' + b + '、再减 ' + c + '，一共减掉了多少？是 ' + b + ' 和 ' + c + ' 合起来那么多。' },
+        { tag: '找规则', text: '连着减两个数，等于减去它们的和：括号里是「' + b + ' + ' + c + '」——○ 里是「+」，不是照抄「−」。' },
+        { tag: '验一验', text: '左边：' + a2 + ' − ' + b + ' − ' + c + ' = ' + r2 + '；右边：' + b + ' + ' + c + ' = ' + (b + c) + '，' + a2 + ' − ' + (b + c) + ' = ' + r2 + '。两边相等 ✓' },
         { tag: '答', text: '○ 里填「+」。' }
       ],
-      key: 'fill:add:' + a2 + ',' + b + ',' + c
+      key: 'fill:paren:' + a2 + ',' + b + ',' + c
     }
   }
 
@@ -147,8 +153,8 @@
       {
         id: 'fill',
         setting: 'vKh1Fill',
-        label: '去括号，填符号',
-        idea: '括号里两个数相加，去掉括号就要一个一个地算：前面是加号就连着加，前面是减号就连着减 —— 符号不翻身。',
+        label: '去括号、添括号，填符号',
+        idea: '减去两个数的和，去掉括号就是连着减；反过来，连着减两个数，添上括号后括号里要写「+」—— 减掉的是它们合起来的数。',
         gen: genFill
       },
       {

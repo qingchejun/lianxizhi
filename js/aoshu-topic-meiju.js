@@ -13,10 +13,10 @@
     var c = U.pick([2, 5])
     var n
     if (c === 2) {
-      var R2 = { L1: [4, 7], L2: [6, 10], L3: [9, 11] }[s.difficulty] || [4, 7]
+      var R2 = { L1: [6, 9], L2: [8, 11], L3: [9, 13] }[s.difficulty] || [4, 7]
       n = U.randInt(R2[0], R2[1])
     } else {
-      var R5 = { L1: [6, 12], L2: [8, 15], L3: [11, 18] }[s.difficulty] || [6, 12]
+      var R5 = { L1: [9, 14], L2: [11, 17], L3: [13, 20] }[s.difficulty] || [6, 12]
       n = U.randInt(R5[0], R5[1])
       if (n % 5 === 0 && U.rand() < 0.5) n += 1 // 别总是整凑
     }
@@ -47,12 +47,21 @@
     }
   }
 
-  /* 变式②摆两位数：三张互不相同的数字卡片，0 不能放十位 */
+  /*
+   * 变式②摆两位数：3~4 张互不相同的数字卡片，0 不能放十位。
+   * 只出「3 张、不能重复用」的话答案永远是 6，背下来就行——
+   * 所以混进带 0 的、4 张的、「卡片可以重复用」的，答案各不相同。
+   */
+  var DIGIT_CARDS = { L1: [3, 3], L2: [3, 4], L3: [4, 4] }
+
   function genDigit(s) {
+    var R = DIGIT_CARDS[s.difficulty] || DIGIT_CARDS.L1
+    var nCards = U.randInt(R[0], R[1])
     var withZero = U.rand() < 0.35
+    var reuse = U.rand() < 0.35
     var ds = []
     var pool = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    var take = withZero ? 2 : 3
+    var take = withZero ? nCards - 1 : nCards
     for (var i = 0; i < take; i++) {
       ds.push(pool.splice(U.randInt(0, pool.length - 1), 1)[0])
     }
@@ -63,43 +72,48 @@
     var tens = ds.filter(function (d) {
       return d !== 0
     })
-    var answer = tens.length * 2
+    var perTen = reuse ? ds.length : ds.length - 1 // 可以重复用时，个位还能用十位那张数字
+    var answer = tens.length * perTen
     var rows = tens.map(function (t) {
       var us = ds.filter(function (d) {
-        return d !== t
+        return reuse || d !== t
       })
       return '十位是 ' + t + ' 时：' + us.map(function (u) {
         return String(t) + String(u)
       }).join('、')
     })
     var counting = tens.map(function () {
-      return '2'
+      return String(perTen)
     }).join(' + ') + ' = ' + answer + '（个）'
     return {
       topic: 'meiju',
       variant: 'digit',
-      stem: '用数字卡片 ' + ds.join('、') + ' 摆两位数（每张卡片只能用一次），能摆出几个不同的两位数？',
+      stem: '用数字卡片 ' + ds.join('、') + ' 摆两位数（' + (reuse ? '同一个数字可以重复用，比如 ' + tens[0] + tens[0] : '每张卡片只能用一次') + '），能摆出几个不同的两位数？',
       answer: answer,
       unit: '个',
       ansLabel: '答：能摆出',
       ansSuffix: '个不同的两位数。',
       workLabel: '列一列',
       solution: [
-        { tag: '想一想', text: '按十位从小到大，一组一组地列。' + (withZero ? '注意：0 不能放在十位（0 开头就不是两位数了）。' : '') },
+        {
+          tag: '想一想',
+          text: '按十位从小到大，一组一组地列。' + (reuse ? '数字可以重复用，个位也能和十位一样。' : '') +
+            (withZero ? '注意：0 不能放在十位（0 开头就不是两位数了）。' : '')
+        },
         { tag: '列一列', text: rows.join('；') + '。' },
-        { tag: '数一数', text: '每个十位都能配 2 个个位：' + counting + '。' },
+        { tag: '数一数', text: '每个十位都能配 ' + perTen + ' 个个位：' + counting + '。' },
         { tag: '验一验', text: '十位按从小到大列的，每组里个位也没重复，不重不漏 ✓' },
         { tag: '答', text: '能摆出 ' + answer + ' 个不同的两位数。' }
       ],
-      key: 'digit:' + ds.join(',')
+      key: 'digit:' + ds.join(',') + (reuse ? ':r' : '')
     }
   }
 
   /* 变式③握手问题：给小朋友编号 ①②③…，每人只和排在自己后面的人算一次 */
   function genShake(s) {
-    var R = { L1: [3, 4], L2: [4, 5], L3: [4, 5] }[s.difficulty] || [3, 4]
+    var R = { L1: [4, 5], L2: [5, 6], L3: [5, 6] }[s.difficulty] || [4, 5] // 3 个人握 3 次，一眼就看出来
     var n = U.randInt(R[0], R[1])
-    var marks = '①②③④⑤'.slice(0, n)
+    var marks = '①②③④⑤⑥'.slice(0, n)
     var answer = (n * (n - 1)) / 2
     var rows = []
     for (var i = 0; i < n - 1; i++) {

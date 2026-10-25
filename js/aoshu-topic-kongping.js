@@ -53,8 +53,8 @@
   /* 各难度档：兑换比 n 与空瓶/购买数量范围 */
   function params(s) {
     if (s.difficulty === 'L3') return { n: U.pick([3, 4]), kMin: 6, kMax: 25, mMin: 4, mMax: 20 }
-    if (s.difficulty === 'L2') return { n: U.pick([2, 3]), kMin: 4, kMax: 15, mMin: 3, mMax: 12 }
-    return { n: 2, kMin: 3, kMax: 9, mMin: 2, mMax: 8 }
+    if (s.difficulty === 'L2') return { n: U.pick([2, 3]), kMin: 6, kMax: 15, mMin: 4, mMax: 12 }
+    return { n: 2, kMin: 5, kMax: 12, mMin: 4, mMax: 10 } // 3 个空瓶、买 2 瓶这种换一次就完了
   }
 
   /* 变式①：有 k 个空瓶，最多喝几瓶 */

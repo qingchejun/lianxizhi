@@ -13,9 +13,9 @@
 
   /* 各难度档：周期上限 / 「第 N 个」的 N 上限 / 递增组的个数上限 */
   var CAPS = {
-    L1: { pMax: 3, nMax: 15, growMax: 9 },
-    L2: { pMax: 3, nMax: 24, growMax: 12 },
-    L3: { pMax: 4, nMax: 30, growMax: 15 }
+    L1: { pMax: 3, nMax: 15, growMax: 12, dMax: 3 },
+    L2: { pMax: 3, nMax: 24, growMax: 15, dMax: 3 },
+    L3: { pMax: 4, nMax: 30, growMax: 18, dMax: 4 }
   }
 
   function caps(s) {
@@ -32,14 +32,18 @@
     return out
   }
 
-  /* 一组图案：周期 2~4；周期 ≥3 时偶尔用「两同一异」形（如 ●●△） */
+  /*
+   * 一组图案：周期 3~4。周期 ≥3 时有四成用两种图形拼（●●△、●△△、●●△△），
+   * 只看「图形换没换」看不出规律，得真的数一组几个。
+   */
+  var TWO_GLYPH = { 3: [[0, 0, 1], [0, 1, 1]], 4: [[0, 0, 0, 1], [0, 0, 1, 1], [0, 1, 1, 1]] }
+
   function makePattern(p) {
-    if (p >= 3 && U.rand() < 0.3) {
+    if (TWO_GLYPH[p] && U.rand() < 0.4) {
       var two = pickGlyphs(2)
-      var arr = []
-      for (var i = 0; i < p - 1; i++) arr.push(two[0])
-      arr.push(two[1])
-      return arr
+      return U.pick(TWO_GLYPH[p]).map(function (i) {
+        return two[i]
+      })
     }
     return pickGlyphs(p)
   }
@@ -68,9 +72,10 @@
     return parts.join('｜')
   }
 
-  /* 变式①周期重复：给 2~3 个完整周期（可带零头），问下一个画什么 */
+  /* 变式①周期重复：给 2~3 个完整周期（可带零头），问下一个画什么。
+     不出两个一换（★●★●），那等于看上一个是什么 */
   function genRepeat(s) {
-    var p = U.randInt(2, caps(s).pMax)
+    var p = U.randInt(3, caps(s).pMax)
     var pattern = makePattern(p)
     var cycles = U.randInt(2, 3)
     var tail = U.randInt(0, Math.min(2, p - 1))
@@ -108,8 +113,9 @@
   /* 变式②数量递增：每组比前一组多 d 个，问下一组画几个 */
   function genGrow(s) {
     var g = U.pick(GLYPHS)
-    var a = U.randInt(1, 2)
-    var d = U.randInt(1, s.difficulty === 'L1' ? 2 : 3)
+    /* 每组只多 1 个（1、2、3）就是数数，至少多 2 个 */
+    var a = U.randInt(1, 3)
+    var d = U.randInt(2, caps(s).dMax)
     var answer = a + 3 * d
     if (answer > caps(s).growMax) return null
     var groups = []
@@ -137,12 +143,12 @@
   /* 变式③第 N 个是什么：给 2 个完整周期加省略号，问第 N 个图形 */
   function genNth(s) {
     var c = caps(s)
-    var p = U.randInt(2, c.pMax)
+    var p = U.randInt(3, c.pMax) // 两个一换就是看单双数，太简单
     var pattern = makePattern(p)
     var twoCycles = []
     for (var i = 0; i < 2 * p; i++) twoCycles.push(pattern[i % p])
     if (hasShorterPeriod(twoCycles, p)) return null
-    var N = U.randInt(2 * p + 1, c.nMax)
+    var N = U.randInt(3 * p + 1, c.nMax) // 第 7 个这种数手指头就数出来了
     var full = Math.floor(N / p)
     var r = N % p
     if (r === 0) full = full // 正好整组

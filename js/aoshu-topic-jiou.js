@@ -17,7 +17,10 @@
 
   /* 变式①认奇偶：看个位判断，验算用「两两配对」拆成 h+h(+1) */
   function genJudge(s) {
-    var n = U.randInt(1, U.diff(s).numMax)
+    /* 「7 是奇数还是偶数」背过就会，不用想：只出两位数（认数不涉及计算，入门档也放到 50），
+       而且多半让十位和个位一奇一偶（34、61），专考「只看个位」这条规则 */
+    var n = U.randInt(10, Math.max(50, U.diff(s).numMax))
+    if (U.rand() < 0.7 && isOdd(Math.floor(n / 10) % 10) === isOdd(n % 10)) return null
     var d = n % 10
     var h = Math.floor(n / 2)
     var ans = parityWord(n)

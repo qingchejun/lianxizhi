@@ -8,7 +8,7 @@
   var U = root.SumSum.aoshu.util
 
   /* 各难度档的数量上限（段数/楼层/人数，太大不真实也画不了图） */
-  var CAP = { L1: 9, L2: 20, L3: 50 }
+  var CAP = { L1: 12, L2: 20, L3: 50 }
 
   function cap(s) {
     return CAP[s.difficulty] || CAP.L1
@@ -26,7 +26,7 @@
   function genSaw(s) {
     var c = cap(s)
     if (U.rand() < 0.5) {
-      var n = U.randInt(3, c)
+      var n = U.randInt(4, c)
       return {
         topic: 'jiange',
         variant: 'saw',
@@ -44,7 +44,7 @@
         key: 'saw:a:' + n
       }
     }
-    var k = U.randInt(2, c - 1)
+    var k = U.randInt(3, c - 1)
     return {
       topic: 'jiange',
       variant: 'saw',
@@ -63,31 +63,45 @@
     }
   }
 
-  /* 变式②爬楼梯：从 1 楼到 n 楼走几层 */
+  /*
+   * 变式②爬楼梯：从 a 楼到 n 楼走几层。
+   * 只出「从 1 楼出发」的话就是拿楼层减 1，背个口诀就完了；
+   * 一半的题从半中间的楼层出发，得真的想明白「层数 = 两个楼层相减」。
+   */
   function genStairs(s) {
-    var n = U.randInt(3, cap(s))
+    var n = U.randInt(5, cap(s))
+    var a = U.rand() < 0.5 ? 1 : U.randInt(2, n - 3)
     var name = U.pick(U.NAMES)
+    var steps = n - a
+    var think =
+      a === 1
+        ? '从 1 楼到 2 楼才走 1 层楼梯——走的层数总比楼层数少 1。'
+        : '从 ' + a + ' 楼到 ' + (a + 1) + ' 楼走 1 层，到 ' + (a + 2) + ' 楼走 2 层——走了几层，就是两个楼层相差几。'
     return {
       topic: 'jiange',
       variant: 'stairs',
-      stem: name + '从 1 楼走到 ' + n + ' 楼，一共要走几层楼梯？',
-      answer: n - 1,
+      theme: a === 1 ? 'from1' : 'mid',
+      stem: name + '从 ' + a + ' 楼走到 ' + n + ' 楼，一共要走几层楼梯？',
+      answer: steps,
       unit: '层',
       ansLabel: '答：一共要走',
       ansSuffix: '层楼梯。',
       solution: [
-        { tag: '想一想', text: '从 1 楼到 2 楼才走 1 层楼梯——走的层数总比楼层数少 1。' },
-        { tag: '列算式', text: n + ' − 1 = ' + (n - 1) + '（层）。' },
-        { tag: '验一验', text: '从 1 楼数起：到 2 楼走 1 层，到 3 楼走 2 层……到 ' + n + ' 楼正好走 ' + (n - 1) + ' 层 ✓' },
-        { tag: '答', text: '一共要走 ' + (n - 1) + ' 层楼梯。' }
+        { tag: '想一想', text: think },
+        { tag: '列算式', text: n + ' − ' + a + ' = ' + steps + '（层）。' },
+        {
+          tag: '验一验',
+          text: '从 ' + a + ' 楼数起：到 ' + (a + 1) + ' 楼走 1 层，到 ' + (a + 2) + ' 楼走 2 层……到 ' + n + ' 楼正好走 ' + steps + ' 层 ✓'
+        },
+        { tag: '答', text: '一共要走 ' + steps + ' 层楼梯。' }
       ],
-      key: 'stairs:' + n
+      key: 'stairs:' + a + ':' + n
     }
   }
 
   /* 变式③排一排：n 个人相邻两人之间放 1 盆花，求花的数量 */
   function genRow(s) {
-    var n = U.randInt(3, Math.min(cap(s), 10)) // 人数别太多，圆点图要画得下
+    var n = U.randInt(4, Math.min(cap(s), 10)) // 人数别太多，圆点图要画得下
     var groups = []
     for (var i = 0; i < n; i++) {
       groups.push({ type: 'hollow', n: 1 })
@@ -154,7 +168,7 @@
         id: 'stairs',
         setting: 'vJgStairs',
         label: '爬楼梯（楼层与层数）',
-        idea: '从 1 楼开始爬，到 2 楼才走 1 层 —— 走的层数总比楼层数少 1，到几楼就拿几减 1，别把楼层当层数。',
+        idea: '从 1 楼爬到 2 楼才走 1 层 —— 走了几层，就是两个楼层相差几：从 1 楼出发就拿楼层减 1，从别的楼层出发就两个楼层相减。',
         gen: genStairs
       },
       {

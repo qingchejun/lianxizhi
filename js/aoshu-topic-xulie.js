@@ -11,8 +11,15 @@
   /* 各难度档的公差/步长上限（数列各项仍受 diff(s).numMax 约束） */
   var STEP_MAX = { L1: 5, L2: 9, L3: 12 }
 
+  /* 公差下限：每次只加/减 1 就是数数（5、6、7、8、9、10），不算找规律 */
+  var STEP_MIN = { L1: 2, L2: 3, L3: 3 }
+
   function stepMax(s) {
     return STEP_MAX[s.difficulty] || STEP_MAX.L1
+  }
+
+  function stepMin(s) {
+    return STEP_MIN[s.difficulty] || STEP_MIN.L1
   }
 
   /* 把数列渲染成题干，空格处用（　） */
@@ -26,7 +33,7 @@
   /* 变式①等差：6 项，每次加/减固定数 step */
   function genDengcha(s) {
     var cap = U.diff(s).numMax
-    var step = U.randInt(1, stepMax(s))
+    var step = U.randInt(stepMin(s), stepMax(s))
     var up = U.rand() < 0.7 // 递增为主，递减少量出现
     if (cap - step * 5 < 1) return null
     var a0 = up ? U.randInt(1, cap - step * 5) : U.randInt(step * 5 + 1, cap)
@@ -52,6 +59,7 @@
     return {
       topic: 'xulie',
       variant: 'dengcha',
+      theme: step,
       stem: stemOf(terms, blank),
       answer: terms[blank],
       unit: '',
@@ -75,7 +83,7 @@
   /* 变式②交替：8 项，第 1、3、5、7 个一组、第 2、4、6、8 个一组，各自有规律 */
   function genJiaoti(s) {
     var cap = U.diff(s).numMax
-    var stepA = U.randInt(1, stepMax(s))
+    var stepA = U.randInt(stepMin(s), stepMax(s))
     var stepB = U.randInt(0, stepMax(s)) // 0 = 另一组是不变的数
     if (cap - stepA * 3 < 1) return null
     var a0 = U.randInt(1, cap - stepA * 3)
@@ -89,6 +97,8 @@
       terms.push(b0 + stepB * i)
     }
     var blank = U.randInt(4, 7)
+    /* 一直不变的那组（20、20、20）挖空等于白送，空只挖在会变的那组 */
+    if (stepB === 0 && blank % 2 === 1) blank -= 1
     var inA = blank % 2 === 0
     /* 组内清单里被挖的数要写成（　），不能拿答案证答案 */
     function listGroup(idxs) {

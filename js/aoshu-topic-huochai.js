@@ -10,7 +10,7 @@
   var U = root.SumSum.aoshu.util
 
   /* 各难度档的图形个数上限 */
-  var N_MAX = { L1: 5, L2: 9, L3: 15 }
+  var N_MAX = { L1: 6, L2: 9, L3: 15 }
 
   function nMax(s) {
     return N_MAX[s.difficulty] || N_MAX.L1
@@ -104,7 +104,7 @@
 
   function genShape(s, shapeId) {
     var shape = SHAPES[shapeId]
-    var n = U.randInt(2, nMax(s))
+    var n = U.randInt(3, nMax(s)) // 2 个图形连排没什么可数的
     var sticks = shape.build(n)
     var answer = sticks.length
     /* 构造器与公式互验：对不上说明构造器有错，宁可不出题 */
@@ -146,7 +146,7 @@
   function genCompare(s) {
     var shapeId = U.pick(['tri', 'squ'])
     var shape = SHAPES[shapeId]
-    var n = U.randInt(2, Math.min(nMax(s), 9))
+    var n = U.randInt(3, Math.min(nMax(s), 9))
     var chained = shape.build(n).length
     var apart = shape.per * n
     var answer = apart - chained

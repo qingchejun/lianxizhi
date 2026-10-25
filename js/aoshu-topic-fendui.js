@@ -9,7 +9,7 @@
 
   var U = root.SumSum.aoshu.util
 
-  var RANGE = { L1: [4, 9], L2: [8, 12], L3: [10, 13] }
+  var RANGE = { L1: [6, 10], L2: [8, 12], L3: [10, 13] } // 4 个分两堆只有 2 种，一眼看完
 
   function pickN(s) {
     var r = RANGE[s.difficulty] || RANGE.L1

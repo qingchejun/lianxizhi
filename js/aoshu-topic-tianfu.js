@@ -67,8 +67,9 @@
     var n = numMax(s)
     var cap = U.diff(s).numMax
     var op = U.pick(['+', '−'])
-    var a = U.randInt(1, n)
-    var b = U.randInt(1, n)
+    /* 一位数配一位数（5 ○ 3 = 2）跟口算没区别：第一个数用两位数，第二个数不取 1 */
+    var b = U.randInt(2, Math.max(2, Math.min(n, cap - 10)))
+    var a = U.randInt(10, Math.max(10, op === '+' ? cap - b : cap - 1)) // 加法先留出 b 的位置，免得 + 号总被丢掉
     if (op === '−' && a < b) {
       var t = a
       a = b

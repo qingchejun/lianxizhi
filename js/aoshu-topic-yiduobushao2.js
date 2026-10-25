@@ -63,7 +63,7 @@
   /* 变式②指定剩差求移动数：差从 d 缩到 r，要移 (d − r) 的一半，答 n */
   function genTarget(s) {
     var d0 = U.diff(s)
-    var n = U.randInt(1, d0.moveMax)
+    var n = U.randInt(U.moveMin(d0), d0.moveMax) // 移 1 个是送分题
     var r = U.randInt(1, Math.max(1, d0.moveMax))
     var d = 2 * n + r
     if (d0.numMax - d < 1) return null
@@ -101,7 +101,7 @@
   /* 变式③知总数与移动数倒推原数：一样多时各分一半 h，A 原来 = h + n */
   function genTotal(s) {
     var d0 = U.diff(s)
-    var n = U.randInt(1, d0.moveMax)
+    var n = U.randInt(U.moveMin(d0), d0.moveMax)
     var hMax = Math.floor(d0.numMax / 2)
     if (hMax < n + 1) return null
     var h = U.randInt(n + 1, hMax) // B 原来 = h − n ≥ 1

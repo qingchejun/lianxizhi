@@ -21,7 +21,7 @@
   function pickCase(s) {
     var c = cap(s)
     var b = U.randInt(2, Math.floor(c / 2) - 1)
-    var d = U.randInt(1, Math.max(1, Math.floor(c / 3)))
+    var d = U.randInt(2, Math.max(2, Math.floor(c / 3))) // 只多 1 个太好猜
     var a = b + d
     if (a + b > c) return null
     var who = U.pickTwoNames()
@@ -114,7 +114,7 @@
   /* 变式③移多补少综合：给 k 个后一样多 → 原差是 2k，转成和差求大数 */
   function genMove(s) {
     var c0 = cap(s)
-    var k = U.randInt(1, Math.max(1, Math.floor(c0 / 8)))
+    var k = U.randInt(2, Math.max(2, Math.floor(c0 / 8))) // 给 1 个就一样多太好猜
     var d = 2 * k
     var b = U.randInt(2, Math.floor(c0 / 2) - 1)
     var a = b + d

@@ -14,7 +14,7 @@
     var c = U.randInt(1, 8)
     var b = U.randInt(c + 1, Math.min(cap - 1, c + 9)) // b > c，差为正
     var d = b - c
-    if (U.rand() < 0.7) {
+    if (U.rand() < 0.5) {
       /* 减去一个差（重点形态） */
       if (b + 1 > cap) return null
       var a = U.randInt(b, cap) // a ≥ b，右边先减 b 不出负数
@@ -22,6 +22,7 @@
       return {
         topic: 'kuohao2',
         variant: 'fill',
+        theme: 'remove-paren',
         stem: a + ' − (' + b + ' − ' + c + ') = ' + a + ' − ' + b + ' ○ ' + c + '。○ 里应该填「+」还是「−」？',
         answer: '+',
         unit: '',
@@ -36,25 +37,30 @@
         key: 'fill:sub:' + a + ',' + b + ',' + c
       }
     }
-    /* 加上一个差 */
-    if (cap - b < 1) return null
-    var a2 = U.randInt(1, cap - b)
-    var r2 = a2 + d
+    /*
+     * 反过来添括号：a − b + c = a − (b ○ c)。
+     * 原先这里出「a + (b − c) = a + b ○ c」—— 照抄括号里的符号就对，是送分题；
+     * 添括号这边照抄「+」就错，正好考「括号前是减号，括号里要变号」。
+     */
+    if (b + 1 > cap) return null
+    var a2 = U.randInt(b + 1, cap)
+    var r2 = a2 - d
     return {
       topic: 'kuohao2',
       variant: 'fill',
-      stem: a2 + ' + (' + b + ' − ' + c + ') = ' + a2 + ' + ' + b + ' ○ ' + c + '。○ 里应该填「+」还是「−」？',
+      theme: 'add-paren',
+      stem: a2 + ' − ' + b + ' + ' + c + ' = ' + a2 + ' − (' + b + ' ○ ' + c + ')。○ 里应该填「+」还是「−」？',
       answer: '−',
       unit: '',
       ansLabel: '答：○ 里填',
       ansSuffix: '。',
       solution: [
-        { tag: '想一想', text: '该加的只是「' + b + ' − ' + c + '」这个差，也就是 ' + d + '；可右边把整个 ' + b + ' 都加上了——加多了！' },
-        { tag: '找规则', text: '多加了 ' + c + '，就要把 ' + c + ' 减回去——○ 里是「−」。' },
-        { tag: '验一验', text: '左边：' + b + ' − ' + c + ' = ' + d + '，' + a2 + ' + ' + d + ' = ' + r2 + '；右边：' + a2 + ' + ' + b + ' − ' + c + ' = ' + (a2 + b) + ' − ' + c + ' = ' + r2 + '。两边相等 ✓' },
+        { tag: '想一想', text: '左边先减 ' + b + '、再加回 ' + c + '，一来一回，其实只减掉了 ' + b + ' 比 ' + c + ' 多的那部分。' },
+        { tag: '找规则', text: '减掉的是「' + b + ' − ' + c + '」这个差——○ 里是「−」，不是照抄「+」。' },
+        { tag: '验一验', text: '左边：' + a2 + ' − ' + b + ' + ' + c + ' = ' + (a2 - b) + ' + ' + c + ' = ' + r2 + '；右边：' + b + ' − ' + c + ' = ' + d + '，' + a2 + ' − ' + d + ' = ' + r2 + '。两边相等 ✓' },
         { tag: '答', text: '○ 里填「−」。' }
       ],
-      key: 'fill:add:' + a2 + ',' + b + ',' + c
+      key: 'fill:paren:' + a2 + ',' + b + ',' + c
     }
   }
 
@@ -177,8 +183,8 @@
       {
         id: 'fill',
         setting: 'vKh2Fill',
-        label: '减去一个差，填符号',
-        idea: '去掉括号时，括号里前一个数照原样加或减，就加多了或减多了 —— 后一个数要用相反的符号补回来。',
+        label: '减去一个差，去括号、添括号填符号',
+        idea: '括号前是减号，去掉括号时括号里后一个数要变号补回来；反过来添括号也一样，「− b + c」添上括号就成了「−(b − c)」。',
         gen: genFill
       },
       {

@@ -11,7 +11,7 @@
   /* 变式①10 的好朋友：合起来是 10 的两个数，凑十法的基本功（不随难度变化） */
   var PAIR_TEXT = '1 和 9、2 和 8、3 和 7、4 和 6、5 和 5'
   function genFriend(s) {
-    var a = U.randInt(1, 9)
+    var a = U.pick([2, 3, 4, 6, 7, 8]) // 1+9、5+5 太顺口，不考
     var ans = 10 - a
     var form = U.pick(['sum', 'left', 'right'])
     var eq
@@ -21,6 +21,7 @@
     return {
       topic: 'coushi',
       variant: 'friend',
+      theme: Math.min(a, ans), // 3+7 和 7+3 是同一对好朋友
       stem: '10 的好朋友，□ 里填几？　' + eq,
       answer: ans,
       unit: '',

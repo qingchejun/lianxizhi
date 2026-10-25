@@ -51,6 +51,15 @@
   width: auto;
 }
 
+/* 扇形的射线图压到 18mm 高，五六条射线挤成一团、编号叠在一起，单独放宽 */
+.aq-stem svg.fig-tall {
+  max-height: 26mm;
+}
+
+.sol-stem svg.fig-tall {
+  max-height: 18mm;
+}
+
 /* 演算留白：高度由 aoshu-render.js 内联给定（有上限），不再吃掉整块剩余高度 */
 .aq-work {
   flex: none;
