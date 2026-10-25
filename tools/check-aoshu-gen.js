@@ -109,6 +109,51 @@ function checkGroupAnswers() {
   }
 }
 
+/* 综合复习卷排课：每组每课至少 1 道、多的给最新的课、同一课不挨着 */
+function checkReviewPlan() {
+  function counts(arr) {
+    var c = {}
+    arr.forEach(function (x) { c[x] = (c[x] || 0) + 1 })
+    return c
+  }
+  var cases = [
+    { ids: ['a', 'b', 'c', 'd'], want: { a: 1, b: 1, c: 1, d: 2 } },
+    { ids: ['a', 'b', 'c'], want: { a: 1, b: 2, c: 2 } },
+    { ids: ['a', 'b'], want: { a: 2, b: 3 } },
+    { ids: ['a'], want: { a: 5 } },
+    { ids: ['a', 'b', 'c', 'd', 'e'], want: { a: 1, b: 1, c: 1, d: 1, e: 1 } }
+  ]
+  for (var seed = 1; seed <= 50; seed++) {
+    cases.forEach(function (cs) {
+      var plan = U.withSeed(seed, function () { return U.planReview(cs.ids, 10) })
+      if (plan.length !== 10) bad('复习排课出了 ' + plan.length + ' 道')
+      for (var g = 0; g < 10; g += 5) {
+        var c = counts(plan.slice(g, g + 5))
+        Object.keys(cs.want).forEach(function (id) {
+          if (c[id] !== cs.want[id]) bad('复习排课 ' + cs.ids.join('') + ' 第 ' + (g / 5 + 1) + ' 组：' + plan.slice(g, g + 5).join(','))
+        })
+      }
+      if (cs.ids.length > 2) {
+        for (var i = 1; i < plan.length; i++) {
+          if (plan[i] === plan[i - 1]) bad('复习排课 ' + cs.ids.join('') + ' 同一课挨着：' + plan.join(','))
+        }
+      }
+    })
+    /* 超过 5 课：最新的课每组都有，组内不重复，两组合起来尽量覆盖 */
+    var many = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    var plan = U.withSeed(seed, function () { return U.planReview(many, 10) })
+    for (var g = 0; g < 10; g += 5) {
+      var grp = plan.slice(g, g + 5)
+      if (grp.indexOf('h') < 0) bad('复习排课 8 课：最新的课这一组没出：' + grp.join(','))
+      if (new Set(grp).size !== 5) bad('复习排课 8 课：组内有重复的课：' + grp.join(','))
+    }
+    if (new Set(plan).size < 8) bad('复习排课 8 课：两组下来还有课没轮到：' + plan.join(','))
+  }
+  /* 题量不是 5 的倍数：最后一组照样先保证每课 1 道 */
+  var odd = U.withSeed(3, function () { return U.planReview(['a', 'b', 'c'], 8) })
+  if (odd.length !== 8 || new Set(odd.slice(5)).size !== 3) bad('复习排课 8 道：最后 3 道应各来自一课：' + odd.join(','))
+}
+
 /* ---------- 2. 不出送分题 + 独立重算答案 ---------- */
 
 var N = 200
@@ -297,6 +342,7 @@ function checkSupply() {
 var t0 = Date.now()
 checkGroups()
 checkGroupAnswers()
+checkReviewPlan()
 checkFloors()
 checkSupply()
 
@@ -305,5 +351,5 @@ if (problems.length) {
   problems.forEach(function (p) { console.log('  - ' + p) })
   process.exit(1)
 }
-console.log('✓ 奥数出题：5 道一组轮题型 / 组内少撞答案 / 送分题下限 + 答案重算 / 默认至少出满一组 全部通过（' + (Date.now() - t0) + 'ms）')
+console.log('✓ 奥数出题：5 道一组轮题型 / 组内少撞答案 / 复习卷排课 / 送分题下限 + 答案重算 / 默认至少出满一组 全部通过（' + (Date.now() - t0) + 'ms）')
 if (thinTopics.length) console.log('  （题目本身种类少、凑不满 10 道：' + thinTopics.join('；') + '）')

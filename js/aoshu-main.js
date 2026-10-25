@@ -398,26 +398,57 @@
    * 生成器（题型勾选、难度档都沿用），所以解析、图示一切照旧；
    * 额外记下知识点名字，解析页上标出来，方便家长知道这题在考什么。
    */
+  /*
+   * 综合复习卷：先用 planReview 排好每道题出自哪一课（5 道一组、每课至少 1 道、多的给最新的课），
+   * 再按课出题。同一组里同一课要 2 道时一次出 2 道，走单课出题的轮题型规则，两道不会是同一种题型。
+   */
   function generateReview(s) {
     var ids = scopeIds(s)
     if (!ids.length) return { questions: [], shortfall: s.count, noTopics: true }
+    var U = S.aoshu.util
+    var plan = U.planReview(ids, s.count)
     var out = []
     var seen = {}
-    var attempts = s.count * 80
-    for (var i = 0; i < attempts && out.length < s.count; i++) {
-      var id = ids[Math.floor(Math.random() * ids.length)]
-      var sub = S.aoshu.settings.sanitize(
-        Object.assign({}, s, { topic: id, count: 1, review: false })
-      )
-      var q = S.aoshu.topics[id].generate(sub).questions[0]
-      if (!q) continue
-      var k = id + '#' + q.key
-      if (seen[k]) continue
-      seen[k] = 1
+
+    function labelOf(id) {
       var entry = S.aoshu.OUTLINE.filter(function (o) {
         return o.id === id
       })[0]
-      out.push(Object.assign({}, q, { topicLabel: entry.no + ' ' + entry.name }))
+      return entry.no + ' ' + entry.name
+    }
+
+    /* 从某一课出 n 道全卷没出过的题；出不够就返回几道算几道 */
+    function draw(id, n) {
+      var got = []
+      for (var t = 0; t < 6 && got.length < n; t++) {
+        var sub = S.aoshu.settings.sanitize(Object.assign({}, s, { topic: id, count: n + t, review: false }))
+        S.aoshu.topics[id].generate(sub).questions.forEach(function (q) {
+          var k = id + '#' + q.key
+          if (got.length < n && !seen[k]) {
+            seen[k] = 1
+            got.push(Object.assign({}, q, { topicLabel: labelOf(id) }))
+          }
+        })
+      }
+      return got
+    }
+
+    for (var g = 0; g < plan.length; g += U.GROUP) {
+      var slots = plan.slice(g, g + U.GROUP)
+      var need = {}
+      slots.forEach(function (id) {
+        need[id] = (need[id] || 0) + 1
+      })
+      var pool = {}
+      Object.keys(need).forEach(function (id) {
+        pool[id] = draw(id, need[id])
+      })
+      slots.forEach(function (id) {
+        var q = pool[id].shift()
+        /* 这一课的题出完了（题库小），换一课顶上，不缺题 */
+        for (var j = 0; !q && j < ids.length; j++) q = draw(ids[(ids.indexOf(id) + j + 1) % ids.length], 1)[0]
+        if (q) out.push(q)
+      })
     }
     return { questions: out, shortfall: s.count - out.length, topicCount: ids.length }
   }

@@ -270,6 +270,56 @@
     return { questions: questions, shortfall: s.count - questions.length }
   }
 
+  /*
+   * 综合复习卷每道题出自哪一课（只排课，不出题）。ids 已按大纲顺序排好，越靠后越新。
+   *
+   * 同样按【5 道一组】：
+   *   - 选的课不超过 5 课：每课至少 1 道，多出来的名额从最新的课往前分
+   *    （选 4 课 → 最新那课 2 道；选 3 课 → 最新两课各 2 道；选 2 课 → 3 + 2）；
+   *   - 选的课超过 5 课：最新那课每组必出，其余 4 个名额在剩下的课里轮着来，
+   *     一组里不重复，几组下来每课都轮得到；
+   *   - 组内打乱顺序，但同一课的两道不挨着（跨组的接缝也不挨着）。
+   */
+  function planReview(ids, count) {
+    var plan = []
+    var newest = ids[ids.length - 1]
+    var newestFirst = ids.slice().reverse()
+    var queue = []
+    while (plan.length < count) {
+      var g = Math.min(GROUP, count - plan.length)
+      var slots = []
+      if (ids.length <= g) {
+        for (var i = 0; i < g; i++) slots.push(newestFirst[i % ids.length])
+      } else {
+        slots.push(newest)
+        while (slots.length < g) {
+          if (!queue.length) queue = shuffled(ids.slice(0, -1))
+          var next = queue.shift()
+          if (slots.indexOf(next) < 0) slots.push(next)
+        }
+      }
+      plan = plan.concat(spread(slots, plan[plan.length - 1]))
+    }
+    return plan
+  }
+
+  /* 打乱一组课，尽量让相同的课不挨着、也不和上一组最后一道挨着 */
+  function spread(slots, prev) {
+    var best = slots
+    var bestBad = Infinity
+    for (var t = 0; t < 30; t++) {
+      var a = shuffled(slots)
+      var bad = a[0] === prev ? 1 : 0
+      for (var i = 1; i < a.length; i++) if (a[i] === a[i - 1]) bad++
+      if (bad < bestBad) {
+        best = a
+        bestBad = bad
+        if (!bad) break
+      }
+    }
+    return best
+  }
+
   /* 移多补少的圆点对比图：●是共同的部分，○是多出来的部分 */
   function moveDiagram(A, B, b, gap, m, u) {
     return {
@@ -544,7 +594,8 @@
     shuffled: shuffled,
     GROUP: GROUP,
     moveMin: moveMin,
-    generateFrom: generateFrom
+    generateFrom: generateFrom,
+    planReview: planReview
   }
   root.SumSum.aoshu.topics = { yiduobushao: YIDUOBUSHAO }
   root.SumSum.aoshu.topicList = [YIDUOBUSHAO]
