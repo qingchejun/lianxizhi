@@ -178,7 +178,7 @@ function kwTime(b, kw) {
   var B = TIMING.beats[b], nth = 1, m = /#(\d+)$/.exec(kw)
   if (m) { nth = +m[1]; kw = kw.slice(0, m.index) }
   kw = kw.replace(PUNCT, '')
-  var cands = [kw, kw.replace(/数/g, '蜀')]
+  var cands = [kw, kw.replace(/数/g, '蜀'), kw.replace(/行/g, '杭'), kw.replace(/数/g, '蜀').replace(/行/g, '杭')]
   if (B.words && B.words.length) {
     var cat = '', idx = []
     B.words.forEach(function (w, i) { var s = w.w.replace(PUNCT, ''); for (var j = 0; j < s.length; j++) idx.push(i); cat += s })
