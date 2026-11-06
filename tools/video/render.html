@@ -113,6 +113,17 @@ var ICON = {
   chick: '<circle cx="54" cy="60" r="32" fill="' + SHADOW + '"/><circle cx="50" cy="56" r="32" fill="#f7d64a" stroke="' + INK + '" stroke-width="5"/><path d="M44 18 C46 10 52 10 50 20 C56 12 60 16 54 24" fill="none" stroke="' + INK + '" stroke-width="4" stroke-linecap="round"/><circle cx="40" cy="50" r="4.5" fill="' + INK + '"/><circle cx="60" cy="50" r="4.5" fill="' + INK + '"/><path d="M44 60 L56 60 L50 70 Z" fill="#f08a3c" stroke="' + INK + '" stroke-width="3.5" stroke-linejoin="round"/><path d="M78 60 C86 56 88 66 80 70" fill="#f7d64a" stroke="' + INK + '" stroke-width="4"/>'
 }
 
+/* 13 分堆与枚举：糖果（手绘，两头拧起来的包装纸） */
+ICON.candy = '<ellipse cx="54" cy="60" rx="44" ry="18" fill="' + SHADOW + '"/>' +
+  '<path d="M30 52 L10 36 C6 34 4 38 6 42 L12 54 L6 66 C4 70 6 74 10 72 L30 58 Z" fill="#f5c95a" stroke="' + INK + '" stroke-width="4.5" stroke-linejoin="round"/>' +
+  '<path d="M70 52 L90 36 C94 34 96 38 94 42 L88 54 L94 66 C96 70 94 74 90 72 L70 58 Z" fill="#f5c95a" stroke="' + INK + '" stroke-width="4.5" stroke-linejoin="round"/>' +
+  '<path d="M14 44 L22 50 M14 64 L22 58 M86 44 L78 50 M86 64 L78 58" stroke="' + INK + '" stroke-width="2.5" opacity="0.45" stroke-linecap="round"/>' +
+  '<defs><clipPath id="cclip"><ellipse cx="50" cy="55" rx="24" ry="20"/></clipPath></defs>' +
+  '<ellipse cx="50" cy="55" rx="24" ry="20" fill="#f29bb0"/>' +
+  '<g clip-path="url(#cclip)" stroke="#fff" stroke-width="5" opacity="0.7"><path d="M30 76 L46 34 M42 78 L58 36 M54 80 L70 38"/></g>' +
+  '<ellipse cx="50" cy="55" rx="24" ry="20" fill="none" stroke="' + INK + '" stroke-width="5"/>' +
+  '<ellipse cx="41" cy="46" rx="6" ry="3.5" fill="#fff" opacity="0.5" transform="rotate(-20 41 46)"/>'
+
 /* 11 重叠问题：小朋友（手绘，6 种发型/衣服颜色） */
 function kidIcon(hair, shirt, girl) {
   return '<ellipse cx="53" cy="95" rx="32" ry="6" fill="' + SHADOW + '"/>' +
