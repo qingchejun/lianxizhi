@@ -40,6 +40,15 @@ python3 assemble.py           # 确认后出全片 final.mp4
 python3 shoot.py timing.json cover cover.jpg
 ```
 
-上线：`final.mp4` 传到 R2 的 `aoshu/<id>.mp4`，`cover.jpg` 传到 `aoshu/<id>.jpg`，然后在 `js/aoshu-videos.js` 的 `LIST`（和 `POSTER`）里登记。
+上线（一键）：推送 `publish/<id>` 分支，`.github/workflows/publish-aoshu-video.yml` 会把视频和封面传到 R2，确认线上能取到后再把登记提交推到 main。
 
-背景音乐 `bgm_full.wav`（约 4:49）不进仓库，在本机 `~/Movies/练习纸视频/素材-shuzimi2-重做版/`。
+```sh
+git checkout -B publish/<id> origin/main
+# 登记：js/aoshu-videos.js 的 LIST（和 POSTER）加一行，tools/check-today.js 补一条自检，提交
+mkdir -p _publish && cp final.mp4 _publish/<id>.mp4 && cp cover.jpg _publish/<id>.jpg
+git add _publish && git commit -m "publish: <id> 视频素材（不进 main）"
+git push origin publish/<id>
+```
+
+需要仓库里设好 `CLOUDFLARE_API_TOKEN`（只给 R2 编辑权限）和 `CLOUDFLARE_ACCOUNT_ID` 两个 Actions secret。
+手动备用：`npx wrangler r2 object put lianxizhi-video/aoshu/<id>.mp4 --file=… --content-type=video/mp4 --remote`，再登记推 main。
