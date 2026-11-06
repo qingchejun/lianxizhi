@@ -63,6 +63,8 @@ html, body { margin: 0; padding: 0; }
 .think .d { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 13px; border: 3px solid #2b2420; box-sizing: border-box; background: #e8b33a; }
 .think .d.off { background: #cfc4b3; }
 .think .lb { position: absolute; left: 200px; top: 0; height: 170px; line-height: 170px; font-family: KL; font-size: 46px; color: #8a7f72; }
+.strip { border: 4px solid #2b2420; border-radius: 6px; box-shadow: 5px 6px 0 rgba(80,60,30,0.13); display: flex; align-items: center; justify-content: center; font-family: Num; font-weight: 700; }
+.zone { border: 4px dashed #e09a2b; border-radius: 8px; background: repeating-linear-gradient(45deg, rgba(232,179,58,0.38) 0 12px, rgba(232,179,58,0.12) 12px 24px); }
 </style></head>
 <body><div id="stage"></div>
 <script src="scenes.js"></script>
@@ -101,6 +103,21 @@ var ICON = {
   rabbit: '<ellipse cx="54" cy="70" rx="30" ry="24" fill="' + SHADOW + '"/><path d="M34 46 C26 30 26 6 34 6 C42 6 44 28 44 42 M66 46 C74 30 74 6 66 6 C58 6 56 28 56 42" fill="#fbf7f0" stroke="' + INK + '" stroke-width="5" stroke-linejoin="round"/><path d="M50 40 C72 40 82 56 80 70 C78 86 64 92 50 92 C36 92 22 86 20 70 C18 56 28 40 50 40 Z" fill="#fbf7f0" stroke="' + INK + '" stroke-width="5"/><circle cx="40" cy="64" r="4.5" fill="' + INK + '"/><circle cx="60" cy="64" r="4.5" fill="' + INK + '"/><ellipse cx="50" cy="74" rx="4" ry="3" fill="#f29bb0"/><ellipse cx="32" cy="76" rx="5" ry="3" fill="#f29bb0" opacity="0.6"/><ellipse cx="68" cy="76" rx="5" ry="3" fill="#f29bb0" opacity="0.6"/>',
   chick: '<circle cx="54" cy="60" r="32" fill="' + SHADOW + '"/><circle cx="50" cy="56" r="32" fill="#f7d64a" stroke="' + INK + '" stroke-width="5"/><path d="M44 18 C46 10 52 10 50 20 C56 12 60 16 54 24" fill="none" stroke="' + INK + '" stroke-width="4" stroke-linecap="round"/><circle cx="40" cy="50" r="4.5" fill="' + INK + '"/><circle cx="60" cy="50" r="4.5" fill="' + INK + '"/><path d="M44 60 L56 60 L50 70 Z" fill="#f08a3c" stroke="' + INK + '" stroke-width="3.5" stroke-linejoin="round"/><path d="M78 60 C86 56 88 66 80 70" fill="#f7d64a" stroke="' + INK + '" stroke-width="4"/>'
 }
+
+/* 11 重叠问题：小朋友（手绘，6 种发型/衣服颜色） */
+function kidIcon(hair, shirt, girl) {
+  return '<ellipse cx="53" cy="95" rx="32" ry="6" fill="' + SHADOW + '"/>' +
+    '<path d="M18 98 C18 80 31 70 50 70 C69 70 82 80 82 98 Z" fill="' + shirt + '" stroke="' + INK + '" stroke-width="5" stroke-linejoin="round"/>' +
+    (girl ? '<circle cx="24" cy="38" r="10" fill="' + hair + '" stroke="' + INK + '" stroke-width="4"/><circle cx="76" cy="38" r="10" fill="' + hair + '" stroke="' + INK + '" stroke-width="4"/>' : '') +
+    '<circle cx="50" cy="44" r="25" fill="#f8dcbc" stroke="' + INK + '" stroke-width="5"/>' +
+    (girl ? '<path d="M26 42 C25 24 38 17 50 17 C62 17 75 24 74 42 C70 33 64 30 58 30 C56 34 52 36 48 33 C42 31 33 33 26 42 Z" fill="' + hair + '" stroke="' + INK + '" stroke-width="4" stroke-linejoin="round"/>'
+          : '<path d="M25 44 C22 24 36 15 51 16 C66 16 79 25 75 44 C72 36 66 31 60 31 L56 25 L51 31 C42 31 32 35 25 44 Z" fill="' + hair + '" stroke="' + INK + '" stroke-width="4" stroke-linejoin="round"/>') +
+    '<circle cx="41" cy="48" r="3.6" fill="' + INK + '"/><circle cx="59" cy="48" r="3.6" fill="' + INK + '"/>' +
+    '<path d="M43 56 Q50 62 57 56" fill="none" stroke="' + INK + '" stroke-width="3.5" stroke-linecap="round"/>' +
+    '<ellipse cx="34" cy="56" rx="5" ry="3" fill="#f29bb0" opacity="0.6"/><ellipse cx="66" cy="56" rx="5" ry="3" fill="#f29bb0" opacity="0.6"/>'
+}
+;[['#4a3a30', '#7fb2e5', 0], ['#3a2c24', '#f2a9b8', 1], ['#8a5a32', '#9fd18a', 0], ['#2b2420', '#f5c95a', 1], ['#6b4a2e', '#f0956a', 0], ['#4a3a30', '#b9a3e3', 1]]
+  .forEach(function (k, i) { ICON['kid' + i] = kidIcon(k[0], k[1], k[2]) })
 function iconSVG(k) { return '<svg viewBox="0 0 100 100" style="width:100%;height:100%;display:block;overflow:visible">' + ICON[k] + '</svg>' }
 /* 天平（重画）：w = 两个托盘中心的距离。元素中心 (x,y)：托盘面在 y-15，支点在 y-195，底座在 y+95。
  * 横梁可按 tilt 关键帧倾斜，两个托盘跟着上下（盘里物品用 on:[天平id,'L'|'R'] 跟随）。 */
@@ -286,6 +303,17 @@ function build(sceneIdx, timing) {
         n = mk('arc', '<svg width="' + (hw + 20) + '" height="40" style="position:absolute;left:0;top:40px;overflow:visible"><path class="ap" d="M6 20 L' + (hw - 4) + ' 20" fill="none" stroke="' + e.color + '" stroke-width="6" stroke-linecap="round"' + (e.dashed ? ' stroke-dasharray="14 10"' : ' pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"') + '/><path class="ah" d="M' + (hw - 22) + ' 4 L' + (hw) + ' 20 L' + (hw - 22) + ' 36" fill="none" stroke="' + e.color + '" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="lb" style="color:' + e.color + ';top:-8px;font-family:KL;font-weight:400;font-size:38px">' + (e.s || '') + '</div>')
         n.style.width = (hw + 20) + 'px'; n.style.height = '90px'; anim = e.dashed ? 'fade' : 'arc'
         break
+      case 'strip':
+        /* 纸条/长条：x0 = 左端，w = 长度；unit = 刻度间距（px）；s = 条上的字 */
+        if (e.x0 !== undefined) e.x = e.x0 + e.w / 2
+        n = mk('strip', e.s || ''); n.style.width = e.w + 'px'; n.style.height = (e.h || 70) + 'px'
+        n.style.background = (e.unit ? 'repeating-linear-gradient(90deg, transparent 0 ' + (e.unit - 3) + 'px, rgba(43,36,32,0.35) ' + (e.unit - 3) + 'px ' + e.unit + 'px) 0 100% / 100% 30% no-repeat, ' : '') + (e.fill || '#f5e1a4')
+        n.style.fontSize = (e.size || 40) + 'px'; n.style.color = e.color || INK; n.style.boxSizing = 'border-box'
+        anim = 'wipe'; break
+      case 'zone':
+        if (e.x0 !== undefined) e.x = e.x0 + e.w / 2
+        n = mk('zone'); n.style.width = e.w + 'px'; n.style.height = e.h + 'px'; n.style.boxSizing = 'border-box'; anim = 'fade'
+        break
       case 'think':
         /* 08 同款倒计时：5 个圆点排成五边形，从顶上开始顺时针逐个熄灭 */
         var dots = ''
@@ -299,6 +327,9 @@ function build(sceneIdx, timing) {
     }
     var rec = { e: e, n: n, anim: anim, t0: beatTime(e.at), t1: beatTime(e.out), td: beatTime(e.dim), rot: e.rot || (e.t === 'stamp' ? -6 : 0) }
     if (e.glow !== undefined) rec.tg = beatTime(e.glow)
+    if (e.glow2 !== undefined) rec.tg2 = beatTime(e.glow2)  /* 第二次亮（同一个东西被念到两次） */
+    /* move: [时间, dx, dy] —— 在这个时间之前偏开 (dx,dy)，到时滑回原位 */
+    if (e.move) rec.tm = beatTime(e.move[0])
     if (e.t === 'think') { e.from = e.from || 5; if (rec.t1 === null) rec.t1 = rec.t0 + e.from }
     ELS.push(rec)
     if (e.id) byId[e.id] = rec
@@ -356,6 +387,7 @@ function render(t) {
         n.querySelector('.panL').style.transform = 'translateY(' + (-dy) + 'px)'
         n.querySelector('.panR').style.transform = 'translateY(' + dy + 'px)'
         break
+      case 'wipe': op = clamp(p * 4); n.style.clipPath = 'inset(-20px ' + (100 - 100 * easeOut(clamp((t - r.t0) / 0.6))) + '% -20px -20px)'; break
       case 'check': n.querySelector('.ck').setAttribute('stroke-dashoffset', 1 - easeOut(clamp((t - r.t0) / 0.5))); break
       case 'loop': n.querySelector('.lp').setAttribute('stroke-dashoffset', 1 - easeOut(clamp((t - r.t0) / 0.6))); break
       case 'arc':
@@ -368,11 +400,11 @@ function render(t) {
     if (r.e.t === 'chant') n.querySelector('.ul').style.transform = 'scaleX(' + easeOut(clamp((t - r.t0 - 0.2) / 0.6)) + ')'
     if (r.td !== null && t > r.td) op *= 1 - 0.7 * easeOut(clamp((t - r.td) / 0.35))
     if (r.t1 !== null && t > r.t1) op *= 1 - clamp((t - r.t1) / 0.3)
-    if (r.tg !== undefined && r.tg !== null && t > r.tg) {
-      var g = clamp((t - r.tg) / 0.2) * (1 - clamp((t - r.tg - 0.7) / 0.35))
-      sc *= 1 + 0.14 * g
-      halo = Math.max(halo, g)
-    }
+    ;[r.tg, r.tg2].forEach(function (tg) {
+      if (tg === undefined || tg === null || t <= tg) return
+      var g = clamp((t - tg) / 0.2) * (1 - clamp((t - tg - 0.7) / 0.35))
+      if (g > halo) { sc *= 1 + 0.14 * (g - halo); halo = g }
+    })
     if (r.pulse) { halo = Math.max(halo, r.pulse); r.pulse = 0 }
     n.style.filter = halo > 0.01 ? 'drop-shadow(0 0 ' + (6 + 16 * halo) + 'px rgba(232,179,58,' + (0.95 * halo) + ')) drop-shadow(0 0 ' + (3 + 6 * halo) + 'px rgba(232,179,58,' + (0.9 * halo) + '))' : ''
     /* 待填的空位：未揭晓前轻轻晃动 */
@@ -404,6 +436,7 @@ function render(t) {
     }
     op *= SCENE_FADE
     if (r.onRec && r.onRec.dy) extra += ' translateY(' + r.onRec.dy[r.e.on[1]] + 'px)'
+    if (r.tm !== undefined) { var mf = 1 - easeOut(clamp((t - r.tm) / 0.7)); extra += ' translate(' + r.e.move[1] * mf + 'px,' + r.e.move[2] * mf + 'px)' }
     if (r.e.scale) sc *= r.e.scale
     n.style.opacity = op
     n.style.transform = 'rotate(' + r.rot + 'deg) scale(' + sc + ')' + extra
