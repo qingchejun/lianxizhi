@@ -46,7 +46,7 @@ python3 shoot.py timing.json cover cover.jpg
 git checkout -B publish/<id> origin/main
 # 登记：js/aoshu-videos.js 的 LIST（和 POSTER）加一行，tools/check-today.js 补一条自检，提交
 mkdir -p _publish && cp final.mp4 _publish/<id>.mp4 && cp cover.jpg _publish/<id>.jpg
-git add _publish && git commit -m "publish: <id> 视频素材（不进 main）"
+git add -f _publish && git commit -m "publish: <id> 视频素材（不进 main）"   # .gitignore 忽略了 *.mp4，必须 -f
 git push origin publish/<id>
 ```
 

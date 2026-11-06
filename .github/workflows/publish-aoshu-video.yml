@@ -1,6 +1,7 @@
 # 奥数讲解视频一键上线：推送 publish/<id> 分支即触发。
 #
 # 分支结构（Claude 准备，用户在对话里说「上线」后推送）：
+#   （.mp4 被 .gitignore 忽略，素材要用 git add -f）
 #   origin/main ── 登记提交（js/aoshu-videos.js 等，可以没有）── 素材提交（只加 _publish/<id>.mp4、可选 _publish/<id>.jpg）← 分支顶端
 #
 # 流程：检查文件（moov 在前）→ 传到 R2 的 aoshu/<id>.mp4 / .jpg → 确认 video.qingchejun.com 能取到、大小一致
