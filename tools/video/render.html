@@ -65,6 +65,15 @@ html, body { margin: 0; padding: 0; }
 .think .lb { position: absolute; left: 200px; top: 0; height: 170px; line-height: 170px; font-family: KL; font-size: 46px; color: #8a7f72; }
 .strip { border: 4px solid #2b2420; border-radius: 6px; box-shadow: 5px 6px 0 rgba(80,60,30,0.13); display: flex; align-items: center; justify-content: center; font-family: Num; font-weight: 700; }
 .zone { border: 4px dashed #e09a2b; border-radius: 8px; background: repeating-linear-gradient(45deg, rgba(232,179,58,0.38) 0 12px, rgba(232,179,58,0.12) 12px 24px); }
+.dcard { border: 4px solid #2b2420; border-radius: 14px; background: #fbf8f1; box-shadow: 6px 7px 0 rgba(80,60,30,0.14);
+  display: flex; align-items: center; justify-content: center; font-family: Num; font-weight: 700; box-sizing: border-box; }
+.dcard::before { content: ''; position: absolute; inset: 8px; border: 2px solid rgba(150,128,96,0.35); border-radius: 9px; }
+.coin { border-radius: 50%; border: 4px solid #2b2420; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
+  font-family: Num; font-weight: 700; color: #5a4520; box-shadow: 4px 5px 0 rgba(80,60,30,0.16); }
+.coin::before { content: ''; position: absolute; inset: 6px; border-radius: 50%; border: 2.5px dashed rgba(43,36,32,0.35); }
+.mk { display: inline-flex; align-items: center; justify-content: center; width: 1.12em; height: 1.12em; border-radius: 50%;
+  border: 0.06em solid #2b2420; box-sizing: border-box; color: #fff; font-family: Num; font-weight: 700; font-size: 0.86em; margin: 0 0.05em; vertical-align: -0.12em; }
+.coin small { font-family: Kai; font-weight: 400; font-size: 0.42em; margin-left: 1px; }
 </style></head>
 <body><div id="stage"></div>
 <script src="scenes.js"></script>
@@ -314,6 +323,25 @@ function build(sceneIdx, timing) {
         if (e.x0 !== undefined) e.x = e.x0 + e.w / 2
         n = mk('zone'); n.style.width = e.w + 'px'; n.style.height = e.h + 'px'; n.style.boxSizing = 'border-box'; anim = 'fade'
         break
+      case 'dcard':
+        /* 12 枚举法：数字卡片 */
+        n = mk('dcard', e.s); n.style.width = Math.round(e.size * 0.78) + 'px'; n.style.height = e.size + 'px'
+        n.style.fontSize = Math.round(e.size * 0.6) + 'px'; n.style.color = e.color || INK; e.rot = e.rot || 0
+        break
+      case 'coin':
+        /* 12 枚举法：硬币，v = 面值；2 元及以上金色，1 元银色 */
+        n = mk('coin', e.v + '<small>元</small>'); n.style.width = e.size + 'px'; n.style.height = e.size + 'px'
+        n.style.fontSize = Math.round(e.size * 0.48) + 'px'
+        n.style.background = e.v > 1 ? 'radial-gradient(circle at 35% 30%, #fbe6a2, #e8be5f 60%, #c99a3a)' : 'radial-gradient(circle at 35% 30%, #ffffff, #dcdcd4 60%, #b4b4aa)'
+        if (e.v <= 1) n.style.color = '#4a4a44'
+        break
+      case 'seg':
+        /* 连线（握手）：从 (x1,y1) 画到 (x2,y2) */
+        var sx = Math.min(e.x1, e.x2) - 10, sy = Math.min(e.y1, e.y2) - 10, sw2 = Math.abs(e.x2 - e.x1) + 20, sh2 = Math.abs(e.y2 - e.y1) + 20
+        e.x = sx + sw2 / 2; e.y = sy + sh2 / 2
+        n = mk('', '<svg width="' + sw2 + '" height="' + sh2 + '" style="display:block;overflow:visible"><path class="ap" d="M' + (e.x1 - sx) + ' ' + (e.y1 - sy) + ' L' + (e.x2 - sx) + ' ' + (e.y2 - sy) + '" fill="none" stroke="' + (e.color || INK) + '" stroke-width="' + (e.sw || 7) + '" stroke-linecap="round"' + (e.dashed ? ' stroke-dasharray="14 10"' : ' pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"') + '/></svg>')
+        n.style.width = sw2 + 'px'; n.style.height = sh2 + 'px'; anim = e.dashed ? 'fade' : 'seg'
+        break
       case 'think':
         /* 08 同款倒计时：5 个圆点排成五边形，从顶上开始顺时针逐个熄灭 */
         var dots = ''
@@ -388,6 +416,7 @@ function render(t) {
         n.querySelector('.panR').style.transform = 'translateY(' + dy + 'px)'
         break
       case 'wipe': op = clamp(p * 4); n.style.clipPath = 'inset(-20px ' + (100 - 100 * easeOut(clamp((t - r.t0) / 0.6))) + '% -20px -20px)'; break
+      case 'seg': n.querySelector('.ap').setAttribute('stroke-dashoffset', 1 - easeOut(clamp((t - r.t0) / 0.45))); break
       case 'check': n.querySelector('.ck').setAttribute('stroke-dashoffset', 1 - easeOut(clamp((t - r.t0) / 0.5))); break
       case 'loop': n.querySelector('.lp').setAttribute('stroke-dashoffset', 1 - easeOut(clamp((t - r.t0) / 0.6))); break
       case 'arc':
@@ -460,7 +489,7 @@ function sfxList() {
   return ev.filter(function (x, i) { return !ev.slice(0, i).some(function (y) { return y.k === x.k && Math.abs(y.t - x.t) < 0.2 }) })
 }
 /* 版面自检：返回压字幕区 / 出画 / 实心元素互相重叠的问题 */
-var SOLID = { txt: 1, item: 1, shp: 1, slot: 1, sym: 1, badge: 1, stamp: 1, note: 1, card: 1, tape: 1, pebble: 1, big: 1, think: 1, mess: 1, check: 1 }
+var SOLID = { txt: 1, item: 1, shp: 1, slot: 1, sym: 1, badge: 1, stamp: 1, note: 1, card: 1, tape: 1, pebble: 1, big: 1, think: 1, mess: 1, check: 1, dcard: 1, coin: 1 }
 function layoutReport(t) {
   render(t)
   var st = stage.getBoundingClientRect(), vis = [], out = []

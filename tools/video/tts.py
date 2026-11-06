@@ -13,12 +13,18 @@ except ImportError:
     import site, importlib; importlib.reload(site)
     import edge_tts
 
+# 云端环境走代理时，edge-tts 写死了 certifi 证书；有 SSL_CERT_FILE 就改用它
+import ssl
+if os.environ.get('SSL_CERT_FILE'):
+    import edge_tts.communicate as _c
+    _c._SSL_CTX = ssl.create_default_context(cafile=os.environ['SSL_CERT_FILE'])
+
 VOICE, RATE = 'zh-CN-XiaoxiaoNeural', '+0%'
 # 多音字表：晓晓容易读错的词 → 同音字写法（按需补充）
 POLY = [
     ('数一数', '蜀一蜀'), ('一个一个数', '一个一个蜀'), ('一组一组地数', '一组一组地蜀'),
     ('数到', '蜀到'), ('数数', '蜀蜀'), ('再数', '再蜀'), ('数出', '蜀出'),
-    ('数两次', '蜀两次'), ('数了两次', '蜀了两次'), ('数错', '蜀错'), ('块数', '块蜀'),
+    ('数两次', '蜀两次'), ('数了两次', '蜀了两次'), ('数错', '蜀错'), ('块数', '块蜀'), ('不重', '不虫'),
 ]
 def fix(text):
     for a, b in POLY:
