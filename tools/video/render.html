@@ -124,6 +124,26 @@ ICON.candy = '<ellipse cx="54" cy="60" rx="44" ry="18" fill="' + SHADOW + '"/>' 
   '<ellipse cx="50" cy="55" rx="24" ry="20" fill="none" stroke="' + INK + '" stroke-width="5"/>' +
   '<ellipse cx="41" cy="46" rx="6" ry="3.5" fill="#fff" opacity="0.5" transform="rotate(-20 41 46)"/>'
 
+/* 14 空瓶换水：汽水瓶（手绘）。bottle = 满瓶（橙色汽水 + 红盖子），empty = 喝完的空瓶（浅色、没盖子） */
+function bottleIcon(full) {
+  var body = 'M43 16 L57 16 L57 29 C57 35 71 38 71 50 L71 87 C71 92 67 95 62 95 L38 95 C33 95 29 92 29 87 L29 50 C29 38 43 35 43 29 Z'
+  var cid = full ? 'bclipF' : 'bclipE'
+  return '<path d="' + body + '" transform="translate(4,4)" fill="' + SHADOW + '"/>' +
+    '<defs><clipPath id="' + cid + '"><path d="' + body + '"/></clipPath></defs>' +
+    '<path d="' + body + '" fill="' + (full ? '#fdf3e2' : '#eef4f1') + '"/>' +
+    (full ? '<g clip-path="url(#' + cid + ')"><path d="M20 40 C34 36 46 44 60 40 C68 38 76 40 80 40 L80 100 L20 100 Z" fill="#f0a23c"/>' +
+      '<circle cx="40" cy="70" r="2.6" fill="#fff" opacity="0.7"/><circle cx="56" cy="80" r="2" fill="#fff" opacity="0.7"/><circle cx="48" cy="58" r="1.8" fill="#fff" opacity="0.7"/></g>' : '') +
+    '<g clip-path="url(#' + cid + ')"><rect x="20" y="60" width="60" height="15" fill="' + (full ? '#fbf8f1' : '#f6f2ea') + '" opacity="' + (full ? 1 : 0.8) + '"/>' +
+    '<path d="M20 60 L80 60 M20 75 L80 75" stroke="' + INK + '" stroke-width="2.5" opacity="' + (full ? 0.55 : 0.3) + '"/>' +
+    '<path d="M38 67.5 L62 67.5" stroke="' + (full ? '#d9443a' : '#b9ad9c') + '" stroke-width="4" stroke-linecap="round"/></g>' +
+    '<path d="M36 48 L35 84" stroke="#fff" stroke-width="4.5" stroke-linecap="round" opacity="' + (full ? 0.55 : 0.85) + '"/>' +
+    '<path d="' + body + '" fill="none" stroke="' + INK + '" stroke-width="4.5" stroke-linejoin="round"' + (full ? '' : ' opacity="0.8"') + '/>' +
+    (full ? '<rect x="40" y="6" width="20" height="12" rx="3" fill="#d9443a" stroke="' + INK + '" stroke-width="4"/><path d="M45 9 L45 15 M50 9 L50 15 M55 9 L55 15" stroke="#fff" stroke-width="1.8" opacity="0.6"/>'
+          : '<ellipse cx="50" cy="16" rx="7" ry="2.4" fill="none" stroke="' + INK + '" stroke-width="3" opacity="0.8"/>')
+}
+ICON.bottle = bottleIcon(true)
+ICON.empty = bottleIcon(false)
+
 /* 11 重叠问题：小朋友（手绘，6 种发型/衣服颜色） */
 function kidIcon(hair, shirt, girl) {
   return '<ellipse cx="53" cy="95" rx="32" ry="6" fill="' + SHADOW + '"/>' +

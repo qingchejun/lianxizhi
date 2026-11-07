@@ -8,7 +8,7 @@
 | 文件 | 作用 |
 |---|---|
 | `render.html` | 渲染引擎：方格纸背景、手绘图形和物品、天平、圈一圈、箭头、便签、印章、08 同款倒计时、念到即高亮、场景淡入淡出；`sfxList()` 导出音效时间表，`layoutReport()` 做版面自检 |
-| `lessons/<id>/scenes.js` | （12 meiju 新增元素：`dcard` 数字卡片、`coin` 硬币 `v` 面值、`seg` 连线；文字里可写 `<span class="mk" style="background:色">1</span>` 实心编号）（13 fendui 新增物品 `item` 的 `candy` 糖果）<br> 每课的分镜：每个场景 `{ tag, beats: [{sub, say, pause?, rate?, pitch?, tts?}], els: [...] }`；`SCENES.cover` 是封面 |
+| `lessons/<id>/scenes.js` | （12 meiju 新增元素：`dcard` 数字卡片、`coin` 硬币 `v` 面值、`seg` 连线；文字里可写 `<span class="mk" style="background:色">1</span>` 实心编号）（13 fendui 新增物品 `item` 的 `candy` 糖果）（14 kongping 新增物品 `bottle` 满瓶汽水、`empty` 空瓶）<br> 每课的分镜：每个场景 `{ tag, beats: [{sub, say, pause?, rate?, pitch?, tts?}], els: [...] }`；`SCENES.cover` 是封面 |
 | `tts.py` | 逐句配音（晓晓）+ 逐字时间戳；POLY 表修多音字；每句可单独设 `rate` / `pitch`；云端走代理时 `SSL_CERT_FILE=/root/.ccr/ca-bundle.crt python3 tts.py` |
 | `timing.py` | 由配音生成 `timing.json`；`est` 参数按字数估算，没配音也能先出预览 |
 | `check.py` | 版面自检：压字幕区、出画、重叠、关键词没对上 |
