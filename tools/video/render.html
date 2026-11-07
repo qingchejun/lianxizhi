@@ -373,6 +373,21 @@ function build(sceneIdx, timing) {
         n = mk('', '<svg width="' + sw2 + '" height="' + sh2 + '" style="display:block;overflow:visible"><path class="ap" d="M' + (e.x1 - sx) + ' ' + (e.y1 - sy) + ' L' + (e.x2 - sx) + ' ' + (e.y2 - sy) + '" fill="none" stroke="' + (e.color || INK) + '" stroke-width="' + (e.sw || 7) + '" stroke-linecap="round"' + (e.dashed ? ' stroke-dasharray="14 10"' : ' pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"') + '/></svg>')
         n.style.width = sw2 + 'px'; n.style.height = sh2 + 'px'; anim = e.dashed ? 'fade' : 'seg'
         break
+      case 'match':
+        /* 15 火柴棒游戏：一根火柴，从 (x1,y1) 到 (x2,y2)，火柴头在 (x2,y2) 一端；两端各缩进 gap */
+        var mdx = e.x2 - e.x1, mdy = e.y2 - e.y1, ml = Math.sqrt(mdx * mdx + mdy * mdy), mg = e.gap === undefined ? 9 : e.gap
+        var ax1 = e.x1 + mdx / ml * mg, ay1 = e.y1 + mdy / ml * mg, ax2 = e.x2 - mdx / ml * mg, ay2 = e.y2 - mdy / ml * mg
+        var mx = Math.min(ax1, ax2) - 18, my = Math.min(ay1, ay2) - 18, mw = Math.abs(ax2 - ax1) + 36, mh = Math.abs(ay2 - ay1) + 36
+        e.x = mx + mw / 2; e.y = my + mh / 2
+        var hx = ax2 - mx - mdx / ml * 7, hy = ay2 - my - mdy / ml * 7, ang = Math.atan2(mdy, mdx) * 180 / Math.PI
+        n = mk('', '<svg width="' + mw + '" height="' + mh + '" style="display:block;overflow:visible">' +
+          '<path d="M' + (ax1 - mx + 3) + ' ' + (ay1 - my + 4) + ' L' + (ax2 - mx + 3) + ' ' + (ay2 - my + 4) + '" stroke="' + SHADOW + '" stroke-width="14" stroke-linecap="round"/>' +
+          '<path d="M' + (ax1 - mx) + ' ' + (ay1 - my) + ' L' + (ax2 - mx) + ' ' + (ay2 - my) + '" stroke="' + INK + '" stroke-width="14" stroke-linecap="round"/>' +
+          '<path d="M' + (ax1 - mx) + ' ' + (ay1 - my) + ' L' + (ax2 - mx) + ' ' + (ay2 - my) + '" stroke="' + (e.wood || '#ecc47e') + '" stroke-width="7.5" stroke-linecap="round"/>' +
+          '<ellipse cx="' + hx + '" cy="' + hy + '" rx="11" ry="8.5" transform="rotate(' + ang + ' ' + hx + ' ' + hy + ')" fill="#d9443a" stroke="' + INK + '" stroke-width="3.5"/>' +
+          '<ellipse cx="' + (hx - 2) + '" cy="' + (hy - 3) + '" rx="3" ry="2" fill="#fff" opacity="0.55"/></svg>')
+        n.style.width = mw + 'px'; n.style.height = mh + 'px'
+        break
       case 'think':
         /* 08 同款倒计时：5 个圆点排成五边形，从顶上开始顺时针逐个熄灭 */
         var dots = ''
