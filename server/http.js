@@ -6,6 +6,10 @@ export function json(obj, status, headers) {
 }
 export async function readBody(request) {
   try {
+    /* 只认 application/json：跨站自动提交的表单（enctype=text/plain 等）伪造不出这个
+       Content-Type，body 一律当空 → 验参失败，挡掉「静默登进攻击者账号」的登录 CSRF */
+    const ct = (request.headers.get('content-type') || '').split(';')[0].trim()
+    if (ct !== 'application/json') return {}
     return await request.json()
   } catch (e) {
     return {}
