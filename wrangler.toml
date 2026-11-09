@@ -1,0 +1,8 @@
+name = "lianxizhi"
+compatibility_date = "2026-11-01"
+pages_build_output_dir = "."
+
+[[d1_databases]]
+binding = "DB"
+database_name = "lianxizhi"
+database_id = "dcd2bd47-222c-47d8-97e7-8aab88af8eea"
