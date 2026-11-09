@@ -284,6 +284,98 @@
   }
 
   /*
+   * ============ 每日一卷（2026-11）：间隔阶梯、到期挑选、登记 ============
+   *
+   * 错字集从「进一出二」升级成间隔阶梯（与用户 2026-11-09 定的）：
+   *   进集 / 又错 → 第 2 天考；认出一次后隔 3 天，再 7 天，再 15 天；
+   *   首错字（n=1）认出 2 次毕业，错过 2 次以上（n≥2）要认出 4 次；
+   *   任一步没认出：k 归 0、n +1，明天再考。
+   * 记录升级为 v3（键 sumsum:shizi:wrong:v3），v2/v1 由 migrateWrong 迁入，旧键留着不删。
+   *
+   * entry 字段：add=本轮进集日，n=累计错过次数，k=本轮连续认出次数，
+   * due=下次到期日（'' 或过去的日子都算到期），hit/fail=最近一次认出/又错的日子
+   * （只为「同一天不重复记」和复习记录重算），out=毕业日，first=第一次错的日子。
+   */
+
+  var PASS_INTERVALS = [1, 3, 7, 15]
+
+  function passesNeeded(n) {
+    return n >= 2 ? 4 : 2
+  }
+
+  /* 'YYYY-MM-DD' 加 n 天。用本地时间构造再取回来：toISOString 走 UTC，
+     北京时间早上 8 点前会把日期挪回前一天（today() 那条注释的同一个坑）。 */
+  function addDays(d, n) {
+    var p = String(d || '').split('-')
+    if (p.length !== 3) return ''
+    var dt = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]) + n)
+    var z = function (v) {
+      return (v < 10 ? '0' : '') + v
+    }
+    return dt.getFullYear() + '-' + z(dt.getMonth() + 1) + '-' + z(dt.getDate())
+  }
+
+  /* v3 的状态：k≥1 = 半红（攒认出次数中），k=0 = 红底，out/null = 不在集 */
+  function stateOf(e) {
+    if (!e || e.out) return 'out'
+    return (e.k || 0) >= 1 ? 'once' : 'wrong'
+  }
+
+  /* 把统计字段搬去新条目、去掉 undefined 键（同下面的 carry，只搬 first） */
+  function keepFirst(e, o) {
+    if (e && e.first) o.first = e.first
+    Object.keys(o).forEach(function (k) {
+      if (o[k] === undefined) delete o[k]
+    })
+    return o
+  }
+
+  /* 新收进错字集（登记时点了的字）。以前错过的不清零，n 接着加 —— 再错自动走四步阶梯 */
+  function markEnter(e, t) {
+    if (e && !e.out) return e // 已经在集里：进集这条路由 markFail 表达，这里不动
+    var o = keepFirst(e, { add: t, n: markCount(e) + 1, k: 0, due: addDays(t, 1) })
+    if (!o.first) o.first = t // 第一次错就是今天（历史统计靠 first 显示「最早错于」）
+    return o
+  }
+
+  /* 又没认出：k 归 0、n +1、明天再考。今天动过（进/错/认出）的字一律原样返回 ——
+     同一天登记两张都带着它，也只记一次 */
+  function markFail(e, t) {
+    if (!e || e.out) return e
+    if (e.add === t || e.fail === t || e.hit === t) return e
+    return keepFirst(e, { add: e.add, n: markCount(e) + 1, k: 0, due: addDays(t, 1), fail: t })
+  }
+
+  /* 认出来了（登记时没点的字）：k + 1；攒够 passesNeeded(n) 次就毕业（墓碑只剩 n/first） */
+  function markPass(e, t) {
+    if (!e || e.out) return e
+    if (e.add === t || e.fail === t || e.hit === t) return e
+    var n = markCount(e)
+    var k = (e.k || 0) + 1
+    if (k >= passesNeeded(n)) return keepFirst(e, { n: n, out: t })
+    return keepFirst(e, { add: e.add, n: n, k: k, due: addDays(t, PASS_INTERVALS[k]), hit: t })
+  }
+
+  /* v2/v1 记录迁进 v3。在集的字一律 due=今天：一轮刚走完，从今天开始按新阶梯走。
+     v1 的 {add:''} 与缺 n 的老条目当作 n=1 的红底（同 markCount 的口径）。 */
+  function migrateWrong(raw, t) {
+    var out = {}
+    if (!raw || typeof raw !== 'object') return out
+    Object.keys(raw).forEach(function (ch) {
+      var e = raw[ch]
+      if (!e || typeof e !== 'object' || (typeof e.add !== 'string' && typeof e.out !== 'string')) return
+      var o
+      if (e.out) {
+        o = { n: markCount(e), out: e.out }
+      } else {
+        o = { add: e.add, n: markCount(e), k: e.hit ? 1 : 0, due: t }
+      }
+      out[ch] = keepFirst(e, o)
+    })
+    return out
+  }
+
+  /*
    * 历史错字统计：只要错过一次的字都在里面，移出了的也在（这就是「历史错字集」，
    * 和错字集是同一份记录，见 markStep 的说明）。
    * 按累计次数从多到少分组，同一组里按字表顺序，免得每次打开顺序都在变。
@@ -357,6 +449,14 @@
     markClear: markClear,
     markMiss: markMiss,
     markUnmiss: markUnmiss,
+    stateOf: stateOf,
+    addDays: addDays,
+    PASS_INTERVALS: PASS_INTERVALS,
+    passesNeeded: passesNeeded,
+    markEnter: markEnter,
+    markFail: markFail,
+    markPass: markPass,
+    migrateWrong: migrateWrong,
     historyStats: historyStats,
     sliceOf: sliceOf,
     titleFor: titleFor

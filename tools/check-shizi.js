@@ -599,6 +599,104 @@ function checkHistory() {
   eq(Z.historyStats(null).total, 0, 'null 当作空')
 }
 
+/* ---------- 5f. 每日一卷：毕业阶梯（addDays / markEnter / markFail / markPass） ---------- */
+
+/*
+ * 间隔阶梯（2026-11-09 与用户定的）：进集后第 1 天考；认出后隔 3、7、15 天再考。
+ * 首错字（n=1）认出 2 次毕业；错过 2 次以上的字（n≥2）要认出 4 次。
+ * 任一步没认出：k 归 0、n +1、明天再考。
+ */
+function checkDailySrs() {
+  function eq(a, b, msg) {
+    if (canon(a) !== canon(b)) bad('每日一卷 ' + msg + '：期望 ' + JSON.stringify(b) + '，实际 ' + JSON.stringify(a))
+  }
+  /* 日期加减跨月、跨年 —— due 全靠它算，错一天整条阶梯就歪了 */
+  eq(Z.addDays('2026-11-09', 0), '2026-11-09', '加 0 天应原样')
+  eq(Z.addDays('2026-11-30', 1), '2026-12-01', '跨月')
+  eq(Z.addDays('2026-12-31', 1), '2027-01-01', '跨年')
+  eq(Z.addDays('2026-11-09', 15), '2026-11-24', '加 15 天')
+  eq(Z.addDays('', 3), '', '坏日期应返回空串不炸')
+
+  eq(Z.passesNeeded(1), 2, '首错字认 2 次毕业')
+  eq(Z.passesNeeded(2), 4, '错 2 次认 4 次')
+  eq(Z.passesNeeded(9), 4, '错很多次也是 4 次')
+
+  /* 主线一：首错字 D0 错 → D1 认出（+3）→ D4 认出 → 毕业 */
+  var e = Z.markEnter(null, '2026-11-09')
+  eq(e, { add: '2026-11-09', n: 1, k: 0, due: '2026-11-10', first: '2026-11-09' }, '新收进：明天考')
+  e = Z.markPass(e, '2026-11-10')
+  eq(e, { add: '2026-11-09', n: 1, k: 1, due: '2026-11-13', hit: '2026-11-10', first: '2026-11-09' }, '第 1 次认出后隔 3 天')
+  e = Z.markPass(e, '2026-11-13')
+  eq(e, { n: 1, out: '2026-11-13', first: '2026-11-09' }, '第 2 次认出毕业，只留 n / out / first')
+
+  /* 主线二：n≥2 的字四步 1/3/7/15 */
+  var f = { add: '2026-11-09', n: 2, k: 0, due: '2026-11-10', first: '2026-11-01' }
+  f = Z.markPass(f, '2026-11-10')
+  eq([f.k, f.due], [1, '2026-11-13'], '×2 的字第 1 次认出 +3')
+  f = Z.markPass(f, '2026-11-13')
+  eq([f.k, f.due], [2, '2026-11-20'], '第 2 次 +7')
+  f = Z.markPass(f, '2026-11-20')
+  eq([f.k, f.due], [3, '2026-12-05'], '第 3 次 +15')
+  f = Z.markPass(f, '2026-12-05')
+  eq(f, { n: 2, out: '2026-12-05', first: '2026-11-01' }, '第 4 次才毕业')
+
+  /* 又没认出：k 归 0、n +1、明天再考；同一天重复记不叠加 */
+  var g = { add: '2026-11-01', n: 1, k: 1, due: '2026-11-04', hit: '2026-11-01', first: '2026-11-01' }
+  g = Z.markFail(g, '2026-11-04')
+  eq(g, { add: '2026-11-01', n: 2, k: 0, due: '2026-11-05', fail: '2026-11-04', first: '2026-11-01' }, '又错一次从头走')
+  eq(Z.markFail(g, '2026-11-04'), g, '同一天不能再记一次又错')
+  eq(Z.markPass(g, '2026-11-04'), g, '今天错了的字当天不能记认出')
+
+  /* 毕业后又错（含当天反悔）：n 接着加 */
+  var h = Z.markEnter({ n: 3, out: '2026-11-04', first: '2026-11-01' }, '2026-11-08')
+  eq(h, { add: '2026-11-08', n: 4, k: 0, due: '2026-11-09', first: '2026-11-01' }, '毕业再错：n=4、从头走四步')
+  /* 在集里的字不该走 markEnter（登记层会拦），这里兜底返回原样 */
+  eq(Z.markEnter({ add: '2026-11-01', n: 1, k: 0, due: '2026-11-02' }, '2026-11-02'),
+    { add: '2026-11-01', n: 1, k: 0, due: '2026-11-02' }, '在集里 markEnter 应原样返回')
+
+  /* 今天刚进的字：当天不能记认出、不能再记又错 */
+  var fresh = { add: '2026-11-09', n: 1, k: 0, due: '2026-11-10' }
+  eq(Z.markPass(fresh, '2026-11-09'), fresh, '今天进的当天不能算认出')
+  eq(Z.markFail(fresh, '2026-11-09'), fresh, '今天进的当天不能又算一次错')
+
+  /* stateOf */
+  eq(Z.stateOf(null), 'out', 'null 是 out')
+  eq(Z.stateOf({ n: 1, out: '2026-11-01' }), 'out', '墓碑是 out')
+  eq(Z.stateOf({ add: '2026-11-01', n: 1, k: 0, due: '' }), 'wrong', 'k=0 红底')
+  eq(Z.stateOf({ add: '2026-11-01', n: 2, k: 1, due: '' }), 'once', 'k≥1 半红')
+  eq(Z.stateOf({ add: '2026-11-01', n: 2, k: 3, due: '' }), 'once', 'k=3 仍是半红')
+
+  /* 不改传入对象 —— 登记层靠这个做整卷回滚 */
+  var orig = { add: '2026-11-01', n: 2, k: 1, due: '2026-11-04' }
+  Z.markPass(orig, '2026-11-04')
+  Z.markFail(orig, '2026-11-04')
+  Z.markEnter(orig, '2026-11-04')
+  eq(orig, { add: '2026-11-01', n: 2, k: 1, due: '2026-11-04' }, '不应改动传入的条目')
+}
+
+/* ---------- 5g. v2/v1 老记录迁进 v3 ---------- */
+
+/* 一轮刚摸完底：在集的字一律当作「今天到期」，从今天开始按新阶梯走 */
+function checkMigrateWrong() {
+  function eq(a, b, msg) {
+    if (canon(a) !== canon(b)) bad('迁移 ' + msg + '：期望 ' + JSON.stringify(b) + '，实际 ' + JSON.stringify(a))
+  }
+  var T = '2026-11-09'
+  var m = Z.migrateWrong({
+    甲: { add: '2026-09-01', n: 1 },                     // 红底 → k=0 今天到期
+    乙: { add: '2026-09-01', hit: '2026-10-01', n: 1 },  // 半红 → k=1（认出过一次算数）
+    丙: { add: '2026-09-01', n: 3, out: '2026-10-01', first: '2026-09-01' }, // 已移出 → 墓碑
+    丁: { add: '' },                                      // v1 老条目：当作 n=1 的红底
+    戊: 42                                                // 垃圾 → 丢弃
+  }, T)
+  eq(m.甲, { add: '2026-09-01', n: 1, k: 0, due: T }, '红底 k=0 今天到期')
+  eq(m.乙, { add: '2026-09-01', n: 1, k: 1, due: T }, '半红 k=1 今天到期')
+  eq(m.丙, { n: 3, out: '2026-10-01', first: '2026-09-01' }, '移出的保持墓碑')
+  eq(m.丁, { add: '', n: 1, k: 0, due: T }, 'v1 条目当作 1 次红底')
+  if (m.戊 != null) bad('迁移 垃圾条目应丢弃，实际 ' + JSON.stringify(m.戊))
+  eq(Z.migrateWrong(null, T), {}, '空输入返回空表')
+}
+
 /* ---------- 6. 本周卷附页抽字（sampleWrong） ---------- */
 
 /*
@@ -801,6 +899,8 @@ function main() {
     ['复习结算：没点的算又错一次、连续两次才移出', checkMarkMiss],
     ['附页抽字权重', checkWeight],
     ['历史错字统计', checkHistory],
+    ['每日一卷：毕业阶梯', checkDailySrs],
+    ['每日一卷：v2/v1 迁移', checkMigrateWrong],
     ['附页抽字：边界 / 顺序 / 均匀性 / 按权重偏向（2 万轮）', checkSample],
     ['设置钳位', checkSettings]
   ]
