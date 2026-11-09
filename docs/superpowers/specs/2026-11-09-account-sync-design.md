@@ -22,7 +22,8 @@ ICP 备案的回调域名，本站域名在 Cloudflare 境外、个人无企业�
 
 ## 数据模型（D1）
 
-- `users(id, email UNIQUE 小写, pw_hash, pw_salt, verified, created_at)`
+- `users(id, email UNIQUE 小写, pw_hash, pw_salt, pwver, verified, created_at)`
+  （pwver = 密码版本号，改密/重置后 +1，旧登录态随之失效）
 - `data(user_id, key, value, updated_at)`，主键 `(user_id, key)`，key = `sumsum:*` 键名
 - `tokens(token_hash, user_id, kind 'verify'|'reset', expires_at, used_at)`
   （验证码 6 位数字同样 hash 后存这张表）
@@ -45,6 +46,7 @@ ICP 备案的回调域名，本站域名在 Cloudflare 境外、个人无企业�
 
 - 验证码 6 位数字，10 分钟有效，5 次填错作废；重发间隔 60 秒，每邮箱每小时最多 3 封
 - 重设 token 32 字节随机、库存 hash、一次性、30 分钟有效
+- 重置密码后该账号所有旧登录态失效（会话校验 pwver）
 - 登录失败按邮箱计数：10 次锁 15 分钟
 - 邮件为中文纯文本，只说事，不带营销话术
 
@@ -62,7 +64,11 @@ ICP 备案的回调域名，本站域名在 Cloudflare 境外、个人无企业�
 
 ## 安全
 
-- 密码 PBKDF2-SHA256（WebCrypto，10 万次迭代 + 每用户随机盐）；最小 8 位
+- 密码哈希两层（自审修正：Workers 免费档每次请求 CPU 约 10ms 上限，
+  服务端跑 10 万次 PBKDF2 会超限，故慢哈希移到客户端）：
+  浏览器 PBKDF2-SHA256 **60 万次迭代**（盐 = 邮箱小写 + 站点固定串，约半秒）
+  → 服务端只做 **SHA-256**（每用户随机盐 + 客户端派生值）入库，微秒级
+- 密码最小 8 位
 - 除 `auth/*` 外所有接口校验会话；data 严格按 user_id 隔离
 - CSRF 靠 SameSite=Lax + 改动仅 POST
 - 登录鉴权类代码完成后过 security-reviewer（用户规则要求）
