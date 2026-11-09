@@ -838,6 +838,67 @@ function checkSample() {
   }
 }
 
+/* ---------- 6b. 每日一卷：到期挑选与卷子构建（dueList / buildDaily） ---------- */
+
+/*
+ * 错字位只给「今天到期」的字：最逾期的排最前，同样逾期错得多的优先；
+ * 未到期的字既不上错字位、也不许混进认识字位；毕业的字可以当认识字抽查。
+ * 认识字从全字表完全随机（不加权重、不排除最近出过的）。
+ */
+function checkDailyBuild() {
+  function eq(a, b, msg) {
+    if (canon(a) !== canon(b)) bad('每日一卷 ' + msg + '：期望 ' + JSON.stringify(b) + '，实际 ' + JSON.stringify(a))
+  }
+  var T = '2026-11-09'
+  var rnd = function () { return 0.5 } // 常数随机：顺序确定，专测规则不测运气
+  var P = Z.pool()
+  var marks = {}
+  marks[P[0]] = { add: '2026-11-01', n: 1, k: 0, due: '2026-11-08' } // 昨天就到期（最逾期）
+  marks[P[1]] = { add: '2026-11-01', n: 1, k: 0, due: T }            // 今天到期
+  marks[P[2]] = { add: '2026-11-01', n: 2, k: 0, due: T }            // 今天到期、错得多
+  marks[P[3]] = { add: '2026-11-01', n: 9, k: 0, due: '2026-11-10' } // 明天才到期
+  marks[P[4]] = { n: 1, out: '2026-11-01' }                          // 已毕业
+
+  var due = Z.dueList(marks, T, rnd)
+  eq(due, [P[0], P[2], P[1]], '最逾期优先，同日 n 大优先；未到期与毕业的都不算')
+
+  var p = Z.buildDaily(marks, T, rnd)
+  eq(p.wrong, [P[0], P[2], P[1]], '到期错字全上卷（不足 10 不预支未来的）')
+  if (p.chars.length !== 20) bad('每日一卷 总数应凑满 20，实际 ' + p.chars.length)
+  var uniq = {}
+  p.chars.forEach(function (ch) {
+    if (uniq[ch]) bad('每日一卷 卷上出现重复字 ' + ch)
+    uniq[ch] = true
+  })
+  p.known.concat(p.wrong).forEach(function (ch) {
+    var e = marks[ch]
+    if (e && !e.out && p.known.indexOf(ch) >= 0) bad('每日一卷 在集的字 ' + ch + ' 不能当认识字')
+  })
+  if (p.known.indexOf(P[3]) >= 0) bad('每日一卷 未到期的在集字 ' + P[3] + ' 混进了认识字')
+
+  /* 错字多于 10 个：只取 10 个最逾期的（到期日排在 10 月，全部早就逾期） */
+  var many = {}
+  for (var i = 0; i < 15; i++) {
+    many[P[i]] = { add: '2026-09-01', n: 1, k: 0, due: '2026-10-' + (i < 9 ? '0' + (i + 1) : i + 1) }
+  }
+  var q = Z.buildDaily(many, T, rnd)
+  if (q.wrong.length !== 10) bad('每日一卷 错字位封顶 10，实际 ' + q.wrong.length)
+  eq(q.wrong, Z.dueList(many, T, rnd).slice(0, 10), '取的是最逾期的 10 个')
+  if (q.chars.length !== 20) bad('每日一卷 错字满额时也要凑满 20')
+
+  /* 空错字集：20 个全认识字 */
+  var r = Z.buildDaily({}, T, rnd)
+  if (r.chars.length !== 20 || r.wrong.length) bad('每日一卷 空错字集应出 20 个认识字')
+
+  /* 认识字是随机的：两次构建（真随机）不该回回一样；成员永远来自字表 */
+  var a = Z.buildDaily({}, T)
+  var b = Z.buildDaily({}, T)
+  if (canon(a.known) === canon(b.known)) bad('每日一卷 认识字应有随机性（两次完全一样可疑）')
+  a.chars.concat(b.chars).forEach(function (ch) {
+    if (P.indexOf(ch) < 0) bad('每日一卷 卷上出现了字表以外的字 ' + ch)
+  })
+}
+
 /* ---------- 7. 设置钳位 ---------- */
 
 function checkSettings() {
@@ -901,6 +962,7 @@ function main() {
     ['历史错字统计', checkHistory],
     ['每日一卷：毕业阶梯', checkDailySrs],
     ['每日一卷：v2/v1 迁移', checkMigrateWrong],
+    ['每日一卷：到期挑选与构建', checkDailyBuild],
     ['附页抽字：边界 / 顺序 / 均匀性 / 按权重偏向（2 万轮）', checkSample],
     ['设置钳位', checkSettings]
   ]

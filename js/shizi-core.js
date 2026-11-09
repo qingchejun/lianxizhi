@@ -375,6 +375,61 @@
     return out
   }
 
+  var DAILY_SIZE = 20
+  var DAILY_WRONG_MAX = 10
+
+  function shuffle(a, rnd) {
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(rnd() * (i + 1))
+      var tmp = a[i]
+      a[i] = a[j]
+      a[j] = tmp
+    }
+    return a
+  }
+
+  /*
+   * 到期（due ≤ 今天）的错字，最逾期的排前面；一样逾期的话错得多的优先；
+   * 再一样就 rnd() 决胜。''（v1 迁移来等）比任何日期都小、最先到期。
+   * rnd 可注入：check-shizi 喂常数把顺序钉死。
+   */
+  function dueList(marks, t, rnd) {
+    var r = rnd || Math.random
+    var arr = []
+    Object.keys(marks || {}).forEach(function (ch) {
+      var e = marks[ch]
+      if (!e || e.out) return
+      if (e.due && e.due > t) return
+      arr.push({ ch: ch, due: e.due || '', n: markCount(e), r: r() })
+    })
+    arr.sort(function (a, b) {
+      return (a.due < b.due ? -1 : a.due > b.due ? 1 : 0) || b.n - a.n || a.r - b.r
+    })
+    return arr.map(function (x) {
+      return x.ch
+    })
+  }
+
+  /*
+   * 构建今天这一卷：≤10 个到期错字 + 认识字补满 20，显示顺序整体打乱
+   * （错字混在认识字里，卷面上看不出哪些是复习位）。
+   * 认识字池 = 字表里不在错字集里的全部字（毕业的算认识），完全随机。
+   * 卷子一经生成就冻结，由 shizi-mark 存进 daily:v1。
+   */
+  function buildDaily(marks, t, rnd) {
+    var r = rnd || Math.random
+    var inSet = {}
+    Object.keys(marks || {}).forEach(function (ch) {
+      var e = marks[ch]
+      if (e && !e.out) inSet[ch] = true
+    })
+    var wrong = dueList(marks, t, r).slice(0, DAILY_WRONG_MAX)
+    var known = shuffle(pool().filter(function (ch) {
+      return !inSet[ch]
+    }), r).slice(0, DAILY_SIZE - wrong.length)
+    return { wrong: wrong, known: known, chars: shuffle(wrong.concat(known), r) }
+  }
+
   /*
    * 历史错字统计：只要错过一次的字都在里面，移出了的也在（这就是「历史错字集」，
    * 和错字集是同一份记录，见 markStep 的说明）。
@@ -457,6 +512,10 @@
     markFail: markFail,
     markPass: markPass,
     migrateWrong: migrateWrong,
+    dueList: dueList,
+    buildDaily: buildDaily,
+    DAILY_SIZE: DAILY_SIZE,
+    DAILY_WRONG_MAX: DAILY_WRONG_MAX,
     historyStats: historyStats,
     sliceOf: sliceOf,
     titleFor: titleFor
