@@ -85,6 +85,25 @@ if (parsed.ok) {
   check(/设置/.test(lines), '摘要：没提到各板块设置：' + lines)
 }
 
+/* ---------- 摘要：2026-11 起错字集是 v3，并多了每日卷键 ---------- */
+
+// describe：有 v3 时按 v3 描述（in-set = 无 out 的条目），并报每日卷张数
+var data3 = {
+  'sumsum:shizi:wrong:v3': JSON.stringify({
+    甲: { add: '2026-11-09', n: 1, k: 0, due: '2026-11-10' },
+    乙: { n: 2, out: '2026-11-01' }
+  }),
+  // v2 里放 2 个在集字：若 describe 还在读 v2，会数出 2 个，和 v3 的 1 个区分得开
+  'sumsum:shizi:wrong:v2': JSON.stringify({
+    丙: { add: '2026-09-01', n: 1 },
+    丁: { add: '2026-09-02', n: 1 }
+  }),
+  'sumsum:shizi:daily:v1': JSON.stringify({ papers: [{ d: '2026-11-09', chars: '一二', wrong: '一', settled: false }] })
+}
+var lines3 = B.describe(data3)
+check(lines3.some(function (l) { return l.indexOf('识字错字集：1 个字') >= 0 }), 'describe 应按 v3 数在集字数（墓碑不算、v2 不重复数）')
+check(lines3.some(function (l) { return l.indexOf('每日卷：1 张') >= 0 }), 'describe 应报每日卷张数')
+
 /* ---------- 导入：看着不对的文件一律拒绝，且给人话理由 ---------- */
 
 function rejects(label, t) {

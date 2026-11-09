@@ -88,16 +88,31 @@
   /* 导入前给家长确认用：备份里有什么，用人话列出来 */
   function describe(data) {
     var lines = []
-    var wrong = json(data, 'sumsum:shizi:wrong:v2')
-    if (isObj(wrong)) {
-      /* 带 out 的是已移出的撤回墓碑，不算错字（见 shizi-mark 的 load） */
-      var n = Object.keys(wrong).filter(function (ch) {
-        return isObj(wrong[ch]) && !wrong[ch].out
+    /* 错字集 2026-11 起是 v3；老备份只有 v2 / v1。有新键按新键数，
+       v2/v1 才是兜底 —— 两份都在时（迁移完老键留着）若数了旧的，同一个字会数两遍 */
+    var wrong3 = json(data, 'sumsum:shizi:wrong:v3')
+    if (isObj(wrong3)) {
+      var n = Object.keys(wrong3).filter(function (ch) {
+        return isObj(wrong3[ch]) && !wrong3[ch].out
       }).length
       lines.push('识字错字集：' + n + ' 个字')
     } else {
-      var old = json(data, 'sumsum:shizi:wrong:v1')
-      if (Array.isArray(old)) lines.push('识字错字集：' + old.length + ' 个字')
+      var wrong = json(data, 'sumsum:shizi:wrong:v2')
+      if (isObj(wrong)) {
+        /* 带 out 的是已移出的撤回墓碑，不算错字（见 shizi-mark 的 load） */
+        var n2 = Object.keys(wrong).filter(function (ch) {
+          return isObj(wrong[ch]) && !wrong[ch].out
+        }).length
+        lines.push('识字错字集：' + n2 + ' 个字')
+      } else {
+        var old = json(data, 'sumsum:shizi:wrong:v1')
+        if (Array.isArray(old)) lines.push('识字错字集：' + old.length + ' 个字')
+      }
+    }
+    /* 每日卷（picks/undo 是当天临时态，无信息量，不描述） */
+    var daily = json(data, 'sumsum:shizi:daily:v1')
+    if (isObj(daily) && Array.isArray(daily.papers) && daily.papers.length) {
+      lines.push('每日卷：' + daily.papers.length + ' 张')
     }
     var slog = json(data, 'sumsum:shizi:log:v1')
     if (Array.isArray(slog) && slog.length) lines.push('识字复习记录：' + slog.length + ' 天')
