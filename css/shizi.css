@@ -107,10 +107,16 @@
  * 深红框 = 这次考没认出、点了等登记的字（is-pick）。登记之前它还只是「点选」，
  * 没进错字集 —— 但卷面上得比红底更醒目，家长核对纸上圈过的字一眼能对上。
  * 写在 is-wrong / is-once 之后：点了的红底 / 半红字直接整个盖成深红。
+ * 半红是两个类的组合（.is-wrong.is-once，特异性更高），光靠写在后面压不住，
+ * 点选状态得再单独压一次，否则点了的半红字只剩描边、底还是斜线。
  */
 .shizi-cell.is-pick {
   background: #ec8f88;
   box-shadow: inset 0 0 0 2px var(--red, #d5453c);
+}
+
+.shizi-cell.is-wrong.is-pick {
+  background: #ec8f88;
 }
 
 /*

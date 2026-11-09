@@ -436,12 +436,13 @@
     listeners.push(fn)
   }
 
-  function paintCell(cell, ch) {
+  function paintCell(cell, ch, noPick) {
     var st = stateOfCh(ch)
     var n = countOf(ch)
     cell.classList.toggle('is-wrong', st !== 'out')
     cell.classList.toggle('is-once', st === 'once')
-    cell.classList.toggle('is-pick', picked(ch))
+    /* 往期卷（只读锁）上不画今天的点选高亮：那是今天那张卷的状态，画到旧卷上只会误导 */
+    cell.classList.toggle('is-pick', !noPick && picked(ch))
     if (n >= REPEAT_MIN) cell.dataset.n = n
     else delete cell.dataset.n
     var rem = remainingOf(ch)
@@ -450,8 +451,10 @@
   }
 
   function paint() {
+    var preview = doc.getElementById('preview')
+    var locked = !!preview && preview.dataset.locked === '1'
     var cells = doc.querySelectorAll('#preview .shizi-cell')
-    for (var i = 0; i < cells.length; i++) paintCell(cells[i], cells[i].dataset.ch)
+    for (var i = 0; i < cells.length; i++) paintCell(cells[i], cells[i].dataset.ch, locked)
   }
 
   function bind() {

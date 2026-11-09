@@ -234,6 +234,7 @@
          此刻唯一有用的信息都是「去哪儿、怎么把第一个字收进来」。 */
       return '错字集还是空的。' +
         (s.mode === 'week' ? '孩子念不出来的字，在卷面上点一下（深红框），'
+          : s.mode === 'daily' ? '孩子念不出来的字，在这张卷上点一下（深红框），'
           : '切到「每日一卷」或「本周复习」，孩子念不出来的字点一下，') +
         '再点「登记结果」收进错字集。<b>纸上不会印出任何标记。</b>'
     }
@@ -270,7 +271,9 @@
       fitPreview()
       var dp = dailyPaper()
       $('pages-hint').textContent = pagesHint(settings, dp ? dp.chars.length : 0, null)
-      $('btn-print').querySelector('.txt').textContent = PRINT_LABEL.daily
+      /* 翻到往期卷时印的就是那张往期卷，按钮不能还顶着「今日」的名字 */
+      $('btn-print').querySelector('.txt').textContent =
+        browseIdx == null ? PRINT_LABEL.daily : '打印往期卷'
       refreshMarkPanel()
       S.shell.summary([
         '每日一卷',
