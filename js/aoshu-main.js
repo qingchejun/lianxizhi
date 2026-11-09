@@ -42,7 +42,7 @@
 
   function saveLearned(set) {
     try {
-      root.localStorage.setItem(LEARNED_KEY, JSON.stringify(Array.from(set)))
+      root.SumSum.store.set(LEARNED_KEY, Array.from(set))
     } catch (e) {
       /* 隐私模式下写入失败可忽略 */
     }

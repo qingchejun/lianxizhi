@@ -80,4 +80,16 @@ check('keys 列出老键', S3.keys().indexOf('sumsum:old:v1') >= 0)
 check('keys 排除不同步的', S3.keys().indexOf('foo:other') < 0 && S3.keys().indexOf('sumsum:sync:meta') < 0)
 
 console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ store 收口全部通过')
+
+/* --- 守卫：六个板块文件不允许再直写 localStorage（写入必须走 store 才有 mtime） --- */
+var WATCHED = ['../js/settings.js', '../js/aoshu-settings.js', '../js/shizi-settings.js',
+  '../js/shudu-settings.js', '../js/aoshu-main.js', '../js/shizi-mark.js']
+var fs = require('fs')
+var path = require('path')
+WATCHED.forEach(function (rel) {
+  var src = fs.readFileSync(path.join(__dirname, rel), 'utf8')
+  var hit = src.match(/localStorage\.(setItem|removeItem)/)
+  check(rel + ' 无直写 localStorage', !hit, hit && hit[0])
+})
+
 process.exit(bad ? 1 : 0)

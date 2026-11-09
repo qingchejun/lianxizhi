@@ -12,6 +12,7 @@
  */
 'use strict'
 
+require("../js/store.js") // 写入收口：各板块 settings 的 save 走它（对缺 localStorage 静默，node 下无害）
 /* 板块脚本都是「挂到 root.SumSum 上」的写法，node 下 root 就是 globalThis */
 require('../js/settings.js')
 require('../js/aoshu-topics.js')

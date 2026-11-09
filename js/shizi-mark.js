@@ -45,7 +45,7 @@
 
   function writeJSON(k, v) {
     try {
-      root.localStorage.setItem(k, JSON.stringify(v))
+      root.SumSum.store.set(k, v)
     } catch (e) {
       /* 隐私模式下写入失败可忽略 */
     }
@@ -324,7 +324,7 @@
   var undoSlot = readJSON(UNDO_KEY)
   if (undoSlot && undoSlot.d !== today()) {
     undoSlot = null
-    root.localStorage.removeItem(UNDO_KEY)
+    root.SumSum.store.remove(UNDO_KEY)
   }
 
   function settle(chars, paper) {
@@ -393,7 +393,7 @@
     }
     saveMarks()
     saveLog()
-    root.localStorage.removeItem(UNDO_KEY)
+    root.SumSum.store.remove(UNDO_KEY)
     undoSlot = null
     fire()
   }

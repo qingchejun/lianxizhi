@@ -15,6 +15,7 @@
 'use strict'
 
 require('../js/shudu-core.js')
+require("../js/store.js") // 写入收口：shudu-settings 的 save 走它（对缺 localStorage 静默，node 下无害）
 require('../js/shudu-settings.js') // 只为验 sanitize 的钳位；它的 load/save 碰 DOM，这里不调
 require('../js/shudu-render.js') // 只为验排版算的 mm 放不放得下；render() 碰 DOM，这里不调
 var SD = globalThis.SumSum.shudu

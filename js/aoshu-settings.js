@@ -118,7 +118,7 @@
   /* 保存：写 localStorage，并把「非默认值」的项同步进 URL（保持链接干净可收藏） */
   function save(s) {
     try {
-      root.localStorage.setItem(KEY, JSON.stringify(s))
+      root.SumSum.store.set(KEY, s)
     } catch (e) {
       /* 隐私模式下写入失败可忽略 */
     }

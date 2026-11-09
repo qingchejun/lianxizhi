@@ -10,6 +10,7 @@
 
 require('../js/aoshu-topics.js')
 require('../js/aoshu-topic-shuzimi.js')
+require("../js/store.js") // 写入收口：aoshu-settings 的 save 走它（对缺 localStorage 静默，node 下无害）
 require('../js/aoshu-topic-xulie.js')
 require('../js/aoshu-settings.js')
 

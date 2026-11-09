@@ -18,6 +18,7 @@
 
 require('../js/shizi-data.js')
 require('../js/shizi-core.js')
+require("../js/store.js") // 写入收口：shizi-settings 的 save 走它（对缺 localStorage 静默，node 下无害）
 require('../js/shizi-settings.js') // 只为验 sanitize 的钳位；load/save 碰 DOM，这里不调
 globalThis.SumSum.render = { parts: {} } // shizi-render 在模块顶层不碰 DOM，但留个壳更保险
 require('../js/shizi-render.js')

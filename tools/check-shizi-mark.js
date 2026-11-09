@@ -15,6 +15,7 @@
 'use strict'
 
 require('../js/shizi-data.js')
+require("../js/store.js") // 写入收口：shizi-mark 的 writeJSON 走它，落到本文件的 localStorage 桩上
 require('../js/shizi-core.js')
 
 var mem = {}
