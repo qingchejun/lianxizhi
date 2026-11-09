@@ -8,8 +8,9 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✏️</text></svg>" />
   <script>
     /* 口算以前就在 index.html，分享出去的链接都是 index.html?mode=…&seed=…。
-       首页本身从不带参数，所以带参数的一律是老的口算链接，原样转过去，卷子一模一样。 */
-    if (location.search) location.replace('kousuan.html' + location.search)
+       首页本身从不带参数，所以带参数的一律是老的口算链接，原样转过去，卷子一模一样。
+       例外：?reset= 是密码重设邮件的落地链接（js/account-ui.js 接管），必须留在首页。 */
+    if (location.search && !/[?&]reset=/.test(location.search)) location.replace('kousuan.html' + location.search)
   </script>
   <link rel="stylesheet" href="css/app.css" />
   <link rel="stylesheet" href="css/today.css" />
