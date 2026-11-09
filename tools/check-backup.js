@@ -31,6 +31,9 @@ function fakeStorage(init) {
     setItem: function (k, v) {
       m[k] = String(v)
     },
+    removeItem: function (k) {
+      delete m[k]
+    },
     dump: function () {
       return Object.assign({}, m)
     }
@@ -132,6 +135,34 @@ var untouched = fakeStorage(SITE)
 var r = B.parse(packWith({ 'sumsum:shizi:v1': '{}', 'evil:key': '1' }))
 if (r.ok) B.apply(untouched, r.data)
 check(!r.ok, '导入：一条好一条坏时应整份拒绝，不能只导好的那条')
+
+/* ---------- 导入老备份（只有 wrong:v2/v1，没有 v3）要能生效 ---------- */
+/* 2026-11 起错字集读 wrong:v3，而页面第一次打开就会写一个空的 v3。
+   老备份导入只覆盖它带的键——不把本机这份空 v3 清掉，导入的 v2 永远读不到，
+   摘要里答应的「识字错字集：N 个字」就是空头支票。 */
+var dstOld = fakeStorage({
+  'sumsum:shizi:wrong:v3': JSON.stringify({}),
+  'sumsum:shizi:v1': JSON.stringify({ week: 1 })
+})
+var oldData = {
+  'sumsum:shizi:wrong:v2': JSON.stringify({ 丙: { add: '2026-09-01', n: 1 } })
+}
+B.apply(dstOld, oldData)
+check(dstOld.getItem('sumsum:shizi:wrong:v2') === oldData['sumsum:shizi:wrong:v2'],
+  '导入老备份：v2 要写进去')
+check(dstOld.getItem('sumsum:shizi:wrong:v3') === null,
+  '导入只有 v2 的老备份：要清掉本机的 v3（下次加载从 v2 重新迁移）')
+check(dstOld.getItem('sumsum:shizi:v1') === JSON.stringify({ week: 1 }),
+  '导入老备份：备份里没有的键（识字设置）不动')
+
+/* 新备份自带 v3：两份都写，v3 原样保留（老键留着只为兼容更老的备份文件） */
+var dstNew = fakeStorage({ 'sumsum:shizi:wrong:v3': JSON.stringify({}) })
+B.apply(dstNew, {
+  'sumsum:shizi:wrong:v2': JSON.stringify({ 丙: { add: '2026-09-01', n: 1 } }),
+  'sumsum:shizi:wrong:v3': JSON.stringify({ 甲: { add: '2026-11-09', n: 1, k: 0, due: '2026-11-10' } })
+})
+check(dstNew.getItem('sumsum:shizi:wrong:v3').indexOf('甲') >= 0,
+  '导入新备份：v3 按备份里的来')
 
 if (problems.length) {
   console.log('✗ ' + problems.length + ' 处问题：')

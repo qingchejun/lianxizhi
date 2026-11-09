@@ -88,13 +88,23 @@
     /* 2026-11 起错字集是 v3；老备份导入前的 v2 也认（在集的都当红底数） */
     var marks = readJson(storage, 'sumsum:shizi:wrong:v3')
     if (!isObj(marks)) marks = readJson(storage, 'sumsum:shizi:wrong:v2')
+    var z = function (v) {
+      return (v < 10 ? '0' : '') + v
+    }
+    var now = new Date()
+    var todayStr = now.getFullYear() + '-' + z(now.getMonth() + 1) + '-' + z(now.getDate())
     var wrong = 0
     var repeats = 0
+    var due = 0
     if (isObj(marks)) {
       Object.keys(marks).forEach(function (ch) {
         var e = marks[ch]
         if (!isObj(e)) return
-        if (Z.stateOf(e) !== 'out') wrong++
+        if (Z.stateOf(e) !== 'out') {
+          wrong++
+          /* v2 条目没有 due：迁移后一律今天到期，这里照这个口径数 */
+          if (!e.due || e.due <= todayStr) due++
+        }
         if (Z.markCount(e) >= 2) repeats++
       })
     }
@@ -107,6 +117,7 @@
       to: slice.to,
       wrong: wrong,
       repeats: repeats,
+      due: due,
       withWrong: s.withWrong,
       href: 'shizi.html',
       printHref: 'shizi.html#print'

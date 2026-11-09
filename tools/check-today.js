@@ -57,6 +57,7 @@ check(empty.aoshu.parts === '讲解 + 练习 + 解析', '奥数默认三部分�
 check(empty.shizi.week === 1 && empty.shizi.weeks === 16, '空浏览器 识字周次：' + empty.shizi.week + '/' + empty.shizi.weeks)
 check(empty.shizi.from === 1 && empty.shizi.to === 100, '空浏览器 识字字序：' + empty.shizi.from + '–' + empty.shizi.to)
 check(empty.shizi.wrong === 0 && empty.shizi.repeats === 0, '空浏览器 错字数应为 0')
+check(empty.shizi.due === 0, '空浏览器 每日一卷到期数应为 0')
 check(empty.shizi.mode === 'daily', '空浏览器 识字模式应是每日一卷')
 check(empty.shizi.printHref === 'shizi.html#print', '识字打印链接不能带设置参数（带了会忽略本地进度）：' + empty.shizi.printHref)
 
@@ -92,6 +93,7 @@ check(used.aoshu.parts === '练习 + 解析', '关了讲解页，摘要就不该
 check(used.shizi.week === 3 && used.shizi.from === 201 && used.shizi.to === 300, '识字第 3 周应是 201–300：' + used.shizi.from + '–' + used.shizi.to)
 check(used.shizi.wrong === 3, '错字集 3 个（已移出的瓜不算）：' + used.shizi.wrong)
 check(used.shizi.repeats === 3, '反复错 3 个（鸟、闪、瓜，移出的也算）：' + used.shizi.repeats)
+check(used.shizi.due === 3, '每日一卷到期 3 个（鸟/闪/伞 due 空=今天到期，瓜毕业不算）：' + used.shizi.due)
 check(used.shizi.withWrong === true, '识字附错字页的开关要带出来')
 
 check(used.kousuan.title === '20以内进退位', '命中预设时用预设名：' + used.kousuan.title)

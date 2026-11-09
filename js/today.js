@@ -81,17 +81,23 @@
     var weeks = ''
     for (var i = 1; i <= z.weeks; i++) weeks += '<i' + (i === z.week ? ' class="on"' : i < z.week ? ' class="past"' : '') + '></i>'
     var isWeek = z.mode === 'week'
+    /* 默认页签是每日一卷，卡片得说今天那张卷的事，不能顶着「错字卷」的名字 */
+    var isDaily = z.mode === 'daily'
     return card({
       href: z.href,
       printHref: z.printHref,
       miniCls: 'mini-center',
       mini: mini,
-      tag: isWeek ? '识字 · 本周复习' : '识字 · 错字集',
-      title: isWeek ? '第 ' + z.week + ' 周 · 第 ' + z.from + '–' + z.to + ' 字' : '错字卷 · ' + z.wrong + ' 个字',
+      tag: isWeek ? '识字 · 本周复习' : isDaily ? '识字 · 每日一卷' : '识字 · 错字集',
+      title: isWeek
+        ? '第 ' + z.week + ' 周 · 第 ' + z.from + '–' + z.to + ' 字'
+        : isDaily
+          ? '今天到期 ' + z.due + ' 字 · 错字集 ' + z.wrong + ' 个'
+          : '错字卷 · ' + z.wrong + ' 个字',
       lines: '<span class="meta">' + meta.join(' · ') + '</span>' +
         '<div class="tcard-prog"><div class="weeks">' + weeks + '</div>' +
         '<span class="meta">第 ' + z.week + ' / ' + z.weeks + ' 周</span></div>',
-      printText: isWeek ? '打印本周复习卷' : '打印错字卷',
+      printText: isWeek ? '打印本周复习卷' : isDaily ? '打印今日卷' : '打印错字卷',
       more: '点卡片去标记错字 →'
     })
   }

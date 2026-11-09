@@ -74,6 +74,20 @@
       storage.setItem(k, data[k])
       n++
     })
+    /* 老备份只带 wrong:v2/v1、没有 wrong:v3 时，要把本机的 v3 清掉：
+       页面第一次打开就会写一个空的 v3，而识字页读错字集只认 v3 ——
+       不清掉它，导入的 v2 永远轮不到（下次加载才会从 v2 重新迁移），
+       确认框里答应的「识字错字集：N 个字」就成了空头支票。 */
+    if (
+      !('sumsum:shizi:wrong:v3' in data) &&
+      ('sumsum:shizi:wrong:v2' in data || 'sumsum:shizi:wrong:v1' in data)
+    ) {
+      try {
+        storage.removeItem('sumsum:shizi:wrong:v3')
+      } catch (e) {
+        /* 删不掉（隐私模式等）也没法补救，导入的其它键照常生效 */
+      }
+    }
     return n
   }
 

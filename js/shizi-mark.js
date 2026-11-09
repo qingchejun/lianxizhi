@@ -335,10 +335,28 @@
         pickedMap[ch] = true
       })
     }
-    /* 整卷回滚的快照：marks、复习记录、每日卷，三个一起拍 */
-    writeJSON(UNDO_KEY, { d: t, marks: marks, log: log, papers: papers })
-    undoSlot = readJSON(UNDO_KEY)
+    /* settleApply 是纯函数：先算出结果，判断这一笔是不是空操作 ——
+       重复登记同一张卷（点选已吃掉、同日幂等全拦住）什么都不该改，
+       更不能把撤销槽覆盖掉，否则「撤销登记」变成无声的无效按钮。 */
     var r = C().settleApply(marks, chars, pickedMap, t)
+    var marksChanged = JSON.stringify(r.marks) !== JSON.stringify(marks)
+    var paperLocks = !!(paper && !paper.settled)
+    if (!marksChanged && !paperLocks) {
+      fire()
+      return
+    }
+    /* 整卷回滚的快照：marks、复习记录、每日卷、点选，四个一起拍。
+       点选必须跟着还原 —— 撤销后重新登记，真错的字还得是「点了」的状态，
+       不然会被记成认出。kind 记下这一笔是哪种卷，两个撤销按钮各撤各的。 */
+    writeJSON(UNDO_KEY, {
+      d: t,
+      marks: marks,
+      log: log,
+      papers: papers,
+      picks: picks,
+      kind: paper ? 'daily' : 'sheet'
+    })
+    undoSlot = readJSON(UNDO_KEY)
     marks = r.marks
     if (r.seen.length) {
       var row = log.length && log[log.length - 1].d === t ? log[log.length - 1] : null
@@ -369,6 +387,10 @@
       papers = undoSlot.papers
       savePapers()
     }
+    if (isObj(undoSlot.picks)) {
+      picks = undoSlot.picks
+      savePicks()
+    }
     saveMarks()
     saveLog()
     root.localStorage.removeItem(UNDO_KEY)
@@ -376,8 +398,10 @@
     fire()
   }
 
-  function canUndo() {
-    return !!undoSlot && undoSlot.d === today()
+  /* kind 可选：'daily'（每日一卷那笔）/ 'sheet'（周卷、错字卷那笔）。
+     同一天两笔登记只有最新一笔可撤，按钮按 kind 判断自己那笔还在不在。 */
+  function canUndo(kind) {
+    return !!undoSlot && undoSlot.d === today() && (!kind || undoSlot.kind === kind)
   }
 
   /* 「清空错字集」：在集的一律当作今天毕业（n 与 first 留着，历史统计不丢）。

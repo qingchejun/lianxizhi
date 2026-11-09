@@ -120,7 +120,7 @@
         (browseIdx == null ? '明天自动生成新的一张。' : '（往期卷只读）')
     }
     $('btn-daily-settle').hidden = !active
-    $('btn-daily-undo').hidden = !(browseIdx == null && p.settled && p.d === todayStr && S.shiziMark.canUndo())
+    $('btn-daily-undo').hidden = !(browseIdx == null && p.settled && p.d === todayStr && S.shiziMark.canUndo('daily'))
     $('btn-daily-drop').hidden = !active
     var n = S.shiziMark.paperCount()
     $('daily-browse').hidden = n < 2
@@ -365,7 +365,7 @@
       html += '<p class="hint settle-done">今天登记过 <b>' + row.seen.length + '</b> 个旧错字：认出 ' + row.ok +
         (row.out ? '（其中 ' + row.out + ' 个认满次数毕业）' : '') +
         '，又错 <b>' + row.miss + '</b> 个。' +
-        (S.shiziMark.canUndo() ? ' <button type="button" class="link-btn" data-settle="undo">撤销登记</button>' : '') + '</p>'
+        (S.shiziMark.canUndo('sheet') ? ' <button type="button" class="link-btn" data-settle="undo">撤销登记</button>' : '') + '</p>'
     }
     if (seen.length || picked.length) {
       html += '<button type="button" class="btn btn-sm settle-btn" data-settle="go">登记结果</button>' +
