@@ -205,24 +205,52 @@ export async function meBySession(repo, session) {
 /* ---- data 拉取 / 推送 ---- */
 const PUSH_MAX_ITEMS = 200
 const VALUE_MAX = 64 * 1024
+const QUOTA_BYTES = 5 * 1024 * 1024 /* 一个账号 5MB 封顶：正常数据几十 KB，防写爆免费档 D1 */
+const PUSH_MIN_MAX = 60 /* 一分钟最多 60 次推送（客户端防抖 2 秒，正常用远够不着） */
+
+/* 推送频控：滚动一分钟计数，复用 limits 表 */
+async function pushGate(repo, userId, now) {
+  const row = await repo.limitGet('push:' + userId, 'min')
+  return !!(row && row.ts > now - 60 * 1000 && row.n >= PUSH_MIN_MAX)
+}
+async function pushMark(repo, userId, now) {
+  const row = await repo.limitGet('push:' + userId, 'min')
+  const n = row && row.ts > now - 60 * 1000 ? row.n + 1 : 1
+  await repo.limitSet('push:' + userId, 'min', { n: n, ts: now, until: 0 })
+}
 
 export async function dataPull(repo, userId) {
   const items = await repo.dataRows(userId)
   return { status: 200, body: { ok: true, items: items } }
 }
 
-export async function dataPush(repo, userId, items) {
+export async function dataPush(repo, userId, items, now) {
+  now = now || Date.now()
   if (!Array.isArray(items) || !items.length) return { status: 422, body: { ok: false, error: '没东西要同步。' } }
   if (items.length > PUSH_MAX_ITEMS) return { status: 413, body: { ok: false, error: '一次同步的东西太多了。' } }
-  let applied = 0, skipped = 0
+  if (await pushGate(repo, userId, now)) {
+    return { status: 429, body: { ok: false, error: '同步得太频繁了，缓一缓再试。' } }
+  }
+  /* 先过一遍验参并算好这批的字节数：配额不够就整批拒绝，不落半批 */
+  let incoming = 0
+  const valid = []
   for (const it of items) {
     if (!it || typeof it.key !== 'string' || it.key.indexOf('sumsum:') !== 0 ||
         it.key === 'sumsum:help:seen' || it.key === 'sumsum:sync:meta' ||
         typeof it.value !== 'string' || it.value.length > VALUE_MAX ||
         typeof it.updated_at !== 'number' || !isFinite(it.updated_at)) {
-      skipped++
       continue
     }
+    valid.push(it)
+    incoming += it.value.length
+  }
+  const used = await repo.dataBytes(userId)
+  if (used + incoming > QUOTA_BYTES) {
+    return { status: 413, body: { ok: false, error: '云端的空间存不下这么多进度了，这份没有同步。' } }
+  }
+  await pushMark(repo, userId, now)
+  let applied = 0, skipped = items.length - valid.length
+  for (const it of valid) {
     if (await repo.dataUpsert(userId, it.key, it.value, it.updated_at)) applied++
     else skipped++
   }

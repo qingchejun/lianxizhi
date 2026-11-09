@@ -7,6 +7,6 @@ export async function onRequestPost(context) {
   const session = await requireSession(context)
   if (!session) return json({ ok: false, error: '请先登录。' }, 401)
   const body = await readBody(context.request)
-  const r = await dataPush(repo(context.env.DB), session.uid, body.items)
+  const r = await dataPush(repo(context.env.DB), session.uid, body.items, Date.now())
   return json(r.body, r.status)
 }

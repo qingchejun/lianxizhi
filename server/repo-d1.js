@@ -56,6 +56,10 @@ export function repo(db) {
       const r = await db.prepare('SELECT key, value, updated_at FROM data WHERE user_id=?').bind(uid).all()
       return (r.results || []).map(x => ({ key: x.key, value: x.value, updated_at: x.updated_at }))
     },
+    async dataBytes(uid) {
+      const r = await db.prepare('SELECT COALESCE(SUM(LENGTH(value)),0) AS n FROM data WHERE user_id=?').bind(uid).first()
+      return r.n
+    },
     async dataUpsert(uid, key, value, updated_at) {
       const r = await db.prepare(
         'INSERT INTO data(user_id,key,value,updated_at) VALUES(?,?,?,?) ' +

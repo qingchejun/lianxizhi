@@ -28,6 +28,11 @@ function memRepo() {
       dbData.set(k, { value: value, updated_at: updated_at })
       return true
     },
+    async dataBytes(uid) {
+      var n = 0
+      dbData.forEach(function (v, k) { if (k.indexOf(uid + '/') === 0) n += v.value.length })
+      return n
+    },
     async userByEmail(e) { return users.find(function (u) { return u.email === e }) || null },
     async userById(id) { return users.find(function (u) { return u.id === id }) || null },
     async insertUser(u) { users.push(u) },
@@ -192,6 +197,29 @@ import('../server/auth-core.js').then(async function (A) {
   for (var q = 0; q < 201; q++) tooMany.push({ key: 'sumsum:k' + q, value: '1', updated_at: now })
   var pBig = await A.dataPush(dbF, uid, tooMany)
   check('超过 200 条整批拒绝', pBig.status === 413)
+
+  /* --- push 总量配额：一个账号 5MB 封顶，防写爆免费档 D1 --- */
+  var dbQ = memRepo()
+  dbQ.users.push({ id: 'u-q', email: 'q@m.co', pw_hash: 'x', pw_salt: 's', pwver: 1, verified: 1 })
+  var kb60 = new Array(60 * 1024).join('x') /* 约 60KB */
+  var items80 = [], items90 = []
+  for (var i = 0; i < 80; i++) items80.push({ key: 'sumsum:q1:' + i + ':v1', value: kb60, updated_at: 1 })
+  for (var j2 = 0; j2 < 90; j2++) items90.push({ key: 'sumsum:q2:' + j2 + ':v1', value: kb60, updated_at: 2 })
+  var pq1 = await A.dataPush(dbQ, 'u-q', items80, now)
+  check('配额内（约 4.8MB）可推', pq1.status === 200 && pq1.body.applied === 80, pq1.body)
+  var pq2 = await A.dataPush(dbQ, 'u-q', items90, now)
+  check('累计超 5MB 整批拒绝', pq2.status === 413, pq2.body)
+  var pq3 = await A.dataPush(dbQ, 'u-q', [{ key: 'sumsum:small:v1', value: '1', updated_at: 3 }], now)
+  check('拒绝后小推不受影响', pq3.status === 200 && pq3.body.applied === 1, pq3.body)
+
+  /* --- push 频控：同账号一分钟最多 60 次（客户端防抖 2s，正常用远够不着） --- */
+  var dbR = memRepo()
+  dbR.users.push({ id: 'u-r', email: 'r@m.co', pw_hash: 'x', pw_salt: 's', pwver: 1, verified: 1 })
+  var rr = null
+  for (var k2 = 0; k2 <= 60; k2++) {
+    rr = await A.dataPush(dbR, 'u-r', [{ key: 'sumsum:r:v1', value: String(k2), updated_at: k2 }], now)
+  }
+  check('一分钟内第 61 次推送被限流', rr.status === 429, rr.body)
 
   console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ auth-core 注册/验证码全部通过')
   process.exit(bad ? 1 : 0)
