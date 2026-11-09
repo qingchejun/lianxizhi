@@ -23,6 +23,9 @@ TAIL = (
     '  <button type="button" class="rail-link small" data-help><svg viewBox="0 0 24 24" aria-hidden="true">'
     '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/>'
     '</svg><span>说明</span></button>\n'
+    '  <button type="button" class="rail-link small" data-account=""><svg viewBox="0 0 24 24" aria-hidden="true">'
+    '<circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"/>'
+    '</svg><span>账号</span></button>\n'
     '  <button type="button" class="rail-link small" data-backup><svg viewBox="0 0 24 24" aria-hidden="true">'
     '<path d="M12 4v11M8 11l4 4 4-4M5 19h14"/></svg><span>备份</span></button>\n'
 )

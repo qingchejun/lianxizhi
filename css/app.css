@@ -741,7 +741,8 @@ select.input {
 
 /* ---------- 使用说明弹窗（js/help.js 插入；打印时隐藏，见 sheet.css） ---------- */
 
-.help-dialog {
+.help-dialog,
+.account-dialog {
   width: min(680px, calc(100vw - 32px));
   max-height: min(820px, calc(100vh - 48px));
   padding: 0;
@@ -752,12 +753,14 @@ select.input {
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
 }
 
-.help-dialog[open] {
+.help-dialog[open],
+.account-dialog[open] {
   display: flex;
   flex-direction: column;
 }
 
-.help-dialog::backdrop {
+.help-dialog::backdrop,
+.account-dialog::backdrop {
   background: rgba(20, 24, 32, 0.45);
 }
 
@@ -987,4 +990,101 @@ select.input {
   height: 100%;
   background: var(--green);
   border-radius: 3px;
+}
+
+/* ---------- 账号弹窗（js/account-ui.js 插入；骨架同 help-dialog，打印时隐藏见 sheet.css） ---------- */
+
+.account-dialog {
+  width: min(420px, calc(100vw - 32px));
+}
+
+.account-body {
+  display: block;
+  padding: 16px 24px 24px;
+  line-height: 1.6;
+}
+
+.account-body form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.account-body label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.account-body input {
+  padding: 9px 10px;
+  font-size: 15px;
+  border: 1px solid var(--card-edge);
+  border-radius: 8px;
+}
+
+.account-line {
+  margin: 0 0 8px;
+}
+
+.account-sub {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.account-row {
+  margin-top: 4px;
+}
+
+.account-links {
+  display: flex;
+  gap: 16px;
+}
+
+.code-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.code-box {
+  width: 44px;
+  height: 52px;
+  text-align: center;
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
+.account-msg {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.account-msg.is-bad {
+  color: var(--red);
+}
+
+.account-msg.is-ok {
+  color: var(--green);
+}
+
+.account-choice {
+  display: flex;
+  gap: 10px;
+}
+
+.account-choice .btn {
+  flex: 1;
+  text-align: center;
+}
+
+.account-choice ul {
+  margin: 6px 0 0;
+  padding-left: 16px;
+  font-size: 11px;
+  color: var(--ink-soft);
+  text-align: left;
 }

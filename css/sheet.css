@@ -184,7 +184,8 @@ body.landscape .sheet {
   .confirm-bar,
   .mark-legend,
   .video-box,
-  .help-dialog {
+  .help-dialog,
+  .account-dialog {
     display: none !important;
   }
 

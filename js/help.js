@@ -35,6 +35,8 @@
       '<p>奥数「已学」标记、识字的进度和错字集存在<b>这台电脑的这个浏览器</b>里。' +
         '换之前（比如从旧网址 lianxizhi.pages.dev 搬到 lianxizhi.qingchejun.com），先在原来的地方点「导出备份」存一个文件，' +
         '再到新的地方点「导入备份」选这个文件。</p>' +
+      '<p class="help-note">也可以不搬文件：在两台电脑上用<b>同一个账号</b>登录（侧栏「账号」），进度自动云端同步。' +
+        '导入备份和云同步不冲突——导入的数据算最新，会同步到云端。</p>' +
       '<div class="help-backup-btns">' +
         '<button type="button" class="btn" data-bk="export">导出备份</button>' +
         '<button type="button" class="btn" data-bk="import">导入备份</button>' +
@@ -251,6 +253,8 @@
         pending = null
         return say('这个浏览器不允许写入本地数据（可能是无痕模式），导入没有成功。', 'bad')
       }
+      /* 导入是用户的明确意图：给导入的键盖「现在」，云同步会把它们当最新推上去 */
+      if (root.SumSum && root.SumSum.store) root.SumSum.store.noteImport(pending.data)
       pending = null
       say('导入成功，页面马上刷新。', 'ok')
       /* 各板块只在页面加载时读一次存储，刷新一下才能看到导入的进度 */

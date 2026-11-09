@@ -5,7 +5,8 @@
  * 识字的进度与错字集、奥数的「已学」都留在了旧网址上。换电脑、清缓存同理。
  *
  * 只搬 sumsum: 开头的键（全站的存储键都用这个前缀，名字沿用旧站名，改了会读不出老数据），
- * 但不搬 sumsum:help:seen —— 那是「这台浏览器有没有看过说明」，不是孩子的进度。
+ * 但不搬 sumsum:help:seen（「这台浏览器有没有看过说明」，不是孩子的进度）
+ * 和 sumsum:sync:meta（每台机器各自的同步时间表，搬走会打乱别机的按时间合并）。
  *
  * 导入是「覆盖备份里有的，保留备份里没有的」，不做合并：错字集的合并规则（同一个字两边
  * 进度不同听谁的）说不清，而搬家场景里新网址上本来就是空的。
@@ -18,7 +19,7 @@
   var APP = 'lianxizhi'
   var VERSION = 1
   var PREFIX = 'sumsum:'
-  var SKIP = { 'sumsum:help:seen': true }
+  var SKIP = { 'sumsum:help:seen': true, 'sumsum:sync:meta': true }
   var MAX_CHARS = 2 * 1024 * 1024 // 真实数据几十 KB；再大就不是我们导出的文件了
 
   function isObj(v) {

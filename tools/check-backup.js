@@ -52,12 +52,13 @@ var SITE = {
 
 /* ---------- 导出 ---------- */
 
-var src = fakeStorage(Object.assign({ 'sumsum:help:seen': '1', 'other-site:thing': 'x' }, SITE))
+var src = fakeStorage(Object.assign({ 'sumsum:help:seen': '1', 'other-site:thing': 'x', 'sumsum:sync:meta': JSON.stringify({ 'sumsum:shizi:v1': 123 }) }, SITE))
 var pack = B.collect(src)
 check(pack.app === 'lianxizhi' && pack.v === 1, '导出：缺少 app / v 标识')
 check(typeof pack.at === 'string' && pack.at.length >= 10, '导出：缺少导出时间')
 check(!('other-site:thing' in pack.data), '导出：带出了别的站的数据')
 check(!('sumsum:help:seen' in pack.data), '导出：带出了「说明看过没」这种不该搬的标记')
+check(!('sumsum:sync:meta' in pack.data), '导出：带出了同步时间表（那是本台机器的管道数据，搬走会打乱别机的 LWW）')
 check(Object.keys(pack.data).length === Object.keys(SITE).length, '导出：本站数据条数不对 ' + Object.keys(pack.data).length)
 check(pack.data['sumsum:shizi:wrong:v2'] === WRONG, '导出：错字集内容被改动了')
 
@@ -126,6 +127,7 @@ rejects('data 不是对象', packWith(['a']))
 rejects('data 为空', packWith({}))
 rejects('键不是本站的', packWith({ 'evil:key': '1' }))
 rejects('夹带说明标记', packWith({ 'sumsum:help:seen': '1' }))
+rejects('夹带同步时间表', packWith({ 'sumsum:sync:meta': '{}' }))
 rejects('值不是字符串', packWith({ 'sumsum:shizi:v1': { week: 1 } }))
 rejects('值不是合法 JSON', packWith({ 'sumsum:shizi:v1': '{week:' }))
 rejects('过大的文件', packWith({ 'sumsum:shizi:v1': JSON.stringify('x'.repeat(3 * 1024 * 1024)) }))
