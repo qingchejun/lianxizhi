@@ -899,6 +899,53 @@ function checkDailyBuild() {
   })
 }
 
+/* ---------- 6c. 登记（settleApply）与复习记录重算（refreshRow） ---------- */
+
+/*
+ * 统一语义：点 = 没认出，没点 = 认出。登记是一批一起算：
+ * 点了的在集字又错一次；点了的白底字收进错字集；没点的在集字认出一次（攒毕业）。
+ * 同一天第二次登记必须幂等；先在一张卷上点过、另一张卷再登记不能把「又错」洗成「认出」。
+ */
+function checkSettle() {
+  function eq(a, b, msg) {
+    if (canon(a) !== canon(b)) bad('登记 ' + msg + '：期望 ' + JSON.stringify(b) + '，实际 ' + JSON.stringify(a))
+  }
+  var T = '2026-11-09'
+  var T1 = '2026-11-10'
+  var marks = {
+    甲: { add: '2026-11-01', n: 1, k: 0, due: '2026-11-08', first: '2026-11-01' }, // 到期红底
+    乙: { add: '2026-11-01', n: 1, k: 1, due: '2026-11-05', hit: '2026-11-05' },   // 半红，再认出一次毕业
+    丙: { n: 2, out: '2026-10-01', first: '2026-09-01' }                            // 毕业字在卷上
+  }
+
+  var r = Z.settleApply(marks, ['甲', '乙', '丙', '丁'], { 甲: true, 丁: true }, T)
+  eq(r.marks.甲, { add: '2026-11-01', n: 2, k: 0, due: T1, fail: T, first: '2026-11-01' }, '点了的在集字又错一次')
+  eq(r.marks.乙, { n: 1, out: T }, '没点的半红认出 → 毕业')
+  eq(r.marks.丙, { n: 2, out: '2026-10-01', first: '2026-09-01' }, '毕业字没点：原样')
+  eq(r.marks.丁, { add: T, n: 1, k: 0, due: T1, first: T }, '点了的白底字收进错字集')
+  eq(r.seen, ['甲', '乙'], 'seen = 处理过的旧错字（新收进的丁不算）')
+  eq(marks.甲, { add: '2026-11-01', n: 1, k: 0, due: '2026-11-08', first: '2026-11-01' }, '不应改动传入的 marks')
+
+  /* 同一天第二次登记（全都又过了一遍）：幂等，一个数都不多记 */
+  var r2 = Z.settleApply(r.marks, ['甲', '乙', '丁'], {}, T)
+  eq(r2.marks, r.marks, '第二次登记不应改动任何条目')
+  eq(r2.seen, [], '第二次登记没有新的 seen')
+
+  /* 毕业当天反悔：再点它 → 撤销毕业、n+1 从头走 */
+  var r3 = Z.settleApply(r.marks, ['乙'], { 乙: true }, T)
+  eq(r3.marks.乙, { add: T, n: 2, k: 0, due: T1 }, '反悔再点：撤销毕业、记一次错')
+
+  /* 跨卷场景：甲在「另一张卷」已经被记了又错，这张卷没点它 —— 不能再算认出（markFail 守卫） */
+  var other = Z.settleApply(marks, ['甲'], { 甲: true }, T)
+  var again = Z.settleApply(other.marks, ['甲'], {}, T)
+  eq(again.marks.甲, other.marks.甲, '今天已记又错的字，另一张卷不能再记认出')
+
+  /* 复习记录重算：ok 含毕业的（沿用老口径），fail/add 今天 = miss */
+  var row = { d: T, seen: '甲乙' }
+  Z.refreshRow(row, r.marks, T)
+  eq(row, { d: T, seen: '甲乙', ok: 1, miss: 1, out: 1 }, '认出/又错/毕业按当天标记重算')
+}
+
 /* ---------- 7. 设置钳位 ---------- */
 
 function checkSettings() {
@@ -963,6 +1010,7 @@ function main() {
     ['每日一卷：毕业阶梯', checkDailySrs],
     ['每日一卷：v2/v1 迁移', checkMigrateWrong],
     ['每日一卷：到期挑选与构建', checkDailyBuild],
+    ['每日一卷：登记', checkSettle],
     ['附页抽字：边界 / 顺序 / 均匀性 / 按权重偏向（2 万轮）', checkSample],
     ['设置钳位', checkSettings]
   ]

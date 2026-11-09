@@ -334,8 +334,8 @@
   function markEnter(e, t) {
     if (e && !e.out) return e // 已经在集里：进集这条路由 markFail 表达，这里不动
     var o = keepFirst(e, { add: t, n: markCount(e) + 1, k: 0, due: addDays(t, 1) })
-    if (!o.first) o.first = t // 第一次错就是今天（历史统计靠 first 显示「最早错于」）
-    return o
+    if (!e && !o.first) o.first = t // 头一回错就是今天（历史统计靠 first 显示「最早错于」）；
+    return o                        // 老墓碑缺 first 的照旧缺着，历史页拿 add 顶（同 v2 口径）
   }
 
   /* 又没认出：k 归 0、n +1、明天再考。今天动过（进/错/认出）的字一律原样返回 ——
@@ -431,6 +431,57 @@
   }
 
   /*
+   * 登记一批卷面。picked 里是「点了 = 没认出」的字：
+   *   点了：在集的又错一次（markFail），白底的收进错字集（markEnter）；
+   *   没点：在集的认出一次（markPass），白底的不动。
+   * 返回新 marks（不改传入）和 seen（这次记进复习记录的旧错字，新收进的不算）。
+   * 幂等由 markFail / markPass 的「今天动过就跳过」保证：同一天登记两张卷
+   * 都带着同一个字，也只记一次。
+   */
+  function settleApply(marks, chars, picked, t) {
+    var out = Object.assign({}, marks || {})
+    var seen = []
+    ;(chars || []).forEach(function (ch) {
+      var e = out[ch]
+      var inSet = !!e && !e.out
+      if (picked && picked[ch]) {
+        if (inSet) {
+          out[ch] = markFail(e, t)
+          seen.push(ch)
+        } else {
+          out[ch] = markEnter(e, t)
+        }
+      } else if (inSet) {
+        var next = markPass(e, t)
+        if (next !== e) {
+          out[ch] = next
+          seen.push(ch)
+        }
+      }
+    })
+    return { marks: out, seen: seen }
+  }
+
+  /* 复习记录当天那行的数字按当前 marks 重算（登记后又点、反悔再点，都跟着变）。
+     ok 含当天毕业的，与 v2 时代 refreshLog 同一个口径，历史页签的表头不用动。 */
+  function refreshRow(row, marks, t) {
+    var ok = 0
+    var miss = 0
+    var out = 0
+    Array.from(row.seen).forEach(function (ch) {
+      var e = marks[ch]
+      if (!e) return
+      if (!e.out && (e.add === t || e.fail === t)) miss++
+      else if (e.out === t) out++
+      else if (e.hit === t) ok++
+    })
+    row.ok = ok + out
+    row.miss = miss
+    row.out = out
+    return row
+  }
+
+  /*
    * 历史错字统计：只要错过一次的字都在里面，移出了的也在（这就是「历史错字集」，
    * 和错字集是同一份记录，见 markStep 的说明）。
    * 按累计次数从多到少分组，同一组里按字表顺序，免得每次打开顺序都在变。
@@ -516,6 +567,8 @@
     buildDaily: buildDaily,
     DAILY_SIZE: DAILY_SIZE,
     DAILY_WRONG_MAX: DAILY_WRONG_MAX,
+    settleApply: settleApply,
+    refreshRow: refreshRow,
     historyStats: historyStats,
     sliceOf: sliceOf,
     titleFor: titleFor
