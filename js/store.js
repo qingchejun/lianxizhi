@@ -62,6 +62,7 @@
   }
 
   function set(key, value) {
+    var had = getString(key)
     try {
       root.localStorage.setItem(key, JSON.stringify(value))
     } catch (e) {
@@ -69,7 +70,10 @@
     }
     if (syncable(key)) {
       var m = loadMeta()
-      m[key] = Date.now()
+      /* 首次写入 = 播种（页面加载生成的默认值/当日卷）：mtime 记 1，
+         任何云端真实数据都 newer；键已存在再写才是用户改动，盖「现在」。
+         没有这条，新机器一打开页面就把空错字集标成最新，登录后会反过来盖掉云端。 */
+      m[key] = had == null ? 1 : Date.now()
       saveMeta(m)
       fire(key)
     }

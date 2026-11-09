@@ -93,13 +93,19 @@ console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ sync-core 合并规则
     await new Promise(function (r) { setTimeout(r, 30) })
     check('拉取应用云端键', mem['sumsum:cloud:v1'] === '{"a":1}')
 
-    /* 本地改动 → 防抖后推送（测试里防抖调到 5ms） */
+    /* 本地改动 → 防抖后推送（测试里防抖调到 5ms）。
+       监听回调按真实 store.js 的签名只传 key（fire(key)）——曾因假桩多传了 value 把 bug 藏住；
+       云端清空 + init 自身的 push-all 先落地并清零，才能隔离出「改动触发的这一次推送」 */
+    pulled = { items: [] }
     pushed = []
     await sync.init({ api: api, noReload: true, debounce: 5 })
     await new Promise(function (r) { setTimeout(r, 30) })
-    changes.forEach(function (fn) { fn('sumsum:local:v1', '{"b":3}') })
+    check('init 首登推送全部（隔离前提）', pushed.length === 1 && pushed[0].length >= 1, pushed.length)
+    pushed = []
+    await new Promise(function (r) { setTimeout(r, 30) })
+    changes.forEach(function (fn) { fn('sumsum:local:v1') })
     await new Promise(function (r) { setTimeout(r, 50) })
-    check('改动触发推送（防抖后）', pushed.length >= 1 && pushed[pushed.length - 1][0].key === 'sumsum:local:v1', pushed.length)
+    check('改动触发推送（防抖后）', pushed.length === 1 && pushed[0][0].key === 'sumsum:local:v1', pushed.length)
 
     /* 老数据（本地有值、无 mtime）撞上云端 → confirm 选云端 */
     mem['sumsum:both:v1'] = '{"side":"local"}'

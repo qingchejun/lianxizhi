@@ -24,7 +24,9 @@ function check(name, cond, extra) {
   else { bad++; console.log('✗', name, extra === undefined ? '' : JSON.stringify(extra)) }
 }
 
-/* --- 写入记 mtime + 广播 --- */
+/* --- 写入记 mtime + 广播 ---
+   首次写入本地没有的键 = 播种（页面加载时生成的默认值/当日卷），mtime 记 1：
+   新机器的机器生成数据不能盖过云端真实进度；键已存在再写才是用户改动，盖「现在」。 */
 var S = fresh()
 var t0 = Date.now()
 var heard = []
@@ -32,9 +34,11 @@ S.onChange(function (k) { heard.push(k) })
 S.set('sumsum:shizi:v1', { week: 3 })
 check('set 写入可读回', S.get('sumsum:shizi:v1').week === 3)
 var m = S.meta()
-check('set 记了 mtime', m['sumsum:shizi:v1'] >= t0, JSON.stringify(m))
+check('首次写入播种 mtime=1', m['sumsum:shizi:v1'] === 1, JSON.stringify(m))
 check('set 广播了', heard.indexOf('sumsum:shizi:v1') >= 0)
 check('mtime 表落在 META_KEY', mem['sumsum:sync:meta'] !== undefined)
+S.set('sumsum:shizi:v1', { week: 4 })
+check('已有键再写盖「现在」', S.meta()['sumsum:shizi:v1'] >= t0, JSON.stringify(S.meta()))
 
 /* --- applyRemote：写原始串、mtime 用给定值、不广播 --- */
 heard.length = 0

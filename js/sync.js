@@ -79,9 +79,9 @@
       if (appliedAny) reload(opts)
     }
 
-    /* 之后本地一有改动，防抖推 */
-    store.onChange(function (key, value) {
-      if (!value && value !== '') return
+    /* 之后本地一有改动，防抖推。store 的 fire 只传 key：删键也会走到这，
+       但 pushAll 只推 meta 里还有的键，删掉的键自然不在推送里 */
+    store.onChange(function () {
       later(api, opts.debounce)
     })
   }
