@@ -58,9 +58,25 @@
       <!-- 看哪一张卷子。两种模式下字格都能点，点一下就是加入/移出错字集 -->
       <section class="group">
         <div class="stage-tabs" id="mode-tabs">
+          <button type="button" class="stage-tab" data-mode="daily">每日一卷<span id="daily-n"></span></button>
           <button type="button" class="stage-tab" data-mode="week">本周复习</button>
           <button type="button" class="stage-tab" data-mode="wrong">错字集<span id="wrong-n"></span></button>
           <button type="button" class="stage-tab" data-mode="history">历史</button>
+        </div>
+      </section>
+
+      <!-- 每日一卷的状态与操作。卷面在左边纸张区：生成后字固定，登记/作废才出下一张 -->
+      <section class="group" id="sec-daily" hidden>
+        <p class="hint" id="daily-status"></p>
+        <div class="week-nav">
+          <button type="button" id="btn-daily-settle" class="btn btn-sm btn-primary">登记结果</button>
+          <button type="button" id="btn-daily-undo" class="btn btn-sm" hidden>撤销登记</button>
+          <button type="button" id="btn-daily-drop" class="btn btn-sm" hidden>作废重来</button>
+        </div>
+        <div class="pair" id="daily-browse" hidden>
+          <button type="button" id="btn-paper-prev" class="btn btn-sm">◀</button>
+          <p class="hint" id="paper-which" style="flex:1;text-align:center;margin:0"></p>
+          <button type="button" id="btn-paper-next" class="btn btn-sm">▶</button>
         </div>
       </section>
 

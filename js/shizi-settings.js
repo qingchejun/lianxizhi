@@ -22,12 +22,13 @@
     copies: 1,
     /*
      * 看哪一张卷子：
-     *   week  本周复习 —— 主场景，按周次印该复习的那一批字
+     *   daily 每日一卷 —— 默认，每天一张冻住的 20 字卷（到期错字 + 认识字随机）
+     *   week  本周复习 —— 按周次印该复习的那一批字
      *   wrong 错字集   —— 把攒下来的错字单独印一张
      *   history 历史   —— 屏幕上的统计页：错过的字按次数排、每次复习的记录。不印
-     * 两种模式下字格都可以点，点一下就是把那个字加入 / 移出错字集（见 shizi-mark）。
+     * 哪种模式下字格都可以点：点一下＝这次没认出，点「登记结果」时结算（见 shizi-mark）。
      */
-    mode: 'week',
+    mode: 'daily',
     /*
      * 本周复习卷后面要不要再附一页错字。见 LOCAL_ONLY —— 这一项不进网址。
      */
@@ -51,7 +52,7 @@
 
   var FONTS = ['kai', 'hei']
 
-  var MODES = ['week', 'wrong', 'history']
+  var MODES = ['daily', 'week', 'wrong', 'history']
 
   /*
    * 每页字数的合法取值，必须与 shizi.html 里 #f-perpage 的 <option> 一一对应。
@@ -145,8 +146,8 @@
       })
       base = keep
     } else {
-      /* 看哪张卷子不该被记住：打开页面永远回到「本周复习」这个主场景。
-         想直达错字集，存一个带 ?mode=wrong 的链接即可。 */
+      /* 看哪张卷子不该被记住：打开页面永远回到「每日一卷」这个主场景。
+         想直达别的页签，存一个带 ?mode=wrong 这样的链接即可。 */
       delete base.mode
     }
     return sanitize(Object.assign({}, base, fromUrl))

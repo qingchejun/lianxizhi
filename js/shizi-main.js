@@ -84,6 +84,52 @@
     })
   }
 
+  /* ---------- 每日一卷 ---------- */
+
+  /* browseIdx=null 看最新一张（登记/作废都在它身上）；数字是 papers 数组的下标，
+     只用来翻往期。往期一律只读 —— 卷是「冻住」的，历史卷不能再点。 */
+  var browseIdx = null
+
+  function dailyPaper() {
+    var p = browseIdx != null ? S.shiziMark.paperAt(browseIdx) : null
+    /* 兜底：翻着往期时数组理论上不会变短（作废会先重置 browseIdx），但别让 null 炸渲染 */
+    return p || S.shiziMark.ensurePaper()
+  }
+
+  function renderDaily() {
+    var p = dailyPaper()
+    var todayStr = S.shiziMark.today()
+    var active = browseIdx == null && !p.settled
+    /* data-locked='1' 时 shizi-mark 的点击代理直接忽略（往期卷只读）；
+       今天的活卷必须清掉，否则从往期切回来点不动 */
+    if (active) delete $('preview').dataset.locked
+    else $('preview').dataset.locked = '1'
+    $('preview').innerHTML = S.shiziRender.renderWrong(settings, Array.from(p.chars), {
+      title: '识字 · 每日一卷',
+      foot: '每日一卷 · ' + p.chars.length + ' 字'
+    }).join('')
+    root.document.body.classList.remove('landscape')
+    S.shiziMark.paint()
+    var status = $('daily-status')
+    if (active) {
+      status.innerHTML = p.d === todayStr
+        ? '今天的卷子已生成（' + p.chars.length + ' 字：到期错字 + 认识字随机）。打印去考，回来点<b>没认出</b>的字，再点「登记结果」。'
+        : '有一张 ' + md(p.d) + ' 的卷子还没登记。对着那张纸点没认出的字再登记；不想登记就作废。'
+    } else {
+      status.innerHTML = (p.d === todayStr ? '今天' : md(p.d)) + '的卷子已登记。' +
+        (browseIdx == null ? '明天自动生成新的一张。' : '（往期卷只读）')
+    }
+    $('btn-daily-settle').hidden = !active
+    $('btn-daily-undo').hidden = !(browseIdx == null && p.settled && p.d === todayStr && S.shiziMark.canUndo())
+    $('btn-daily-drop').hidden = !active
+    var n = S.shiziMark.paperCount()
+    $('daily-browse').hidden = n < 2
+    $('paper-which').textContent = n ? md(p.d) + ' · 第 ' + (browseIdx == null ? n : browseIdx + 1) + '/' + n + ' 张' : ''
+    /* ◀ 往旧翻：停在最早一张时才禁用；▶ 往回走：停在最新一张时禁用 */
+    $('btn-paper-prev').disabled = browseIdx != null && browseIdx <= 0
+    $('btn-paper-next').disabled = browseIdx == null
+  }
+
   function fillTabs(s) {
     var tabs = $('mode-tabs').querySelectorAll('.stage-tab')
     for (var i = 0; i < tabs.length; i++) {
@@ -91,11 +137,13 @@
     }
     /* 页签上直接带字数，不用切进去才知道攒了多少 */
     var n = S.shiziMark.size()
+    $('daily-n').textContent = S.shiziMark.dueCount() ? ' · ' + S.shiziMark.dueCount() : ''
     $('wrong-n').textContent = n ? ' · ' + n : ''
     $('wrong-title-n').textContent = n ? n + ' 个' : ''
   }
 
   function fillForm(s) {
+    $('sec-daily').hidden = s.mode !== 'daily'
     /* 非「本周复习」模式下，周次与每周字数这两块控件不起作用，直接收起来。
        留着变灰只是噪音 —— 上面的页签已经说清楚现在在看哪张卷子。 */
     $('sec-progress').hidden = s.mode !== 'week'
@@ -169,7 +217,9 @@
     if (sheets > 1) text += ' · 每页 ' + per + ' 个 = ' + sheets + ' 页'
     if (addSheets) text += ' + 错字附页 ' + append.length + ' 字'
     if (s.copies > 1) text += '，× ' + s.copies + ' 份'
-    return text + '。本周卷排成 ' + lay.cols + ' 列 × ' + lay.rows + ' 行，每个字约 ' +
+    /* 「本周卷」三个字只在本周复习模式下说得通；每日一卷那张小卷不该顶着这个名 */
+    var label = s.mode === 'daily' ? '每日卷' : '本周卷'
+    return text + '。' + label + '排成 ' + lay.cols + ' 列 × ' + lay.rows + ' 行，每个字约 ' +
       (Math.floor(lay.glyph * 10) / 10) + 'mm（课本生字约 10mm）。'
   }
 
@@ -203,7 +253,7 @@
   }
 
   /* 按钮文案随模式走：印的是哪张卷子，按钮上就写哪张 */
-  var PRINT_LABEL = { week: '打印复习卷', wrong: '打印错字卷', history: '打印' }
+  var PRINT_LABEL = { daily: '打印今日卷', week: '打印复习卷', wrong: '打印错字卷', history: '打印' }
 
   /* 主流程：保存设置 → 同步表单 → 渲染 → 把错字标记投影回新 DOM */
   function refresh() {
@@ -215,6 +265,23 @@
     /* 错字集模式下，渲染用的是【进入时的快照】；之后用户再点就只改 class，
        不动卷面结构，直到他自己点「重新排版」或切走再切回来。 */
     renderedWrong = settings.mode === 'wrong' ? S.shiziMark.all() : []
+    if (settings.mode === 'daily') {
+      renderDaily()
+      fitPreview()
+      var dp = dailyPaper()
+      $('pages-hint').textContent = pagesHint(settings, dp ? dp.chars.length : 0, null)
+      $('btn-print').querySelector('.txt').textContent = PRINT_LABEL.daily
+      refreshMarkPanel()
+      S.shell.summary([
+        '每日一卷',
+        dp && dp.wrong.length ? '错字 ' + dp.wrong.length + ' + 认识 ' + (dp.chars.length - dp.wrong.length) : dp ? '认识 ' + dp.chars.length : '',
+        dp ? md(dp.d) : ''
+      ])
+      $('notice').hidden = true
+      return
+    }
+    /* 每日一卷给 #preview 上过的只读锁，别的模式一律解掉 */
+    delete $('preview').dataset.locked
     if (settings.mode === 'history') {
       renderHistory()
       fitPreview()
@@ -315,6 +382,43 @@
     else S.shiziMark.undoSettle()
     /* 只改格子的颜色，卷面不重排（理由同 shizi-mark 的文件头）；面板由 onChange 刷 */
     S.shiziMark.paint()
+  })
+
+  /* ---------- 每日一卷的按钮 ---------- */
+
+  $('btn-daily-settle').addEventListener('click', function () {
+    var p = dailyPaper()
+    if (!p || p.settled) return
+    S.shiziMark.settle(Array.from(p.chars), p)
+    refresh()
+  })
+
+  $('btn-daily-undo').addEventListener('click', function () {
+    S.shiziMark.undoSettle()
+    refresh()
+  })
+
+  $('btn-daily-drop').addEventListener('click', function () {
+    if (!root.confirm('作废这张卷子？字的数据不动，今天可以重新生成一张。')) return
+    S.shiziMark.discardPaper()
+    browseIdx = null
+    refresh()
+  })
+
+  /* ◀ 往旧翻：从最新一张开始，一路翻到最早；▶ 往回走，走出倒数第二张就回到「活卷」视角
+     ——最新那张永远由 null 视角显示（活卷/今天已登记），浏览范围不含它，免得同一张卷
+     出现「可点的」和「锁住的」两个版本 */
+  $('btn-paper-prev').addEventListener('click', function () {
+    var n = S.shiziMark.paperCount()
+    browseIdx = browseIdx == null ? n - 2 : Math.max(0, browseIdx - 1)
+    refresh()
+  })
+
+  $('btn-paper-next').addEventListener('click', function () {
+    if (browseIdx == null) return
+    var n = S.shiziMark.paperCount()
+    browseIdx = browseIdx >= n - 2 ? null : browseIdx + 1
+    refresh()
   })
 
   /* ---------- 历史页（只在屏幕上，不印） ---------- */
@@ -472,6 +576,7 @@
 
   function gotoMode(mode) {
     if (mode === settings.mode) return
+    browseIdx = null // 离开又回来，先看最新一张，别停在刚才翻的往期上
     settings = S.shiziSettings.sanitize(Object.assign({}, settings, { mode: mode }))
     refresh()
   }

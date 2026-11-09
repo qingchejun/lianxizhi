@@ -451,6 +451,7 @@
     paint: paint,
     onChange: onChange,
     setToday: setToday,
+    today: today,
     has: has,
     size: size,
     countOf: countOf,

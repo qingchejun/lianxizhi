@@ -57,7 +57,7 @@ check(empty.aoshu.parts === '讲解 + 练习 + 解析', '奥数默认三部分�
 check(empty.shizi.week === 1 && empty.shizi.weeks === 16, '空浏览器 识字周次：' + empty.shizi.week + '/' + empty.shizi.weeks)
 check(empty.shizi.from === 1 && empty.shizi.to === 100, '空浏览器 识字字序：' + empty.shizi.from + '–' + empty.shizi.to)
 check(empty.shizi.wrong === 0 && empty.shizi.repeats === 0, '空浏览器 错字数应为 0')
-check(empty.shizi.mode === 'week', '空浏览器 识字模式应是本周复习')
+check(empty.shizi.mode === 'daily', '空浏览器 识字模式应是每日一卷')
 check(empty.shizi.printHref === 'shizi.html#print', '识字打印链接不能带设置参数（带了会忽略本地进度）：' + empty.shizi.printHref)
 
 check(empty.kousuan.title === '加减法混合', '空浏览器 口算标题应是默认模式名：' + empty.kousuan.title)

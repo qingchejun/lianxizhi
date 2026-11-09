@@ -792,16 +792,16 @@ function checkSettings() {
     [{ perWeek: 9999 }, 'perWeek', 200],
     [{ perWeek: '' }, 'perWeek', 100],
     [{ font: 'comic' }, 'font', 'kai'],
-    /* 模式白名单。「整表核对」（?mode=proof，更早是 ?proof=true）已下架，
-       老链接一律回到本周复习，不能停在一个不存在的页签上 */
-    [{}, 'mode', 'week'],
+    /* 模式白名单。「整表核对」（?mode=proof，更早是 ?proof=true）已下架；
+       2026-11 起默认页签是每日一卷，老链接里的非法 mode 一律回到它 */
+    [{}, 'mode', 'daily'],
     [{ mode: 'wrong' }, 'mode', 'wrong'],
     [{ mode: 'history' }, 'mode', 'history'],
-    [{ mode: 'proof' }, 'mode', 'week'],
-    [{ mode: 'xx' }, 'mode', 'week'],
-    [{ mode: '' }, 'mode', 'week'],
-    [{ proof: 'true' }, 'mode', 'week'],
-    [{ proof: 'false' }, 'mode', 'week'],
+    [{ mode: 'proof' }, 'mode', 'daily'],
+    [{ mode: 'xx' }, 'mode', 'daily'],
+    [{ mode: '' }, 'mode', 'daily'],
+    [{ proof: 'true' }, 'mode', 'daily'],
+    [{ proof: 'false' }, 'mode', 'daily'],
     [{ copies: 9 }, 'copies', 2],
     [{ copies: 0 }, 'copies', 1],
     [{ perPage: -5 }, 'perPage', 0]
