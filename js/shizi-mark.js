@@ -185,6 +185,9 @@
   }
 
   var picks = loadPicks()
+  /* 首载播种空点选集（wrong:v3 同款）：键先在，用户点选时才盖「现在」。
+     不播的话首次点选就被播种语义盖成 mtime=1，两台设备各点过字永远打平、互不同步。 */
+  if (readJSON(PICK_KEY) === null) savePicks()
 
   function savePicks() {
     writeJSON(PICK_KEY, picks)

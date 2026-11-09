@@ -112,6 +112,18 @@ M.undoSettle()
 check(marksNow().甲.n === 1 && marksNow().乙.n === 2,
   'I3：撤销只回滚最新那笔（每日卷），周卷那笔保住', marksNow())
 
+/* ---------- 云同步：点选集要像错字集一样首载播种（终审后浏览器 e2e 抓出） ----------
+   picks:v1 只在用户点选时才首写，会被播种语义盖成 mtime=1——两台设备各点过字
+   就永远打平（1 vs 1），点选互不同步。修法与 wrong:v3 一致：页面加载就写空集。 */
+M = fresh({})
+check(mem['sumsum:shizi:picks:v1'] !== undefined,
+  '空浏览器首载播种空点选集', mem['sumsum:shizi:picks:v1'])
+M.setToday(function () { return T0 })
+M.togglePick('甲')
+var pickMtime = JSON.parse(mem['sumsum:sync:meta'] || '{}')['sumsum:shizi:picks:v1']
+check(typeof pickMtime === 'number' && pickMtime > 1,
+  '首次点选盖「现在」（>1）而非播种的 1，两台设备才能分出新旧', pickMtime)
+
 if (problems.length) {
   console.log('✗ ' + problems.length + ' 处问题：')
   problems.forEach(function (p) { console.log('  - ' + p) })

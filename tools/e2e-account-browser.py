@@ -67,8 +67,9 @@ with sync_playwright() as p:
     page.wait_for_timeout(3500)
     check('本地改动触发推送', any(r.url.endswith('/api/data/push') for r in apis))
 
-    # 第二个浏览器：同账号新 context 登录。全新浏览器里页面加载写的都是播种值（mtime=1），
-    # 登录拉取时云端真实数据 newer → 全部应用 → 自动 reload 一次（弹窗随刷新关掉）。
+    # 第二个浏览器：同账号新 context 登录。卷面是每台随机生成的，播种语义下（mtime=1 对 1）
+    # 互不覆盖——点选只在同一张卷上可见。先把第一台的卷面塞给第二台再登录，模拟
+    # 老设备→新设备的真实继承（真实 mtime 的数据赢过新设备的播种值）。
     ctx2 = browser.new_context()
     page2 = ctx2.new_page()
     watch(page2)
@@ -81,6 +82,10 @@ with sync_playwright() as p:
         page2.wait_for_timeout(300)
     except Exception:
         pass
+    paper = page.evaluate("() => localStorage.getItem('sumsum:shizi:daily:v1')")
+    page2.evaluate("v => localStorage.setItem('sumsum:shizi:daily:v1', v)", paper)
+    page2.reload()
+    page2.wait_for_selector('#preview .shizi-cell')
     page2.click('[data-account]')
     page2.fill('input[name=email]', EMAIL)
     page2.fill('input[name=password]', PASSWORD)

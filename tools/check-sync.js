@@ -70,21 +70,36 @@ console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ sync-core 合并规则
 
   var pushed = []
   var pulled = { items: [] }
+  var throwPull = false
   var api = {
-    pull: async function () { return { status: 200, body: pulled } },
+    pull: async function () { if (throwPull) throw new Error('offline'); return { status: 200, body: pulled } },
     push: async function (items) { pushed.push(items); return { status: 200, body: { applied: items.length, skipped: 0 } } }
+  }
+  function lastPushByKey() {
+    var by = {}
+    ;(pushed[pushed.length - 1] || []).forEach(function (it) { by[it.key] = it })
+    return by
   }
 
   Promise.resolve().then(async function () {
-    /* 本地有数据、云端空 → 首登推送全部 */
+    /* 本地有数据、云端空 → 首登推送全部。三类键三种待遇（终审 C1）：
+       老键（无 mtime 的真实数据）盖「现在」；用户改过的键带自己的 mtime；
+       播种键（mtime=1 的默认值）必须按 1 推——盖了「现在」，干净设备一建号
+       就把空错字集变成云端新王，别机的真实数据登录时会被它清空。 */
+    mem['sumsum:old:v1'] = '{"a":1}' /* 同步上线前的老键：无 mtime */
     mem['sumsum:local:v1'] = '{"b":2}'
     meta['sumsum:local:v1'] = 100
+    mem['sumsum:seed:v1'] = '{"c":3}'
+    meta['sumsum:seed:v1'] = 1
     var confirmCalls = []
     await sync.init({ api: api, noReload: true, confirm: async function (o) { confirmCalls.push(o); return 'local' } })
     await new Promise(function (r) { setTimeout(r, 30) })
-    check('首登本地有云端无 → 推全部', pushed.length === 1 && pushed[0][0].key === 'sumsum:local:v1', pushed)
+    var by1 = lastPushByKey()
+    check('首登本地有云端无 → 推全部（三类键都在）', by1['sumsum:old:v1'] && by1['sumsum:local:v1'] && by1['sumsum:seed:v1'], by1)
     check('不需要弹确认框（云端空）', confirmCalls.length === 0)
-    check('推送后 meta 已刷新', meta['sumsum:local:v1'] === 123)
+    check('老键盖「现在」推上去', by1['sumsum:old:v1'].updated_at === 123 && meta['sumsum:old:v1'] === 123, by1['sumsum:old:v1'])
+    check('已有 mtime 的键按自己的时间推', by1['sumsum:local:v1'].updated_at === 100 && meta['sumsum:local:v1'] === 100, by1['sumsum:local:v1'])
+    check('播种键按 1 推（默认值不得变云端新王）', by1['sumsum:seed:v1'].updated_at === 1 && meta['sumsum:seed:v1'] === 1, by1['sumsum:seed:v1'])
 
     /* 再打开：拉到云端新键 → 应用 */
     pulled = { items: [ { key: 'sumsum:cloud:v1', value: '{"a":1}', updated_at: 500 } ] }
@@ -129,6 +144,28 @@ console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ sync-core 合并规则
     await new Promise(function (r) { setTimeout(r, 30) })
     check('没选方向 → 本地云端都不动', mem['sumsum:old2:v1'] === '{"x":1}' && pushed.length === 0,
       [mem['sumsum:old2:v1'], pushed.length])
+
+    /* 选「本机为准」：老键盖「现在」推上去；播种键同样不许盖（C1 同源） */
+    mem['sumsum:old3:v1'] = '{"x":9}'
+    delete meta['sumsum:old3:v1']
+    mem['sumsum:seed3:v1'] = '{"y":8}'
+    meta['sumsum:seed3:v1'] = 1
+    pulled = { items: [ { key: 'sumsum:old3:v1', value: '{"x":1}', updated_at: 900 } ] }
+    pushed = []
+    await sync.init({ api: api, noReload: true, confirm: async function () { return 'local' } })
+    await new Promise(function (r) { setTimeout(r, 30) })
+    var by3 = lastPushByKey()
+    check('选本机 → 老键盖「现在」推上去', by3['sumsum:old3:v1'] && by3['sumsum:old3:v1'].updated_at === 123, by3['sumsum:old3:v1'])
+    check('选本机 → 播种键仍按 1 推', by3['sumsum:seed3:v1'] && by3['sumsum:seed3:v1'].updated_at === 1, by3['sumsum:seed3:v1'])
+
+    /* 断网打开页面：pull 抛异常 → init 不炸、监听照挂，恢复后一有改动就推（终审 I1） */
+    throwPull = true
+    pushed = []
+    await sync.init({ api: api, noReload: true, debounce: 5 })
+    await new Promise(function (r) { setTimeout(r, 30) })
+    changes.forEach(function (fn) { fn('sumsum:local:v1') })
+    await new Promise(function (r) { setTimeout(r, 50) })
+    check('断网打开后改动仍触发推送（监听必须挂上）', pushed.length >= 1, pushed.length)
 
     finish()
   }).catch(function (e) { console.error(e); process.exit(1) })

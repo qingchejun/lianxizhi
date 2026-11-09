@@ -30,6 +30,7 @@
     var metaMap = store.meta()
     var oldKeys = allKeys.filter(function (k) { return !(k in metaMap) }) /* 同步上线前的老数据 */
 
+    try {
     var pulled = await api.pull()
     var cloudItems = (pulled && pulled.status === 200 && pulled.body && pulled.body.items) || []
 
@@ -44,7 +45,9 @@
         cloud: cloudItems.map(function (it) { return it.key })
       })
       if (pick === 'local') {
-        store.stampNow(allKeys)
+        /* 只给老键（同步上线前的真实数据）盖「现在」；播种键按 1 原样推，
+           否则干净设备的默认值会变成云端新王，反过来清空别机的真实数据 */
+        if (oldKeys.length) store.stampNow(oldKeys)
         await pushAll(api, store)
         return /* 本地已称王 */
       } else if (pick === 'cloud') {
@@ -60,7 +63,8 @@
         return /* 用户没选（关了弹窗）：这次不同步，下次打开再问 */
       }
     } else if (plan === 'push-all') {
-      store.stampNow(allKeys)
+      /* 同上：只盖老键，播种键（mtime=1）与已有时钟的键按自己的时间推 */
+      if (oldKeys.length) store.stampNow(oldKeys)
       await pushAll(api, store)
       cloudItems = []
     }
@@ -77,6 +81,10 @@
       }).filter(function (it) { return it.value !== null })
       if (toPush.length) await api.push(toPush)
       if (appliedAny) reload(opts)
+    }
+    } catch (e) {
+      /* 断网、服务器抖动：本次不同步就跳过；下面的监听照挂，
+         之后一有改动防抖推会自愈（本地 mtime 还新着） */
     }
 
     /* 之后本地一有改动，防抖推。store 的 fire 只传 key：删键也会走到这，
@@ -99,7 +107,7 @@
     if (timer) clearTimeout(timer)
     timer = setTimeout(function () {
       timer = null
-      pushAll(api, S())
+      pushAll(api, S()).catch(function () { /* 推失败不重试：下次改动或下次打开自然再推 */ })
     }, ms || DEBOUNCE)
   }
 
