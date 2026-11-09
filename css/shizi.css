@@ -87,8 +87,8 @@
 }
 
 /*
- * 红底 = 这个字在错字集里；半红（斜着一半红一半白）= 认出过一次，改天再认出来、再点一下才移出。
- * 规则见 js/shizi-core.js 的 markStep，两种模式下含义一致，见 js/shizi-mark.js 的说明。
+ * 红底 = 这个字在错字集里；半红（斜着一半红一半白）= 认出过、正攒次数等毕业。
+ * 规则见 js/shizi-core.js 的「每日一卷」一节，两种模式下含义一致，见 js/shizi-mark.js 的说明。
  * （2026-10 以前用右上角的数字 2 / 1 表示，按 Claude Design 定稿改成半红，用户同意先试用。）
  *
  * 只改 background、不碰 color：数独在 css/shudu.css 明文定过这条规矩 ——
@@ -101,6 +101,16 @@
 
 .shizi-cell.is-wrong.is-once {
   background: linear-gradient(135deg, var(--mark, #f4bdb8) 0 50%, #fff 50% 100%);
+}
+
+/*
+ * 深红框 = 这次考没认出、点了等登记的字（is-pick）。登记之前它还只是「点选」，
+ * 没进错字集 —— 但卷面上得比红底更醒目，家长核对纸上圈过的字一眼能对上。
+ * 写在 is-wrong / is-once 之后：点了的红底 / 半红字直接整个盖成深红。
+ */
+.shizi-cell.is-pick {
+  background: #ec8f88;
+  box-shadow: inset 0 0 0 2px var(--red, #d5453c);
 }
 
 /*
@@ -122,6 +132,23 @@
   color: var(--ink-soft);
 }
 
+/*
+ * 右上角的数字 = 还差几次认出毕业（见 shizi-mark 的 remainingOf）。
+ * 与左上角的 ×n 各占一角：左上角是过去（错过几次），右上角是将来（还差几次）。
+ */
+.shizi-cell[data-k] {
+  position: relative;
+}
+
+.shizi-cell[data-k]::after {
+  content: attr(data-k);
+  position: absolute;
+  top: 0.12em;
+  right: 0.14em;
+  font: 600 max(12px, 0.26em)/1 "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+  color: var(--ink-soft);
+}
+
 @media print {
   /*
    * 错字标记一律不印。每周卷是【认读考核卷】，把不认识的字标在纸上等于给孩子划重点；
@@ -136,8 +163,17 @@
     background: none;
   }
 
-  /* 左上角的次数同理 */
+  /* 点选的深红框与右上角的剩余次数同理 */
+  .shizi-cell.is-pick {
+    background: none;
+    box-shadow: none;
+  }
+
   .shizi-cell[data-n]::before {
+    display: none;
+  }
+
+  .shizi-cell[data-k]::after {
     display: none;
   }
 
@@ -242,6 +278,11 @@
 
 .mark-legend .sw.half {
   background: linear-gradient(135deg, var(--mark, #f4bdb8) 0 50%, #fff 50% 100%);
+}
+
+.mark-legend .sw.pick {
+  background: #ec8f88;
+  box-shadow: inset 0 0 0 2px var(--red, #d5453c);
 }
 
 .mark-legend .n {

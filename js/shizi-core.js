@@ -169,118 +169,15 @@
    * 已经移出的是 0，不抽。错 4 次的红底字（8）被抽中的机会大约是错 1 次的半红字（1）的 8 倍。
    */
   function reviewWeight(e) {
-    var st = markState(e)
+    var st = stateOf(e)
     if (st === 'out') return 0
     return markCount(e) * (st === 'wrong' ? 2 : 1)
   }
 
-  /*
-   * 错字进出错字集的规则：【进来点一下，出去要在两个不同的日子各认出来一次】。
-   * 另外每个字记一个【累计次数】n：一共进过几次错字集，移出也不清零，再进来接着加一。
-   *
-   * 错字集和累计记录是【同一份数据】，不是两个库：每个字一条记录，状态和次数都在里面。
-   * 分两处存的话，点一下、撤回一下、清空一下都得两边一起改，迟早对不上。
-   *
-   * 一条记录 entry 长这样（日期都是本地日期 'YYYY-MM-DD'，字符串直接比大小）：
-   *   { add, n }              2：在错字集里，还没认出来过
-   *   { add, hit, n }         1：hit 那天认出来过一次
-   *   { add, hit, out, n }    out 那天刚移出。当天再点能原样撤回
-   *   { n, out }              早就移出了，只留累计次数
-   *   { add, n, prev }        移出过又进来的；prev 是上一次移出的日子，只为当天撤回用
-   *   null                    从没进过（或者进来当天就撤回了）
-   * 缺 n 的老记录（v1 迁移过来的、v2 早期的）一律当作进过 1 次，见 markCount。
-   *
-   * 点一下怎么走，只看两件事：现在是哪种状态，上一步是不是今天点的。
-   *   【今天点的，再点一下就是撤回】；不是今天点的，再点一下才往前走一步。
-   * 这样「同一天连点两下」永远凑不成「认出两次」—— 孩子当场念对两遍，和隔天
-   * 还记得，是两回事；而手一滑点错了，当场再点一下就回去，次数也跟着退回，不留痕迹。
-   *
-   * 「两次」要【连续】：认出一次之后，下一次复习没认出来，家长点「复习完了，结算」，
-   * 它就退回红底、次数 +1（见下面的 markMiss）。不结算的话系统分不出「没认出」和「没复习」，
-   * 只能停在 1 等着。
-   *
-   * 另外两个只为历史统计记的字段，各种状态之间都跟着走（见 carry）：
-   *   first   第一次错的日子（2026-10 以前的老记录没有，用 add 顶）
-   *   miss    最近一次结算时没认出的日子；missWas 是结算前的样子，只为当天撤销用
-   *
-   * 永远返回新对象，不改传进来的 entry。纯函数放 core，理由同 sortByTable。
-   */
-  function markState(e) {
-    if (!e || e.out) return 'out'
-    return e.hit ? 'once' : 'wrong'
-  }
-
+  /* 进出规则、累计次数与 v3 记录形状见下面「每日一卷」那一节；缺 n 的老记录
+     （v1 迁移过来的、v2 早期的）一律当作错过 1 次。永远返回新对象，不改传进来的 entry。 */
   function markCount(e) {
     return e ? e.n || 1 : 0
-  }
-
-  /* 把只为统计记的字段搬到新记录上；去掉值为 undefined 的键，存起来干净 */
-  function carry(e, today, o) {
-    if (e && e.first) o.first = e.first
-    if (e && e.miss) o.miss = e.miss
-    if (e && e.miss === today && e.missWas) o.missWas = e.missWas
-    Object.keys(o).forEach(function (k) {
-      if (o[k] === undefined) delete o[k]
-    })
-    return o
-  }
-
-  function markStep(e, today) {
-    var st = markState(e)
-    /* 今天结算时算成「没认出」的，又被点了：是家长漏点了。先撤销结算，再当作今天认出 */
-    if (st !== 'out' && e.miss === today && e.missWas) return markStep(markUnmiss(e, today), today)
-    var n = markCount(e)
-    if (st === 'out') {
-      if (!e) return { add: today, n: 1, first: today }
-      /* 当天移出（或当天清空）的，原样恢复，不算又进来一次 */
-      if (e.out === today) return carry(e, today, { add: e.add, hit: e.hit, n: n })
-      return carry(e, today, { add: today, n: n + 1, prev: e.out })
-    }
-    if (st === 'wrong') {
-      if (e.add === today) {
-        /* 今天刚进来的：撤回。以前进过的回到「已移出」，次数退回去；第一次进的整条删掉 */
-        return e.prev ? carry(e, today, { n: n - 1, out: e.prev }) : null
-      }
-      return carry(e, today, { add: e.add, hit: today, n: n })
-    }
-    if (e.hit === today) return carry(e, today, { add: e.add, n: n }) // 今天刚认出的：撤回
-    return carry(e, today, { add: e.add, hit: e.hit, out: today, n: n })
-  }
-
-  /* 「清空错字集」：在集里的一律当作今天移出，次数不动；已经移出的原样返回 */
-  function markClear(e, today) {
-    if (markState(e) === 'out') return e
-    return carry(e, today, { add: e.add, hit: e.hit, out: today, n: markCount(e) })
-  }
-
-  /*
-   * 复习结算：这个字在卷面上、在错字集里，今天却没点 —— 又不认识了。
-   * 次数 +1；认出过一次的退回红底（移出要连续两次复习都认出）。
-   * 今天动过的不算（今天刚收进来的已经记过一次；今天认出、今天移出的是认识的）；
-   * 同一天结算两次不重复加。missWas 记下结算前的样子，当天撤销用。
-   */
-  function markMiss(e, today) {
-    if (markState(e) === 'out') return e
-    if (e.add === today || e.hit === today || e.miss === today) return e
-    var was = {}
-    if (e.hit) was.hit = e.hit
-    if (e.miss) was.miss = e.miss
-    var o = Object.assign({}, e, { n: markCount(e) + 1, miss: today, missWas: was })
-    delete o.hit
-    delete o.prev // 只在进来当天有用（撤回用），进来不是今天，早就没用了
-    return o
-  }
-
-  /* 撤销今天的结算：回到结算前的样子。不是今天结算的原样返回 */
-  function markUnmiss(e, today) {
-    if (!e || e.miss !== today || !e.missWas) return e
-    var o = Object.assign({}, e, { n: Math.max(1, markCount(e) - 1) })
-    delete o.missWas
-    delete o.miss
-    delete o.hit
-    if (e.missWas.hit) o.hit = e.missWas.hit
-    if (e.missWas.miss) o.miss = e.missWas.miss
-    return o
   }
 
   /*
@@ -321,7 +218,7 @@
     return (e.k || 0) >= 1 ? 'once' : 'wrong'
   }
 
-  /* 把统计字段搬去新条目、去掉 undefined 键（同下面的 carry，只搬 first） */
+  /* 把 first 搬去新条目、去掉值为 undefined 的键（存起来干净） */
   function keepFirst(e, o) {
     if (e && e.first) o.first = e.first
     Object.keys(o).forEach(function (k) {
@@ -483,7 +380,7 @@
 
   /*
    * 历史错字统计：只要错过一次的字都在里面，移出了的也在（这就是「历史错字集」，
-   * 和错字集是同一份记录，见 markStep 的说明）。
+   * 和错字集是同一份记录，见「每日一卷」那一节的 entry 说明）。
    * 按累计次数从多到少分组，同一组里按字表顺序，免得每次打开顺序都在变。
    * 被人手改坏的条目跳过，判断口径同 shizi-mark 的 load。
    */
@@ -495,7 +392,7 @@
     Object.keys(marks).forEach(function (ch) {
       var e = marks[ch]
       if (!e || typeof e !== 'object' || (typeof e.add !== 'string' && typeof e.out !== 'string')) return
-      var st = markState(e)
+      var st = stateOf(e)
       var n = markCount(e)
       out.total++
       out.times += n
@@ -503,8 +400,8 @@
       else out.inSet++
       if (st === 'once') out.once++
       var add = e.add || ''
-      var miss = e.miss || ''
-      info[ch] = { ch: ch, n: n, st: st, first: e.first || add, last: miss > add ? miss : add }
+      var fail = e.fail || ''
+      info[ch] = { ch: ch, n: n, st: st, first: e.first || add, last: fail > add ? fail : add }
       ;(byN[n] = byN[n] || []).push(ch)
     })
     out.groups = Object.keys(byN).map(Number).sort(function (a, b) {
@@ -549,12 +446,7 @@
     sortByTable: sortByTable,
     sampleWrong: sampleWrong,
     reviewWeight: reviewWeight,
-    markState: markState,
-    markStep: markStep,
     markCount: markCount,
-    markClear: markClear,
-    markMiss: markMiss,
-    markUnmiss: markUnmiss,
     stateOf: stateOf,
     addDays: addDays,
     PASS_INTERVALS: PASS_INTERVALS,

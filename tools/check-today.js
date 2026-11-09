@@ -74,11 +74,11 @@ var used = T.build(fakeStorage({
   'sumsum:aoshu:learned:v1': JSON.stringify(learned7),
   'sumsum:aoshu:v1': JSON.stringify({ topic: 'tuxing', lessonPage: false, answerPage: true }),
   'sumsum:shizi:v1': JSON.stringify({ week: 3, perWeek: 100, withWrong: true }),
-  'sumsum:shizi:wrong:v2': JSON.stringify({
-    鸟: { add: '2026-09-20', n: 3 },
-    闪: { add: '2026-09-21', hit: '2026-09-22', n: 2 },
-    瓜: { add: '2026-09-01', out: '2026-09-25', n: 2 }, // 已移出：不算错字，但算反复错
-    伞: { add: '2026-09-28' }
+  'sumsum:shizi:wrong:v3': JSON.stringify({
+    鸟: { add: '2026-09-20', n: 3, k: 0, due: '' },
+    闪: { add: '2026-09-21', n: 2, k: 1, due: '' },
+    瓜: { n: 2, out: '2026-09-25', first: '2026-09-01' }, // 已毕业：不算错字，但算反复错
+    伞: { add: '2026-09-28', n: 1, k: 0, due: '' }
   }),
   'sumsum:settings:v1': JSON.stringify({ mode: 'addsub', min: 0, max: 20, carryMode: 'carryonly', count: 40, columns: 2 }),
   'sumsum:shudu:v1': JSON.stringify({ shape: 's6', clues: 18, count: 2, copies: 2 })
@@ -123,6 +123,7 @@ try {
     'sumsum:aoshu:v1': 'null',
     'sumsum:shizi:v1': JSON.stringify({ week: 999, perWeek: 'abc' }),
     'sumsum:shizi:wrong:v2': JSON.stringify([1, 2, 3]),
+    'sumsum:shizi:wrong:v3': JSON.stringify([1, 2, 3]),
     'sumsum:settings:v1': JSON.stringify({ mode: 'nope', count: -5 }),
     'sumsum:shudu:v1': '"just a string"'
   }), NOW)

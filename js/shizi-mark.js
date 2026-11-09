@@ -1,54 +1,61 @@
 /**
- * 错字集：在预览的卷面上点字，把它加入 / 移出错字集。
+ * 错字集（v3）+ 每日登记：点选「没认出」的字，登记时一批结算。
  *
- * 【进来容易，出去难】：不认识的字点一下就收进来（红底）；
- * 要移出，得在【两个不同的日子】各认出来一次 —— 第一次点变半红，改天再认出来、再点一下才移出。
- * 同一天连点不算两次：今天点的，再点一下就是撤回。完整规则和理由见 shizi-core 的 markStep。
- * 每个字还记着【累计错过几次】，移出、清空都不清零；错过 2 次以上的在左上角标「×n」。
- * 错字集和累计记录（历史错字集）是同一份数据，见 markStep 的说明。
+ * 2026-11 起全站统一语义：**点 = 没认出**，登记时**没点的算认出**。
+ * 点了先不落库 —— 只进当天的「点选集」（picks:v1，切板块、刷新、重开都不丢），
+ * 点「登记结果」才一批写进错字集（settleApply）。这修掉了两件老毛病：
+ *   1) 打印后切走再回来，附页错字重抽（appendPick 只活在 JS 变量里）——现在选择与卷子都落库；
+ *   2) 「错字集页点 = 认出、本周页点 = 不认识」两套相反的规则——现在只有一个方向。
  *
- * 【复习结算】：点了的字是认出来的，没点的字系统分不出是「又不认识」还是「这次没复习」，
- * 所以复习完由家长点「结算」：卷面上还在错字集里、今天没动过的字算又错一次（markMiss），
- * 半红的退回红底 —— 移出要连续两次复习都认出。当天可以撤销。每次结算记一行复习记录（LOG_KEY），
- * 「历史」页签里看。
+ * 登记当天可整卷撤销：settle 前把 marks/log/papers 快照进 undo:v1，undoSettle 整体还原。
  *
- * 两种模式下点击规则完全一样，不做「在错字集页点表示认识了、在本周卷页点表示不认识」
- * 那种按页面区分的语义，否则每次都要先想自己在哪一页。
- * 移出之后的样子和从没标记过的字完全一样，所以屏幕上只有红底、半红两种标记。
- *
- * 【点击绝不触发重新渲染】—— 这是这个功能好不好用的分水岭。
- * shizi-main 的 refresh() 会把 #preview 的 innerHTML 整个换掉；若每点一次就 refresh，
- * 错字集页面上点掉一个字，网格立刻重新流动，下一个字跳到手指底下，必然误点。
- * 所以这里只改被点那一格的 class，卷面结构一动不动，什么时候重排由用户自己决定。
- *
- * 绑定方式抄 js/shudu-play.js：事件委托绑在【永不被替换的】#preview 上，只绑一次
- * （bind）；每次 render 之后把状态重新投影到新 DOM 上（paint）。字格上一个监听器都不绑。
+ * 【点击绝不触发重新渲染】的老规矩不变（见 shizi-main 的 refresh）：点字只改 class。
  */
 (function (root) {
   'use strict'
 
   var doc = root.document
 
-  /*
-   * 存储。命名沿用 sumsum:<板块>:<用途>:v1，与奥数的 sumsum:aoshu:learned:v1 同级。
-   *
-   * 【绝不能并进 settings】：shizi-settings 的 save() 会把非默认项写进网址，
-   * 错字集进去等于把孩子的个人进度塞进分享链接，语义全错，几百个汉字也会让网址没法看。
-   *
-   * 【存汉字本身，不存字表下标】：每周字数是可改的，下标会随之漂移
-   *（remapWeek 那套换算就是在处理这个问题），汉字则天然稳定。
-   */
-  var KEY = 'sumsum:shizi:wrong:v2'
-  /* v1 只存了一个字的数组，没有「哪天认出过」这回事。读进来当作「很早以前加的红底字」，
-     add 给空串 —— 比任何日期都小，所以今天就能记一次认出。v1 那一项留着不删，不碍事。 */
+  function C() {
+    return root.SumSum.shizi
+  }
+
+  var KEY = 'sumsum:shizi:wrong:v3'
+  /* v2/v1 只用来第一次迁移，迁完留着不删：老备份文件里还是这些键 */
+  var KEY_V2 = 'sumsum:shizi:wrong:v2'
   var KEY_V1 = 'sumsum:shizi:wrong:v1'
+  var PICK_KEY = 'sumsum:shizi:picks:v1'
+  var UNDO_KEY = 'sumsum:shizi:undo:v1'
+  var PAPERS_KEY = 'sumsum:shizi:daily:v1'
+  var PAPERS_MAX = 60
+  var LOG_KEY = 'sumsum:shizi:log:v1'
+  var LOG_MAX = 120
 
   function isObj(v) {
     return !!v && typeof v === 'object' && !Array.isArray(v)
   }
 
-  /* 本地日期。toISOString 是 UTC，北京时间早上 8 点前会算成前一天，所以自己拼 */
+  function readJSON(k) {
+    try {
+      return JSON.parse(root.localStorage.getItem(k))
+    } catch (e) {
+      return null
+    }
+  }
+
+  function writeJSON(k, v) {
+    try {
+      root.localStorage.setItem(k, JSON.stringify(v))
+    } catch (e) {
+      /* 隐私模式下写入失败可忽略 */
+    }
+  }
+
+  /* 本地日期。toISOString 是 UTC，北京时间早上 8 点前会算成前一天，所以自己拼。
+     setToday 是测试钩子：浏览器实测「隔天」不必真等到明天。 */
+  var todayFn = null
   function today() {
+    if (todayFn) return todayFn()
     var d = new Date()
     var p = function (n) {
       return (n < 10 ? '0' : '') + n
@@ -56,108 +63,174 @@
     return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
   }
 
-  function load() {
-    var map = {}
-    try {
-      var raw = JSON.parse(root.localStorage.getItem(KEY))
-      if (isObj(raw)) {
-        Object.keys(raw).forEach(function (ch) {
-          var e = raw[ch]
-          /* 被人手改坏的条目丢掉。已经移出的【留着】—— 累计次数就记在它们身上，
-             见 shizi-core 的 markStep。在集里的必有 add，早就移出的至少有 out */
-          if (!isObj(e) || (typeof e.add !== 'string' && typeof e.out !== 'string')) return
-          map[ch] = e
-        })
-        return map
-      }
-      var old = JSON.parse(root.localStorage.getItem(KEY_V1))
-      if (Array.isArray(old)) {
-        old.forEach(function (ch) {
-          if (typeof ch === 'string' && ch) map[ch] = { add: '' }
-        })
-      }
-    } catch (e) {
-      /* 隐私模式或数据损坏时当作空集 */
-    }
-    return map
+  function setToday(fn) {
+    todayFn = typeof fn === 'function' ? fn : null
   }
 
-  function save() {
-    try {
-      root.localStorage.setItem(KEY, JSON.stringify(marks))
-    } catch (e) {
-      /* 隐私模式下写入失败可忽略 */
+  /* ---------- 错字集（v3） ---------- */
+
+  /* 老的 v2/v1 原样读回来（不清洗——清洗交给 migrateWrong） */
+  function loadV2Raw() {
+    var raw = readJSON(KEY_V2)
+    if (isObj(raw)) return raw
+    var old = readJSON(KEY_V1)
+    if (Array.isArray(old)) {
+      var map = {}
+      old.forEach(function (ch) {
+        if (typeof ch === 'string' && ch) map[ch] = { add: '' }
+      })
+      return map
     }
+    return {}
   }
 
-  var marks = load()
-  var listeners = []
+  /* v3：有就用（条目防线同 v2 时代），没有就把 v2/v1 迁进来。
+     在集的字一律今天到期——一轮刚摸完底，从今天开始按新阶梯走。 */
+  function loadMarks() {
+    var raw = readJSON(KEY)
+    if (isObj(raw)) {
+      var map = {}
+      Object.keys(raw).forEach(function (ch) {
+        var e = raw[ch]
+        if (isObj(e) && (typeof e.add === 'string' || typeof e.out === 'string')) map[ch] = e
+      })
+      return map
+    }
+    var m = C().migrateWrong(loadV2Raw(), today())
+    writeJSON(KEY, m)
+    return m
+  }
 
-  /*
-   * 复习记录：每次结算记一行，一天一行（同一天结算几次合并）。
-   *   { d: 日期, seen: '复习到的旧错字', ok: 认出几个, miss: 又错几个, out: 学会移出几个 }
-   * 当天这一行在之后点字、撤销时跟着重算（见 refreshLog）；过了这一天就定格。
-   * 只留最近 LOG_MAX 天，够看趋势，不会越攒越大。
-   */
-  var LOG_KEY = 'sumsum:shizi:log:v1'
-  var LOG_MAX = 120
+  var marks = loadMarks()
+
+  function saveMarks() {
+    writeJSON(KEY, marks)
+  }
+
+  /* ---------- 复习记录（键与格式都不变） ---------- */
 
   function loadLog() {
-    try {
-      var raw = JSON.parse(root.localStorage.getItem(LOG_KEY))
-      return Array.isArray(raw) ? raw.filter(function (r) {
-        return isObj(r) && typeof r.d === 'string' && typeof r.seen === 'string'
-      }) : []
-    } catch (e) {
-      return []
-    }
+    var raw = readJSON(LOG_KEY)
+    return Array.isArray(raw)
+      ? raw.filter(function (r) {
+          return isObj(r) && typeof r.d === 'string' && typeof r.seen === 'string'
+        })
+      : []
   }
 
   var log = loadLog()
 
   function saveLog() {
-    try {
-      root.localStorage.setItem(LOG_KEY, JSON.stringify(log.slice(-LOG_MAX)))
-    } catch (e) {
-      /* 隐私模式下写入失败可忽略 */
-    }
+    writeJSON(LOG_KEY, log.slice(-LOG_MAX))
   }
 
-  /* 今天那一行的数字按当前记录重算：结算后又点了漏点的字、撤销了结算，都要反映出来 */
-  function refreshLog() {
+  function todayLog() {
     var t = today()
-    var row = log.length && log[log.length - 1].d === t ? log[log.length - 1] : null
-    if (!row) return
-    var ok = 0
-    var miss = 0
-    var out = 0
-    Array.from(row.seen).forEach(function (ch) {
-      var e = marks[ch]
-      if (!e) return
-      if (e.miss === t && e.missWas && stateOf(ch) !== 'out') miss++
-      else if (e.out === t) out++
-      else if (e.hit === t) ok++
+    return log.length && log[log.length - 1].d === t ? log[log.length - 1] : null
+  }
+
+  /* ---------- 每日卷存储（Task 5 的面板从这里取） ---------- */
+
+  function loadPapers() {
+    var p = readJSON(PAPERS_KEY)
+    return isObj(p) && Array.isArray(p.papers) ? p : { papers: [] }
+  }
+
+  var papers = loadPapers()
+
+  function savePapers() {
+    writeJSON(PAPERS_KEY, { papers: papers.papers.slice(-PAPERS_MAX) })
+  }
+
+  function paperCount() {
+    return papers.papers.length
+  }
+
+  function paperAt(i) {
+    return papers.papers[i] || null
+  }
+
+  /*
+   * 拿「该看的那张卷」：有未登记的就先登记它（哪怕是昨天的）；
+   * 今天已经登记过 → 就是它（今天完成了）；否则生成今天的新卷。
+   * 一天一卷由「papers 只在生成时追加」保证；作废（discardPaper）是唯一的删法。
+   */
+  function ensurePaper() {
+    var t = today()
+    var last = papers.papers[papers.papers.length - 1] || null
+    if (last && !last.settled) return last
+    if (last && last.d === t) return last
+    var b = C().buildDaily(marks, t)
+    var p = { d: t, chars: b.chars.join(''), wrong: b.wrong.join(''), settled: false }
+    papers.papers.push(p)
+    savePapers()
+    return p
+  }
+
+  /* 作废最后一张未登记的卷：字的数据一律不动，当天可以重新生成一张 */
+  function discardPaper() {
+    var last = papers.papers[papers.papers.length - 1]
+    if (!last || last.settled) return false
+    papers.papers.pop()
+    clearPicks(Array.from(last.chars))
+    savePapers()
+    return true
+  }
+
+  /* ---------- 点选集：点了 = 没认出，只存当天 ---------- */
+
+  function loadPicks() {
+    var p = readJSON(PICK_KEY)
+    return isObj(p) && typeof p.d === 'string' && typeof p.chars === 'string' ? p : { d: '', chars: '' }
+  }
+
+  var picks = loadPicks()
+
+  function savePicks() {
+    writeJSON(PICK_KEY, picks)
+  }
+
+  function picked(ch) {
+    return picks.d === today() && picks.chars.indexOf(ch) >= 0
+  }
+
+  /* 点一下切换选中/取消。登记前再点一下 = 撤回这一个 */
+  function togglePick(ch) {
+    if (!ch) return
+    if (picks.d !== today()) picks = { d: today(), chars: '' }
+    var i = picks.chars.indexOf(ch)
+    if (i >= 0) picks.chars = picks.chars.slice(0, i) + picks.chars.slice(i + 1)
+    else picks.chars += ch
+    savePicks()
+    fire()
+  }
+
+  /* 登记后只清掉这批字的选择；别的卷上点的还留着（那边登记时用） */
+  function clearPicks(chs) {
+    var drop = {}
+    ;(chs || []).forEach(function (ch) {
+      drop[ch] = true
     })
-    row.ok = ok + out
-    row.miss = miss
-    row.out = out
-    saveLog()
+    picks.chars = Array.from(picks.chars)
+      .filter(function (ch) {
+        return !drop[ch]
+      })
+      .join('')
+    savePicks()
   }
 
-  function fire() {
-    refreshLog()
-    listeners.forEach(function (fn) {
-      fn(size())
-    })
+  function pickCount() {
+    return picks.d === today() ? Array.from(picks.chars).length : 0
   }
 
-  function stateOf(ch) {
-    return root.SumSum.shizi.markState(marks[ch])
+  /* ---------- 查询 ---------- */
+
+  function stateOfCh(ch) {
+    return C().stateOf(marks[ch])
   }
 
-  /* 「在错字集里」= 右上角标着 2 或 1 的。移出了的（只剩累计次数的）不算 */
   function has(ch) {
-    return stateOf(ch) !== 'out'
+    return stateOfCh(ch) !== 'out'
   }
 
   function members() {
@@ -168,27 +241,40 @@
     return members().length
   }
 
-  /* 其中认出过一次、再认出一次就能移出的 */
+  function countOf(ch) {
+    return C().markCount(marks[ch])
+  }
+
+  /* 还差几次毕业（在集的字才有意义），格子右上角的数字 */
+  function remainingOf(ch) {
+    var e = marks[ch]
+    if (!e || e.out) return 0
+    return C().passesNeeded(C().markCount(e)) - (e.k || 0)
+  }
+
+  /* 其中只差一次认出就毕业的 */
   function onceCount() {
     return members().filter(function (ch) {
-      return stateOf(ch) === 'once'
+      return remainingOf(ch) === 1
     }).length
   }
 
-  /* 累计进过几次错字集，移出了也算。从没进过是 0 */
-  function countOf(ch) {
-    return root.SumSum.shizi.markCount(marks[ch])
+  /* 今天到期的字数（每日一卷页签的徽标用） */
+  function dueCount() {
+    var t = today()
+    return members().filter(function (ch) {
+      var due = marks[ch].due
+      return !due || due <= t
+    }).length
   }
 
-  /*
-   * 反复错的字：累计进过 2 次以上的，不管现在在不在集里。
-   * 次数多的排前面；次数一样的按字表顺序，免得每次打开顺序都在变。
-   */
   var REPEAT_MIN = 2
   function repeats() {
-    var chars = root.SumSum.shizi.sortByTable(Object.keys(marks).filter(function (ch) {
-      return countOf(ch) >= REPEAT_MIN
-    }))
+    var chars = C().sortByTable(
+      Object.keys(marks).filter(function (ch) {
+        return countOf(ch) >= REPEAT_MIN
+      })
+    )
     var rank = {}
     chars.forEach(function (ch, i) {
       rank[ch] = i
@@ -202,161 +288,160 @@
       })
   }
 
-  /*
-   * 卷面上这些字里，哪些是「这次复习到的旧错字」：在错字集里、或今天刚认出移出的，
-   * 但不含今天才收进来的（那是本周卷上新发现的，不是复习旧账）。
-   */
-  function reviewed(chars) {
-    var t = today()
+  function all() {
+    return C().sortByTable(members())
+  }
+
+  /* 卷面上这些字里，哪些是旧错字（在集的） */
+  function onSheet(chars) {
     var seen = {}
-    return chars.filter(function (ch) {
-      var e = marks[ch]
-      if (!e || seen[ch]) return false
+    return (chars || []).filter(function (ch) {
+      if (seen[ch]) return false
       seen[ch] = true
-      if (e.add === t) return false
-      return stateOf(ch) !== 'out' || e.out === t
+      return has(ch)
     })
   }
 
-  /* 结算会把哪些字算成又错一次 */
-  function pending(chars) {
-    var t = today()
-    return reviewed(chars).filter(function (ch) {
-      return root.SumSum.shizi.markMiss(marks[ch], t) !== marks[ch]
+  function pickedIn(chars) {
+    var seen = {}
+    return (chars || []).filter(function (ch) {
+      if (seen[ch]) return false
+      seen[ch] = true
+      return picked(ch)
     })
   }
 
-  /* 今天已经结算成「又错一次」的字（不限卷面），撤销按钮用 */
-  function missedToday() {
-    var t = today()
-    return Object.keys(marks).filter(function (ch) {
-      var e = marks[ch]
-      return e.miss === t && e.missWas && stateOf(ch) !== 'out'
-    })
-  }
-
-  /* 结算：卷面上的字传进来，没点的算又错一次，并记一行复习记录 */
-  function settle(chars) {
-    var t = today()
-    var seen = reviewed(chars)
-    if (!seen.length) return
-    seen.forEach(function (ch) {
-      marks[ch] = root.SumSum.shizi.markMiss(marks[ch], t)
-    })
-    var row = log.length && log[log.length - 1].d === t ? log[log.length - 1] : null
-    if (!row) {
-      row = { d: t, seen: '' }
-      log.push(row)
-    }
-    seen.forEach(function (ch) {
-      if (row.seen.indexOf(ch) < 0) row.seen += ch
-    })
-    save()
-    fire() // fire 里 refreshLog 算出今天这一行的数字
-  }
-
-  /* 撤销今天的结算：次数退回、半红的回到半红；今天那一行复习记录删掉 */
-  function unsettle() {
-    var t = today()
-    Object.keys(marks).forEach(function (ch) {
-      marks[ch] = root.SumSum.shizi.markUnmiss(marks[ch], t)
-    })
-    if (log.length && log[log.length - 1].d === t) log.pop()
-    save()
-    saveLog()
-    fire()
-  }
-
-  function todayLog() {
-    var t = today()
-    return log.length && log[log.length - 1].d === t ? log[log.length - 1] : null
-  }
-
-  /* 最近的复习记录，新的在前 */
   function history() {
     return {
-      stats: root.SumSum.shizi.historyStats(marks),
+      stats: C().historyStats(marks),
       log: log.slice().reverse()
     }
   }
 
-  /* 附页抽字的权重：错得越多越容易抽到，规则在 shizi-core 的 reviewWeight */
-  function weightOf(ch) {
-    return root.SumSum.shizi.reviewWeight(marks[ch])
+  /* ---------- 登记与撤销 ---------- */
+
+  /* 撤销快照隔天作废：昨天的登记已经「落章」，再撤会跟今天的记录打架 */
+  var undoSlot = readJSON(UNDO_KEY)
+  if (undoSlot && undoSlot.d !== today()) {
+    undoSlot = null
+    root.localStorage.removeItem(UNDO_KEY)
   }
 
-  /* 按字表顺序排好的错字数组。排序逻辑在 shizi-core（纯函数，node 里测得动） */
-  function all() {
-    return root.SumSum.shizi.sortByTable(members())
-  }
-
-  /* 点一下：按 markStep 走一步，返回这个字的新状态 'wrong' | 'once' | 'out' */
-  function step(ch) {
-    if (!ch) return 'out'
-    var next = root.SumSum.shizi.markStep(marks[ch], today())
-    if (next) marks[ch] = next
-    else delete marks[ch]
-    save()
+  function settle(chars, paper) {
+    var t = today()
+    var pickedMap = {}
+    if (picks.d === t) {
+      Array.from(picks.chars).forEach(function (ch) {
+        pickedMap[ch] = true
+      })
+    }
+    /* 整卷回滚的快照：marks、复习记录、每日卷，三个一起拍 */
+    writeJSON(UNDO_KEY, { d: t, marks: marks, log: log, papers: papers })
+    undoSlot = readJSON(UNDO_KEY)
+    var r = C().settleApply(marks, chars, pickedMap, t)
+    marks = r.marks
+    if (r.seen.length) {
+      var row = log.length && log[log.length - 1].d === t ? log[log.length - 1] : null
+      if (!row) {
+        row = { d: t, seen: '' }
+        log.push(row)
+      }
+      r.seen.forEach(function (ch) {
+        if (row.seen.indexOf(ch) < 0) row.seen += ch
+      })
+      C().refreshRow(row, marks, t)
+    }
+    if (paper) {
+      paper.settled = true
+      savePapers()
+    }
+    clearPicks(chars)
+    saveMarks()
+    saveLog()
     fire()
-    return stateOf(ch)
   }
 
-  /* 清空的是【错字集】，不是历史：在集里的字一律当作今天移出，累计次数留着 */
+  function undoSettle() {
+    if (!undoSlot || undoSlot.d !== today()) return
+    marks = isObj(undoSlot.marks) ? undoSlot.marks : {}
+    log = Array.isArray(undoSlot.log) ? undoSlot.log : []
+    if (isObj(undoSlot.papers)) {
+      papers = undoSlot.papers
+      savePapers()
+    }
+    saveMarks()
+    saveLog()
+    root.localStorage.removeItem(UNDO_KEY)
+    undoSlot = null
+    fire()
+  }
+
+  function canUndo() {
+    return !!undoSlot && undoSlot.d === today()
+  }
+
+  /* 「清空错字集」：在集的一律当作今天毕业（n 与 first 留着，历史统计不丢）。
+     跟登记一样不可逆（面板上有 confirm 拦一道），点选集顺手全清，免得残留的选择
+     把刚毕业的字又收回来。 */
   function clear() {
     var t = today()
     Object.keys(marks).forEach(function (ch) {
-      marks[ch] = root.SumSum.shizi.markClear(marks[ch], t)
+      var e = marks[ch]
+      if (!e || e.out) return
+      var o = { n: C().markCount(e), out: t }
+      if (e.first) o.first = e.first
+      marks[ch] = o
     })
-    save()
+    picks = { d: '', chars: '' }
+    savePicks()
+    saveMarks()
     fire()
+  }
+
+  /* ---------- 屏幕投影 ---------- */
+
+  var listeners = []
+
+  function fire() {
+    listeners.forEach(function (fn) {
+      fn(size())
+    })
   }
 
   function onChange(fn) {
     listeners.push(fn)
   }
 
-  /*
-   * 把集合投影到当前 DOM 上。每次 render 之后调一次（见 shizi-main 的 refresh），
-   * 位置对应数独 shudu-main.js 里 render() 紧跟 attach() 的那两行。
-   * 全量重刷、不做增量：一页最多两百来个格子，重算一遍 class 是微秒级，
-   * 而增量更新要维护「上次是什么状态」，是 bug 的温床。
-   */
-  /* 左上角的「×3」靠 data-n + CSS 画，只有累计 2 次以上才有 */
-  function paintCell(cell, st, n) {
+  function paintCell(cell, ch) {
+    var st = stateOfCh(ch)
+    var n = countOf(ch)
     cell.classList.toggle('is-wrong', st !== 'out')
     cell.classList.toggle('is-once', st === 'once')
+    cell.classList.toggle('is-pick', picked(ch))
     if (n >= REPEAT_MIN) cell.dataset.n = n
     else delete cell.dataset.n
+    var rem = remainingOf(ch)
+    if (st !== 'out' && rem > 0) cell.dataset.k = rem
+    else delete cell.dataset.k
   }
 
   function paint() {
     var cells = doc.querySelectorAll('#preview .shizi-cell')
-    for (var i = 0; i < cells.length; i++) {
-      var ch = cells[i].dataset.ch
-      paintCell(cells[i], stateOf(ch), countOf(ch))
-    }
+    for (var i = 0; i < cells.length; i++) paintCell(cells[i], cells[i].dataset.ch)
   }
 
-  /*
-   * 只调一次。#preview 的内容会反复重渲染，但容器本身不换，所以委托绑在它上面。
-   *
-   * 同一个字在一页上只会出现一次；真正需要多格同步的情况是「打印份数 = 2」时同一页连印两张 —— 那两张上的同一个字
-   * 必须一起变色，否则用户会以为没点上。所以这里按 data-ch 全量同步，而不是只改被点的那一格。
-   */
   function bind() {
     var preview = doc.getElementById('preview')
     if (!preview) return
     preview.addEventListener('click', function (ev) {
+      if (preview.dataset.locked === '1') return // 往期卷只读
       var cell = ev.target.closest ? ev.target.closest('.shizi-cell') : null
       if (!cell || !preview.contains(cell)) return
       var ch = cell.dataset.ch
       if (!ch) return
-      var st = step(ch)
-      var n = countOf(ch)
+      togglePick(ch)
       var same = preview.querySelectorAll('.shizi-cell[data-ch="' + ch.replace(/"/g, '\\"') + '"]')
-      for (var i = 0; i < same.length; i++) {
-        paintCell(same[i], st, n)
-      }
+      for (var i = 0; i < same.length; i++) paintCell(same[i], ch)
     })
   }
 
@@ -365,21 +450,32 @@
     bind: bind,
     paint: paint,
     onChange: onChange,
+    setToday: setToday,
     has: has,
     size: size,
-    onceCount: onceCount,
     countOf: countOf,
+    onceCount: onceCount,
+    dueCount: dueCount,
+    remainingOf: remainingOf,
     repeats: repeats,
     all: all,
-    step: step,
-    clear: clear,
-    reviewed: reviewed,
-    pending: pending,
-    missedToday: missedToday,
+    onSheet: onSheet,
+    pickedIn: pickedIn,
+    picked: picked,
+    pickCount: pickCount,
+    togglePick: togglePick,
     settle: settle,
-    unsettle: unsettle,
+    undoSettle: undoSettle,
+    canUndo: canUndo,
+    clear: clear,
     todayLog: todayLog,
     history: history,
-    weightOf: weightOf
+    weightOf: function (ch) {
+      return C().reviewWeight(marks[ch])
+    },
+    ensurePaper: ensurePaper,
+    discardPaper: discardPaper,
+    paperAt: paperAt,
+    paperCount: paperCount
   }
 })(typeof window !== 'undefined' ? window : globalThis)

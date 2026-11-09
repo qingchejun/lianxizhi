@@ -174,34 +174,30 @@
   }
 
   /*
-   * 错字集那一块的说明。两种模式下点击的规则一致（见 shizi-core 的 markStep），只是初始状态不同。
+   * 错字集那一块的说明。全站统一的标记规则（点 = 没认出，见 shizi-mark 的文件头）。
    * 返回的是 HTML，里面全是写死的文案，没有任何用户输入，可以直接进 innerHTML。
    */
   function markHint(s) {
     var n = S.shiziMark.size()
     if (!n) {
-      /* 一个字都没有时，讲「怎么移出」是没意义的 —— 不管在哪个模式，
+      /* 一个字都没有时，讲「怎么毕业」是没意义的 —— 不管在哪个模式，
          此刻唯一有用的信息都是「去哪儿、怎么把第一个字收进来」。 */
       return '错字集还是空的。' +
-        (s.mode === 'week' ? '孩子念不出来的字，在卷面上点一下就收进来了，'
-          : '切到「本周复习」，孩子念不出来的字在卷面上点一下就收进来了，') +
-        '<b>纸上不会印出任何标记。</b>'
+        (s.mode === 'week' ? '孩子念不出来的字，在卷面上点一下（深红框），'
+          : '切到「每日一卷」或「本周复习」，孩子念不出来的字点一下，') +
+        '再点「登记结果」收进错字集。<b>纸上不会印出任何标记。</b>'
     }
     var once = S.shiziMark.onceCount()
     var head = '错字集里有 <b>' + n + '</b> 个字' +
-      (once ? '（其中 ' + once + ' 个只差一次）' : '') + '。'
-    /* 出错字集的规则两种模式都一样，只在错字卷上讲全 —— 那是家长真正在「点掉」字的地方 */
+      (once ? '（其中 ' + once + ' 个只差一次认出就毕业）' : '') + '。' +
+      '复习按 1 → 3 → 7 → 15 天的间隔排：错过的字认出 ' +
+      '<b>2 次</b>毕业；错过 2 次以上的要认出 <b>4 次</b>。'
     if (s.mode === 'wrong') {
-      return head + '孩子认出来了就点一下，红底变成<b>半红</b>；' +
-        '<b>下次复习</b>再认出来、再点一下才移出。当天点的，再点一下就是撤回。' +
-        '<br>点掉的字先留在原位不重排，不然下一个字会跳到手指底下，很容易误点。'
+      return head + '<br>考这一张时，孩子<b>没认出</b>的字点一下（深红框）；考完点「登记结果」，没点的算认出。'
     }
-    var tail = head + '孩子念不出来的字，在卷面上点一下就变红底，收进错字集。' +
-      '可以边念边点，也可以先在纸上圈、事后对着纸点一遍。<b>纸上不会印出任何标记。</b>'
+    var tail = head + '孩子念不出来的字，在卷面上点一下（深红框），点「登记结果」收进来。<b>纸上不会印出任何标记。</b>'
     if (s.withWrong && appendPick.length) {
-      tail += '<br>本周卷后面附了 <b>' + appendPick.length + '</b> 个旧错字' +
-        (n > appendPick.length ? '（从 ' + n + ' 个里抽的，错得多的优先；本周卷上已有的不重复印）' : '') +
-        '。孩子认出来了就点一下变半红；半红的字要下次复习再认出来一次才移出。'
+      tail += '<br>附页的 ' + appendPick.length + ' 个旧错字：没认出的点一下，考完一并「登记结果」。'
     }
     return tail
   }
@@ -285,33 +281,29 @@
   }
 
   /*
-   * 结算那一块。三种情况：
-   *   卷面上有旧错字今天还没点 → 「复习完了，结算」，并说清楚结算会怎样；
-   *   全点过了（都认出来了）    → 也给按钮，只为记一笔复习记录；
-   *   今天结算过              → 显示今天的结果和「撤销结算」。
+   * 登记那一块。三种情况：
+   *   今天登记过                    → 显示今天的结果和「撤销登记」；
+   *   卷面上有在集字或点过字        → 「登记结果」按钮 + 说清楚登记会怎样；
+   *   都没有（纯认识字的一周卷）    → 空，不占地方。
    * 文案里只有数字，没有用户输入，可以直接进 innerHTML。
    */
   function settleHtml() {
-    if (settings.mode === 'history') return ''
+    if (settings.mode === 'history' || settings.mode === 'daily') return ''
     var chars = sheetChars()
-    var seen = S.shiziMark.reviewed(chars)
-    var pend = S.shiziMark.pending(chars)
+    var seen = S.shiziMark.onSheet(chars)
+    var picked = S.shiziMark.pickedIn(chars)
     var row = S.shiziMark.todayLog()
     var html = ''
     if (row) {
-      html += '<p class="hint settle-done">今天复习了 <b>' + row.seen.length + '</b> 个旧错字：认出 ' + row.ok +
-        (row.out ? '（其中 ' + row.out + ' 个连续两次认出，已移出）' : '') +
+      html += '<p class="hint settle-done">今天登记过 <b>' + row.seen.length + '</b> 个旧错字：认出 ' + row.ok +
+        (row.out ? '（其中 ' + row.out + ' 个认满次数毕业）' : '') +
         '，又错 <b>' + row.miss + '</b> 个。' +
-        (S.shiziMark.missedToday().length
-          ? ' <button type="button" class="link-btn" data-settle="undo">撤销结算</button>' : '') + '</p>'
+        (S.shiziMark.canUndo() ? ' <button type="button" class="link-btn" data-settle="undo">撤销登记</button>' : '') + '</p>'
     }
-    if (pend.length) {
-      html += '<button type="button" class="btn btn-sm settle-btn" data-settle="go">复习完了，结算</button>' +
-        '<p class="hint">卷面上有 <b>' + pend.length + '</b> 个旧错字今天没点。结算后算孩子又错一次：次数 +1，' +
-        '半红的退回红底 —— 要<b>连续两次</b>复习都认出来才移出。这次没复习就别点。</p>'
-    } else if (seen.length && !row) {
-      html += '<button type="button" class="btn btn-sm settle-btn" data-settle="go">复习完了，记一笔</button>' +
-        '<p class="hint">卷面上的 ' + seen.length + ' 个旧错字今天都认出来了，点一下记进复习记录。</p>'
+    if (seen.length || picked.length) {
+      html += '<button type="button" class="btn btn-sm settle-btn" data-settle="go">登记结果</button>' +
+        '<p class="hint">点了 <b>' + picked.length + '</b> 个没认出的；没点的 ' + seen.length +
+        ' 个旧错字算认出（认出记一次，攒够次数毕业）。点错了再点一下就取消。</p>'
     }
     return html
   }
@@ -320,7 +312,7 @@
     var b = ev.target.closest('[data-settle]')
     if (!b) return
     if (b.getAttribute('data-settle') === 'go') S.shiziMark.settle(sheetChars())
-    else S.shiziMark.unsettle()
+    else S.shiziMark.undoSettle()
     /* 只改格子的颜色，卷面不重排（理由同 shizi-mark 的文件头）；面板由 onChange 刷 */
     S.shiziMark.paint()
   })
@@ -332,7 +324,7 @@
     return p.length === 3 ? Number(p[1]) + '/' + Number(p[2]) : ''
   }
 
-  var ST_LABEL = { wrong: '在错字集里', once: '认出一次，差一次移出', out: '已学会，移出了' }
+  var ST_LABEL = { wrong: '在错字集里', once: '认出过，还差几次看卷面右上角', out: '已毕业，移出了' }
 
   /*
    * 上半：四个数；中间：按错的次数分组，一字一块，颜色和卷面一致（红底 / 半红 / 白底 = 已移出）；
@@ -349,8 +341,8 @@
     }
     var cards = [
       [st.total, '个字错过', '只要错过一次就算'],
-      [st.inSet, '个还在错字集', st.once ? '其中 ' + st.once + ' 个差一次移出' : '　'],
-      [st.out, '个已学会', '连续两次认出，移出了'],
+      [st.inSet, '个还在错字集', st.once ? '其中 ' + st.once + ' 个差一次毕业' : '　'],
+      [st.out, '个已学会', '认满次数，毕业移出'],
       [st.times, '次', '累计一共错过']
     ].map(function (c) {
       return '<div class="hist-card"><b>' + c[0] + '</b><span>' + c[1] + '</span><small>' + c[2] + '</small></div>'
@@ -371,13 +363,13 @@
     box.innerHTML = '<div class="hist">' +
       '<div class="hist-cards">' + cards + '</div>' +
       '<h3 class="hist-h">按错的次数<span class="hist-key"><i class="hc wrong"></i>在错字集里' +
-        '<i class="hc once"></i>差一次移出<i class="hc out"></i>已学会</span></h3>' +
+        '<i class="hc once"></i>认出过，攒次数中<i class="hc out"></i>已毕业</span></h3>' +
       groups +
       '<h3 class="hist-h">最近的复习</h3>' +
       (logRows
         ? '<table class="hist-log"><thead><tr><th>日期</th><th>复习旧错字</th><th>认出</th><th>又错</th>' +
-          '<th>学会移出</th></tr></thead><tbody>' + logRows + '</tbody></table>'
-        : '<p class="hist-empty">还没有复习记录。复习完错字后，在右边「错字集」里点「复习完了，结算」，这里就会记一笔。</p>') +
+          '<th>毕业移出</th></tr></thead><tbody>' + logRows + '</tbody></table>'
+        : '<p class="hist-empty">还没有复习记录。考完对着纸点没认出的字、点「登记结果」，这里就会记一笔。</p>') +
       '</div>'
   }
 

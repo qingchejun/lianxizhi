@@ -85,14 +85,16 @@
     var s = root.SumSum.shiziSettings.sanitize(isObj(raw) ? raw : {})
     var slice = Z.sliceOf(s.week, s.perWeek)
 
-    var marks = readJson(storage, 'sumsum:shizi:wrong:v2')
+    /* 2026-11 起错字集是 v3；老备份导入前的 v2 也认（在集的都当红底数） */
+    var marks = readJson(storage, 'sumsum:shizi:wrong:v3')
+    if (!isObj(marks)) marks = readJson(storage, 'sumsum:shizi:wrong:v2')
     var wrong = 0
     var repeats = 0
     if (isObj(marks)) {
       Object.keys(marks).forEach(function (ch) {
         var e = marks[ch]
         if (!isObj(e)) return
-        if (Z.markState(e) !== 'out') wrong++
+        if (Z.stateOf(e) !== 'out') wrong++
         if (Z.markCount(e) >= 2) repeats++
       })
     }
