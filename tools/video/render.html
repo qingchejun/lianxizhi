@@ -500,6 +500,28 @@ function build(sceneIdx, timing) {
         n.style.width = e.w + 'px'; n.style.height = e.h + 'px'
         anim = e.draw ? 'draw' : (e.anim || 'fade')
         break
+      case 'clock':
+        /* B03 起：钟面。size 直径；time:[时,分]（null = 只有钟面）；turn:[[锚点,时,分],…] 指针顺时针转过去；
+           mAt / hAt：分针 / 时针到这个锚点才从中心「长」出来（画钟用）；时针红、分针蓝；nums:false 不写数 */
+        var S2 = e.size, C = S2 / 2, R = C - 4, cl = '<svg width="' + S2 + '" height="' + S2 + '" style="display:block;overflow:visible">'
+        cl += '<circle cx="' + (C + 4) + '" cy="' + (C + 5) + '" r="' + R + '" fill="' + SHADOW + '"/>'
+        cl += '<circle cx="' + C + '" cy="' + C + '" r="' + R + '" fill="#fffaf0" stroke="' + INK + '" stroke-width="' + Math.max(4, S2 * 0.022) + '"/>'
+        for (var ti = 0; ti < 60; ti++) {
+          var big = ti % 5 === 0, ta = ti * 6 * Math.PI / 180, r1 = R - S2 * 0.015, r2 = R - S2 * (big ? 0.06 : 0.035)
+          cl += '<line x1="' + (C + r1 * Math.sin(ta)) + '" y1="' + (C - r1 * Math.cos(ta)) + '" x2="' + (C + r2 * Math.sin(ta)) + '" y2="' + (C - r2 * Math.cos(ta)) + '" stroke="' + INK + '" stroke-width="' + (big ? S2 * 0.012 : S2 * 0.005) + '" stroke-linecap="round"/>'
+        }
+        var numsSvg = ''
+        if (e.nums !== false) for (var ni = 1; ni <= 12; ni++) {
+          var na = ni * 30 * Math.PI / 180, nr = R - S2 * 0.15
+          numsSvg += '<text class="cn cn' + ni + '" x="' + (C + nr * Math.sin(na)) + '" y="' + (C - nr * Math.cos(na) + S2 * 0.04) + '" font-family="Num" font-weight="600" font-size="' + (S2 * 0.105) + '" text-anchor="middle" fill="' + INK + '" stroke="#fffaf0" stroke-width="' + S2 * 0.018 + '" paint-order="stroke" stroke-linejoin="round">' + ni + '</text>'
+        }
+        var mc = e.mcolor || '#3f7fc4', hc = e.hcolor || '#d9443a'
+        cl += '<g class="mh"><line x1="' + C + '" y1="' + C + '" x2="' + C + '" y2="' + (C - R * 0.8) + '" stroke="' + mc + '" stroke-width="' + S2 * 0.022 + '" stroke-linecap="round"/></g>'
+        cl += '<g class="hh"><line x1="' + C + '" y1="' + C + '" x2="' + C + '" y2="' + (C - R * 0.5) + '" stroke="' + hc + '" stroke-width="' + S2 * 0.05 + '" stroke-linecap="round"/></g>'
+        cl += numsSvg + '<circle cx="' + C + '" cy="' + C + '" r="' + S2 * 0.035 + '" fill="' + INK + '"/></svg>'
+        n = mk('', cl); n.style.width = S2 + 'px'; n.style.height = S2 + 'px'
+        anim = e.anim || 'pop'
+        break
       case 'think':
         /* 08 同款倒计时：5 个圆点排成五边形，从顶上开始顺时针逐个熄灭 */
         var dots = ''
@@ -526,6 +548,16 @@ function build(sceneIdx, timing) {
   })
   ELS.forEach(function (r) {
     if (r.e.t === 'balance' && r.e.tilt) r.tilts = r.e.tilt.map(function (k) { return { t: k[0] === null ? r.t0 : beatTime(k[0]), a: k[1] } })
+    if (r.e.t === 'clock') {
+      r.keys = []
+      if (r.e.time) r.keys.push({ t: -1, v: r.e.time[0] % 12 * 60 + r.e.time[1] })
+      ;(r.e.turn || []).forEach(function (k) {
+        var prev = r.keys.length ? r.keys[r.keys.length - 1].v : 0, v = k[1] % 12 * 60 + k[2]
+        while (v <= prev - 0.001 && r.keys.length) v += 720 // 只往前（顺时针）转
+        r.keys.push({ t: beatTime(k[0]), v: v, d: k[3] || Math.min(3, 0.6 + (v - prev) / 240) })
+      })
+      r.tmA = beatTime(r.e.mAt); r.thA = beatTime(r.e.hAt)
+    }
     if (r.e.on) r.onRec = byId[r.e.on[0]]
     if (r.e.pulse) r.pulseRec = byId[r.e.pulse]
   })
@@ -612,6 +644,28 @@ function render(t) {
       n.querySelectorAll('.d').forEach(function (d, i) { d.classList.toggle('off', i < from - k) })
       if (r.pulseRec && el < from) r.pulseRec.pulse = Math.max(0, 1 - tick / 0.7)
     }
+    if (r.e.t === 'clock') {
+      var C2 = r.e.size / 2, mins = null
+      r.keys.forEach(function (k, i) {
+        if (k.t === -1 || t >= k.t) mins = k.v
+        if (k.t !== -1 && i > 0 && t > k.t && t < k.t + k.d) mins = r.keys[i - 1].v + (k.v - r.keys[i - 1].v) * (1 - Math.pow(1 - (t - k.t) / k.d, 2))
+      })
+      var mh = n.querySelector('.mh'), hh = n.querySelector('.hh')
+      if (mins === null) { mh.style.opacity = 0; hh.style.opacity = 0 } else {
+        var gm = r.tmA === null || r.tmA === undefined ? 1 : easeOut(clamp((t - r.tmA) / 0.6))
+        var gh = r.thA === null || r.thA === undefined ? 1 : easeOut(clamp((t - r.thA) / 0.6))
+        mh.style.opacity = gm > 0 ? 1 : 0; hh.style.opacity = gh > 0 ? 1 : 0
+        mh.setAttribute('transform', 'rotate(' + (mins % 60) * 6 + ' ' + C2 + ' ' + C2 + ') translate(' + C2 + ' ' + C2 + ') scale(' + Math.max(gm, 0.001) + ') translate(' + (-C2) + ' ' + (-C2) + ')')
+        hh.setAttribute('transform', 'rotate(' + (mins / 2) + ' ' + C2 + ' ' + C2 + ') translate(' + C2 + ' ' + C2 + ') scale(' + Math.max(gh, 0.001) + ') translate(' + (-C2) + ' ' + (-C2) + ')')
+      }
+      ;(r.e.glowNums || []).forEach(function (g) {
+        var tn = beatTime(g[0]), el2 = n.querySelector('.cn' + g[1])
+        if (!el2) return
+        var on = tn !== null && t > tn ? clamp((t - tn) / 0.2) * (1 - clamp((t - tn - (g[2] || 0.7)) / 0.35)) : 0
+        el2.setAttribute('fill', on > 0.3 ? '#d9443a' : INK)
+        el2.style.filter = on > 0.01 ? 'drop-shadow(0 0 ' + 8 * on + 'px rgba(232,179,58,1))' : ''
+      })
+    }
     if (r.fills) {
       var cur = null
       r.fills.forEach(function (f) { if (t >= f.t) cur = f })
@@ -653,7 +707,7 @@ function sfxList() {
   return ev.filter(function (x, i) { return !ev.slice(0, i).some(function (y) { return y.k === x.k && Math.abs(y.t - x.t) < 0.2 }) })
 }
 /* 版面自检：返回压字幕区 / 出画 / 实心元素互相重叠的问题 */
-var SOLID = { txt: 1, item: 1, shp: 1, slot: 1, sym: 1, badge: 1, stamp: 1, note: 1, card: 1, tape: 1, pebble: 1, big: 1, think: 1, mess: 1, check: 1, dcard: 1, coin: 1 }
+var SOLID = { clock: 1, txt: 1, item: 1, shp: 1, slot: 1, sym: 1, badge: 1, stamp: 1, note: 1, card: 1, tape: 1, pebble: 1, big: 1, think: 1, mess: 1, check: 1, dcard: 1, coin: 1 }
 function layoutReport(t) {
   render(t)
   var st = stage.getBoundingClientRect(), vis = [], out = []
