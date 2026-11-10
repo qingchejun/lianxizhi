@@ -208,6 +208,81 @@ function checkBichang() {
   })
 }
 
+/* B02 比轻重：从 key 独立枚举（每样东西 1～6 的重量全试一遍），和天平都对得上的组合，答案必须都一样且等于给的答案 */
+function checkBizhong() {
+  if (!A.topics.bizhong) return
+  function parse(q) {
+    var p = q.key.split(':')
+    var names = p[1].split('/')
+    var scales = p[2].split(',').map(function (x) {
+      var m = x.match(/^([\d+]+)([<>=])([\d+]+)$/)
+      return { L: m[1].split('+').map(Number), R: m[3].split('+').map(Number), op: m[2] }
+    })
+    return { names: names, scales: scales, ask: p[3] }
+  }
+  function answerFor(k, w) {
+    var a = k.ask
+    var n = k.names
+    var m = a.match(/^cmp([HL])(\d)-(\d)$/)
+    if (m) {
+      var i = +m[2], j = +m[3]
+      if (w[i] === w[j]) return '一样重'
+      var heavy = w[i] > w[j] ? i : j
+      return m[1] === 'H' ? n[heavy] : n[i + j - heavy]
+    }
+    var idx = w.map(function (x, i) { return i })
+    if (a === 'max' || a === 'min') {
+      var best = a === 'max' ? Math.max.apply(null, w) : Math.min.apply(null, w)
+      var who = idx.filter(function (i) { return w[i] === best })
+      return who.length === 1 ? n[who[0]] : '并列'
+    }
+    if (new Set(w).size !== w.length) return '有一样重的'
+    idx.sort(function (x, y) { return w[y] - w[x] })
+    if (a === 'asc') idx.reverse()
+    return idx.map(function (i) { return n[i] }).join(' → ')
+  }
+  function solve(k) {
+    var n = k.names.length
+    var outs = new Set()
+    var w = []
+    ;(function rec(d) {
+      if (d === n) {
+        var ok = k.scales.every(function (sc) {
+          var l = sc.L.reduce(function (s, i) { return s + w[i] }, 0)
+          var r = sc.R.reduce(function (s, i) { return s + w[i] }, 0)
+          return sc.op === '>' ? l > r : sc.op === '<' ? l < r : l === r
+        })
+        if (ok) outs.add(answerFor(k, w))
+        return
+      }
+      for (var x = 1; x <= 6; x++) { w[d] = x; rec(d + 1) }
+    })(0)
+    return outs
+  }
+  ;['scale', 'sort', 'cancel'].forEach(function (vid) {
+    each('bizhong', vid, function (q, d) {
+      var k = parse(q)
+      var outs = solve(k)
+      if (outs.size !== 1) bad('B02 ' + vid + ' 光看天平推不出唯一答案：' + q.key + ' → ' + Array.from(outs).join(' / '))
+      /* 入门档看天平答「小熊重 / 小狗轻」，比对时去掉末尾的重、轻 */
+      var got = vid === 'scale' && d === 'L1' && q.answer !== '一样重' ? String(q.answer).replace(/[重轻]$/, '') : q.answer
+      if (outs.size === 1 && Array.from(outs)[0] !== got) bad('B02 ' + vid + ' 答案错：' + q.key + ' 给的 ' + q.answer + ' 应为 ' + Array.from(outs)[0])
+      if (vid === 'scale' && d === 'L1' && q.answer !== '一样重' && !/^.+(重|轻)$/.test(q.answer)) bad('B02 入门看天平答案要带重/轻：' + q.answer)
+      var N = k.names.length
+      if (vid === 'scale') {
+        if (d !== 'L1' && k.scales.length < 2) bad('B02 看天平提高档只有一个天平：' + q.key)
+        var cm = k.ask.match(/^cmp[HL](\d)-(\d)$/)
+        if (d === 'L3' && cm && k.scales.some(function (sc) { return sc.L.concat(sc.R).indexOf(+cm[1]) >= 0 && sc.L.concat(sc.R).indexOf(+cm[2]) >= 0 })) bad('B02 看天平挑战档问的两样放在同一个天平上，一眼看穿：' + q.key)
+      }
+      if (vid === 'sort') {
+        var want = d === 'L1' ? 3 : d === 'L2' ? 4 : 5
+        if (N !== want || k.scales.length !== want - 1) bad('B02 排顺序数量不对：' + q.key)
+      }
+      if (vid === 'cancel' && !k.scales.every(function (sc) { return sc.L.length + sc.R.length >= 3 })) bad('B02 拿掉一样的：天平两边只有一对一，不用拿：' + q.key)
+    })
+  })
+}
+
 function checkFloors() {
   each('daxiao', 'num', function (q) {
     var n = nums(q.stem)
@@ -386,6 +461,7 @@ checkGroupAnswers()
 checkReviewPlan()
 checkFloors()
 checkBichang()
+checkBizhong()
 checkSupply()
 
 if (problems.length) {
