@@ -52,3 +52,10 @@ git push origin publish/<id>
 
 需要仓库里设好 `CLOUDFLARE_API_TOKEN`（只给 R2 编辑权限）和 `CLOUDFLARE_ACCOUNT_ID` 两个 Actions secret。
 手动备用：`npx wrangler r2 object put lianxizhi-video/aoshu/<id>.mp4 --file=… --content-type=video/mp4 --remote`，再登记推 main。
+
+## 读音核对（19 课起）
+
+- `ttstest.py 名=句子 …`：把几句测试句配音到 `ttstest/`（云端加 `SSL_CERT_FILE=/root/.ccr/ca-bundle.crt`）。
+- `cmp.py 句A 句B 句C`：同一句框架只换一个字，比整句 MFCC 的 DTW 距离，看某个多音字更像哪种读法。例：「一个圆圈 / 一个圆娟 / 一个圆悛」里圆悛与圆圈距离 2.6、与圆娟 33，说明「悛」稳定读 quān。
+- `tone.py 字`：量配音里某个字的基频走势（平 = 一声，降 = 四声，升 = 二声）；只能分声调，分不了 j/q 这类声母。
+- 「圈」晓晓常读成 juān，POLY 表最后一条把所有「圈」换成「悛」（只影响读音）。
