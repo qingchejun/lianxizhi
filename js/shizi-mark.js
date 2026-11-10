@@ -262,15 +262,6 @@
     }).length
   }
 
-  /* 今天到期的字数（每日一卷页签的徽标用） */
-  function dueCount() {
-    var t = today()
-    return members().filter(function (ch) {
-      var due = marks[ch].due
-      return !due || due <= t
-    }).length
-  }
-
   var REPEAT_MIN = 2
   function repeats() {
     var chars = C().sortByTable(
@@ -486,7 +477,6 @@
     size: size,
     countOf: countOf,
     onceCount: onceCount,
-    dueCount: dueCount,
     remainingOf: remainingOf,
     repeats: repeats,
     all: all,

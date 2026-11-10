@@ -135,9 +135,9 @@
     for (var i = 0; i < tabs.length; i++) {
       tabs[i].classList.toggle('active', tabs[i].dataset.mode === s.mode)
     }
-    /* 页签上直接带字数，不用切进去才知道攒了多少 */
+    /* 页签上直接带字数，不用切进去才知道攒了多少（每日一卷不带：到期数跟
+       错字集总数常年一样大，摆出来只让人多问一句是什么） */
     var n = S.shiziMark.size()
-    $('daily-n').textContent = S.shiziMark.dueCount() ? ' · ' + S.shiziMark.dueCount() : ''
     $('wrong-n').textContent = n ? ' · ' + n : ''
     $('wrong-title-n').textContent = n ? n + ' 个' : ''
   }
