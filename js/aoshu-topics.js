@@ -551,6 +551,8 @@
     { no: '18', stage: 'L1', id: 'xianjing', name: '趣味陷阱题' },
     { no: '19', stage: 'L1', id: 'fenzu', name: '合理分组问题' },
     { no: '20', stage: 'L1', id: 'hebubian', name: '和不变与差不变' },
+    /* L1 补充：对照学而思 1 级讲义的新课和补充版（docs/xes-1ji），学完 L1 接着学 */
+    { no: 'B01', stage: 'L1B', id: 'bichang', name: '推理比较：比长短' },
     { no: '21', stage: 'L2', id: 'wenzimi', name: '加减法文字谜' },
     { no: '22', stage: 'L2', id: 'kuohao1', name: '加减法添去括号（一）' },
     { no: '23', stage: 'L2', id: 'kuohao2', name: '加减法添去括号（二）' },

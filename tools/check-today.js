@@ -46,9 +46,15 @@ var NOW = new Date(2026, 9, 4, 20, 30)
 /* ---------- 空浏览器 ---------- */
 
 var empty = T.build(fakeStorage({}), NOW)
+/* 学完 L1 全部 20 课，接着学应推「L1 补充」第一课 B01（大纲里放在 L1 之后、L2 之前） */
+;(function () {
+  var A1 = globalThis.SumSum.aoshu.OUTLINE.filter(function (o) { return o.stage === 'L1' }).map(function (o) { return o.id })
+  var r = T.build(fakeStorage({ 'sumsum:aoshu:learned:v1': JSON.stringify(A1) }), NOW)
+  check(r.aoshu.next && r.aoshu.next.id === 'bichang', '学完 L1 接着学应是 B01 比长短：' + JSON.stringify(r.aoshu.next))
+})()
 check(empty.date === '10 月 4 日 星期日', '日期：' + empty.date)
 
-check(empty.aoshu.learned === 0 && empty.aoshu.total === 40, '空浏览器 奥数进度：' + empty.aoshu.learned + '/' + empty.aoshu.total)
+check(empty.aoshu.learned === 0 && empty.aoshu.total === globalThis.SumSum.aoshu.OUTLINE.length && empty.aoshu.total >= 41, '空浏览器 奥数进度：' + empty.aoshu.learned + '/' + empty.aoshu.total)
 check(empty.aoshu.next && empty.aoshu.next.id === 'daxiao', '空浏览器 奥数接着学应是第 01 课：' + JSON.stringify(empty.aoshu.next))
 check(empty.aoshu.href === 'aoshu.html?topic=daxiao&review=false', '空浏览器 奥数链接：' + empty.aoshu.href)
 check(empty.aoshu.printHref === empty.aoshu.href + '#print', '奥数打印链接要带 #print：' + empty.aoshu.printHref)

@@ -167,6 +167,47 @@ function each(id, vid, fn) {
 
 function sym(a, b) { return a > b ? '>' : a < b ? '<' : '=' }
 
+/* B01 比长短：从 key 独立重算（不调生成器里的任何函数），再核对「只靠讲解页的方法能判断」 */
+function checkBichang() {
+  if (!A.topics.bichang) return
+  each('bichang', 'rope', function (q, d) {
+    var parts = q.key.split(':')
+    var rods = parts[1].split(',').map(function (x) { var a = x.split('/'); return { th: +a[0], n: +a[1] } })
+    var len = rods.map(function (r) { return r.n * (r.th ? 1.6 : 1) })
+    var want = parts[2] === 'L' ? Math.max.apply(null, len) : Math.min.apply(null, len)
+    if (len.filter(function (l) { return l === want }).length !== 1) bad('B01 绕绳子答案不唯一：' + q.key)
+    if (len.indexOf(want) + 1 !== q.answer) bad('B01 绕绳子答案错：' + q.key + ' 给的 ' + q.answer)
+    if (rods.every(function (r) { return r.n < 3 })) bad('B01 绕绳子圈数太少：' + q.key)
+  })
+  each('bichang', 'grid', function (q, d) {
+    var bars = q.key.split(':')[1].split(',').map(function (x) { return +x.replace(/t$/, '').split('.').slice(2).join('.') })
+    var idx = bars.map(function (l, i) { return i })
+    idx.sort(function (a, b) { return bars[a] - bars[b] })
+    if (d === 'L1') {
+      var want = /最长/.test(q.stem) ? idx[idx.length - 1] + 1 : idx[0] + 1
+      if (q.answer !== want) bad('B01 方格最长最短答错：' + q.key + ' 给的 ' + q.answer)
+    } else {
+      var asc = /短到长/.test(q.stem)
+      var seq = (asc ? idx : idx.slice().reverse()).map(function (i) { return (i + 1) + ' 号' }).join(' → ')
+      if (q.answer !== seq) bad('B01 方格排序答错：' + q.key + ' 给的 ' + q.answer + ' 应为 ' + seq)
+    }
+    if (new Set(bars).size !== bars.length) bad('B01 方格有两支一样长：' + q.key)
+  })
+  each('bichang', 'route', function (q, d) {
+    var mv = q.key.split(':')[2].split('|')
+    var c = mv.map(function (m) {
+      var dg = (m.match(/[RF]/g) || []).length
+      return { dg: dg, st: m.length - dg, len: m.length - dg + dg * Math.SQRT2 }
+    })
+    var names = q.stem.match(/^(.+?)和(.+?)走得/)
+    var want = Math.abs(c[0].len - c[1].len) < 1e-9 ? '两人同时到' : (c[0].len < c[1].len ? names[1] : names[2]) + '先到'
+    if (q.answer !== want) bad('B01 路线答错：' + q.key + ' 给的 ' + q.answer + ' 应为 ' + want)
+    var ok = (c[0].dg >= c[1].dg && c[0].st >= c[1].st) || (c[1].dg >= c[0].dg && c[1].st >= c[0].st)
+    if (!ok) bad('B01 路线要算 1.4 倍才比得出：' + q.key)
+    if (d !== 'L1' && c[0].dg + c[1].dg === 0) bad('B01 提高档路线没有斜线：' + q.key)
+  })
+}
+
 function checkFloors() {
   each('daxiao', 'num', function (q) {
     var n = nums(q.stem)
@@ -344,6 +385,7 @@ checkGroups()
 checkGroupAnswers()
 checkReviewPlan()
 checkFloors()
+checkBichang()
 checkSupply()
 
 if (problems.length) {

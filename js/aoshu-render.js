@@ -124,7 +124,100 @@
    * 返回的是【一块一块】的数组而不是一整坨 HTML —— 讲解页现在也要装页（见 lessonPages），
    * 得按块测高才切得动。每个例题自成一块，多出来的例题才能流到第二页去。
    */
+  /*
+   * 新版讲解页（lesson.v2，2026-11 起的 L1 补充课先用）：
+   *   今天学会（一句话）→ 先想一想（带图的小问题）→ 先认识（知识卡片，可选）
+   *   → 招式卡（每招：要点、1-2-3 步、小心、示意图）+ 紧跟这一招的例题（生成器现取）
+   *   → 用哪一招（几招放一起对比）→ 口诀大框。
+   * 讲 == 考 的规矩不变：招式卡只画勾选了的题型所属的那几招，例题只取勾选的题型；
+   * 一招下的题型都没勾，这一招整张卡不出现，后面的招重新编号。
+   * 每张招式卡、每道例题各自成块，装页时才切得动。
+   */
+  var NUM_CN = ['一', '二', '三', '四', '五', '六']
+
+  function lessonBlocksV2(topic, s) {
+    var p = P()
+    var U = root.SumSum.aoshu.util
+    var L = topic.lesson
+    var on = {}
+    U.selectedVariants(topic.variants, s).forEach(function (v) { on[v.id] = v })
+    var blocks = []
+
+    function sec(cls, heading, body) {
+      return (
+        '<section class="lesson-sec ' + cls + '">' +
+        (heading ? '<h3 class="lesson-h">' + p.esc(heading) + '</h3>' : '') +
+        body + '</section>'
+      )
+    }
+    function exampleHTML(v) {
+      var q = U.lessonExample(v, s)
+      if (!q) return ''
+      return (
+        '<div class="lesson-example lx-example">' +
+        '<div class="lesson-vtag">例题 · ' + p.esc(v.label) + '</div>' +
+        '<div class="lesson-stem">' + stemHTML(q) + '</div>' +
+        (q.diagramHTML ? q.diagramHTML : q.diagram ? diagramHTML(q.diagram) : '') +
+        stepsHTML(q.solution) +
+        '</div>'
+      )
+    }
+
+    /* 必须是 .lesson-sec：装页按 .lesson-sec 量高，漏一块后面的分页全错位（口诀会被挤丢） */
+    if (L.goal) blocks.push('<section class="lesson-sec"><div class="lx-goal"><b>今天学会</b>' + p.esc(L.goal) + '</div></section>')
+
+    var moveNo = 0
+    var moveNames = {}
+    L.sections.forEach(function (sc) {
+      if (sc.kind === 'hook') {
+        var paras = (sc.paras || []).map(function (t) { return '<p class="lesson-p">' + p.esc(t) + '</p>' }).join('')
+        blocks.push(sec('lx-hook', sc.heading || '先想一想',
+          '<div class="lx-row">' + (sc.figHTML ? '<div class="lx-fig">' + sc.figHTML + '</div>' : '') +
+          '<div class="lx-text">' + paras + '</div></div>'))
+      } else if (sc.kind === 'know') {
+        var cards = sc.cards.map(function (c) {
+          return '<div class="lx-card">' + (c.figHTML ? '<div class="lx-fig">' + c.figHTML + '</div>' : '') +
+            '<div class="lx-card-t">' + p.esc(c.title) + '</div><div class="lx-card-x">' + p.esc(c.text) + '</div></div>'
+        }).join('')
+        blocks.push(sec('lx-know', sc.heading || '先认识', '<div class="lx-cards">' + cards + '</div>'))
+      } else if (sc.kind === 'move') {
+        var vs = sc.variants.filter(function (id) { return on[id] })
+        if (!vs.length) return
+        var no = NUM_CN[moveNo++]
+        moveNames[sc.name] = '第' + no + '招'
+        var steps = sc.steps.map(function (t) { return '<li>' + p.esc(t) + '</li>' }).join('')
+        blocks.push(
+          '<section class="lesson-sec lx-move"><div class="lx-move-h"><span class="lx-badge">第' + no + '招</span>' +
+          '<span class="lx-move-n">' + p.esc(sc.name) + '</span></div>' +
+          '<div class="lx-row"><div class="lx-text">' +
+          (sc.tip ? '<p class="lx-tip">' + p.esc(sc.tip) + '</p>' : '') +
+          '<ol class="lx-steps">' + steps + '</ol>' +
+          (sc.pitfall ? '<p class="lx-pit"><b>小心</b>' + p.esc(sc.pitfall) + '</p>' : '') +
+          '</div>' + (sc.figHTML ? '<div class="lx-fig">' + sc.figHTML + '</div>' : '') + '</div></section>'
+        )
+        vs.forEach(function (id) {
+          var ex = exampleHTML(on[id])
+          if (ex) blocks.push('<section class="lesson-sec">' + ex + '</section>')
+        })
+      } else if (sc.kind === 'pick') {
+        var rows = sc.rows.filter(function (r) {
+          return (r[2] || []).some(function (id) { return on[id] })
+        })
+        if (rows.length < 2) return // 只剩一招，没什么好选的
+        var trs = rows.map(function (r) {
+          return '<tr><td>' + p.esc(r[0]) + '</td><td>' + p.esc((moveNames[r[1]] || '') + ' ' + r[1]) + '</td></tr>'
+        }).join('')
+        blocks.push(sec('lx-pick', sc.heading || '用哪一招？',
+          '<table class="lx-table"><thead><tr><th>题目里看到</th><th>用</th></tr></thead><tbody>' + trs + '</tbody></table>'))
+      } else if (sc.kind === 'chant') {
+        blocks.push(sec('lx-chant-sec', '记住口诀', '<div class="lx-chant">' + p.esc(sc.chant) + '</div>'))
+      }
+    })
+    return blocks
+  }
+
   function lessonBlocks(topic, s) {
+    if (topic.lesson.v2) return lessonBlocksV2(topic, s)
     var p = P()
     var blocks = []
 

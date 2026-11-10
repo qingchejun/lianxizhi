@@ -49,6 +49,35 @@ function checkShape() {
   eachTopic(function (t) {
     var l = t.lesson
     if (!l || !Array.isArray(l.sections)) { bad(t.no + ' 没有讲解页'); return }
+    /*
+     * 新版讲解页（v2）：例题挂在招式卡下面。规矩换个说法——
+     * 每个题型恰好属于一招（不多讲、不漏讲），招里写的题型必须真存在，还得有口诀和对比表能对上。
+     */
+    if (l.v2) {
+      var ids = t.variants.map(function (v) { return v.id })
+      var seen = {}
+      l.sections.forEach(function (s, i) {
+        if (['hook', 'know', 'move', 'pick', 'chant'].indexOf(s.kind) < 0) bad(t.no + ' #' + i + '：v2 段落 kind 不认识：' + s.kind)
+        if (s.kind === 'move') {
+          if (!s.name || !Array.isArray(s.steps) || s.steps.length < 2) bad(t.no + ' #' + i + '：招式卡缺名字或步骤')
+          ;(s.variants || []).forEach(function (id) {
+            if (ids.indexOf(id) < 0) bad(t.no + ' 招「' + s.name + '」写了不存在的题型 ' + id)
+            seen[id] = (seen[id] || 0) + 1
+          })
+        }
+        if (s.kind === 'pick') {
+          s.rows.forEach(function (r) {
+            var hit = l.sections.some(function (m) { return m.kind === 'move' && m.name === r[1] })
+            if (!hit) bad(t.no + ' 对比表写的招「' + r[1] + '」没有对应的招式卡')
+          })
+        }
+      })
+      ids.forEach(function (id) {
+        if (seen[id] !== 1) bad(t.no + ' ' + t.name + '：题型 ' + id + ' 挂在 ' + (seen[id] || 0) + ' 张招式卡下，应当恰好 1 张')
+      })
+      if (!l.sections.some(function (s) { return s.kind === 'chant' && s.chant })) bad(t.no + ' 新版讲解页没有口诀')
+      return
+    }
     var pv = l.sections.filter(function (s) { return s.perVariant })
     if (pv.length !== 1) bad(t.no + ' ' + t.name + '：perVariant 段有 ' + pv.length + ' 个，应当恰好 1 个')
     var pvi = l.sections.filter(function (s) { return s.perVariantIdea })

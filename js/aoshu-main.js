@@ -206,12 +206,13 @@
       return S.aoshu.topics[o.id]
     })
     var html = ''
-    ;['L1', 'L2'].forEach(function (stage) {
+    var STAGE_NAME = { L1: 'L1', L1B: 'L1 补充', L2: 'L2' }
+    ;['L1', 'L1B', 'L2'].forEach(function (stage) {
       var rows = ready.filter(function (o) {
         return o.stage === stage
       })
       if (!rows.length) return
-      html += '<div class="scope-stage">' + stage + '</div>' + rows.map(function (o) {
+      html += '<div class="scope-stage">' + STAGE_NAME[stage] + '</div>' + rows.map(function (o) {
         return '<label class="tick"><input type="checkbox" data-scope="' + o.id + '"' +
           (on[o.id] ? ' checked' : '') + ' /><span><span class="scope-no">' + o.no + '</span>' +
           o.name + '</span></label>'

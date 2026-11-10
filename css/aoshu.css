@@ -60,6 +60,28 @@
   max-height: 18mm;
 }
 
+/* 要数格子、数线段的大图（B01 比长短的方格、路线）：太小就数不清，卷子上放到 34mm */
+.aq-stem svg.fig-big {
+  max-height: 44mm;
+}
+
+.sol-stem svg.fig-big {
+  max-height: 26mm;
+}
+
+/* 两条路线上下叠放，每格要大到能用手指点着数 */
+.aq-stem svg.fig-route {
+  max-height: 56mm;
+}
+
+.sol-stem svg.fig-route {
+  max-height: 30mm;
+}
+
+.lesson-stem svg.fig-route {
+  max-height: 44mm;
+}
+
 /* 演算留白：高度由 aoshu-render.js 内联给定（有上限），不再吃掉整块剩余高度 */
 .aq-work {
   flex: none;
@@ -286,6 +308,163 @@
   font-weight: 700;
   letter-spacing: 2px;
   text-align: center;
+}
+
+/*
+ * ---------- 新版讲解页（lesson.v2）----------
+ * 招式卡、知识卡片、对比表、口诀框。打印默认丢背景，所以全部靠边框和字重区分，不靠底色。
+ */
+.lx-goal {
+  margin-bottom: 4mm;
+  padding: 2mm 3.5mm;
+  font-size: 15px;
+  line-height: 1.7;
+  border: 1.5px solid #000;
+  border-radius: 2mm;
+}
+
+.lx-goal b {
+  margin-right: 2.5mm;
+  padding-right: 2.5mm;
+  border-right: 1.5px solid #000;
+}
+
+.lx-row {
+  display: flex;
+  gap: 4mm;
+  align-items: center;
+}
+
+.lx-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.lx-fig {
+  flex: none;
+}
+
+.lx-fig svg {
+  display: block;
+  max-height: 30mm;
+  width: auto;
+}
+
+.lx-move {
+  padding: 2.5mm 3.5mm 2mm;
+  border: 2px solid #000;
+  border-radius: 2.5mm;
+}
+
+.lx-move-h {
+  display: flex;
+  align-items: center;
+  gap: 2.5mm;
+  margin-bottom: 1.5mm;
+}
+
+.lx-badge {
+  padding: 0.3mm 2.2mm;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1.5px solid #000;
+  border-radius: 10mm;
+}
+
+.lx-move-n {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.lx-tip {
+  margin: 0 0 1mm;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #333;
+}
+
+.lx-steps {
+  margin: 0 0 1mm;
+  padding-left: 6mm;
+  font-size: 15px;
+  line-height: 1.85;
+}
+
+.lx-pit {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.lx-pit b {
+  margin-right: 2mm;
+  padding: 0 1.5mm;
+  border: 1px dashed #000;
+  border-radius: 1mm;
+}
+
+.lx-example {
+  margin-left: 6mm;
+  border-style: dashed;
+}
+
+.lesson-stem svg {
+  display: block;
+  max-height: 34mm;
+  width: auto;
+  margin-top: 1mm;
+}
+
+.lx-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3mm;
+}
+
+.lx-card {
+  flex: 1 1 45%;
+  padding: 2mm 3mm;
+  border: 1px solid #000;
+  border-radius: 2mm;
+}
+
+.lx-card-t {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.lx-card-x {
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.lx-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14.5px;
+}
+
+.lx-table th,
+.lx-table td {
+  padding: 1.2mm 2.5mm;
+  border: 1px solid #000;
+  text-align: left;
+}
+
+.lx-table th {
+  font-weight: 700;
+}
+
+.lx-chant {
+  padding: 3mm 4mm;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.9;
+  letter-spacing: 1.5px;
+  text-align: center;
+  border: 3px double #000;
+  border-radius: 2mm;
 }
 
 /* ---------- 打印：与 sheet.css 同套路，用最小高度锁定网格区 ---------- */
