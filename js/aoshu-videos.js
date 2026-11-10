@@ -28,11 +28,12 @@
     fendui: '3:29', // 13 分堆与枚举
     kongping: '3:29', // 14 空瓶换水
     huochai: '3:01', // 15 火柴棒游戏
-    jiange: '2:47' // 16 间隔问题
+    jiange: '2:47', // 16 间隔问题
+    paidui: '3:02' // 17 排队问题
   })
 
   /* 有封面图的课（aoshu/<id>.jpg） */
-  var POSTER = Object.freeze({ dengliang: true, chongdie: true, meiju: true, fendui: true, kongping: true, huochai: true, jiange: true })
+  var POSTER = Object.freeze({ dengliang: true, chongdie: true, meiju: true, fendui: true, kongping: true, huochai: true, jiange: true, paidui: true })
 
   function has(obj, id) {
     return Object.prototype.hasOwnProperty.call(obj, id)
