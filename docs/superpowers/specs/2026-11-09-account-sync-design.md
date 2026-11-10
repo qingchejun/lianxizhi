@@ -1,6 +1,6 @@
 # 账号登录与云同步设计
 
-日期：2026-11-09 · 状态：已确认（2026-11-09 用户认可设计；实施计划见 ../plans/2026-11-09-account-sync.md）
+日期：2026-11-09 · 状态：已上线（2026-11-10 部署：Resend 域名 mail.qingchejun.com、Pages 密钥 RESEND_API_KEY/SESSION_SECRET、远程 D1 建表完成；实施记录见 ../plans/2026-11-09-account-sync.md）
 
 ## 背景
 
