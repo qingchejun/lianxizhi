@@ -167,6 +167,37 @@ function logSVG(w, h, ring) {
       '<ellipse cx="' + (w - h * 0.22) + '" cy="' + (h / 2) + '" rx="' + (h * 0.1) + '" ry="' + (h * 0.24) + '" fill="none" stroke="#b97d45" stroke-width="3"/>' : '') +
     '<path d="' + body + '" fill="none" stroke="' + INK + '" stroke-width="5" stroke-linejoin="round"/></svg>'
 }
+/* 18 趣味陷阱题：蜡烛（点着 / 吹灭冒烟 / 烧光只剩一摊蜡）、橘子、盘子 */
+function candleIcon(state) {
+  var body = '<path d="M38 44 C38 41 40 40 43 40 L57 40 C60 40 62 41 62 44 L62 92 C62 94 61 95 59 95 L41 95 C39 95 38 94 38 92 Z"'
+  var s = '<path d="M38 44 L62 44 L62 95 L38 95 Z" transform="translate(4,3)" fill="' + SHADOW + '"/>'
+  if (state === 'gone')
+    return '<ellipse cx="53" cy="92" rx="26" ry="6" fill="' + SHADOW + '"/>' +
+      '<path d="M28 90 C28 84 36 82 42 84 C46 80 56 80 60 84 C66 82 74 85 72 90 C72 94 66 95 50 95 C34 95 28 94 28 90 Z" fill="#f4e9d4" stroke="' + INK + '" stroke-width="4" stroke-linejoin="round"/>' +
+      '<path d="M50 84 L51 78" stroke="' + INK + '" stroke-width="3.5" stroke-linecap="round"/>'
+  s += body + ' fill="#f4e9d4" stroke="' + INK + '" stroke-width="4.5" stroke-linejoin="round"/>' +
+    '<path d="M38 58 L62 52 M38 74 L62 68" stroke="#e46a5e" stroke-width="5" opacity="0.8"/>' +
+    '<path d="M44 48 L44 86" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity="0.45"/>' +
+    '<path d="M50 40 L50 31" stroke="' + INK + '" stroke-width="3.5" stroke-linecap="round"/>'
+  if (state === 'lit')
+    s += '<path d="M50 4 C58 14 62 20 60 27 C58 33 54 35 50 35 C46 35 42 33 40 27 C38 20 43 13 50 4 Z" fill="#f7b733" stroke="' + INK + '" stroke-width="3.5" stroke-linejoin="round"/>' +
+      '<path d="M50 16 C54 21 55 25 53 29 C52 31 51 31 50 31 C48 31 47 30 46 28 C45 24 47 21 50 16 Z" fill="#fde7a0"/>'
+  else
+    s += '<path d="M50 29 C44 24 56 19 50 13 C45 8 54 4 50 0" fill="none" stroke="#9a9086" stroke-width="3.5" stroke-linecap="round" opacity="0.8"/>'
+  return s
+}
+ICON.candle = candleIcon('lit')
+ICON.candleOut = candleIcon('out')
+ICON.candleGone = candleIcon('gone')
+ICON.orange = '<circle cx="54" cy="58" r="36" fill="' + SHADOW + '"/>' +
+  '<path d="M50 20 C72 19 88 35 87 56 C86 77 70 91 49 90 C28 89 13 74 14 53 C15 33 30 21 50 20 Z" fill="#f29a3a" stroke="' + INK + '" stroke-width="5" stroke-linejoin="round"/>' +
+  '<path d="M50 21 L52 13" stroke="' + INK + '" stroke-width="4" stroke-linecap="round"/>' +
+  '<path d="M52 15 C58 6 70 6 74 10 C68 18 58 19 52 15 Z" fill="#7cc46f" stroke="' + INK + '" stroke-width="3.5" stroke-linejoin="round"/>' +
+  '<ellipse cx="36" cy="40" rx="8" ry="5" fill="#fff" opacity="0.35" transform="rotate(-30 36 40)"/>' +
+  '<circle cx="62" cy="64" r="1.8" fill="#c96f1d"/><circle cx="44" cy="70" r="1.8" fill="#c96f1d"/><circle cx="66" cy="44" r="1.8" fill="#c96f1d"/>'
+ICON.plate = '<ellipse cx="54" cy="64" rx="44" ry="18" fill="' + SHADOW + '"/>' +
+  '<ellipse cx="50" cy="60" rx="44" ry="18" fill="#fffaf0" stroke="' + INK + '" stroke-width="4.5"/>' +
+  '<ellipse cx="50" cy="58" rx="30" ry="10" fill="none" stroke="#d8c3a0" stroke-width="3"/>'
 ICON.bottle = bottleIcon(true)
 ICON.empty = bottleIcon(false)
 
