@@ -33,11 +33,12 @@
     xianjing: '3:02', // 18 趣味陷阱题
     fenzu: '2:53', // 19 合理分组问题
     hebubian: '3:00', // 20 和不变与差不变
-    bichang: '4:41' // B01 推理比较：比长短（L1 补充）
+    bichang: '4:41', // B01 推理比较：比长短（L1 补充）
+    bizhong: '4:54' // B02 推理比较：比轻重（L1 补充）
   })
 
   /* 有封面图的课（aoshu/<id>.jpg） */
-  var POSTER = Object.freeze({ dengliang: true, chongdie: true, meiju: true, fendui: true, kongping: true, huochai: true, jiange: true, paidui: true, xianjing: true, fenzu: true, hebubian: true, bichang: true })
+  var POSTER = Object.freeze({ dengliang: true, chongdie: true, meiju: true, fendui: true, kongping: true, huochai: true, jiange: true, paidui: true, xianjing: true, fenzu: true, hebubian: true, bichang: true, bizhong: true })
 
   function has(obj, id) {
     return Object.prototype.hasOwnProperty.call(obj, id)

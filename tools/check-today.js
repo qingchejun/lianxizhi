@@ -204,6 +204,8 @@ check(V.of('hebubian').src === 'https://video.qingchejun.com/aoshu/hebubian.mp4'
 })()
 check(V.of('bichang').src === 'https://video.qingchejun.com/aoshu/bichang.mp4' && V.of('bichang').dur === '4:41' &&
   V.of('bichang').poster === 'https://video.qingchejun.com/aoshu/bichang.jpg', '推理比较比长短视频：' + JSON.stringify(V.of('bichang')))
+check(V.of('bizhong').src === 'https://video.qingchejun.com/aoshu/bizhong.mp4' && V.of('bizhong').dur === '4:54' &&
+  V.of('bizhong').poster === 'https://video.qingchejun.com/aoshu/bizhong.jpg', '推理比较比轻重视频：' + JSON.stringify(V.of('bizhong')))
 check(V.of('daxiao') === null, '没视频的课应返回 null')
 check(V.of('__proto__') === null && V.of('toString') === null, '原型链上的名字不能当成有视频')
 Object.keys(V.list).forEach(function (id) {
