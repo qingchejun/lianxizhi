@@ -186,12 +186,48 @@ export async function reset(repo, now, body) {
   const user = await repo.userById(row.user_id)
   if (!user) return { status: 422, body: { ok: false, error: '重置链接已失效，请重新发一封。' } }
   await repo.tokenUse(row.token_hash)
+  /* 密码一换，之前发出去的重设链接/验证码全部作废——不然泄漏的旧链接
+     还能在有效期内反杀，界面「其他设备需要重新登录」就成了空话 */
+  await repo.tokensClear(user.id, 'reset')
+  await repo.tokensClear(user.id, 'verify')
   const pw_salt = randomHex(16)
+  /* 同 changePassword：先存 nextPwver，别依赖 repo 不改写 user */
+  const nextPwver = user.pwver + 1
   await repo.updateUser(user.id, {
     pw_hash: await sha256hex(pw_salt + pw), pw_salt: pw_salt,
-    pwver: user.pwver + 1, verified: 1 /* 重设顺带验证（能收到邮件就证明邮箱是本人的） */
+    pwver: nextPwver, verified: 1 /* 重设顺带验证（能收到邮件就证明邮箱是本人的） */
   })
-  return { status: 200, body: { ok: true }, session: { uid: user.id, pwver: user.pwver + 1 } }
+  return { status: 200, body: { ok: true }, session: { uid: user.id, pwver: nextPwver } }
+}
+
+/* ---- 改密码：要登录态 + 当前密码；副作用与重设一致（pwver+1，别处登录态全失效）。
+   当前密码的试错与登录共用 loginfail 计数：同一个账号同一个语义——猜密码。 ---- */
+export async function changePassword(repo, session, now, body) {
+  if (!session) return { status: 401, body: { ok: false, error: '先登录才能改密码。' } }
+  const oldHash = (body && body.old) || ''
+  const newHash = (body && body.new) || ''
+  if (!validClientHash(newHash)) return { status: 422, body: { ok: false, error: '新密码至少 8 位。' } }
+  if (!validClientHash(oldHash)) return { status: 401, body: { ok: false, error: '当前密码不对。' } }
+  const user = await repo.userById(session.uid)
+  if (!user) return { status: 401, body: { ok: false, error: '先登录才能改密码。' } }
+  const row = await repo.limitGet(user.email, 'loginfail')
+  if (row && row.until > now) return { status: 429, body: { ok: false, error: '试错次数太多，等 15 分钟再来。' } }
+  if (user.pw_hash !== await sha256hex(user.pw_salt + oldHash)) {
+    await bumpLoginFails(repo, user.email, now)
+    return { status: 401, body: { ok: false, error: '当前密码不对。' } }
+  }
+  const pw_salt = randomHex(16)
+  /* 先存好 nextPwver 再写库：repo 若原地改写 user（内存桩就会），user.pwver+1 会算两遍 */
+  const nextPwver = user.pwver + 1
+  await repo.updateUser(user.id, {
+    pw_hash: await sha256hex(pw_salt + newHash), pw_salt: pw_salt,
+    pwver: nextPwver
+  })
+  /* 同 reset：改密码就得把手里所有重设链接/验证码都收回（安全审查 Important 1） */
+  await repo.tokensClear(user.id, 'reset')
+  await repo.tokensClear(user.id, 'verify')
+  await repo.limitSet(user.email, 'loginfail', { n: 0, ts: now, until: 0 })
+  return { status: 200, body: { ok: true }, session: { uid: user.id, pwver: nextPwver } }
 }
 
 /* ---- /api/auth/me：会话有效性 + pwver 比对 ---- */

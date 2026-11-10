@@ -159,20 +159,65 @@ import('../server/auth-core.js').then(async function (A) {
 
   /* --- 重设：一次性、pwver 失效 --- */
   var newHash = clientHash('f@m.co', 'newpassword9')
+  /* 重设前埋第二枚活 token（模拟同时泄漏出去的两封重设邮件） */
+  var leaked2 = 'b'.repeat(64)
+  await dbF.tokenInsert({ token_hash: 'plain$' + require('crypto').createHash('sha256').update(leaked2).digest('hex'), user_id: dbF.users[0].id, kind: 'reset', expires_at: now + 30 * 60 * 1000 })
   var rs = await A.reset(dbF, now + 3000, { token: real.dev.token, password: newHash })
   check('重设成功并登录', rs.status === 200 && rs.session, rs)
   check('重设顺带验证', dbF.users[0].verified === 1)
   var rs2 = await A.reset(dbF, now + 4000, { token: real.dev.token, password: newHash })
   check('token 一次性', rs2.status === 422, rs2)
+  check('重设作废之前泄漏的其他重设链接', (await A.reset(dbF, now + 4100, { token: leaked2, password: newHash })).status === 422)
   check('pwver 加过', dbF.users[0].pwver === 2)
   var oldSess = await A.meBySession(dbF, { uid: dbF.users[0].id, pwver: 1 })
   check('旧登录态失效', oldSess.status === 401)
-  var newSess = await A.meBySession(dbF, { uid: dbF.users[0].id, pwver: 2 })
+  var newSess = await A.meBySession(dbF, rs.session) /* 用返回值不硬编码：盯住 pwver 别算两遍 */
   check('新登录态有效', newSess.status === 200 && newSess.body.email === 'f@m.co')
   var oldPwLogin = await A.login(dbF, now + 5000, { email: 'f@m.co', password: clientHash('f@m.co', 'password123') })
   check('旧密码登不上', oldPwLogin.status === 401)
   var newPwLogin = await A.login(dbF, now + 5000, { email: 'f@m.co', password: newHash })
   check('新密码能登', newPwLogin.status === 200)
+
+  /* --- 改密码：要登录态 + 当前密码对得上；副作用与重设一致（pwver+1） --- */
+  var dbC = memRepo()
+  var regC = await A.register(dbC, now, { email: 'c@m.co', password: clientHash('c@m.co', 'password123') })
+  await A.verify(dbC, now + 1000, { email: 'c@m.co', code: regC.dev.code })
+  var sessC = { uid: dbC.users[0].id, pwver: 1 }
+  /* 改密码前埋一枚活着的重设 token 和一枚验证码（模拟改密码前泄漏出去的链接） */
+  var sha = function (s) { return require('crypto').createHash('sha256').update(s).digest('hex') }
+  var leakedReset = 'a'.repeat(64)
+  await dbC.tokenInsert({ token_hash: 'plain$' + sha(leakedReset), user_id: sessC.uid, kind: 'reset', expires_at: now + 30 * 60 * 1000 })
+  await dbC.tokenInsert({ token_hash: 's$' + sha('555555'), user_id: sessC.uid, kind: 'verify', expires_at: now + 10 * 60 * 1000 })
+  var noSess = await A.changePassword(dbC, null, now + 2000, { old: 'x', new: 'y' })
+  check('没登录不能改密码', noSess.status === 401, noSess)
+  var badNew = await A.changePassword(dbC, sessC, now + 2000, { old: clientHash('c@m.co', 'password123'), new: 'short' })
+  check('新密码格式不对 422', badNew.status === 422, badNew)
+  var wrongOld = await A.changePassword(dbC, sessC, now + 2000, { old: clientHash('c@m.co', 'password999'), new: clientHash('c@m.co', 'newpassword9') })
+  check('当前密码错 401', wrongOld.status === 401, wrongOld)
+  var cp = await A.changePassword(dbC, sessC, now + 3000, { old: clientHash('c@m.co', 'password123'), new: clientHash('c@m.co', 'newpassword9') })
+  check('改密码成功', cp.status === 200 && cp.session && cp.session.pwver === 2, cp)
+  check('改密码作废之前泄漏的重设链接', (await A.reset(dbC, now + 3500, { token: leakedReset, password: clientHash('c@m.co', 'evilpass9') })).status === 422)
+  check('改密码作废之前的验证码', (await A.verify(dbC, now + 3500, { email: 'c@m.co', code: '555555' })).status === 422)
+  check('改密码 pwver 加过', dbC.users[0].pwver === 2)
+  check('改密码后旧登录态失效', (await A.meBySession(dbC, sessC)).status === 401)
+  check('改密码后新登录态有效', (await A.meBySession(dbC, cp.session)).status === 200)
+  check('改后旧密码登不上', (await A.login(dbC, now + 4000, { email: 'c@m.co', password: clientHash('c@m.co', 'password123') })).status === 401)
+  check('改后新密码能登', (await A.login(dbC, now + 4000, { email: 'c@m.co', password: clientHash('c@m.co', 'newpassword9') })).status === 200)
+
+  /* 改密码的当前密码也吃登录锁：错 10 次锁 15 分钟（和登录共用一个计数） */
+  var dbC2 = memRepo()
+  var regC2 = await A.register(dbC2, now, { email: 'c2@m.co', password: clientHash('c2@m.co', 'password123') })
+  await A.verify(dbC2, now + 1000, { email: 'c2@m.co', code: regC2.dev.code })
+  var sessC2 = { uid: dbC2.users[0].id, pwver: 1 }
+  for (var w = 0; w < 10; w++) {
+    await A.changePassword(dbC2, sessC2, now + 2000 + w, { old: clientHash('c2@m.co', 'wrongpw' + w), new: clientHash('c2@m.co', 'newpassword9') })
+  }
+  var lockedC = await A.changePassword(dbC2, sessC2, now + 3000, { old: clientHash('c2@m.co', 'password123'), new: clientHash('c2@m.co', 'newpassword9') })
+  check('错太多次当前密码被锁', lockedC.status === 429, lockedC)
+  check('改密码的锁也挡登录（共用计数）', (await A.login(dbC2, now + 3100, { email: 'c2@m.co', password: clientHash('c2@m.co', 'password123') })).status === 429)
+  var afterC = await A.changePassword(dbC2, sessC2, now + 16 * MIN, { old: clientHash('c2@m.co', 'password123'), new: clientHash('c2@m.co', 'newpassword9') })
+  check('15 分钟后能改', afterC.status === 200, afterC)
+  check('改成后计数清零', afterC.status === 200 && (await A.login(dbC2, now + 17 * MIN, { email: 'c2@m.co', password: clientHash('c2@m.co', 'newpassword9') })).status === 200)
 
   /* --- data：拉取 + 推送（坏键混合 / LWW / 平局） --- */
   var uid = dbF.users[0].id

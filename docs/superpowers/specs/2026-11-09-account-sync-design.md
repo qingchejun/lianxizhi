@@ -38,6 +38,10 @@ ICP 备案的回调域名，本站域名在 Cloudflare 境外、个人无企业�
 - `POST /api/auth/forgot {email}` → 发重设邮件（无论邮箱是否存在都返回 200，不泄露注册情况）
 - `POST /api/auth/reset {token, password}` → 重设 + 登录
 - `POST /api/auth/logout`、`GET /api/auth/me`
+- `POST /api/auth/password {old, new}`（2026-11-10 加）→ 登录态 + 当前密码对得上才改；
+  当前密码试错与登录共用 10 次锁 15 分钟；改完 pwver+1，其他设备登录态失效、
+  当前浏览器拿新 cookie 继续用，且作废所有未用的重设链接与验证码
+  （`reset` 成功后同样作废其余重设链接——泄漏的旧链接不能反杀）
 - `GET /api/data` → 本人全部 key
 - `POST /api/data/push {items:[{key, value, updated_at}]}` → 逐条 LWW；
   只接受 `sumsum:` 前缀、排除 `sumsum:help:seen`，服务端按 updated_at 新者胜
@@ -94,5 +98,5 @@ ICP 备案的回调域名，本站域名在 Cloudflare 境外、个人无企业�
 ## 非目标
 
 - 微信登录（不可行，见背景）
-- 登录态下改密码 / 换邮箱（后续需要再加）
+- 换邮箱（后续需要再加；改密码已于 2026-11-10 上线）
 - 多孩子档案（一个账号 = 一个家庭）

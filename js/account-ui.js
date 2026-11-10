@@ -1,5 +1,5 @@
 /**
- * 账号弹窗：登录 / 注册（验证码六格）/ 找回 / 重设 / 已登录主页。
+ * 账号弹窗：登录 / 注册（验证码六格）/ 找回 / 重设 / 修改密码 / 已登录主页。
  * 骨架沿用 help.js：dialog 建一次、view 切换、data-act / data-goto 事件委托。
  * 登录成功 → sync.init（confirm 由本文件提供：本地/云端二选一弹窗）。
  * 首页带 ?reset=<token> 时直接打开重设视图（重设要重问邮箱：PBKDF2 盐需要它）。
@@ -48,12 +48,17 @@
   function render() {
     var body = dlg.querySelector('[data-body]')
     var title = dlg.querySelector('[data-title]')
-    if (A.state.loggedIn) {
+    /* 登录态掉了还停在改密码表单上，回去登录页（提交也只会 401） */
+    if (!A.state.loggedIn && (view === 'account' || view === 'changepw')) view = 'login'
+    if (A.state.loggedIn && view !== 'changepw') {
       title.textContent = '账号'
       body.innerHTML =
         '<p class="account-line">已登录：<b>' + esc(A.state.email) + '</b></p>' +
         '<p class="account-sub">这台浏览器上的练习进度会自动同步到云端；换电脑登录同一账号即可带过去。</p>' +
-        '<div class="account-row"><button type="button" class="btn" data-act="logout">退出登录</button></div>' +
+        '<div class="account-row">' +
+          '<button type="button" class="btn" data-act="changepw">修改密码</button>' +
+          '<button type="button" class="btn" data-act="logout">退出登录</button>' +
+        '</div>' +
         '<div class="account-msg" data-msg hidden></div>'
       return
     }
@@ -111,6 +116,15 @@
           '<label>邮箱<input type="email" name="email" required autocomplete="email"></label>' +
           '<label>新密码（至少 8 位）<input type="password" name="password" required minlength="8" autocomplete="new-password"></label>' +
           '<button type="submit" class="btn btn-primary" data-act="submit">保存新密码</button>' +
+          '<div class="account-msg" data-msg hidden></div></form>'
+      },
+      changepw: {
+        title: '修改密码',
+        html: '<form data-view="changepw">' +
+          '<label>当前密码<input type="password" name="old" required minlength="8" autocomplete="current-password"></label>' +
+          '<label>新密码（至少 8 位）<input type="password" name="password" required minlength="8" autocomplete="new-password"></label>' +
+          '<button type="submit" class="btn btn-primary" data-act="submit">保存新密码</button>' +
+          '<div class="account-links"><button type="button" class="link-btn" data-goto="account">返回</button></div>' +
           '<div class="account-msg" data-msg hidden></div></form>'
       }
     }
@@ -258,6 +272,19 @@
           view = 'account'
           render()
         } else say(rr.body.error || '重设没成功。', 'bad')
+      } else if (view === 'changepw') {
+        /* 已登录才能到这个视图；PBKDF2 的盐要邮箱，直接用登录态里的 */
+        var oldPw = fd.get('old') || ''
+        if (!A.validPassword(oldPw)) return say('当前密码至少 8 位。', 'bad')
+        if (!A.validPassword(pw)) return say('新密码至少 8 位。', 'bad')
+        var oh = await A.hashPassword(A.state.email, oldPw)
+        var nh = await A.hashPassword(A.state.email, pw)
+        var cr = await A.request('/api/auth/password', { old: oh, new: nh })
+        if (cr.status === 200) {
+          /* 改完服务端发了新登录 cookie（别的设备全下线）；停一拍让「已改好」看得见再回主页 */
+          say('密码已改好，其他设备需要重新登录。', 'ok')
+          setTimeout(function () { view = 'account'; render() }, 1500)
+        } else say(cr.body.error || '没改成，稍后再试。', 'bad')
       }
     } catch (err) {
       say('网络出了问题，稍后再试。', 'bad')
@@ -275,6 +302,9 @@
     } else if (b.dataset.act === 'logout') {
       await A.logout()
       view = 'login'
+      render()
+    } else if (b.dataset.act === 'changepw') {
+      view = 'changepw'
       render()
     } else if (b.dataset.act === 'resend') {
       /* 重发 = 再调一次 register（带上注册时缓存的哈希）：未验证账号 → 换密码 + 重发码，

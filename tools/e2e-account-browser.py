@@ -137,6 +137,24 @@ with sync_playwright() as p:
     page2.wait_for_selector('.account-line', timeout=10000)
     check('重设后自动登录', True)
 
+    # 修改密码：账号主页 → 表单（当前+新密码）→ 成功回主页 → 退出 → 新密码重登
+    page2.keyboard.press('Escape')  # 重设成功后弹窗还开着，先关掉再从入口进
+    page2.wait_for_timeout(200)
+    page2.click('[data-account]')
+    page2.click('[data-act="changepw"]')
+    page2.fill('input[name=old]', 'newpassword9')
+    page2.fill('input[name=password]', 'password777')
+    page2.click('[data-act="submit"]')
+    page2.wait_for_selector('.account-line', timeout=15000)  # PBKDF2×2 + 停 1.5s 后回主页
+    check('改密码成功并回到账号主页', True)
+    page2.click('[data-act="logout"]')
+    page2.wait_for_selector('input[name=email]')
+    page2.fill('input[name=email]', EMAIL)
+    page2.fill('input[name=password]', 'password777')
+    page2.click('[data-act="submit"]')
+    page2.wait_for_selector('.account-line', timeout=10000)
+    check('改密码后用新密码能登录', True)
+
     browser.close()
 
 for e in page_errors:
