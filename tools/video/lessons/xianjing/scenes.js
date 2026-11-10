@@ -188,11 +188,11 @@ var SCENES = (function () {
     { t: 'slot', id: 'q6', x: 1760, y: 430, size: 104, at: [1, '几个'] },
     lbl(1760, 530, '个', GREY, [1, '几个', 0.2], { font: 'kl', size: 44 }),
     { t: 'think', x: 960, y: 790, at: [2, '想一想', 0.7], from: 5, pulse: 'q6' },
-    lbl(960, 660, '3 个人分！', ORANGE, [3, '三个人'], { font: 'kl', size: 48 })
+    lbl(960, 690, '3 个人分！', ORANGE, [3, '三个人'], { font: 'kl', size: 48 })
   ]
   for (var p = 0; p < 3; p++) {
     e6.push(item('plate', PX[p], 470, 260, [3, '几个人', p * 0.2]))
-    e6.push(lbl(PX[p], 570, WHO[p], p === 0 ? RED : INK, [3, '几个人', p * 0.2], { font: 'kl', size: 42, glow: p === 0 ? [3, '自己'] : undefined }))
+    e6.push(lbl(PX[p], 610, WHO[p], p === 0 ? RED : INK, [3, '几个人', p * 0.2], { font: 'kl', size: 42, glow: p === 0 ? [3, '自己'] : undefined }))
     for (var o = 0; o < 4; o++) {
       e6.push(item('orange', PX[p] - 66 + o * 44, 440, 62, [4, '三个四', 0.1 + p * 0.35 + o * 0.08], { glow: [5, '四加四加四', p * 0.45] }))
     }
