@@ -177,5 +177,42 @@
 <script src="js/account-ui.js"></script>
 <script src="js/sync-core.js"></script>
 <script src="js/sync.js"></script>
+<script>
+/* 防护：主脚本没跑完（加载失败或新旧文件混跑）时自动刷新一次，仍不行就在顶部提示，避免页面静默空白 */
+(function () {
+  var KEY = 'sumsum:jsretried:' + location.pathname
+  function ready() {
+    return document.documentElement.getAttribute('data-sumsum-ready') === '1'
+  }
+  function fail() {
+    var retried = ''
+    try { retried = sessionStorage.getItem(KEY) || '' } catch (e) {}
+    if (!retried) {
+      try { sessionStorage.setItem(KEY, '1') } catch (e) {}
+      location.reload()
+      return
+    }
+    var bar = document.createElement('div')
+    bar.id = 'js-load-guard'
+    var mac = navigator.platform && navigator.platform.indexOf('Mac') >= 0
+    bar.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:9999;padding:10px 16px;background:#b42318;color:#fff;font-size:14px;line-height:1.6;text-align:center'
+    bar.textContent = '页面没加载全，练习纸出不来。请按 ' + (mac ? 'Cmd+Shift+R' : 'Ctrl+Shift+R') + ' 强制刷新一次；还不行就过几分钟再打开。'
+    document.body.appendChild(bar)
+  }
+  function check() {
+    if (ready()) return
+    if (document.readyState === 'complete') {
+      fail()
+      return
+    }
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        if (!ready()) fail()
+      }, 300)
+    })
+  }
+  check()
+})()
+</script>
 </body>
 </html>

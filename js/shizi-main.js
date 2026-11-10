@@ -642,4 +642,7 @@
   S.shiziMark.onChange(refreshMarkPanel)
   S.shiziMark.bind()
   refresh()
+
+  /* 完工标记：上面任何一步抛错都到不了这里；HTML 里的防护脚本据此判断并提示 */
+  document.documentElement.setAttribute('data-sumsum-ready', '1')
 })(window)

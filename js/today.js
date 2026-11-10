@@ -134,4 +134,7 @@
   doc.getElementById('today-date').textContent = data.date + ' · 每张卡片都是上次的设置'
   doc.getElementById('today-cards').innerHTML =
     aoshuCard(data.aoshu) + shiziCard(data.shizi) + kousuanCard(data.kousuan) + shuduCard(data.shudu)
+
+  /* 完工标记：上面任何一步抛错都到不了这里；HTML 里的防护脚本据此判断并提示 */
+  document.documentElement.setAttribute('data-sumsum-ready', '1')
 })(window)
