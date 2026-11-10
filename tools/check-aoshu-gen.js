@@ -283,6 +283,72 @@ function checkBizhong() {
   })
 }
 
+/*
+ * B03 认识钟表：从 key 的时刻独立重算答案；再把题干 SVG 里每个钟两根针的终点量出来，
+ * 换成角度和 key 的时刻对得上（分针 = 分 × 6°，时针 = (时 + 分/60) × 30°），长针必须比短针长。
+ */
+function checkZhongbiao() {
+  if (!A.topics.zhongbiao) return
+  var CI = ['①', '②', '③', '④']
+  function tm(x) { var m = x.split(':'); return { h: +m[0], m: +m[1] } }
+  function show(t) { return t.h + ':' + (t.m < 10 ? '0' : '') + t.m }
+  function hands(html) {
+    var out = []
+    var re = /<line class="(mh|hh)" x1="([\d.]+)" y1="([\d.]+)" x2="([-\d.]+)" y2="([-\d.]+)"/g
+    var m
+    while ((m = re.exec(html))) {
+      var dx = +m[4] - +m[2], dy = +m[5] - +m[3]
+      var deg = (Math.atan2(dx, -dy) * 180 / Math.PI + 360) % 360
+      out.push({ k: m[1], deg: deg, len: Math.hypot(dx, dy) })
+    }
+    return out
+  }
+  function angOk(a, b) { var d = Math.abs(a - b) % 360; return Math.min(d, 360 - d) < 0.6 }
+  function checkFace(q, times) {
+    var hs = hands(q.stemHTML)
+    if (hs.length !== times.length * 2) { bad('B03 题干里针的数量不对：' + q.key); return }
+    times.forEach(function (t, i) {
+      var mh = hs[i * 2], hh = hs[i * 2 + 1]
+      if (mh.k !== 'mh' || hh.k !== 'hh') bad('B03 针的顺序不对：' + q.key)
+      if (!angOk(mh.deg, t.m * 6)) bad('B03 分针角度和时刻对不上：' + q.key + ' 第 ' + (i + 1) + ' 个')
+      if (!angOk(hh.deg, ((t.h % 12) + t.m / 60) * 30)) bad('B03 时针角度和时刻对不上：' + q.key + ' 第 ' + (i + 1) + ' 个')
+      if (!(mh.len > hh.len * 1.4)) bad('B03 分针不比时针长：' + q.key)
+    })
+  }
+  each('zhongbiao', 'read', function (q, d) {
+    var times = q.key.split(':').slice(1).join(':').split(',').map(tm)
+    var want = times.length > 1 ? times.map(function (t, i) { return CI[i] + ' ' + show(t) }).join('　') : show(times[0])
+    if (q.answer !== want) bad('B03 看钟答案错：' + q.key + ' 给的 ' + q.answer)
+    times.forEach(function (t) { if (t.m !== 0 && t.m !== 30) bad('B03 本课只出整时半时：' + q.key) })
+    if (d === 'L1' && times.some(function (t) { return t.m !== 0 })) bad('B03 入门看钟出了半时：' + q.key)
+    if (d === 'L3' && times.length !== 2) bad('B03 挑战看钟应是两个钟：' + q.key)
+    checkFace(q, times)
+  })
+  each('zhongbiao', 'pick', function (q, d) {
+    var parts = q.key.slice(5).split('|')
+    var target = tm(parts[0])
+    var opts = parts.slice(1).map(tm)
+    var hit = []
+    opts.forEach(function (o, i) { if (o.h === target.h && o.m === target.m) hit.push(i) })
+    if (hit.length !== 1) bad('B03 选一选正确的钟不是正好一个：' + q.key)
+    else if (q.answer !== CI[hit[0]]) bad('B03 选一选答案错：' + q.key + ' 给的 ' + q.answer)
+    if (new Set(parts.slice(1)).size !== opts.length) bad('B03 选项有重复：' + q.key)
+    if (opts.length !== (d === 'L3' ? 4 : 3)) bad('B03 选项个数不对：' + q.key)
+    if (d === 'L1' && target.m !== 0) bad('B03 入门选一选出了半时：' + q.key)
+    checkFace(q, opts)
+  })
+  each('zhongbiao', 'draw', function (q, d) {
+    var times = q.key.split(':').slice(1).join(':').split(',').map(tm)
+    var want = times.length > 1 ? times.map(function (t, i) { return CI[i] + ' ' + show(t) }).join('　') : show(times[0])
+    if (q.answer !== want) bad('B03 画钟答案错：' + q.key + ' 给的 ' + q.answer)
+    if (hands(q.stemHTML).length) bad('B03 画钟的题干钟面上已经有针：' + q.key)
+    var ah = hands(q.diagramHTML)
+    if (ah.length !== times.length * 2) bad('B03 画钟解析里缺答案图：' + q.key)
+    if (/重在一起/.test(q.stem) && q.answer !== '12:00') bad('B03 两针重叠应是 12:00：' + q.stem)
+    if (/一条直线/.test(q.stem) && q.answer !== '6:00') bad('B03 连成直线应是 6:00：' + q.stem)
+  })
+}
+
 function checkFloors() {
   each('daxiao', 'num', function (q) {
     var n = nums(q.stem)
@@ -462,6 +528,7 @@ checkReviewPlan()
 checkFloors()
 checkBichang()
 checkBizhong()
+checkZhongbiao()
 checkSupply()
 
 if (problems.length) {
