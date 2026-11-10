@@ -471,6 +471,12 @@ function build(sceneIdx, timing) {
         n = mk('', '<svg width="' + kw + '" height="' + kh + '" style="display:block;overflow:visible"><path d="' + kp + '" transform="translate(4,5)" fill="none" stroke="' + SHADOW + '" stroke-width="' + (e.sw || 7) + '" stroke-linejoin="round"/><path class="ap" d="' + kp + '" fill="none" stroke="' + (e.color || INK) + '" stroke-width="' + (e.sw || 7) + '" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg>')
         n.style.width = kw + 'px'; n.style.height = kh + 'px'; anim = 'seg'
         break
+      case 'svg':
+        /* B01 起：通用矢量图。html 用 w×h 坐标系；draw:true 时 class="ap" 的线（pathLength=1）按 dur 秒一笔画出 */
+        n = mk('', '<svg width="' + e.w + '" height="' + e.h + '" viewBox="0 0 ' + e.w + ' ' + e.h + '" style="display:block;overflow:visible">' + e.html + '</svg>')
+        n.style.width = e.w + 'px'; n.style.height = e.h + 'px'
+        anim = e.draw ? 'draw' : (e.anim || 'fade')
+        break
       case 'think':
         /* 08 同款倒计时：5 个圆点排成五边形，从顶上开始顺时针逐个熄灭 */
         var dots = ''
@@ -546,6 +552,11 @@ function render(t) {
         break
       case 'wipe': op = clamp(p * 4); n.style.clipPath = 'inset(-20px ' + (100 - 100 * easeOut(clamp((t - r.t0) / 0.6))) + '% -20px -20px)'; break
       case 'seg': n.querySelector('.ap').setAttribute('stroke-dashoffset', 1 - easeOut(clamp((t - r.t0) / 0.45))); break
+      case 'draw':
+        op = clamp(p * 4)
+        var dp = easeOut(clamp((t - r.t0) / (r.e.dur || 0.9)))
+        n.querySelectorAll('.ap').forEach(function (a) { a.setAttribute('stroke-dashoffset', 1 - dp) })
+        break
       case 'check': n.querySelector('.ck').setAttribute('stroke-dashoffset', 1 - easeOut(clamp((t - r.t0) / 0.5))); break
       case 'loop': n.querySelector('.lp').setAttribute('stroke-dashoffset', 1 - easeOut(clamp((t - r.t0) / 0.6))); break
       case 'arc':
