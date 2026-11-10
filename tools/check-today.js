@@ -185,6 +185,8 @@ check(V.of('xianjing').src === 'https://video.qingchejun.com/aoshu/xianjing.mp4'
   V.of('xianjing').poster === 'https://video.qingchejun.com/aoshu/xianjing.jpg', '趣味陷阱题视频：' + JSON.stringify(V.of('xianjing')))
 check(V.of('fenzu').src === 'https://video.qingchejun.com/aoshu/fenzu.mp4' && V.of('fenzu').dur === '2:53' &&
   V.of('fenzu').poster === 'https://video.qingchejun.com/aoshu/fenzu.jpg', '合理分组问题视频：' + JSON.stringify(V.of('fenzu')))
+check(V.of('hebubian').src === 'https://video.qingchejun.com/aoshu/hebubian.mp4' && V.of('hebubian').dur === '3:00' &&
+  V.of('hebubian').poster === 'https://video.qingchejun.com/aoshu/hebubian.jpg', '和不变与差不变视频：' + JSON.stringify(V.of('hebubian')))
 // 登记表脚本带版本号（?v=最后登记的那一课）：自定义域名会让浏览器缓存 js 4 小时，换版本号才能让新视频马上出现
 ;(function () {
   var fs = require('fs'), path = require('path'), root = path.join(__dirname, '..')
