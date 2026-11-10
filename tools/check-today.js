@@ -179,6 +179,15 @@ check(V.of('huochai').src === 'https://video.qingchejun.com/aoshu/huochai.mp4' &
   V.of('huochai').poster === 'https://video.qingchejun.com/aoshu/huochai.jpg', '火柴棒游戏视频：' + JSON.stringify(V.of('huochai')))
 check(V.of('jiange').src === 'https://video.qingchejun.com/aoshu/jiange.mp4' && V.of('jiange').dur === '2:47' &&
   V.of('jiange').poster === 'https://video.qingchejun.com/aoshu/jiange.jpg', '间隔问题视频：' + JSON.stringify(V.of('jiange')))
+// 登记表脚本带版本号（?v=最后登记的那一课）：自定义域名会让浏览器缓存 js 4 小时，换版本号才能让新视频马上出现
+;(function () {
+  var fs = require('fs'), path = require('path'), root = path.join(__dirname, '..')
+  var ids = (fs.readFileSync(path.join(root, 'js/aoshu-videos.js'), 'utf8').match(/^\s+(\w+): '\d+:\d\d'/mg) || []).map(function (l) { return l.trim().split(':')[0] })
+  var want = 'js/aoshu-videos.js?v=' + ids[ids.length - 1]
+  ;['index.html', 'aoshu.html'].forEach(function (f) {
+    check(fs.readFileSync(path.join(root, f), 'utf8').indexOf('<script src="' + want + '"></script>') >= 0, f + ' 要引用 ' + want + '（登记新视频时同步改版本号）')
+  })
+})()
 check(V.of('daxiao') === null, '没视频的课应返回 null')
 check(V.of('__proto__') === null && V.of('toString') === null, '原型链上的名字不能当成有视频')
 Object.keys(V.list).forEach(function (id) {
