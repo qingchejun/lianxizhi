@@ -113,6 +113,29 @@ var ICON = {
   chick: '<circle cx="54" cy="60" r="32" fill="' + SHADOW + '"/><circle cx="50" cy="56" r="32" fill="#f7d64a" stroke="' + INK + '" stroke-width="5"/><path d="M44 18 C46 10 52 10 50 20 C56 12 60 16 54 24" fill="none" stroke="' + INK + '" stroke-width="4" stroke-linecap="round"/><circle cx="40" cy="50" r="4.5" fill="' + INK + '"/><circle cx="60" cy="50" r="4.5" fill="' + INK + '"/><path d="M44 60 L56 60 L50 70 Z" fill="#f08a3c" stroke="' + INK + '" stroke-width="3.5" stroke-linejoin="round"/><path d="M78 60 C86 56 88 66 80 70" fill="#f7d64a" stroke="' + INK + '" stroke-width="4"/>'
 }
 
+/* B02 比轻重：梨、桃、四色彩球（手绘，大小差不多，看不出谁重） */
+ICON.pear = '<path d="M50 22 C60 22 64 34 66 44 C80 52 86 66 82 78 C78 90 64 94 50 94 C36 94 22 90 18 78 C14 66 20 52 34 44 C36 34 40 22 50 22 Z" transform="translate(4,4)" fill="' + SHADOW + '"/>' +
+  '<path d="M50 22 C60 22 64 34 66 44 C80 52 86 66 82 78 C78 90 64 94 50 94 C36 94 22 90 18 78 C14 66 20 52 34 44 C36 34 40 22 50 22 Z" fill="#cfe07a" stroke="' + INK + '" stroke-width="5" stroke-linejoin="round"/>' +
+  '<path d="M50 23 C50 16 52 10 56 6" fill="none" stroke="' + INK + '" stroke-width="4.5" stroke-linecap="round"/>' +
+  '<path d="M55 12 C62 4 74 6 76 10 C70 17 61 17 55 12 Z" fill="#6dbb6a" stroke="' + INK + '" stroke-width="3.5"/>' +
+  '<ellipse cx="34" cy="64" rx="6" ry="10" fill="#fff" opacity="0.35"/>' +
+  '<circle cx="58" cy="70" r="1.8" fill="#9aa64a"/><circle cx="44" cy="80" r="1.8" fill="#9aa64a"/><circle cx="66" cy="58" r="1.8" fill="#9aa64a"/>'
+ICON.peach = '<path d="M50 24 C70 18 90 34 88 58 C86 80 70 92 50 92 C30 92 14 80 12 58 C10 34 30 18 50 24 Z" transform="translate(4,4)" fill="' + SHADOW + '"/>' +
+  '<path d="M50 24 C70 18 90 34 88 58 C86 80 70 92 50 92 C30 92 14 80 12 58 C10 34 30 18 50 24 Z" fill="#f7b3a3" stroke="' + INK + '" stroke-width="5" stroke-linejoin="round"/>' +
+  '<path d="M50 26 C44 44 44 70 50 90" fill="none" stroke="#e07f6c" stroke-width="4" stroke-linecap="round"/>' +
+  '<path d="M66 40 C74 50 76 66 70 78" fill="none" stroke="#fbd3c8" stroke-width="7" stroke-linecap="round" opacity="0.8"/>' +
+  '<path d="M50 24 C46 14 36 10 28 14 C32 24 42 26 50 24 Z" fill="#6dbb6a" stroke="' + INK + '" stroke-width="3.5" stroke-linejoin="round"/>'
+function ballIcon(c, hi) {
+  return '<circle cx="54" cy="58" r="36" fill="' + SHADOW + '"/>' +
+    '<circle cx="50" cy="54" r="36" fill="' + c + '" stroke="' + INK + '" stroke-width="5"/>' +
+    '<path d="M18 46 C34 58 66 58 82 46" fill="none" stroke="' + hi + '" stroke-width="5" stroke-linecap="round" opacity="0.7"/>' +
+    '<ellipse cx="36" cy="36" rx="9" ry="6" fill="#fff" opacity="0.45" transform="rotate(-30 36 36)"/>'
+}
+ICON.ballR = ballIcon('#e8574a', '#b8392f')
+ICON.ballB = ballIcon('#5b95d6', '#3a6ea8')
+ICON.ballY = ballIcon('#f5cf4a', '#c9a22a')
+ICON.ballG = ballIcon('#6cc072', '#3f8f48')
+
 /* 13 分堆与枚举：糖果（手绘，两头拧起来的包装纸） */
 ICON.candy = '<ellipse cx="54" cy="60" rx="44" ry="18" fill="' + SHADOW + '"/>' +
   '<path d="M30 52 L10 36 C6 34 4 38 6 42 L12 54 L6 66 C4 70 6 74 10 72 L30 58 Z" fill="#f5c95a" stroke="' + INK + '" stroke-width="4.5" stroke-linejoin="round"/>' +
@@ -546,7 +569,8 @@ function render(t) {
         var ang = balanceAngle(r, t)
         n.querySelector('.beam').style.transform = 'rotate(' + ang + 'deg)'
         var dy = Math.sin(ang * Math.PI / 180) * r.e.w / 2
-        r.dy = { L: -dy, R: dy }
+        var ds = r.e.scale || 1 // 天平缩小时托盘在画面上的位移也跟着缩，盘里物品才跟得上
+        r.dy = { L: -dy * ds, R: dy * ds }
         n.querySelector('.panL').style.transform = 'translateY(' + (-dy) + 'px)'
         n.querySelector('.panR').style.transform = 'translateY(' + dy + 'px)'
         break
