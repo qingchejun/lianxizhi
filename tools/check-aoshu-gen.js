@@ -349,6 +349,93 @@ function checkZhongbiao() {
   })
 }
 
+/*
+ * B04 几时几分：从 key 的时刻独立重算答案（不调生成器），量题干两根针的角度；
+ * 选一选正好一个对、选项不重复；排一排按「12 时最早、再 1 时、2 时……」重排；各档范围。
+ */
+function checkZhongbiao2() {
+  if (!A.topics.zhongbiao2) return
+  var CI = ['①', '②', '③', '④']
+  function tm(x) { var m = x.split(':'); return { h: +m[0], m: +m[1] } }
+  function show(t) { return t.h + ':' + (t.m < 10 ? '0' : '') + t.m }
+  function list(q) { return q.key.split('|')[0].replace(/^[a-z]+:/, '').split(',').map(tm) }
+  function hands(html) {
+    var out = []
+    var re = /<line class="(mh|hh)" x1="([\d.]+)" y1="([\d.]+)" x2="([-\d.]+)" y2="([-\d.]+)"/g
+    var m
+    while ((m = re.exec(html))) {
+      var dx = +m[4] - +m[2], dy = +m[5] - +m[3]
+      out.push({ k: m[1], deg: (Math.atan2(dx, -dy) * 180 / Math.PI + 360) % 360, len: Math.hypot(dx, dy) })
+    }
+    return out
+  }
+  function gap(a, b) { var d = Math.abs(a - b) % 360; return Math.min(d, 360 - d) }
+  function checkFace(q, times, html) {
+    var hs = hands(html || q.stemHTML)
+    if (hs.length !== times.length * 2) { bad('B04 针的数量不对：' + q.key); return }
+    times.forEach(function (t, i) {
+      var mh = hs[i * 2], hh = hs[i * 2 + 1]
+      if (mh.k !== 'mh' || hh.k !== 'hh') bad('B04 针的顺序不对：' + q.key)
+      if (gap(mh.deg, t.m * 6) > 0.6) bad('B04 分针角度对不上：' + q.key)
+      if (gap(hh.deg, ((t.h % 12) + t.m / 60) * 30) > 0.6) bad('B04 时针角度对不上：' + q.key)
+      if (gap(mh.deg, hh.deg) < 14) bad('B04 两根针挨太近，小格数不清：' + q.key)
+      if (!(mh.len > hh.len * 1.4)) bad('B04 分针不比时针长：' + q.key)
+    })
+  }
+  function notB03(q, times) {
+    times.forEach(function (t) { if (t.m === 0 || t.m === 30) bad('B04 出了整时半时（B03 的）：' + q.key) })
+  }
+  function joined(times) {
+    return times.length > 1 ? times.map(function (t, i) { return CI[i] + ' ' + show(t) }).join('　') : show(times[0])
+  }
+  each('zhongbiao2', 'read', function (q, d) {
+    var times = list(q)
+    if (q.answer !== joined(times)) bad('B04 看钟答案错：' + q.key + ' 给的 ' + q.answer)
+    notB03(q, times)
+    if (d === 'L1' && times.some(function (t) { return t.m % 5 })) bad('B04 入门看钟分针不在数上：' + q.key)
+    if (d === 'L3') {
+      var s = times.slice().sort(function (a, b) { return b.m - a.m })
+      if (times.length !== 2 || s[0].m < 45 || s[1].m > 14 || s[1].h !== s[0].h % 12 + 1) bad('B04 挑战看钟应是快到整时和刚过整时：' + q.key)
+    }
+    checkFace(q, times)
+  })
+  each('zhongbiao2', 'pick', function (q, d) {
+    var parts = q.key.slice(5).split('|')
+    var target = tm(parts[0])
+    var opts = parts.slice(1).map(tm)
+    var hit = []
+    opts.forEach(function (o, i) { if (o.h === target.h && o.m === target.m) hit.push(i) })
+    if (hit.length !== 1) bad('B04 选一选正确的钟不是正好一个：' + q.key)
+    else if (q.answer !== CI[hit[0]]) bad('B04 选一选答案错：' + q.key + ' 给的 ' + q.answer)
+    if (new Set(parts.slice(1)).size !== opts.length) bad('B04 选项有重复：' + q.key)
+    if (opts.length !== (d === 'L3' ? 4 : 3)) bad('B04 选项个数不对：' + q.key)
+    notB03(q, opts)
+    var name = q.stem.match(/表示 (.+)？/)[1]
+    if (name !== show(target) && name !== target.h + ' 时 ' + target.m + ' 分') bad('B04 选一选题干和 key 对不上：' + q.stem)
+    checkFace(q, opts)
+  })
+  each('zhongbiao2', 'draw', function (q, d) {
+    var times = list(q)
+    if (q.answer !== joined(times)) bad('B04 画钟答案错：' + q.key)
+    notB03(q, times)
+    if (hands(q.stemHTML).length) bad('B04 画钟题干钟面上已经有针：' + q.key)
+    checkFace(q, times, q.diagramHTML)
+  })
+  each('zhongbiao2', 'order', function (q, d) {
+    var times = list(q)
+    var idx = times.map(function (t, i) { return i })
+    idx.sort(function (a, b) { var x = times[a], y = times[b]; return (x.h === 12 ? 0 : x.h) * 60 + x.m - ((y.h === 12 ? 0 : y.h) * 60 + y.m) })
+    var want = idx.map(function (i) { return CI[i] }).join(' → ')
+    if (q.answer !== want) bad('B04 排一排答案错：' + q.key + ' 给的 ' + q.answer)
+    if (times.length !== 3) bad('B04 排一排不是三件事：' + q.key)
+    if (new Set(times.map(show)).size !== 3) bad('B04 排一排有同一时刻：' + q.key)
+    if (d !== 'L1' && !times.some(function (t) { return t.h === 12 })) bad('B04 提高、挑战的排一排应有中午 12 时：' + q.key)
+    if (d === 'L3' && !times.some(function (t) { return t.m >= 45 && times.some(function (u) { return u.h === t.h % 12 + 1 && u.m <= 14 }) })) bad('B04 挑战排一排缺快到整时的一对：' + q.key)
+    notB03(q, times)
+    checkFace(q, times)
+  })
+}
+
 function checkFloors() {
   each('daxiao', 'num', function (q) {
     var n = nums(q.stem)
@@ -529,6 +616,7 @@ checkFloors()
 checkBichang()
 checkBizhong()
 checkZhongbiao()
+checkZhongbiao2()
 checkSupply()
 
 if (problems.length) {

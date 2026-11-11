@@ -555,6 +555,7 @@
     { no: 'B01', stage: 'L1B', id: 'bichang', name: '推理比较：比长短' },
     { no: 'B02', stage: 'L1B', id: 'bizhong', name: '推理比较：比轻重' },
     { no: 'B03', stage: 'L1B', id: 'zhongbiao', name: '认识钟表：整时和半时' },
+    { no: 'B04', stage: 'L1B', id: 'zhongbiao2', name: '认识钟表：几时几分' },
     { no: '21', stage: 'L2', id: 'wenzimi', name: '加减法文字谜' },
     { no: '22', stage: 'L2', id: 'kuohao1', name: '加减法添去括号（一）' },
     { no: '23', stage: 'L2', id: 'kuohao2', name: '加减法添去括号（二）' },
