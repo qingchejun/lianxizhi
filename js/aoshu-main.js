@@ -472,7 +472,13 @@
     firstPaint = false
     fillForm(settings)
 
-    var result = settings.review ? generateReview(settings) : topic.generate(settings)
+    /* 出题走种子账本：同课同设置给同一个种子（走开再回来题目不变），
+       改了影响题目的设置或点「重新生成」才滚新种子（见 js/aoshu-batch.js） */
+    var batch = S.aoshu.batch
+    var seed = batch.seedFor(batch.keyOf(settings), batch.sigOf(settings))
+    var result = S.aoshu.util.withSeed(seed, function () {
+      return settings.review ? generateReview(settings) : topic.generate(settings)
+    })
     var pages = S.aoshu.render.render($('preview'), settings, result.questions, {
       review: settings.review,
       topicCount: result.topicCount
@@ -511,8 +517,12 @@
 
   buildVariantList(S.aoshu.topics[settings.topic])
 
-  /* 重新生成：参数不变，换一批随机题 */
-  $('btn-regen').addEventListener('click', refresh)
+  /* 重新生成：参数不变也要换一批——滚新种子再刷新 */
+  $('btn-regen').addEventListener('click', function () {
+    var batch = S.aoshu.batch
+    batch.roll(batch.keyOf(settings), batch.sigOf(settings))
+    refresh()
+  })
 
   $('btn-print').addEventListener('click', function () {
     root.print()
