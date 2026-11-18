@@ -730,7 +730,7 @@ function checkDailyBuild() {
   eq(Z.dueList(tie, T, otherRnd), Z.dueList(tie, T, rnd), '顺序确定：换随机源也不变')
 
   var p = Z.buildDaily(marks, T, rnd)
-  eq(p.wrong, [P[0], P[2], P[1]], '到期错字全上卷（不足 10 不预支未来的）')
+  eq(p.wrong, [P[2], P[1], P[0]], '到期错字全上卷（当天到期的先上、逾期的补位，不足 10 不预支未来的）')
   if (p.chars.length !== 20) bad('每日一卷 总数应凑满 20，实际 ' + p.chars.length)
   var uniq = {}
   p.chars.forEach(function (ch) {
@@ -752,6 +752,21 @@ function checkDailyBuild() {
   if (q.wrong.length !== 10) bad('每日一卷 错字位封顶 10，实际 ' + q.wrong.length)
   eq(q.wrong, Z.dueList(many, T, rnd).slice(0, 10), '取的是最逾期的 10 个')
   if (q.chars.length !== 20) bad('每日一卷 错字满额时也要凑满 20')
+
+  /* 昨晚新收的错字（due 正好等于卷子日期）必须上卷：「没认出 → 明天接着考」是硬承诺，
+     逾期积压再多也不能把它挤掉（2026-11-18 用户实测：10 个逾期老错字把周卷新标的
+     3 个字挤出了明天的卷，位子全被占满） */
+  var fresh = {}
+  for (var j = 0; j < 10; j++) {
+    fresh[P[20 + j]] = { add: '2026-09-01', n: 1, k: 0, due: '2026-10-' + (j < 9 ? '0' + (j + 1) : j + 1) }
+  }
+  fresh[P[30]] = { add: '2026-11-08', n: 1, k: 0, due: T, first: '2026-11-06' } // 昨晚刚收的
+  fresh[P[31]] = { add: '2026-11-08', n: 1, k: 0, due: T, first: '2026-11-07' }
+  fresh[P[32]] = { add: '2026-11-08', n: 1, k: 0, due: T, first: '2026-11-08' }
+  var f = Z.buildDaily(fresh, T, rnd)
+  if (f.wrong.length !== 10) bad('每日一卷 积压 + 新错字时错字位仍是 10，实际 ' + f.wrong.length)
+  eq(f.wrong.slice(0, 3), [P[30], P[31], P[32]], '昨晚新收的 3 个字全上卷（不被逾期积压挤掉）')
+  eq(f.wrong.slice(3), Z.dueList(fresh, T, rnd).slice(0, 7), '空位仍按最逾期的补')
 
   /* 空错字集：20 个全认识字 */
   var r = Z.buildDaily({}, T, rnd)

@@ -346,7 +346,15 @@
       var e = marks[ch]
       if (e && !e.out) inSet[ch] = true
     })
-    var wrong = dueList(marks, t, r).slice(0, DAILY_WRONG_MAX)
+    /* 「没认出 → 明天接着考」是硬承诺：due 正好落在卷子日期上的（昨晚新收的、
+       当天到期复核的）先占位，不许被逾期积压挤掉；余下的位子再按最逾期优先补。
+       2026-11-18 用户实测：积压满 10 个时新错的字全被挤出卷，才把这条提到最前。 */
+    var fresh = []
+    var late = []
+    dueList(marks, t, r).forEach(function (ch) {
+      ;((marks[ch].due || '') === t ? fresh : late).push(ch)
+    })
+    var wrong = fresh.concat(late).slice(0, DAILY_WRONG_MAX)
     var known = shuffle(pool().filter(function (ch) {
       return !inSet[ch]
     }), r).slice(0, DAILY_SIZE - wrong.length)

@@ -205,6 +205,24 @@ M.settle(['甲'], M.paperAt(0)) // 欠账卷今天补考，甲认出
 var pv6 = M.ensurePaper()
 check(pv6 && pv6.d === T0 && M.paperCount() === 2, 'S6：结完欠账卷出今天的卷，不跳明天', pv6)
 
+/* S7：逾期积压满 10 个时，今晚新标的错字仍要上明天的卷（2026-11-18 用户实测的洞：
+   周卷标了 3 个字，明天的卷被 10 个逾期老错字占满位子，一个都没带上） */
+M = fresh({
+  'sumsum:shizi:wrong:v3': JSON.stringify((function () {
+    var seed = {}
+    '甲乙丙丁戊己庚辛壬癸'.split('').forEach(function (ch) {
+      seed[ch] = { add: '2026-11-10', n: 1, k: 0, due: '2026-11-19' } // 全部逾期一天
+    })
+    return seed
+  })())
+})
+M.setToday(function () { return T0 })
+M.togglePick('觅')
+M.settle(['觅'], null) // 周卷上登记觅（点了＝没认出）
+var pv7 = M.ensurePaper()
+check(pv7 && pv7.d === T1 && pv7.wrong.indexOf('觅') >= 0 && pv7.wrong.length === 10,
+  'S7：积压满 10 个，今晚新标的觅仍上明天的卷（位子从逾期老字里匀）', pv7 && pv7.wrong)
+
 if (problems.length) {
   console.log('✗ ' + problems.length + ' 处问题：')
   problems.forEach(function (p) { console.log('  - ' + p) })
