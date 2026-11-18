@@ -228,6 +228,40 @@
   font-weight: 700;
 }
 
+/* 紧凑一档：解析页舒排放不进一页时，由 js/aoshu-render.js 给 .sol-grid 加
+   compact 再装一次（能省一页才加）。字号各降半号、行距收紧、块内留白减半——
+   解析是家长看的，可以比孩子落笔的题目页密一点，一页排得满就不浪费纸。 */
+.sol-grid.compact .sol {
+  padding: 2mm 0 1mm;
+}
+
+.sol-grid.compact .sol-stem {
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.sol-grid.compact .sol-topic {
+  font-size: 10.5px;
+}
+
+.sol-grid.compact .sol-steps {
+  margin-top: 1mm;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.sol-grid.compact .sol-diagram {
+  margin-top: 1mm;
+}
+
+.sol-grid.compact .sol-diagram .dot-row {
+  line-height: 1.45;
+}
+
+.sol-grid.compact .sol-answer {
+  font-size: 13px;
+}
+
 /* ---------- 知识点讲解页：自由排版（非网格），内容手工编写保证一页放得下 ---------- */
 
 .lesson-sec {

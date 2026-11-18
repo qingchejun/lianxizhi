@@ -18,7 +18,8 @@
     workMax: 14, // 演算留白上限：摊分页面余量时，这道缝隙最多撑到这么宽
     tailMax: 14, // 答题线以下的收尾留白上限：余量超出演算上限的部分落在这里
     minQ: 18, // 题块最小高度：再短的题也留得下写一行的地方
-    solPad: 3 // 解析块下方的呼吸空间
+    solPad: 3, // 解析块下方的呼吸空间
+    solPadCompact: 1.5 // 紧凑档的呼吸空间：舒排放不进一页时省纸用的
   }
 
   function P() {
@@ -548,6 +549,27 @@
     })
   }
 
+  /*
+   * 页眉兜底：页眉一行里「日期 姓名 用时 得分」栏宽度固定，标题超长就把整行
+   * 顶出内容区（复习卷练习页默认标题 12 个字、单课卷追加「（解析）」后都会贴线）。
+   * 先逐级缩标题字号（21 → 14px），缩到底还放不下就去掉不换行让标题折行——
+   * 页眉高一点无妨，内容不丢、不挤右边的成绩栏。综合复习解析这类短标题不触发。
+   */
+  function fitHeads(container) {
+    var heads = container.querySelectorAll('.sheet-head')
+    Array.prototype.forEach.call(heads, function (head) {
+      var title = head.querySelector('.sheet-title')
+      if (!title || head.scrollWidth <= head.clientWidth + 1) return
+      var size = parseFloat(root.getComputedStyle(title).fontSize)
+      while (head.scrollWidth > head.clientWidth + 1 && size > 14) {
+        size -= 1
+        title.style.fontSize = size + 'px'
+        if (size < 19) title.style.letterSpacing = '1px'
+      }
+      if (head.scrollWidth > head.clientWidth + 1) title.style.whiteSpace = 'normal'
+    })
+  }
+
   /* 一批页面（题目页或解析页）的 HTML 数组：先测高装页，再带内联高度重排 */
   function sheetsHTML(container, questions, opts) {
     var probeHTML = questions
@@ -555,8 +577,26 @@
         return opts.blockHTML(q, i + 1)
       })
       .join('')
-    var heights = measureMM(container, opts.gridClass, probeHTML)
+    var gridClass = opts.gridClass
+    var heights = measureMM(container, gridClass, probeHTML)
     var pages = packPages(heights, opts)
+    /*
+     * 解析页的省纸档：舒排放不进一页时，用紧凑一档（.sol-grid.compact，
+     * 字号小半号、行距收紧）再量再装一遍——能少一页纸就用紧凑版，
+     * 省不了页数就照旧舒展。题目页不参与：孩子要落笔写，留白是刻意给的。
+     */
+    if (opts.compact && pages.length > 1) {
+      var cOpts = {}
+      Object.keys(opts).forEach(function (k) { cOpts[k] = opts[k] })
+      cOpts.pad = MM.solPadCompact
+      var cHeights = measureMM(container, gridClass + ' compact', probeHTML)
+      var cPages = packPages(cHeights, cOpts)
+      if (cPages.length < pages.length) {
+        gridClass += ' compact'
+        pages = cPages
+        opts = cOpts
+      }
+    }
     return pages.map(function (pg, p) {
       var blocks = pg.idx
         .map(function (qi, j) {
@@ -566,12 +606,22 @@
       return pageHTML({
         title: opts.title,
         blocksHTML: blocks,
-        gridClass: opts.gridClass,
+        gridClass: gridClass,
         pageNo: p + 1,
         pageTotal: pages.length,
         footPrefix: opts.footPrefix
       })
     })
+  }
+
+  /*
+   * 解析页标题：页眉一行里「日期 姓名 用时 得分」那栏是固定宽度，留给标题的
+   * 只有约 75mm（约 12 个字）。综合复习卷的默认标题本身就有 12 个字，再追加
+   * 「（解析）」必然把页眉顶出纸外——复习卷直接叫「综合复习解析」；
+   * 自拟了标题（长度家长自己把握）和单课卷照旧追加「（解析）」。
+   */
+  function solTitle(s, opts, title) {
+    return opts.review && !s.title ? '综合复习解析' : title + '（解析）'
   }
 
   /*
@@ -608,20 +658,22 @@
 
     if (s.answerPage) {
       answer = sheetsHTML(container, questions, {
-        title: title + '（解析）',
+        title: solTitle(s, opts, title),
         gridClass: 'sol-grid',
         blockHTML: solutionBlockHTML,
         pad: MM.solPad,
+        compact: true,
         footPrefix: '解析 · '
       })
     }
 
     container.innerHTML = lesson.concat(practice, answer).join('')
+    fitHeads(container)
     fitBlocks(container)
     return { lesson: lesson.length, practice: practice.length, answer: answer.length }
   }
 
   root.SumSum = root.SumSum || {}
   root.SumSum.aoshu = root.SumSum.aoshu || {}
-  root.SumSum.aoshu.render = { render: render }
+  root.SumSum.aoshu.render = { render: render, solTitle: solTitle }
 })(typeof window !== 'undefined' ? window : globalThis)
