@@ -111,16 +111,21 @@
     root.document.body.classList.remove('landscape')
     S.shiziMark.paint()
     var status = $('daily-status')
+    var settledToday = browseIdx == null && S.shiziMark.canUndo('daily')
     if (active) {
       status.innerHTML = p.d === todayStr
         ? '今天的卷子已生成（' + p.chars.length + ' 字：错字最多 10 个 + 认识字凑满，顺序打乱）。打印去考，回来点<b>没认出</b>的字，再点「登记结果」。'
-        : '有一张 ' + md(p.d) + ' 的卷子还没登记。对着那张纸点没认出的字再登记；不想登记就作废。'
+        : p.d > todayStr
+          ? (settledToday ? '今天的卷子已登记，明天的卷已经出好（' : '明天的卷已经出好（') + p.chars.length +
+            ' 字，今晚登记的错字都在上面）。可以今晚先打印，明天直接考；回来点<b>没认出</b>的字再登记。'
+          : '有一张 ' + md(p.d) + ' 的卷子还没登记。对着那张纸点没认出的字再登记；不想登记就作废。'
     } else {
       status.innerHTML = (p.d === todayStr ? '今天' : md(p.d)) + '的卷子已登记。' +
-        (browseIdx == null ? '明天自动生成新的一张。' : '（往期卷只读）')
+        (browseIdx == null ? '下一张会自动出好。' : '（往期卷只读）')
     }
     $('btn-daily-settle').hidden = !active
-    $('btn-daily-undo').hidden = !(browseIdx == null && p.settled && p.d === todayStr && S.shiziMark.canUndo('daily'))
+    /* 撤销登记：看着「今天已登记的那张」时亮；登记完顶上来的是明日预览卷，那也得亮 */
+    $('btn-daily-undo').hidden = !(browseIdx == null && ((p.settled && p.d === todayStr) || p.d > todayStr) && S.shiziMark.canUndo('daily'))
     $('btn-daily-drop').hidden = !active
     var n = S.shiziMark.paperCount()
     $('daily-browse').hidden = n < 2
@@ -402,7 +407,7 @@
   })
 
   $('btn-daily-drop').addEventListener('click', function () {
-    if (!root.confirm('作废这张卷子？字的数据不动，今天可以重新生成一张。')) return
+    if (!root.confirm('作废这张卷子？字的数据不动，随时可以重新生成一张。')) return
     S.shiziMark.discardPaper()
     browseIdx = null
     refresh()

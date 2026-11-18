@@ -137,6 +137,74 @@ var pickMtime = JSON.parse(mem['sumsum:sync:meta'] || '{}')['sumsum:shizi:picks:
 check(typeof pickMtime === 'number' && pickMtime > 1,
   '首次点选盖「现在」（>1）而非播种的 1，两台设备才能分出新旧', pickMtime)
 
+/* ---------- 预生成明天的卷（2026-11-18 用户场景：周卷标完错字，自动出的卷没带它们） ----------
+   规矩：今晚登记的错字到期日是明天，所以登记完自动出的下一张 = 按「明天到期」组卷的
+   明日卷；明晚卷已出、又标了新错字 → 还没考的明日卷重排带上（考过的绝不重排）。 */
+var T1 = '2026-11-21', T2 = '2026-11-22'
+
+/* S1：每日卷登记完 → 预生成明天的卷，今晚的错字就在上面 */
+M = fresh({
+  'sumsum:shizi:wrong:v3': JSON.stringify({ 甲: { add: '2026-11-19', n: 1, k: 0, due: T0 } }),
+  'sumsum:shizi:daily:v1': JSON.stringify({ papers: [{ d: T0, chars: '甲', wrong: '甲', settled: false }] })
+})
+M.setToday(function () { return T0 })
+M.togglePick('甲')
+M.settle(['甲'], M.paperAt(0))
+var pv = M.ensurePaper()
+check(pv && pv.d === T1 && !pv.settled, 'S1：登记完自动出的是明天的卷', pv)
+check(pv && pv.wrong.indexOf('甲') >= 0, 'S1：今晚错的甲在明日卷上（第二天接着考）', pv)
+
+/* S2：明天打开页面，还是这张（不重新生成、字不变脸） */
+M.setToday(function () { return T1 })
+var frozen = JSON.stringify(M.paperAt(1))
+var served = M.ensurePaper()
+check(JSON.stringify(served) === frozen && M.paperCount() === 2, 'S2：明天打开还是昨晚那张，不重出', served)
+
+/* S3：今天只登记了周卷（还没出过每日卷）→ 直接出明天的卷，别出「今天到期」的加场卷 */
+M = fresh({
+  'sumsum:shizi:wrong:v3': JSON.stringify({ 乙: { add: '2026-11-19', n: 1, k: 0, due: T0 } })
+})
+M.setToday(function () { return T0 })
+M.togglePick('乙')
+M.settle(['乙'], null) // 周卷上登记乙（点了＝又错）
+var pv3 = M.ensurePaper()
+check(pv3 && pv3.d === T1 && pv3.wrong.indexOf('乙') >= 0 && M.paperCount() === 1,
+  'S3：周卷登记后直接出明天的卷（带乙）', pv3)
+
+/* S4：明日卷已出，又去标了新错字 → 还没考的明日卷重排带上，不翻倍 */
+M.togglePick('丙')
+M.settle(['丙'], null) // 又登记了一笔周卷错字
+var pv4 = M.paperAt(0)
+check(pv4 && pv4.d === T1 && pv4.wrong.indexOf('丙') >= 0 && pv4.wrong.indexOf('乙') >= 0,
+  'S4：晚标的丙也进明日卷（乙还在）', pv4)
+check(M.paperCount() === 1, 'S4：重排是换一张，不是多一张', M.paperCount())
+
+/* S5：考过（登记过）的卷绝不重排；下一张从后天起 */
+M.setToday(function () { return T1 })
+var p2 = M.paperAt(0)
+var p2Face = p2.chars + '|' + p2.wrong // 卷面 = 字 + 错字位；settled 翻位是登记本身，不算变脸
+M.settle(Array.from(p2.chars), p2) // 明日卷第二天考完，全认出（没点）
+M.togglePick('丁')
+M.settle(['丁'], null) // 又标了新错字
+var p2After = M.paperAt(0)
+check(p2After.settled === true && p2After.chars + '|' + p2After.wrong === p2Face,
+  'S5：登记过的卷不重排（红线）', p2After)
+var pv5 = M.ensurePaper()
+check(pv5 && pv5.d === T2 && pv5.wrong.indexOf('丁') >= 0 && pv5.wrong.indexOf('乙') < 0,
+  'S5：下一张从后天起，带丁不带乙（乙在等复核）', pv5)
+
+/* S6：往日欠账卷今天结清 → 出的还是今天的卷（不许跳天） */
+M = fresh({
+  'sumsum:shizi:wrong:v3': JSON.stringify({ 甲: { add: '2026-11-16', n: 1, k: 0, due: '2026-11-17' } }),
+  'sumsum:shizi:daily:v1': JSON.stringify({
+    papers: [{ d: '2026-11-17', chars: '甲', wrong: '甲', settled: false }]
+  })
+})
+M.setToday(function () { return T0 })
+M.settle(['甲'], M.paperAt(0)) // 欠账卷今天补考，甲认出
+var pv6 = M.ensurePaper()
+check(pv6 && pv6.d === T0 && M.paperCount() === 2, 'S6：结完欠账卷出今天的卷，不跳明天', pv6)
+
 if (problems.length) {
   console.log('✗ ' + problems.length + ' 处问题：')
   problems.forEach(function (p) { console.log('  - ' + p) })

@@ -154,17 +154,25 @@
   }
 
   /*
-   * 拿「该看的那张卷」：有未登记的就先登记它（哪怕是昨天的）；
-   * 今天已经登记过 → 就是它（今天完成了）；否则生成今天的新卷。
+   * 拿「该看的那张卷」：有未登记的就先登记它（哪怕是昨天的）；否则生成下一张。
+   * 下一张的日期（2026-11-18 定的规矩：今晚登记的错字要出现在下一张卷上）：
+   *   - 今天的卷登记完 → 预生成明天的。今晚错的字到期日正是明天，直接在卷上；
+   *   - 同一天连考两张（当晚把明日卷提前考了）→ 再往后一天；
+   *   - 今天只登记了周卷/错字卷（没出过每日卷）→ 也直接出明天的，
+   *     别再出一张「今天到期」的加场卷把今晚的错字漏掉；
+   *   - 全新的一天，或只是把往日的欠账卷结清 → 出今天的。
    * 一天一卷由「papers 只在生成时追加」保证；作废（discardPaper）是唯一的删法。
    */
   function ensurePaper() {
     var t = today()
     var last = papers.papers[papers.papers.length - 1] || null
     if (last && !last.settled) return last
-    if (last && last.d === t) return last
-    var b = C().buildDaily(marks, t)
-    var p = { d: t, chars: b.chars.join(''), wrong: b.wrong.join(''), settled: false }
+    var nextD
+    if (last && last.d >= t) nextD = C().addDays(last.d, 1)
+    else if (undoSlot && undoSlot.d === t && undoSlot.kind === 'sheet') nextD = C().addDays(t, 1)
+    else nextD = t
+    var b = C().buildDaily(marks, nextD)
+    var p = { d: nextD, chars: b.chars.join(''), wrong: b.wrong.join(''), settled: false }
     papers.papers.push(p)
     savePapers()
     return p
@@ -373,6 +381,14 @@
     clearPicks(chars)
     saveMarks()
     saveLog()
+    /* 明日卷已预生成、现在又标了新的错字（比如补登记了周卷）：那张还没考过，
+       重排出一张把新错字带上。登记过的卷绝不重排——卷面变脸只发生在没考过的卷上。 */
+    var lastPaper = papers.papers[papers.papers.length - 1]
+    if (lastPaper && !lastPaper.settled && lastPaper.d > t) {
+      papers.papers.pop()
+      savePapers()
+      ensurePaper()
+    }
     fire()
   }
 
