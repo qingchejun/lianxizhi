@@ -181,23 +181,31 @@
   }
 
   /*
-   * ============ 每日一卷（2026-11）：间隔阶梯、到期挑选、登记 ============
+   * ============ 每日一卷：进出规则、到期挑选、登记（2026-11-18 与用户定的） ============
    *
-   * 错字集从「进一出二」升级成间隔阶梯（与用户 2026-11-09 定的）：
-   *   进集 / 又错 → 第 2 天考；认出一次后隔 3 天，再 7 天，再 15 天；
-   *   首错字（n=1）认出 2 次毕业，错过 2 次以上（n≥2）要认出 4 次；
-   *   任一步没认出：k 归 0、n +1，明天再考。
-   * 记录升级为 v3（键 sumsum:shizi:wrong:v3），v2/v1 由 migrateWrong 迁入，旧键留着不删。
+   * 答应孩子每天只认 20 个字，错字包含在这 20 里（最多占 10 个位）：
+   *   进集 / 又错 → 第 2 天考，之后天天都在候选里（近 7 天的错字自然天天在卷上）；
+   *   认出一次 → 下架，隔 3 天回来复核：复核认出 → 毕业；复核没认出 → 回炉接着滚；
+   *   毕业后再错 → 重新进集，n 接着累计（错得越多排得越靠前）。
+   * 挑错字位的顺序：最逾期的在前（复核到期的先伺候毕业）；同日错得多的优先；
+   * 再同先错的先上（老字优先，不再掷随机）。
    *
-   * entry 字段：add=本轮进集日，n=累计错过次数，k=本轮连续认出次数，
+   * 记录仍是 v3（键 sumsum:shizi:wrong:v3），字段一个没变；上一版阶梯
+   * （首错认 2 次 / 错多次认 4 次、隔 3/7/15 天）攒到 k≥2 的在集字由 normalizeWrong
+   * 换规当天直接毕业。v2/v1 由 migrateWrong 迁入，旧键留着不删。
+   *
+   * entry 字段：add=本轮进集日，n=累计错过次数，k=本轮连续认出次数（换规后只有 0 / 1），
    * due=下次到期日（'' 或过去的日子都算到期），hit/fail=最近一次认出/又错的日子
    * （只为「同一天不重复记」和复习记录重算），out=毕业日，first=第一次错的日子。
    */
 
-  var PASS_INTERVALS = [1, 3, 7, 15]
+  /* [0]：进集/又错后第 2 天考（markFail 里直接写死 +1，这里只作记录）；
+     [1]：认出一次后隔 3 天复核。毕业只需认出 2 次，用不到更长的间隔。 */
+  var PASS_INTERVALS = [1, 3]
 
-  function passesNeeded(n) {
-    return n >= 2 ? 4 : 2
+  /* 2026-11-18 起统一：认出 2 次（当场 + 隔 3 天复核）毕业，不再按错几次分档 */
+  function passesNeeded() {
+    return 2
   }
 
   /* 'YYYY-MM-DD' 加 n 天。用本地时间构造再取回来：toISOString 走 UTC，
@@ -227,7 +235,7 @@
     return o
   }
 
-  /* 新收进错字集（登记时点了的字）。以前错过的不清零，n 接着加 —— 再错自动走四步阶梯 */
+  /* 新收进错字集（登记时点了的字）。以前错过的不清零，n 接着加 —— 再错重新攒复核 */
   function markEnter(e, t) {
     if (e && !e.out) return e // 已经在集里：进集这条路由 markFail 表达，这里不动
     var o = keepFirst(e, { add: t, n: markCount(e) + 1, k: 0, due: addDays(t, 1) })
@@ -243,7 +251,7 @@
     return keepFirst(e, { add: e.add, n: markCount(e) + 1, k: 0, due: addDays(t, 1), fail: t })
   }
 
-  /* 认出来了（登记时没点的字）：k + 1；攒够 passesNeeded(n) 次就毕业（墓碑只剩 n/first） */
+  /* 认出来了（登记时没点的字）：k + 1；认出 2 次（当场 + 复核）就毕业（墓碑只剩 n/first） */
   function markPass(e, t) {
     if (!e || e.out) return e
     if (e.add === t || e.fail === t || e.hit === t) return e
@@ -272,6 +280,23 @@
     return out
   }
 
+  /* 2026-11-18 换规：老阶梯时代在集、已认出 2 次以上（k≥2）的字，新规则下早就够
+     毕业了（否则它们的 due 是按 7/15 天排的，还得干等）。加载时直接毕业，其余原样。
+     换规收尾后 markPass 在 k=2 就落 out，在集的 k≥2 不会再出现，这是趟一次性迁移。 */
+  function normalizeWrong(raw, t) {
+    var out = {}
+    Object.keys(raw || {}).forEach(function (ch) {
+      var e = raw[ch]
+      if (!e || typeof e !== 'object' || (typeof e.add !== 'string' && typeof e.out !== 'string')) return
+      if (!e.out && (e.k || 0) >= 2) {
+        out[ch] = keepFirst(e, { n: markCount(e), out: t })
+        return
+      }
+      out[ch] = e
+    })
+    return out
+  }
+
   var DAILY_SIZE = 20
   var DAILY_WRONG_MAX = 10
 
@@ -287,20 +312,21 @@
 
   /*
    * 到期（due ≤ 今天）的错字，最逾期的排前面；一样逾期的话错得多的优先；
-   * 再一样就 rnd() 决胜。''（v1 迁移来等）比任何日期都小、最先到期。
-   * rnd 可注入：check-shizi 喂常数把顺序钉死。
+   * 再一样先错的先上（first 早的在前 —— 2026-11-18 与用户定的「从每周一的错字开始」，
+   * 取代原先的随机决胜：哪 10 个字上卷不再看运气）。''（v1 迁移来等）比任何日期都小、
+   * 最先到期。rnd 参数留着兼容旧调用，已不参与排序。
    */
   function dueList(marks, t, rnd) {
-    var r = rnd || Math.random
     var arr = []
     Object.keys(marks || {}).forEach(function (ch) {
       var e = marks[ch]
       if (!e || e.out) return
       if (e.due && e.due > t) return
-      arr.push({ ch: ch, due: e.due || '', n: markCount(e), r: r() })
+      arr.push({ ch: ch, due: e.due || '', n: markCount(e), f: e.first || e.add || '' })
     })
     arr.sort(function (a, b) {
-      return (a.due < b.due ? -1 : a.due > b.due ? 1 : 0) || b.n - a.n || a.r - b.r
+      return (a.due < b.due ? -1 : a.due > b.due ? 1 : 0) || b.n - a.n ||
+        (a.f < b.f ? -1 : a.f > b.f ? 1 : 0)
     })
     return arr.map(function (x) {
       return x.ch
@@ -455,6 +481,7 @@
     markFail: markFail,
     markPass: markPass,
     migrateWrong: migrateWrong,
+    normalizeWrong: normalizeWrong,
     dueList: dueList,
     buildDaily: buildDaily,
     DAILY_SIZE: DAILY_SIZE,

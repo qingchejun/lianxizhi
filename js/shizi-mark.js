@@ -85,7 +85,8 @@
   }
 
   /* v3：有就用（条目防线同 v2 时代），没有就把 v2/v1 迁进来。
-     在集的字一律今天到期——一轮刚摸完底，从今天开始按新阶梯走。 */
+     在集的字一律今天到期——一轮刚摸完底，从今天开始按新规则走。
+     2026-11-18 换规：老阶梯攒到 k≥2 的在集字（新规则下早已够毕业）加载即毕业并落盘。 */
   function loadMarks() {
     var raw = readJSON(KEY)
     if (isObj(raw)) {
@@ -94,7 +95,9 @@
         var e = raw[ch]
         if (isObj(e) && (typeof e.add === 'string' || typeof e.out === 'string')) map[ch] = e
       })
-      return map
+      var fixed = C().normalizeWrong(map, today())
+      if (JSON.stringify(fixed) !== JSON.stringify(map)) writeJSON(KEY, fixed)
+      return fixed
     }
     var m = C().migrateWrong(loadV2Raw(), today())
     writeJSON(KEY, m)

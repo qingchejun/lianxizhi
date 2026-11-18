@@ -113,7 +113,7 @@
     var status = $('daily-status')
     if (active) {
       status.innerHTML = p.d === todayStr
-        ? '今天的卷子已生成（' + p.chars.length + ' 字：到期错字 + 认识字随机）。打印去考，回来点<b>没认出</b>的字，再点「登记结果」。'
+        ? '今天的卷子已生成（' + p.chars.length + ' 字：错字最多 10 个 + 认识字凑满，顺序打乱）。打印去考，回来点<b>没认出</b>的字，再点「登记结果」。'
         : '有一张 ' + md(p.d) + ' 的卷子还没登记。对着那张纸点没认出的字再登记；不想登记就作废。'
     } else {
       status.innerHTML = (p.d === todayStr ? '今天' : md(p.d)) + '的卷子已登记。' +
@@ -241,8 +241,8 @@
     var once = S.shiziMark.onceCount()
     var head = '错字集里有 <b>' + n + '</b> 个字' +
       (once ? '（其中 ' + once + ' 个只差一次认出就毕业）' : '') + '。' +
-      '复习按 1 → 3 → 7 → 15 天的间隔排：错过的字认出 ' +
-      '<b>2 次</b>毕业；错过 2 次以上的要认出 <b>4 次</b>。'
+      '没认出的字第二天接着考，认出一次后隔 <b>3 天</b>回来复核一次，复核也认出才毕业；' +
+      '每天最多带 10 个：复核到期的先上，然后错得多的、错得早的。'
     if (s.mode === 'wrong') {
       return head + '<br>考这一张时，孩子<b>没认出</b>的字点一下（深红框）；考完点「登记结果」，没点的算认出。'
     }
@@ -366,14 +366,14 @@
     var html = ''
     if (row) {
       html += '<p class="hint settle-done">今天登记过 <b>' + row.seen.length + '</b> 个旧错字：认出 ' + row.ok +
-        (row.out ? '（其中 ' + row.out + ' 个认满次数毕业）' : '') +
+        (row.out ? '（其中 ' + row.out + ' 个复核通过毕业）' : '') +
         '，又错 <b>' + row.miss + '</b> 个。' +
         (S.shiziMark.canUndo('sheet') ? ' <button type="button" class="link-btn" data-settle="undo">撤销登记</button>' : '') + '</p>'
     }
     if (seen.length || picked.length) {
       html += '<button type="button" class="btn btn-sm settle-btn" data-settle="go">登记结果</button>' +
         '<p class="hint">点了 <b>' + picked.length + '</b> 个没认出的；没点的 ' + seen.length +
-        ' 个旧错字算认出（认出记一次，攒够次数毕业）。点错了再点一下就取消。</p>'
+        ' 个旧错字算认出（认出记一次，隔 3 天复核过了就毕业）。点错了再点一下就取消。</p>'
     }
     return html
   }
@@ -431,7 +431,7 @@
     return p.length === 3 ? Number(p[1]) + '/' + Number(p[2]) : ''
   }
 
-  var ST_LABEL = { wrong: '在错字集里', once: '认出过，还差几次看卷面右上角', out: '已毕业，移出了' }
+  var ST_LABEL = { wrong: '在错字集里', once: '认出过一次，复核认出就毕业', out: '已毕业，移出了' }
 
   /*
    * 上半：四个数；中间：按错的次数分组，一字一块，颜色和卷面一致（红底 / 半红 / 白底 = 已移出）；
@@ -449,7 +449,7 @@
     var cards = [
       [st.total, '个字错过', '只要错过一次就算'],
       [st.inSet, '个还在错字集', st.once ? '其中 ' + st.once + ' 个差一次毕业' : '　'],
-      [st.out, '个已学会', '认满次数，毕业移出'],
+      [st.out, '个已学会', '复核通过，毕业移出'],
       [st.times, '次', '累计一共错过']
     ].map(function (c) {
       return '<div class="hist-card"><b>' + c[0] + '</b><span>' + c[1] + '</span><small>' + c[2] + '</small></div>'
@@ -470,7 +470,7 @@
     box.innerHTML = '<div class="hist">' +
       '<div class="hist-cards">' + cards + '</div>' +
       '<h3 class="hist-h">按错的次数<span class="hist-key"><i class="hc wrong"></i>在错字集里' +
-        '<i class="hc once"></i>认出过，攒次数中<i class="hc out"></i>已毕业</span></h3>' +
+        '<i class="hc once"></i>认出过一次，等复核<i class="hc out"></i>已毕业</span></h3>' +
       groups +
       '<h3 class="hist-h">最近的复习</h3>' +
       (logRows

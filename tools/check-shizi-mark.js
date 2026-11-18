@@ -112,6 +112,19 @@ M.undoSettle()
 check(marksNow().甲.n === 1 && marksNow().乙.n === 2,
   'I3：撤销只回滚最新那笔（每日卷），周卷那笔保住', marksNow())
 
+/* ---------- 换规迁移：老阶梯攒到 k≥2 的在集字，加载即毕业并落盘 ----------
+   毕业日是「加载那一刻的真实今天」（setToday 只能在模块加载之后设），所以只验墓碑形状。 */
+M = fresh({ 'sumsum:shizi:wrong:v3': JSON.stringify({
+  甲: { add: '2026-11-01', n: 2, k: 2, due: '2026-11-30', hit: '2026-11-15', first: '2026-10-01' },
+  乙: { add: '2026-11-19', n: 1, k: 1, due: '2026-11-22', hit: '2026-11-19' }
+}) })
+M.setToday(function () { return T0 })
+var ji = marksNow().甲
+check(ji && typeof ji.out === 'string' && ji.n === 2 && ji.first === '2026-10-01' && ji.add === undefined,
+  '换规：认出过 2 次的甲加载即毕业（墓碑只留 n/out/first）', ji)
+check(marksNow().乙 && marksNow().乙.k === 1 && !marksNow().乙.out,
+  '换规：半红乙原样等复核', marksNow().乙)
+
 /* ---------- 云同步：点选集要像错字集一样首载播种（终审后浏览器 e2e 抓出） ----------
    picks:v1 只在用户点选时才首写，会被播种语义盖成 mtime=1——两台设备各点过字
    就永远打平（1 vs 1），点选互不同步。修法与 wrong:v3 一致：页面加载就写空集。 */

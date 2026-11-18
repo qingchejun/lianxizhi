@@ -432,12 +432,13 @@ function checkHistory() {
   eq(Z.historyStats(null).total, 0, 'null 当作空')
 }
 
-/* ---------- 5f. 每日一卷：毕业阶梯（addDays / markEnter / markFail / markPass） ---------- */
+/* ---------- 5f. 每日一卷：毕业规则（addDays / markEnter / markFail / markPass） ---------- */
 
 /*
- * 间隔阶梯（2026-11-09 与用户定的）：进集后第 1 天考；认出后隔 3、7、15 天再考。
- * 首错字（n=1）认出 2 次毕业；错过 2 次以上的字（n≥2）要认出 4 次。
- * 任一步没认出：k 归 0、n +1、明天再考。
+ * 进出规则（2026-11-18 与用户定的）：进集 / 又错后第 2 天考，之后天天都在候选里；
+ * 认出一次 → 下架隔 3 天回来复核，复核认出 → 毕业；复核没认出 → 回炉接着滚。
+ * 毕业统一认出 2 次（当场 + 复核），不再按错几次分档（旧版 n≥2 要认 4 次、隔 7/15 天）。
+ * 毕业后再错 → 重新进集，n 接着累计。
  */
 function checkDailySrs() {
   function eq(a, b, msg) {
@@ -451,27 +452,23 @@ function checkDailySrs() {
   eq(Z.addDays('', 3), '', '坏日期应返回空串不炸')
 
   eq(Z.passesNeeded(1), 2, '首错字认 2 次毕业')
-  eq(Z.passesNeeded(2), 4, '错 2 次认 4 次')
-  eq(Z.passesNeeded(9), 4, '错很多次也是 4 次')
+  eq(Z.passesNeeded(2), 2, '错 2 次也是认 2 次（不分档）')
+  eq(Z.passesNeeded(9), 2, '错很多次同样是 2 次')
 
   /* 主线一：首错字 D0 错 → D1 认出（+3）→ D4 认出 → 毕业 */
   var e = Z.markEnter(null, '2026-11-09')
   eq(e, { add: '2026-11-09', n: 1, k: 0, due: '2026-11-10', first: '2026-11-09' }, '新收进：明天考')
   e = Z.markPass(e, '2026-11-10')
-  eq(e, { add: '2026-11-09', n: 1, k: 1, due: '2026-11-13', hit: '2026-11-10', first: '2026-11-09' }, '第 1 次认出后隔 3 天')
+  eq(e, { add: '2026-11-09', n: 1, k: 1, due: '2026-11-13', hit: '2026-11-10', first: '2026-11-09' }, '第 1 次认出后隔 3 天复核')
   e = Z.markPass(e, '2026-11-13')
-  eq(e, { n: 1, out: '2026-11-13', first: '2026-11-09' }, '第 2 次认出毕业，只留 n / out / first')
+  eq(e, { n: 1, out: '2026-11-13', first: '2026-11-09' }, '复核认出毕业，只留 n / out / first')
 
-  /* 主线二：n≥2 的字四步 1/3/7/15 */
+  /* 主线二：错得多的字一样两步，不吃小灶也不加码 */
   var f = { add: '2026-11-09', n: 2, k: 0, due: '2026-11-10', first: '2026-11-01' }
   f = Z.markPass(f, '2026-11-10')
-  eq([f.k, f.due], [1, '2026-11-13'], '×2 的字第 1 次认出 +3')
+  eq([f.k, f.due], [1, '2026-11-13'], '×2 的字第 1 次认出同样 +3')
   f = Z.markPass(f, '2026-11-13')
-  eq([f.k, f.due], [2, '2026-11-20'], '第 2 次 +7')
-  f = Z.markPass(f, '2026-11-20')
-  eq([f.k, f.due], [3, '2026-12-05'], '第 3 次 +15')
-  f = Z.markPass(f, '2026-12-05')
-  eq(f, { n: 2, out: '2026-12-05', first: '2026-11-01' }, '第 4 次才毕业')
+  eq(f, { n: 2, out: '2026-11-13', first: '2026-11-01' }, '第 2 次认出就毕业（不再走 7/15 天）')
 
   /* 又没认出：k 归 0、n +1、明天再考；同一天重复记不叠加 */
   var g = { add: '2026-11-01', n: 1, k: 1, due: '2026-11-04', hit: '2026-11-01', first: '2026-11-01' }
@@ -482,7 +479,7 @@ function checkDailySrs() {
 
   /* 毕业后又错（含当天反悔）：n 接着加 */
   var h = Z.markEnter({ n: 3, out: '2026-11-04', first: '2026-11-01' }, '2026-11-08')
-  eq(h, { add: '2026-11-08', n: 4, k: 0, due: '2026-11-09', first: '2026-11-01' }, '毕业再错：n=4、从头走四步')
+  eq(h, { add: '2026-11-08', n: 4, k: 0, due: '2026-11-09', first: '2026-11-01' }, '毕业再错：n=4、从头再攒复核')
   /* 在集里的字不该走 markEnter（登记层会拦），这里兜底返回原样 */
   eq(Z.markEnter({ add: '2026-11-01', n: 1, k: 0, due: '2026-11-02' }, '2026-11-02'),
     { add: '2026-11-01', n: 1, k: 0, due: '2026-11-02' }, '在集里 markEnter 应原样返回')
@@ -497,7 +494,7 @@ function checkDailySrs() {
   eq(Z.stateOf({ n: 1, out: '2026-11-01' }), 'out', '墓碑是 out')
   eq(Z.stateOf({ add: '2026-11-01', n: 1, k: 0, due: '' }), 'wrong', 'k=0 红底')
   eq(Z.stateOf({ add: '2026-11-01', n: 2, k: 1, due: '' }), 'once', 'k≥1 半红')
-  eq(Z.stateOf({ add: '2026-11-01', n: 2, k: 3, due: '' }), 'once', 'k=3 仍是半红')
+  eq(Z.stateOf({ add: '2026-11-01', n: 2, k: 3, due: '' }), 'once', '防御：k 比 1 大也当半红（换规后正常不会有）')
 
   /* 不改传入对象 —— 登记层靠这个做整卷回滚 */
   var orig = { add: '2026-11-01', n: 2, k: 1, due: '2026-11-04' }
@@ -528,6 +525,35 @@ function checkMigrateWrong() {
   eq(m.丁, { add: '', n: 1, k: 0, due: T }, 'v1 条目当作 1 次红底')
   if (m.戊 != null) bad('迁移 垃圾条目应丢弃，实际 ' + JSON.stringify(m.戊))
   eq(Z.migrateWrong(null, T), {}, '空输入返回空表')
+}
+
+/* ---------- 5h. 换规：老阶梯攒到 k≥2 的在集字，加载即毕业 ---------- */
+
+/*
+ * 2026-11-18 规则从「认 2 或 4 次、隔 3/7/15 天」换成「认 2 次、隔 3 天复核」。
+ * 老数据里在集、已认出 2 次以上（k≥2）的字，新规则下早就够毕业了，不该再按
+ * 老阶梯排的 7/15 天 due 干等 —— normalizeWrong 在加载时直接把它们毕业，其余原样。
+ */
+function checkNormalizeWrong() {
+  function eq(a, b, msg) {
+    if (canon(a) !== canon(b)) bad('换规 ' + msg + '：期望 ' + JSON.stringify(b) + '，实际 ' + JSON.stringify(a))
+  }
+  var T = '2026-11-18'
+  var m = Z.normalizeWrong({
+    甲: { add: '2026-11-01', n: 2, k: 2, due: '2026-11-25', hit: '2026-11-15', first: '2026-10-01' }, // 老阶梯第 3 步
+    乙: { add: '2026-11-01', n: 3, k: 3, due: '2026-12-01', hit: '2026-11-16' },                      // 老阶梯第 4 步
+    丙: { add: '2026-11-15', n: 1, k: 1, due: '2026-11-18', hit: '2026-11-15' },                      // 半红：等复核
+    丁: { add: '2026-11-17', n: 2, k: 0, due: '2026-11-18', fail: '2026-11-17' },                     // 红底：天天滚
+    戊: { n: 1, out: '2026-11-01', first: '2026-10-01' },                                             // 墓碑
+    己: 42                                                                                             // 垃圾 → 丢弃
+  }, T)
+  eq(m.甲, { n: 2, out: T, first: '2026-10-01' }, '认出过 2 次的当天毕业（墓碑只留 n / out / first）')
+  eq(m.乙, { n: 3, out: T }, '认出过 3 次的也毕业')
+  eq(m.丙, { add: '2026-11-15', n: 1, k: 1, due: '2026-11-18', hit: '2026-11-15' }, '半红原样等复核')
+  eq(m.丁, { add: '2026-11-17', n: 2, k: 0, due: '2026-11-18', fail: '2026-11-17' }, '红底原样接着滚')
+  eq(m.戊, { n: 1, out: '2026-11-01', first: '2026-10-01' }, '墓碑原样')
+  if (m.己 != null) bad('换规 垃圾条目应丢弃，实际 ' + JSON.stringify(m.己))
+  eq(Z.normalizeWrong({}, T), {}, '空表原样')
 }
 
 /* ---------- 6. 本周卷附页抽字（sampleWrong） ---------- */
@@ -695,6 +721,14 @@ function checkDailyBuild() {
   var due = Z.dueList(marks, T, rnd)
   eq(due, [P[0], P[2], P[1]], '最逾期优先，同日 n 大优先；未到期与毕业的都不算')
 
+  /* 同日同次：先错的先上（first 早的在前），顺序确定、不看运气 */
+  var tie = {}
+  tie[P[5]] = { add: '2026-11-01', n: 1, k: 0, due: T, first: '2026-11-01' }
+  tie[P[6]] = { add: '2026-10-01', n: 1, k: 0, due: T, first: '2026-10-01' } // 后插入但错得更早
+  var otherRnd = function () { return 0.9 }
+  eq(Z.dueList(tie, T, rnd), [P[6], P[5]], '同日同次：先错的先上')
+  eq(Z.dueList(tie, T, otherRnd), Z.dueList(tie, T, rnd), '顺序确定：换随机源也不变')
+
   var p = Z.buildDaily(marks, T, rnd)
   eq(p.wrong, [P[0], P[2], P[1]], '到期错字全上卷（不足 10 不预支未来的）')
   if (p.chars.length !== 20) bad('每日一卷 总数应凑满 20，实际 ' + p.chars.length)
@@ -838,8 +872,9 @@ function main() {
     ['错字集排序与错字卷排版（1~400 字全扫）', checkWrongSet],
     ['附页抽字权重', checkWeight],
     ['历史错字统计', checkHistory],
-    ['每日一卷：毕业阶梯', checkDailySrs],
+    ['每日一卷：毕业规则（认出 2 次 + 隔 3 天复核）', checkDailySrs],
     ['每日一卷：v2/v1 迁移', checkMigrateWrong],
+    ['每日一卷：换规当天老账直接毕业', checkNormalizeWrong],
     ['每日一卷：到期挑选与构建', checkDailyBuild],
     ['每日一卷：登记', checkSettle],
     ['附页抽字：边界 / 顺序 / 均匀性 / 按权重偏向（2 万轮）', checkSample],
