@@ -230,6 +230,29 @@ function checkClueText(report) {
   if (T(1, 1) !== '有 2 个号码正确，只有 1 个位置正确') report('clueText(1,1) 文案不对')
 }
 
+function checkSettings(report) {
+  var ST = globalThis.SumSum.mimaSettings
+  if (!ST) { report('mima-settings.js 没加载上'); return }
+
+  /* 越界/畸形值必须被钳住或回退，而不是透传给生成器 */
+  if (ST.sanitize({ level: 'L9' }).level !== 'L1') report('level=L9 没回退到 L1')
+  if (ST.sanitize({ level: 'l1' }).level !== 'L1') report('level 大小写敏感地拒绝了 l1（应回退 L1）')
+  if (ST.sanitize({ count: 0 }).count !== 1) report('count=0 没钳到 1')
+  if (ST.sanitize({ count: 99 }).count !== 12) report('count=99 没钳到 12')
+  if (ST.sanitize({ count: 'abc' }).count !== 4) report('count=abc 没回退默认 4')
+  if (ST.sanitize({ copies: 5 }).copies !== 2) report('copies=5 没钳到 2')
+  if (ST.sanitize({ copies: '1' }).copies !== 1) report("copies='1' 没按数字处理")
+  if (ST.sanitize({ noDuplicates: 'false' }).noDuplicates !== false) report("noDuplicates='false' 没转成布尔假")
+  if (ST.sanitize({ answerPage: '1' }).answerPage !== true) report("answerPage='1' 没转成布尔真")
+  if (ST.sanitize({ title: 'x'.repeat(50) }).title.length > 30) report('title 没截到 30 字')
+  if (ST.sanitize({ seed: -5 }).seed !== 0) report('seed=-5 没钳到 0')
+  /* 默认值本身 */
+  var d = ST.DEFAULTS
+  if (d.level !== 'L1' || d.count !== 4 || d.copies !== 2 || d.noDuplicates !== true || d.answerPage !== false) {
+    report('DEFAULTS 与规格不符：' + JSON.stringify(d))
+  }
+}
+
 function main() {
   var problems = []
   function report(msg) { problems.push(msg) }
@@ -256,7 +279,8 @@ function main() {
   ;[
     ['文字句式', checkClueText],
     ['种子可复现', checkReproducible],
-    ['题目不重复', checkNoDuplicates]
+    ['题目不重复', checkNoDuplicates],
+    ['设置钳位', checkSettings]
   ].forEach(function (pair) {
     var before = problems.length
     pair[1](report)
