@@ -128,6 +128,108 @@ function selfTest() {
   return fails
 }
 
+/* ---------- 主校验：每关扫一批生成题 ---------- */
+
+var ROUNDS = 300
+
+function poolOf(lv) {
+  var p = []
+  for (var d = lv.poolMin; d <= lv.poolMax; d++) p.push(d)
+  return p
+}
+
+function checkLevel(levelKey, report) {
+  var lv = LEVELS[levelKey]
+  var pool = poolOf(lv)
+
+  for (var r = 1; r <= ROUNDS; r++) {
+    var seed = r * 7919 + levelKey.charCodeAt(1) * 131
+    var res = MI.generate({ level: levelKey, count: 1, seed: seed, noDuplicates: false })
+    var q = res.puzzles[0]
+    var where = levelKey + ' seed=' + seed
+    if (!q) { report(where + '：generate 没产出题目'); continue }
+
+    /* ① 密码本身：位数、不重复、都在池里 */
+    if (q.code.length !== lv.N) report(where + '：密码位数 ' + q.code.length + ' ≠ ' + lv.N)
+    if (new Set(q.code).size !== lv.N) report(where + '：密码数字重复 ' + q.code.join(''))
+    q.code.forEach(function (d) {
+      if (d < lv.poolMin || d > lv.poolMax) report(where + '：密码数字 ' + d + ' 不在池里')
+    })
+
+    /* ② 线索行：条数在关卡区间、行内数字合规、行不重复、行 ≠ 密码、反馈真算 */
+    if (q.rows.length < lv.rowMin || q.rows.length > lv.rowMax) {
+      report(where + '：线索 ' + q.rows.length + ' 行，超出 [' + lv.rowMin + ',' + lv.rowMax + ']')
+    }
+    var seenRow = {}
+    q.rows.forEach(function (row) {
+      var k = row.g.join('')
+      if (k === q.code.join('')) report(where + '：有线索行等于密码本身')
+      if (seenRow[k]) report(where + '：线索行重复 ' + k)
+      seenRow[k] = 1
+      if (row.g.length !== lv.N) report(where + '：行 ' + k + ' 位数不对')
+      if (new Set(row.g).size !== lv.N) report(where + '：行 ' + k + ' 数字重复')
+      row.g.forEach(function (d) {
+        if (d < lv.poolMin || d > lv.poolMax) report(where + '：行 ' + k + ' 数字 ' + d + ' 不在池里')
+      })
+      var fb = score2(row.g, q.code)
+      if (fb[0] !== row.a || fb[1] !== row.b) {
+        report(where + '：行 ' + k + ' 反馈 (' + row.a + ',' + row.b + ') 与真算 (' + fb + ') 不符——线索说谎')
+      }
+      if (lv.bZero && row.b !== 0) report(where + '：L1 出现了 ○（b=' + row.b + '）')
+    })
+
+    /* ③ 唯一解（独立计数器）且就是那个密码 */
+    var sols = enumerate2(pool, lv.N, q.rows, 2)
+    if (sols.length !== 1) { report(where + '：【红线】解的个数是 ' + sols.length + '，不唯一'); continue }
+    if (sols[0].join('') !== q.code.join('')) report(where + '：唯一解与 code 字段不一致')
+
+    /* ④ 排除可解：solve 必须推到底、推出的就是密码、步骤是孩子跟得上的句式 */
+    var sol = MI.solve(pool, lv.N, q.rows)
+    if (!sol.solved) { report(where + '：【红线】只靠排除推不到底'); continue }
+    if (sol.placed.join('') !== q.code.join('')) report(where + '：【红线】推出的密码与 code 不一致')
+    if (!q.trace || !q.trace.length) report(where + '：trace 为空')
+    q.trace.forEach(function (line) {
+      if (!/^(第|定位|剩下|密码是)/.test(line)) report(where + '：解析步骤句式不对：' + line)
+    })
+    var last = q.trace[q.trace.length - 1]
+    if (last !== '密码是 ' + q.code.join(' ')) report(where + '：解析末条应为密码本身，实际是 ' + last)
+
+    /* ⑤ key 与题目对得上（去重靠它） */
+    if (q.key !== levelKey + '|' + q.code.join('') + '|' + q.rows.map(function (x) { return x.g.join('') }).join('.')) {
+      report(where + '：key 字段与题目内容不一致')
+    }
+  }
+}
+
+function checkReproducible(report) {
+  ['L1', 'L4'].forEach(function (lk) {
+    var s = { level: lk, count: 6, seed: 20261119, noDuplicates: true }
+    var a = JSON.stringify(MI.generate(s).puzzles)
+    var b = JSON.stringify(MI.generate(s).puzzles)
+    if (a !== b) report(lk + '：同一种子两次生成不同（不可复现）')
+    var other = JSON.stringify(MI.generate({ level: lk, count: 6, seed: 20261120, noDuplicates: true }).puzzles)
+    if (a === other) report(lk + '：换种子题目没变（种子没生效）')
+  })
+}
+
+function checkNoDuplicates(report) {
+  var res = MI.generate({ level: 'L1', count: 12, seed: 424242, noDuplicates: true })
+  var seen = {}
+  res.puzzles.forEach(function (q) {
+    if (seen[q.key]) report('L1：开了「题目不重复」仍出现重复题')
+    seen[q.key] = 1
+  })
+  if (res.puzzles.length !== 12) report('L1：要 12 题只出了 ' + res.puzzles.length + ' 题')
+}
+
+function checkClueText(report) {
+  var T = MI.clueText
+  if (T(0, 0) !== '这些号码都不在密码里') report('clueText(0,0) 文案不对：' + T(0, 0))
+  if (T(1, 0) !== '只有 1 个号码正确，位置也对') report('clueText(1,0) 文案不对')
+  if (T(0, 3) !== '有 3 个号码正确，位置都不对') report('clueText(0,3) 文案不对')
+  if (T(1, 1) !== '有 2 个号码正确，只有 1 个位置正确') report('clueText(1,1) 文案不对')
+}
+
 function main() {
   var problems = []
   function report(msg) { problems.push(msg) }
@@ -140,7 +242,34 @@ function main() {
   }
   console.log('✓ 校验器自检通过')
 
-  if (problems.length) process.exit(1)
+  var t0 = Date.now()
+  var total = 0
+  Object.keys(LEVELS).forEach(function (lk) {
+    var before = problems.length
+    var st = Date.now()
+    checkLevel(lk, report)
+    total += ROUNDS
+    console.log(
+      (problems.length > before ? '✗' : '✓') + ' ' + lk + '  ' + ROUNDS + ' 局  (' + (Date.now() - st) + 'ms)'
+    )
+  })
+  ;[
+    ['文字句式', checkClueText],
+    ['种子可复现', checkReproducible],
+    ['题目不重复', checkNoDuplicates]
+  ].forEach(function (pair) {
+    var before = problems.length
+    pair[1](report)
+    console.log((problems.length > before ? '✗' : '✓') + ' ' + pair[0])
+  })
+
+  console.log('')
+  if (problems.length) {
+    console.log('✗ ' + total + ' 局里发现 ' + problems.length + ' 处问题（最多列前 20 条）：')
+    problems.slice(0, 20).forEach(function (m) { console.log('   · ' + m) })
+    process.exit(1)
+  }
+  console.log('✓ 全部通过：' + total + ' 局，耗时 ' + (Date.now() - t0) + 'ms')
 }
 
 main()

@@ -271,7 +271,7 @@ function checkLevel(levelKey, report) {
   var pool = poolOf(lv)
 
   for (var r = 1; r <= ROUNDS; r++) {
-    var seed = r * 7919 + levelKey.charCodeAt(1) * 131 + levelKey.charCodeAt(2)
+    var seed = r * 7919 + levelKey.charCodeAt(1) * 131
     var res = MI.generate({ level: levelKey, count: 1, seed: seed, noDuplicates: false })
     var q = res.puzzles[0]
     var where = levelKey + ' seed=' + seed
@@ -732,7 +732,7 @@ Expected: FAIL——`MI.generate is not a function`（壳还没有实现）
     var maxAttempts = s.count * 50
     for (var i = 0; i < maxAttempts && puzzles.length < s.count; i++) {
       var q = makeOne(s.level, rnd)
-      if (!q) break
+      if (!q) continue /* L4 偶尔 50 次重试全败（约 2%），接着再试，不是放弃整批 */
       if (s.noDuplicates && seen[q.key]) continue
       seen[q.key] = 1
       puzzles.push(q)
