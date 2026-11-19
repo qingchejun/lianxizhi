@@ -72,7 +72,9 @@
 
   function itemHTML(entry, lv) {
     return (
-      '<div class="zhizhi-item">' +
+      /* data-zp-idx：题卡在题目数组里的下标（题号-1），在线玩的「试玩」按钮靠它取题；
+         答案页题卡不走这里，天然不带 */
+      '<div class="zhizhi-item" data-zp-idx="' + (entry.idx - 1) + '">' +
       '<p class="zhizhi-no">' + P().numLabel(entry.idx) + '</p>' +
       gridHTML(entry.q, lv) +
       '</div>'

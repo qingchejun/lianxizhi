@@ -185,7 +185,9 @@ body.landscape .sheet {
   .mark-legend,
   .video-box,
   .help-dialog,
-  .account-dialog {
+  .account-dialog,
+  .zhizhi-play-btn,
+  .zhizhi-play-dialog {
     display: none !important;
   }
 

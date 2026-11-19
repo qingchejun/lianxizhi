@@ -123,3 +123,168 @@
   line-height: 1.7;
   color: #222;
 }
+
+/* ---------- 在线玩（屏幕态；打印隔离在 sheet.css 的「只出纸」清单里） ---------- */
+
+/* 题卡右上角的入口。.zhizhi-item 补 relative 做锚点，不影响打印布局 */
+.zhizhi-item { position: relative; }
+
+.zhizhi-play-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 26px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--blue);
+  background: #fff;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.zhizhi-play-btn:hover {
+  border-color: var(--blue);
+}
+
+/* 弹层：原生 dialog，观感与说明弹窗（app.css 的 .help-dialog）一致 */
+.zhizhi-play-dialog {
+  width: min(560px, calc(100vw - 32px));
+  max-height: min(820px, calc(100vh - 48px));
+  padding: 18px 20px 20px;
+  color: var(--ink);
+  background: var(--card);
+  border: 0;
+  border-radius: 14px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+}
+
+.zhizhi-play-dialog::backdrop {
+  background: rgba(20, 24, 32, 0.45);
+}
+
+.zp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 6px;
+}
+
+.zp-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.zp-close {
+  width: 30px;
+  height: 30px;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--ink-soft);
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.zp-close:hover {
+  background: #eef0f4;
+  color: var(--ink);
+}
+
+.zp-status {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.zp-won .zp-status {
+  color: #15803d;
+  font-weight: 600;
+}
+
+.zp-board {
+  display: flex;
+  justify-content: center;
+}
+
+.zp-table {
+  border-collapse: collapse;
+  user-select: none;
+}
+
+.zp-colclue {
+  vertical-align: bottom;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.3;
+  padding: 0 0 3px;
+}
+
+.zp-colclue span {
+  display: block;
+}
+
+.zp-rowclue {
+  vertical-align: middle;
+  text-align: right;
+  font-size: 13px;
+  padding: 0 8px 0 14px;
+  white-space: nowrap;
+  word-spacing: 6px;
+}
+
+.zp-cell {
+  position: relative;
+  border: 1px solid #7a8190;
+  background: #fff;
+  cursor: pointer;
+}
+
+/* 屏幕格子（px）：L4 12 格 × 30px + 行线索 ≈ 410px，560px 弹层装得下 */
+.zp-l1 .zp-cell { width: 44px; height: 44px; }
+.zp-l2 .zp-cell { width: 36px; height: 36px; }
+.zp-l3 .zp-cell { width: 30px; height: 30px; }
+.zp-l4 .zp-cell { width: 30px; height: 30px; }
+
+.zp-v5 { border-right-width: 2px; }
+.zp-h5 { border-bottom-width: 2px; }
+
+.zp-on {
+  background: #111;
+}
+
+.zp-mark::after {
+  content: '×';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a0b0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* 涂对的行列线索变灰（孩子由此看懂「数字 ↔ 黑格」的对应） */
+.zp-done {
+  color: #c3c9d3;
+}
+
+/* 赢了：叉淡化让图案突出，格子不再响应 */
+.zp-won .zp-mark::after {
+  opacity: 0.25;
+}
+
+.zp-won .zp-cell {
+  cursor: default;
+}
+
+.zp-foot {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 14px 0 0;
+}

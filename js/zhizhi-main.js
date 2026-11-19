@@ -70,6 +70,7 @@
 
     var result = S.zhizhi.generate(settings)
     S.zhizhiRender.render($('preview'), settings, result.puzzles)
+    S.zhizhiPlay.attach($('preview'), result.puzzles)
     S.shell.fit()
 
     $('level-hint').textContent = LEVEL_HINTS[settings.level] || ''

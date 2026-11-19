@@ -450,6 +450,12 @@ function main() {
   var ans3 = (h3.match(/sheet sheet-zhizhi-ans"/g) || []).length
   if (ans3 !== 2) rProblems.push('8 题的答案页应为 2 张，实际 ' + ans3)
 
+  /* 题卡索引：在线玩的「试玩」按钮靠 data-zp-idx 把题卡对回题目数据；答案页不带 */
+  var idxN = (h2.match(/data-zp-idx="/g) || []).length
+  if (idxN !== 8) rProblems.push('copies=2 × 4 题：题卷题卡应有 8 个 data-zp-idx，实际 ' + idxN)
+  var ansPart = h2.slice(h2.indexOf('sheet-zhizhi-ans'))
+  if (ansPart.indexOf('data-zp-idx') >= 0) rProblems.push('答案页题卡不该带 data-zp-idx（答案页没有试玩入口）')
+
   if (rProblems.length) {
     rProblems.forEach(function (p) { console.error('  ✗ ' + p) })
     process.exit(1)
