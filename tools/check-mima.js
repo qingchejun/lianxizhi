@@ -253,6 +253,70 @@ function checkSettings(report) {
   }
 }
 
+/* ---------- 渲染：字符串级断言（buildHTML 在 node 里可直接跑） ---------- */
+
+function genOne(levelKey, seed) {
+  return MI.generate({ level: levelKey, count: 2, seed: seed, noDuplicates: false }).puzzles
+}
+
+function checkRenderStrings(report) {
+  var R = globalThis.SumSum.mimaRender
+  if (!R) { report('mima-render.js 没加载上'); return }
+
+  /* 皮肤不许串关 */
+  var l1 = R.buildHTML({ level: 'L1', copies: 1, answerPage: false, title: '' }, genOne('L1', 11))
+  if (l1.indexOf('mima-strip') < 0) report('L1 卷面没有划掉数字带')
+  if (l1.indexOf('号码正确') >= 0) report('L1 卷面出现了文字线索（应是点子）')
+  var l2 = R.buildHTML({ level: 'L2', copies: 1, answerPage: false, title: '' }, genOne('L2', 12))
+  if (l2.indexOf('mima-strip') < 0) report('L2 卷面没有划掉数字带')
+  var l3 = R.buildHTML({ level: 'L3', copies: 1, answerPage: false, title: '' }, genOne('L3', 13))
+  if (l3.indexOf('号码正确') < 0) report('L3 卷面没有文字线索')
+  if (l3.indexOf('mima-strip') >= 0) report('L3 卷面不该有划掉数字带')
+  var l4 = R.buildHTML({ level: 'L4', copies: 1, answerPage: false, title: '' }, genOne('L4', 14))
+  if (l4.indexOf('mima-strip') >= 0) report('L4 卷面不该有划掉数字带')
+
+  /* 对战双份：题页 ×2，答案页仍只 1 份 */
+  var two = R.buildHTML({ level: 'L1', copies: 2, answerPage: true, title: '' }, genOne('L1', 15))
+  var sheetCount = (two.match(/sheet sheet-mima"/g) || []).length
+  var ansCount = (two.match(/sheet-mima-ans"/g) || []).length
+  /* L1 每页 2 道、2 道题 = 1 页 × 2 份 = 2 张题页 + 1 张答案页 */
+  if (sheetCount !== 2) report('copies=2 时题页应为 2 张，实际 ' + sheetCount)
+  if (ansCount !== 1) report('copies=2 时答案页应仍为 1 张，实际 ' + ansCount)
+
+  /* 答案页带密码与分步解析 */
+  if (two.indexOf('mima-steps') < 0) report('答案页没有分步解析')
+  if (two.indexOf('mima-ans-code') < 0) report('答案页没有密码行')
+
+  /* 题目比每页容量少时按实际题数排 */
+  if (R.perPageOf({ level: 'L1' }, 1) !== 1) report('只出 1 道时没有按 1 道排')
+  if (R.perPageOf({ level: 'L3' }, 9) !== 2) report('L3 每页应固定 2 道')
+}
+
+/* ---------- 排版：按 A4 实际尺寸独立重算（不共用渲染层的 MM 常量） ---------- */
+
+function checkLayout(report) {
+  var R = globalThis.SumSum.mimaRender
+  if (!R) { report('mima-render.js 没加载上'); return }
+  var W = 180 // A4 纵向内容区宽
+  var GAP = 8
+  var RULE = 9, NO = 6, ROWH = 11, ANSH = 12, STRIPH = 9, PADH = 8
+
+  Object.keys(LEVELS).forEach(function (lk) {
+    var lv = LEVELS[lk]
+    var per = R.MM.PER_PAGE[lk]
+    var h = RULE + per * (NO + lv.rowMax * ROWH + ANSH + (lv.strip ? STRIPH : 0) + PADH) + (per - 1) * GAP
+    if (h > 222) report(lk + ' 每页 ' + per + ' 道高 ' + h.toFixed(0) + 'mm，超出 222mm 版心')
+    /* 宽：一行 = N 个数字格 + 反馈（点子 18mm / 文字最长约 62mm） */
+    var fbW = lv.dots ? 18 : 62
+    var w = lv.N * 9 + 3 + fbW + 8 /* 卡片左右 padding */
+    if (w > W) report(lk + ' 线索行宽 ' + w + 'mm 超出 ' + W + 'mm')
+  })
+
+  /* 答案页 2×2：步骤按最长 12 条估 */
+  var ansH = 2 * (NO + 8 + 12 * 5.2 + PADH) + GAP
+  if (ansH > 218) report('答案页高 ' + ansH.toFixed(0) + 'mm 超出版心')
+}
+
 function main() {
   var problems = []
   function report(msg) { problems.push(msg) }
@@ -280,7 +344,9 @@ function main() {
     ['文字句式', checkClueText],
     ['种子可复现', checkReproducible],
     ['题目不重复', checkNoDuplicates],
-    ['设置钳位', checkSettings]
+    ['设置钳位', checkSettings],
+    ['渲染皮肤', checkRenderStrings],
+    ['排版放得下', checkLayout]
   ].forEach(function (pair) {
     var before = problems.length
     pair[1](report)
