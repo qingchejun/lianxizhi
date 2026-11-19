@@ -273,9 +273,95 @@ function main() {
   }
   console.log('✓ 自检通过：clues2 / placements2 / solve2 / flood2（手工样例）')
 
-  /* 图库 / 生成 / 渲染校验在后续任务里追加 */
+  /* ---------- 图库全量（第二实现复核生成门） ---------- */
 
-  console.log('✓ 全部通过（当前为骨架，后续任务补全）')
+  load('js/zhizhi-art.js')
+  load('js/zhizhi-core.js')
+  var Z = globalThis.SumSum.zhizhi
+  var ARTS = globalThis.SumSum.zhizhiArt.ARTS
+
+  var artProblems = []
+  var seenName = {}
+  var seenDot = {}
+  var bySize = {}
+  ARTS.forEach(function (a) {
+    bySize[a.size] = (bySize[a.size] || 0) + 1
+    var tag = a.size + '×' + a.size + ' ' + a.name
+    if (!a.name || typeof a.name !== 'string') { artProblems.push('缺名字：' + JSON.stringify(a)); return }
+    if (!Array.isArray(a.rows) || a.rows.length !== a.size) { artProblems.push(tag + '：行数不等于尺寸'); return }
+    for (var i = 0; i < a.rows.length; i++) {
+      if (a.rows[i].length !== a.size) { artProblems.push(tag + '：第 ' + (i + 1) + ' 行宽度不是 ' + a.size); return }
+      if (!/^[X.]+$/.test(a.rows[i])) { artProblems.push(tag + '：含 X 和 . 之外的字符'); return }
+    }
+    var nk = a.size + '|' + a.name
+    if (seenName[nk]) artProblems.push(tag + '：同尺寸重名')
+    seenName[nk] = true
+    var dk = a.size + '|' + a.rows.join('')
+    if (seenDot[dk]) artProblems.push(tag + '：同尺寸点阵重复')
+    seenDot[dk] = true
+    var blacks = a.rows.join('').split('X').length - 1
+    var ratio = blacks / (a.size * a.size)
+    if (ratio < 0.35 || ratio > 0.6) artProblems.push(tag + '：黑格比例 ' + Math.round(ratio * 100) + '% 出界（35~60）')
+    if (flood2(a.rows) !== 1) artProblems.push(tag + '：黑格不连通')
+    var cl = clues2(a.rows)
+    var sol = solve2(a.size, cl.rows, cl.cols)
+    if (!sol.solved) artProblems.push(tag + '：line-solver 解不动（需要猜）')
+    else if (JSON.stringify(sol.rows) !== JSON.stringify(bits2(a.rows))) artProblems.push(tag + '：唯一解 != 原图')
+  })
+  Z.LEVEL_ORDER.forEach(function (k) {
+    var N = Z.LEVELS[k].N
+    if (!bySize[N]) artProblems.push(k + '（' + N + '×' + N + '）图库是空的')
+  })
+  if (artProblems.length) {
+    console.error('图库有 ' + artProblems.length + ' 处问题：')
+    artProblems.forEach(function (p) { console.error('  ✗ ' + p) })
+    process.exit(1)
+  }
+  console.log('✓ 图库全量：' + ARTS.length + ' 幅过生成门（唯一解 / 连通 / 比例 / 重名去重，第二实现复核）')
+
+  /* ---------- 生成抽样（每关 50 个种子） ---------- */
+
+  var genProblems = []
+  var ROUNDS = 50
+  Z.LEVEL_ORDER.forEach(function (lv) {
+    var N = Z.LEVELS[lv].N
+    for (var s = 1; s <= ROUNDS; s++) {
+      var conf = { level: lv, count: 4, copies: 2, noDuplicates: true, seed: s * 7919, title: '' }
+      var r1 = Z.generate(conf)
+      var r2 = Z.generate(conf)
+      if (JSON.stringify(r1) !== JSON.stringify(r2)) { genProblems.push(lv + ' 种子 ' + conf.seed + '：两次生成不一致（不可复现）'); continue }
+      if (r1.shortfall !== 0) { genProblems.push(lv + ' 种子 ' + conf.seed + '：题不够（shortfall=' + r1.shortfall + '）'); continue }
+      var names = {}
+      for (var p = 0; p < r1.puzzles.length; p++) {
+        var pz = r1.puzzles[p]
+        if (pz.level !== lv) genProblems.push(lv + ' 种子 ' + conf.seed + '：题卡 level 写错')
+        if (pz.key !== lv + '|' + pz.art.name + '|' + N) genProblems.push(lv + '：key 格式错 -> ' + pz.key)
+        if (names[pz.art.name]) genProblems.push(lv + ' 种子 ' + conf.seed + '：图案重复 ' + pz.art.name)
+        names[pz.art.name] = true
+        var cl2 = clues2(pz.art.rows)
+        if (JSON.stringify(pz.rowClues) !== JSON.stringify(cl2.rows)) genProblems.push(lv + ' ' + pz.art.name + '：rowClues 与第二实现不一致')
+        if (JSON.stringify(pz.colClues) !== JSON.stringify(cl2.cols)) genProblems.push(lv + ' ' + pz.art.name + '：colClues 与第二实现不一致')
+        if (!solve2(N, pz.rowClues, pz.colClues).solved) genProblems.push(lv + ' ' + pz.art.name + '：第二实现解不动题卡线索')
+        if (!pz.hints.length) genProblems.push(lv + ' ' + pz.art.name + '：起步提示为空')
+        else if (pz.hints[pz.hints.length - 1] !== '涂完就是「' + pz.art.name + '」！') genProblems.push(lv + ' ' + pz.art.name + '：提示尾句不是揭晓语')
+      }
+    }
+  })
+
+  /* L1 图库最小（14 幅）：要 20 题时应给全库并如实报缺，而不是死循环或重复 */
+  var sf = Z.generate({ level: 'L1', count: 20, copies: 1, noDuplicates: true, seed: 1, title: '' })
+  if (sf.puzzles.length !== bySize[5] || sf.shortfall !== 20 - bySize[5]) {
+    genProblems.push('L1 shortfall：拿到 ' + sf.puzzles.length + ' 幅、报缺 ' + sf.shortfall + '，期望 ' + bySize[5] + ' 幅、报缺 ' + (20 - bySize[5]))
+  }
+
+  if (genProblems.length) {
+    console.error('生成抽样有 ' + genProblems.length + ' 处问题：')
+    genProblems.forEach(function (p) { console.error('  ✗ ' + p) })
+    process.exit(1)
+  }
+  console.log('✓ 生成抽样：每关 ' + ROUNDS + ' 个种子，可复现 / 无重复 / 线索一致 / 提示齐全 / shortfall 如实')
+
+  console.log('✓ 全部通过')
 }
 
 main()

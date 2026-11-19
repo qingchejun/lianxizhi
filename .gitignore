@@ -3,3 +3,6 @@
 .wrangler/
 *.mp4
 *.mov
+
+# 图标转译的素材与中间产物不入库（MIT 许可来源记录在数织设计文档里）
+tools/import-icons/vendor/
