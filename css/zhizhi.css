@@ -1,0 +1,122 @@
+/*
+ * 数织练习纸。卷面件（.zhizhi-*）屏幕预览与打印共用，只用黑字、边框与实心黑格。
+ * 首版没有在线玩，卷面无任何作答态，打印段无需做屏幕态还原。
+ * 注意：body 的 font/line-height 是卷面继承的，不许在本文件改动。
+ */
+
+.zhizhi-rule {
+  font-size: 12px;
+  color: #444;
+  margin: 0 0 4mm;
+}
+
+.zhizhi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8mm;
+}
+
+.zhizhi-no {
+  font-weight: 600;
+  font-size: 13px;
+  margin: 0 0 1.5mm;
+}
+
+/* 涂画网格：table 拼出「列线索行 + 行线索列 + 格盘」。border-collapse 让
+   相邻格边框合一，粗辅助线只需加在单侧 border 上。 */
+.zhizhi-grid {
+  border-collapse: collapse;
+}
+
+.zhizhi-blank {
+  border: none;
+}
+
+/* 列线索：竖着堆在每列头顶，与格子底边对齐 */
+.zhizhi-colclue {
+  border: none;
+  vertical-align: bottom;
+  text-align: center;
+  font-size: 10px;
+  line-height: 1.25;
+  padding: 0 0 1mm;
+  white-space: nowrap;
+}
+
+.zhizhi-colclue span {
+  display: block;
+}
+
+/* 行线索：靠在每行左侧，与格子中线对齐 */
+.zhizhi-rowclue {
+  border: none;
+  vertical-align: middle;
+  text-align: right;
+  font-size: 10px;
+  line-height: 1.25;
+  padding: 0 1.5mm 0 3mm;
+  white-space: nowrap;
+}
+
+.zhizhi-cell {
+  border: 0.3mm solid #555;
+  background: #fff;
+}
+
+/* 每关格边长（mm）：L1 10 / L2 9 / L3 7 / L4 9（与 zhizhi-render 的 MM.CELL 对应） */
+.zhizhi-l1 .zhizhi-cell { width: 10mm; height: 10mm; }
+.zhizhi-l2 .zhizhi-cell { width: 9mm; height: 9mm; }
+.zhizhi-l3 .zhizhi-cell { width: 7mm; height: 7mm; }
+.zhizhi-l4 .zhizhi-cell { width: 9mm; height: 9mm; }
+
+/* L3/L4 每 5 格加粗辅助线（5 个 5 个数格子好数） */
+.zhizhi-v5 { border-right-width: 0.8mm; }
+.zhizhi-h5 { border-bottom-width: 0.8mm; }
+
+/* ---------- 答案页 ---------- */
+
+.zhizhi-ans-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8mm;
+}
+
+.zhizhi-ans-item {
+  border: 0.3mm solid #bbb;
+  border-radius: 2mm;
+  padding: 4mm;
+}
+
+.zhizhi-ans-head {
+  display: flex;
+  align-items: baseline;
+  gap: 3mm;
+  margin: 0 0 2mm;
+  font-size: 14px;
+}
+
+.zhizhi-ans-name {
+  font-size: 13px;
+}
+
+.zhizhi-ans-board {
+  border-collapse: collapse;
+}
+
+.zhizhi-ans-cell {
+  width: 3mm;
+  height: 3mm;
+  border: 0.2mm solid #bbb;
+}
+
+.zhizhi-ans-on {
+  background: #111;
+}
+
+.zhizhi-hints {
+  margin: 2mm 0 0;
+  padding-left: 5mm;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #222;
+}

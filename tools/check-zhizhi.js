@@ -389,6 +389,114 @@ function main() {
   }
   console.log('✓ 设置：钳位 / 回退 / 默认值与规格一致')
 
+  /* ---------- 渲染字符串（buildHTML 在 node 里可直接跑） ---------- */
+
+  load('js/render.js') // 只为 zhizhi-render 的 P().esc 等零件；加载期不碰 DOM
+  load('js/zhizhi-render.js')
+  var R = globalThis.SumSum.zhizhiRender
+  var rProblems = []
+
+  function genPuzzles(levelKey, seed, count) {
+    return Z.generate({
+      level: levelKey, count: count || 2, copies: 1,
+      noDuplicates: false, seed: seed, title: ''
+    }).puzzles
+  }
+
+  /* 每页容量钳位 */
+  if (R.perPageOf({ level: 'L1' }, 1) !== 1) rProblems.push('L1 只出 1 题时应按 1 题排')
+  if (R.perPageOf({ level: 'L3' }, 9) !== 2) rProblems.push('L3 每页应固定 2 题')
+  if (R.perPageOf({ level: 'L4' }, 9) !== 1) rProblems.push('L4 每页应固定 1 题')
+  if (R.perPageOf({ level: 'L2' }, 0) !== 1) rProblems.push('count=0 时每页按 1 题兜底')
+
+  /* 题卷：图例在、答案不在、图案名不许泄露（名字就是谜底） */
+  var p1 = genPuzzles('L1', 11)
+  var h1 = R.buildHTML({ level: 'L1', copies: 1, answerPage: false, title: '' }, p1)
+  if (h1.indexOf('0 = 全空') < 0) rProblems.push('题卷页顶没有读题图例')
+  if (h1.indexOf('sheet-zhizhi-ans') >= 0) rProblems.push('没勾答案页却印了答案')
+  if (h1.indexOf('zhizhi-hints') >= 0) rProblems.push('题卷不该有起步提示')
+  if (h1.indexOf(p1[0].art.name) >= 0) rProblems.push('题卷泄露了图案名 ' + p1[0].art.name)
+
+  /* 全空行的线索必须印成 0（拿手绘小山做样例，它最后一行全空） */
+  var xshan = null
+  ARTS.forEach(function (a) { if (a.size === 5 && a.name === '小山') xshan = a })
+  if (!xshan) {
+    rProblems.push('图库里找不到手绘小山（0 线索样例）')
+  } else {
+    var clX = Z.cluesOf(xshan.rows)
+    var pX = {
+      level: 'L1', art: xshan, rowClues: clX.rows, colClues: clX.cols,
+      hints: Z.hints(xshan, Z.solve(5, clX.rows, clX.cols).trace), key: 'L1|小山|5'
+    }
+    var hx = R.buildHTML({ level: 'L1', copies: 1, answerPage: false, title: '' }, [pX])
+    if (hx.indexOf('zhizhi-rowclue">0<') < 0) rProblems.push('全空行的行线索没印成 0')
+    if (hx.indexOf('小山') >= 0) rProblems.push('题卷泄露了图案名 小山')
+  }
+
+  /* 对战双份 + 答案页：4 题 L1 = 2 页 × 2 份题卷 + 1 张 2×2 答案页 */
+  var p2 = genPuzzles('L1', 12, 4)
+  var h2 = R.buildHTML({ level: 'L1', copies: 2, answerPage: true, title: '' }, p2)
+  var sheetN = (h2.match(/sheet sheet-zhizhi zhizhi-l1"/g) || []).length
+  var ansN = (h2.match(/sheet sheet-zhizhi-ans"/g) || []).length
+  if (sheetN !== 4) rProblems.push('copies=2 时题卷应为 4 张（2 页×2 份），实际 ' + sheetN)
+  if (ansN !== 1) rProblems.push('copies=2 时答案页应仍为 1 张，实际 ' + ansN)
+  if ((h2.match(/zhizhi-ans-item/g) || []).length !== 4) rProblems.push('答案页应有 4 个题位')
+  if (h2.indexOf(p2[0].art.name) < 0) rProblems.push('答案页没有图案名')
+  if (h2.indexOf('zhizhi-hints') < 0) rProblems.push('答案页没有起步提示')
+  if (h2.indexOf('zhizhi-ans-on') < 0) rProblems.push('答案页完成图没有黑格')
+
+  /* 8 题答案页翻页：2×2 一张，第 5 题起第二张 */
+  var h3 = R.buildHTML({ level: 'L1', copies: 1, answerPage: true, title: '' }, genPuzzles('L1', 13, 8))
+  var ans3 = (h3.match(/sheet sheet-zhizhi-ans"/g) || []).length
+  if (ans3 !== 2) rProblems.push('8 题的答案页应为 2 张，实际 ' + ans3)
+
+  if (rProblems.length) {
+    rProblems.forEach(function (p) { console.error('  ✗ ' + p) })
+    process.exit(1)
+  }
+  console.log('✓ 渲染：图例 / 0 线索 / 不泄题名 / 双份与答案页分页')
+
+  /* ---------- 排版：独立常量对证（不共用渲染层的 MM） ---------- */
+
+  var lProblems = []
+  var LV2 = {
+    L1: { N: 5, cell: 10, per: 2, maxColSegs: 2, maxRowChars: 3 },
+    L2: { N: 8, cell: 9, per: 2, maxColSegs: 4, maxRowChars: 7 },
+    L3: { N: 10, cell: 7, per: 2, maxColSegs: 4, maxRowChars: 7 },
+    L4: { N: 12, cell: 9, per: 1, maxColSegs: 6, maxRowChars: 11 }
+  }
+  var FIT_W = 178, FIT_H = 222, GAP2 = 8, RULE2 = 7, NO2 = 6, CLUE_LINE2 = 3.7, DIGIT_MM = 1.7
+
+  /* 图库实际值不得超过排版模型（超了说明要改模型，不是删检查） */
+  var realSegs = {}, realChars = {}
+  ARTS.forEach(function (a) {
+    var cl = clues2(a.rows)
+    var ms = 0, mc = 0
+    cl.cols.forEach(function (c) { ms = Math.max(ms, c.length) })
+    cl.rows.forEach(function (r) { mc = Math.max(mc, r.join(' ').length) })
+    realSegs[a.size] = Math.max(realSegs[a.size] || 0, ms)
+    realChars[a.size] = Math.max(realChars[a.size] || 0, mc)
+  })
+  Object.keys(LV2).forEach(function (k) {
+    var lv = LV2[k]
+    var real = realSegs[lv.N], realC = realChars[lv.N]
+    if (real > lv.maxColSegs) lProblems.push(k + '：图库列线索最多 ' + real + ' 段，超过排版模型 ' + lv.maxColSegs)
+    if (realC > lv.maxRowChars) lProblems.push(k + '：图库行线索最长 ' + realC + ' 字符，超过排版模型 ' + lv.maxRowChars)
+    var w = lv.N * lv.cell + lv.maxRowChars * DIGIT_MM + 4
+    if (w > FIT_W) lProblems.push(k + ' 题宽 ' + w.toFixed(1) + 'mm 超出 ' + FIT_W + 'mm')
+    var stack = lv.maxColSegs * CLUE_LINE2 + 1
+    var h = RULE2 + lv.per * (NO2 + stack + lv.N * lv.cell) + (lv.per - 1) * GAP2
+    if (h > FIT_H) lProblems.push(k + ' 每页 ' + lv.per + ' 题高 ' + h.toFixed(1) + 'mm，超出 ' + FIT_H + 'mm 版心')
+  })
+  /* 答案页 2×2：卡片 padding + 头 + 完成图（3mm 小格）+ 提示按 4 行估 */
+  var ansH2 = 2 * (8 + 6 + 12 * 3 + 4 * 5.2) + GAP2
+  if (ansH2 > 218) lProblems.push('答案页高 ' + ansH2.toFixed(1) + 'mm 超出版心')
+  if (lProblems.length) {
+    lProblems.forEach(function (p) { console.error('  ✗ ' + p) })
+    process.exit(1)
+  }
+  console.log('✓ 排版：题宽 / 题高 / 答案页高全部在版心内（独立常量对证）')
+
   console.log('✓ 全部通过')
 }
 
