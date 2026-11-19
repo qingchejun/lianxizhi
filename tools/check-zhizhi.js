@@ -456,6 +456,41 @@ function main() {
   }
   console.log('✓ 渲染：图例 / 0 线索 / 不泄题名 / 双份与答案页分页')
 
+  /* ---------- 在线玩：纯逻辑（js/zhizhi-play.js，加载期不碰 DOM） ---------- */
+
+  load('js/zhizhi-play.js')
+  var PL = globalThis.SumSum.zhizhiPlay
+  var plProblems = []
+  function eq(a, b) { return JSON.stringify(a) === JSON.stringify(b) }
+  /* lineClue：一行/列状态 -> 黑格段序列，无黑记 [0]，叉不算黑、也不切断黑段 */
+  if (!eq(PL.lineClue([1, 1, 0, 1, 0]), [2, 1])) plProblems.push('lineClue 2-1 算错')
+  if (!eq(PL.lineClue([0, 0, 0, 0, 0]), [0])) plProblems.push('lineClue 全空没记 [0]')
+  if (!eq(PL.lineClue([2, 2, 0, 2, 0]), [0])) plProblems.push('叉不该算黑格')
+  if (!eq(PL.lineClue([1, 2, 1, 0, 1]), [1, 1, 1])) plProblems.push('叉不该切断黑段，应 [1,1,1]')
+  if (!eq(PL.lineClue([1, 0, 1, 1, 0]), [1, 2])) plProblems.push('lineClue 1-2 算错')
+  /* wonBoard：黑格集合与答案逐格一致即赢，叉/空不影响 */
+  var artT = { name: '样例', size: 5, rows: ['X.X..', '.XX..', 'X...X', '..XX.', '.X...'] }
+  var winT = [[1, 0, 1, 0, 0], [0, 1, 1, 0, 0], [1, 0, 0, 0, 1], [0, 0, 1, 1, 0], [0, 1, 0, 0, 0]]
+  if (!PL.wonBoard(winT, artT)) plProblems.push('黑格全对应判赢')
+  var extra = winT.map(function (r) { return r.slice() }); extra[4][4] = 1
+  if (PL.wonBoard(extra, artT)) plProblems.push('多涂一黑不该赢（逐格比对，不是数数）')
+  var marked = [[1, 2, 1, 0, 2], [0, 1, 1, 0, 0], [1, 0, 2, 0, 1], [0, 0, 1, 1, 0], [2, 1, 0, 0, 0]]
+  if (!PL.wonBoard(marked, artT)) plProblems.push('叉不影响判赢')
+  /* fullBoard / wrongCount */
+  if (!PL.fullBoard([[1, 2], [2, 1]])) plProblems.push('全非空应 true')
+  if (PL.fullBoard([[1, 0], [2, 1]])) plProblems.push('有空格应 false')
+  if (PL.wrongCount([[1, 0], [0, 1]], { rows: ['XX', '..'] }) !== 2) plProblems.push('wrongCount 应 2（该黑没黑 1 + 不该黑涂黑 1）')
+  /* 「再来一幅」要能换图：图库每关（按尺寸）至少 2 幅 */
+  ;[5, 8, 10, 12].forEach(function (n) {
+    var c = ARTS.filter(function (a) { return a.size === n }).length
+    if (c < 2) plProblems.push(n + '×' + n + ' 图库只有 ' + c + ' 幅，「再来一幅」没法保证换图')
+  })
+  if (plProblems.length) {
+    plProblems.forEach(function (p) { console.error('  ✗ ' + p) })
+    process.exit(1)
+  }
+  console.log('✓ 在线玩：段序列 / 判赢 / 满盘 / 错格数 / 每关图库 ≥2')
+
   /* ---------- 排版：独立常量对证（不共用渲染层的 MM） ---------- */
 
   var lProblems = []
