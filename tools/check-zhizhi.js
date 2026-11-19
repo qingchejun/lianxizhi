@@ -361,6 +361,34 @@ function main() {
   }
   console.log('✓ 生成抽样：每关 ' + ROUNDS + ' 个种子，可复现 / 无重复 / 线索一致 / 提示齐全 / shortfall 如实')
 
+  /* ---------- 设置（越界/畸形值必须钳住，不透传给生成器） ---------- */
+
+  load('js/store.js') // 写入收口：zhizhi-settings 的 save 走它（node 下无害）
+  load('js/zhizhi-settings.js')
+  var ST = globalThis.SumSum.zhizhiSettings
+  var stProblems = []
+  if (ST.sanitize({ level: 'L9' }).level !== 'L1') stProblems.push('level=L9 没回退到 L1')
+  if (ST.sanitize({ level: 'l1' }).level !== 'L1') stProblems.push('level=l1 应回退 L1')
+  if (ST.sanitize({ count: 0 }).count !== 1) stProblems.push('count=0 没钳到 1')
+  if (ST.sanitize({ count: 99 }).count !== 8) stProblems.push('count=99 没钳到 8')
+  if (ST.sanitize({ count: 'abc' }).count !== 4) stProblems.push('count=abc 没回退默认 4')
+  if (ST.sanitize({ count: '' }).count !== 4) stProblems.push("count='' 被当成 0（应回退默认）")
+  if (ST.sanitize({ copies: 5 }).copies !== 2) stProblems.push('copies=5 没钳到 2')
+  if (ST.sanitize({ copies: '1' }).copies !== 1) stProblems.push("copies='1' 没按数字处理")
+  if (ST.sanitize({ noDuplicates: 'false' }).noDuplicates !== false) stProblems.push("noDuplicates='false' 没转成布尔假")
+  if (ST.sanitize({ answerPage: '1' }).answerPage !== true) stProblems.push("answerPage='1' 没转成布尔真")
+  if (ST.sanitize({ title: 'x'.repeat(50) }).title.length > 30) stProblems.push('title 没截到 30 字')
+  if (ST.sanitize({ seed: -5 }).seed !== 0) stProblems.push('seed=-5 没钳到 0')
+  var d = ST.DEFAULTS
+  if (d.level !== 'L1' || d.count !== 4 || d.copies !== 2 || d.noDuplicates !== true || d.answerPage !== false) {
+    stProblems.push('DEFAULTS 与规格不符：' + JSON.stringify(d))
+  }
+  if (stProblems.length) {
+    stProblems.forEach(function (p) { console.error('  ✗ ' + p) })
+    process.exit(1)
+  }
+  console.log('✓ 设置：钳位 / 回退 / 默认值与规格一致')
+
   console.log('✓ 全部通过')
 }
 
