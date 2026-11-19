@@ -56,6 +56,9 @@
   line-height: 1.25;
   padding: 0 1.5mm 0 3mm;
   white-space: nowrap;
+  /* 「1 1」两个组的间隙拉开：普通空格在 10px 字号下只有 2px，孩子容易看成「11」。
+     加宽后最坏情况（L4 六个组五个缝）每行多约 13mm，排版模型 144mm 仍远小于 178mm 上限 */
+  word-spacing: 1em;
 }
 
 .zhizhi-cell {

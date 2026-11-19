@@ -1,22 +1,33 @@
 #!/usr/bin/env python3
 """
-把左侧板块栏写进六个页面。用法：python3 tools/rail.py
+把左侧板块栏写进七个页面。用法：python3 tools/rail.py
 
-六个页面的板块栏一模一样，只有「当前是哪一个」不同。手抄六份迟早会改漏一份，
+七个页面的板块栏一模一样，只有「当前是哪一个」不同。手抄七份迟早会改漏一份，
 所以页面里只留 <!-- rail:今天 --> … <!-- /rail --> 这对标记，内容由本脚本生成。
-改板块栏（加板块、换图标）只改这里，再跑一遍。
+改板块栏（加板块、换图标、调分组）只改这里，再跑一遍。
+
+2026-11 起分两组：练习（今天/口算/奥数/识字）与游戏（数独/密码/数织）——
+给孩子选板块时先分「做题还是玩」，再挑具体项目。
 """
 import pathlib, re
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
-LINKS = [
-    ('今天', 'index.html', '<path d="M4 11l8-7 8 7M6 9.5V20h12V9.5M10 20v-5h4v5"/>'),
-    ('口算', 'kousuan.html', '<path d="M4 7h6M7 4v6M14 7h6M5 15l4 4M9 15l-4 4M14 16h6M14 19h6"/>'),
-    ('奥数', 'aoshu.html', '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/>'),
-    ('数独', 'shudu.html', '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16"/>'),
-    ('密码', 'mima.html', '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'),
-    ('识字', 'shizi.html', '<path d="M12 6c-2-1.5-5-2-8-1.5v14c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5v-14c-3-.5-6 0-8 1.5zM12 6v14"/>'),
+# (名称, 页面, 图标)。图标为 stroke 风格；数织的两个实心块用内联 style 覆盖描边默认值。
+GROUPS = [
+    ('练习', [
+        ('今天', 'index.html', '<path d="M4 11l8-7 8 7M6 9.5V20h12V9.5M10 20v-5h4v5"/>'),
+        ('口算', 'kousuan.html', '<path d="M4 7h6M7 4v6M14 7h6M5 15l4 4M9 15l-4 4M14 16h6M14 19h6"/>'),
+        ('奥数', 'aoshu.html', '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/>'),
+        ('识字', 'shizi.html', '<path d="M12 6c-2-1.5-5-2-8-1.5v14c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5v-14c-3-.5-6 0-8 1.5zM12 6v14"/>'),
+    ]),
+    ('游戏', [
+        ('数独', 'shudu.html', '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16"/>'),
+        ('密码', 'mima.html', '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'),
+        ('数织', 'zhizhi.html', '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 4v16M4 12h16"/>'
+         '<rect x="5.5" y="5.5" width="5" height="5" style="fill:currentColor;stroke:none"/>'
+         '<rect x="13.5" y="13.5" width="5" height="5" style="fill:currentColor;stroke:none"/>'),
+    ]),
 ]
 
 TAIL = (
@@ -31,17 +42,22 @@ TAIL = (
     '<path d="M12 4v11M8 11l4 4 4-4M5 19h14"/></svg><span>备份</span></button>\n'
 )
 
-PAGES = {'index.html': '今天', 'kousuan.html': '口算', 'aoshu.html': '奥数', 'shudu.html': '数独', 'mima.html': '密码', 'shizi.html': '识字'}
+PAGES = {
+    'index.html': '今天', 'kousuan.html': '口算', 'aoshu.html': '奥数',
+    'shizi.html': '识字', 'shudu.html': '数独', 'mima.html': '密码', 'zhizhi.html': '数织',
+}
 
 
 def rail(current):
     out = ['<nav class="rail" aria-label="板块">\n', '  <a class="rail-brand" href="index.html">练习纸</a>\n']
-    for name, href, icon in LINKS:
-        on = name == current
-        out.append(
-            '  <a class="rail-link%s" href="%s" data-module="%s"%s><svg viewBox="0 0 24 24" aria-hidden="true">%s</svg><span>%s</span></a>\n'
-            % (' active' if on else '', href, name, ' aria-current="page"' if on else '', icon, name)
-        )
+    for label, links in GROUPS:
+        out.append('  <span class="rail-label">%s</span>\n' % label)
+        for name, href, icon in links:
+            on = name == current
+            out.append(
+                '  <a class="rail-link%s" href="%s" data-module="%s"%s><svg viewBox="0 0 24 24" aria-hidden="true">%s</svg><span>%s</span></a>\n'
+                % (' active' if on else '', href, name, ' aria-current="page"' if on else '', icon, name)
+            )
     out.append(TAIL)
     out.append('</nav>')
     return ''.join(out)

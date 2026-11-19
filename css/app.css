@@ -137,6 +137,15 @@ a {
   color: #fff;
 }
 
+/* 组标签：练习 / 游戏（2026-11 板块多了，先分「做题还是玩」再挑项目） */
+.rail-label {
+  margin: 8px 0 2px;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: #767e8c;
+  user-select: none;
+}
+
 .rail-link {
   display: flex;
   flex-direction: column;
