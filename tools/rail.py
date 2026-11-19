@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-把左侧板块栏写进五个页面。用法：python3 tools/rail.py
+把左侧板块栏写进六个页面。用法：python3 tools/rail.py
 
-五个页面的板块栏一模一样，只有「当前是哪一个」不同。手抄五份迟早会改漏一份，
+六个页面的板块栏一模一样，只有「当前是哪一个」不同。手抄六份迟早会改漏一份，
 所以页面里只留 <!-- rail:今天 --> … <!-- /rail --> 这对标记，内容由本脚本生成。
 改板块栏（加板块、换图标）只改这里，再跑一遍。
 """
@@ -15,6 +15,7 @@ LINKS = [
     ('口算', 'kousuan.html', '<path d="M4 7h6M7 4v6M14 7h6M5 15l4 4M9 15l-4 4M14 16h6M14 19h6"/>'),
     ('奥数', 'aoshu.html', '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/>'),
     ('数独', 'shudu.html', '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16"/>'),
+    ('密码', 'mima.html', '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'),
     ('识字', 'shizi.html', '<path d="M12 6c-2-1.5-5-2-8-1.5v14c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5v-14c-3-.5-6 0-8 1.5zM12 6v14"/>'),
 ]
 
@@ -30,7 +31,7 @@ TAIL = (
     '<path d="M12 4v11M8 11l4 4 4-4M5 19h14"/></svg><span>备份</span></button>\n'
 )
 
-PAGES = {'index.html': '今天', 'kousuan.html': '口算', 'aoshu.html': '奥数', 'shudu.html': '数独', 'shizi.html': '识字'}
+PAGES = {'index.html': '今天', 'kousuan.html': '口算', 'aoshu.html': '奥数', 'shudu.html': '数独', 'mima.html': '密码', 'shizi.html': '识字'}
 
 
 def rail(current):

@@ -1,0 +1,133 @@
+/*
+ * 密码推理练习纸。卷面件（.mima-*）同时用于屏幕预览与打印。
+ * 首版没有在线玩、没有任何作答态，卷面只用黑字与边框，
+ * 因此打印段无需做屏幕态还原（数独那三个特异性坑在这里没有土壤）。
+ * 注意：body 的 font/line-height 是卷面继承的，不许在本文件改动。
+ */
+
+.sheet-mima .mima-rule {
+  font-size: 12px;
+  color: #444;
+  margin: 0 0 4mm;
+}
+
+.sheet-mima .mima-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8mm;
+}
+
+.mima-item {
+  border: 0.3mm solid #999;
+  border-radius: 2mm;
+  padding: 4mm;
+}
+
+.mima-no {
+  font-weight: 600;
+  font-size: 14px;
+  margin: 0 0 2mm;
+}
+
+.mima-clue {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2mm;
+}
+
+/* 数字格：线索行与划掉带共用 */
+.mima-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 9mm;
+  height: 9mm;
+  margin-right: 2mm;
+  border: 0.3mm solid #666;
+  border-radius: 1mm;
+  font-size: 16px;
+}
+
+.mima-fb {
+  font-size: 15px;
+  letter-spacing: 1mm;
+}
+
+.mima-fb-text {
+  letter-spacing: 0;
+  font-size: 13px;
+}
+
+.mima-ans {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+  margin-top: 3mm;
+  font-size: 13px;
+}
+
+.mima-box {
+  display: inline-block;
+  width: 10mm;
+  height: 10mm;
+  margin-right: 2mm;
+  border: 0.3mm solid #555;
+  border-bottom: 0.7mm solid #555;
+  border-radius: 1mm;
+}
+
+/* 划掉数字带：训练轮，只在第 1、2 关出现 */
+.mima-strip {
+  display: flex;
+  align-items: center;
+  gap: 1mm;
+  margin-top: 3mm;
+  font-size: 11px;
+  color: #555;
+}
+
+.mima-strip .mima-cell {
+  width: 7mm;
+  height: 7mm;
+  margin-right: 1mm;
+  font-size: 13px;
+  border-color: #aaa;
+}
+
+.mima-strip-l {
+  margin-right: 1mm;
+}
+
+/* ---------- 答案页 ---------- */
+
+.mima-ans-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8mm;
+}
+
+.mima-ans-item {
+  border: 0.3mm solid #bbb;
+  border-radius: 2mm;
+  padding: 4mm;
+}
+
+.mima-ans-head {
+  display: flex;
+  align-items: baseline;
+  gap: 3mm;
+  margin: 0 0 2mm;
+  font-size: 14px;
+}
+
+.mima-ans-code b {
+  letter-spacing: 2mm;
+}
+
+.mima-steps {
+  margin: 0;
+  padding-left: 5mm;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #222;
+}
