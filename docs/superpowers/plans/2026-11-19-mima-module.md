@@ -84,29 +84,29 @@ function score2(guess, code) {
   return [exact, share - exact]
 }
 
-/* 独立实现 ②：解计数。与 core 的 enumerate 遍历方式不同——按池的下标 组合
-   递归（保证数字不重复且有序枚举），数到 cap 个就停。 */
+/* 独立实现 ②：解计数。与 core 的 enumerate 遍历方式不同——按位递归、位掩码
+   记已用下标（密码各位顺序有意义，必须枚举全部排列而不是组合——自检就抓到过
+   这个错：只枚举升序组合时 5827 永远找不到；数到 cap 个就停）。 */
 function enumerate2(pool, N, rows, cap) {
   var found = []
-  var idx = []
-  function step(pos, start) {
+  function step(pos, usedMask, cur) {
     if (found.length >= cap) return
     if (pos === N) {
-      var cand = idx.map(function (k) { return pool[k] })
       for (var r = 0; r < rows.length; r++) {
-        var fb = score2(rows[r].g, cand)
+        var fb = score2(rows[r].g, cur)
         if (fb[0] !== rows[r].a || fb[1] !== rows[r].b) return
       }
-      found.push(cand)
+      found.push(cur.slice())
       return
     }
-    for (var i = start; i < pool.length; i++) {
-      idx.push(i)
-      step(pos + 1, i + 1)
-      idx.pop()
+    for (var i = 0; i < pool.length; i++) {
+      if (usedMask & (1 << i)) continue
+      cur.push(pool[i])
+      step(pos + 1, usedMask | (1 << i), cur)
+      cur.pop()
     }
   }
-  step(0, 0)
+  step(0, 0, [])
   return found
 }
 
