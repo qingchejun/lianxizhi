@@ -1,0 +1,27 @@
+/* 管理员面板（admin.html）：仅站长使用，桌面版；不依赖 app.css 布局类，只借它的基础字体。 */
+.admin { max-width: 900px; margin: 0 auto; padding: 36px 20px 60px; }
+.admin-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 24px; }
+.admin-head h1 { font-size: 22px; margin: 0; }
+.admin-back { color: #666; text-decoration: none; font-size: 14px; }
+.admin-back:hover { color: #111; }
+.admin-note { color: #666; font-size: 14px; line-height: 1.8; }
+.admin-note a { color: inherit; }
+.admin-form { display: flex; gap: 10px; align-items: center; margin-bottom: 22px; flex-wrap: wrap; }
+.admin-form input[type="text"] { width: 260px; padding: 7px 10px; border: 1px solid #cfd3d8; border-radius: 6px; font-size: 14px; }
+.admin-form select { padding: 7px 8px; border: 1px solid #cfd3d8; border-radius: 6px; font-size: 14px; background: #fff; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.admin-table th, .admin-table td { border-bottom: 1px solid #e3e5e8; padding: 9px 10px; text-align: left; vertical-align: top; }
+.admin-table th { color: #666; font-weight: 500; font-size: 13px; white-space: nowrap; }
+.admin-table td small { color: #888; }
+.admin-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 15px; letter-spacing: .5px; background: none; border: none; padding: 0; cursor: pointer; color: inherit; }
+.admin-code:hover { text-decoration: underline; }
+.badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; white-space: nowrap; }
+.badge-unused { background: #eef0f2; color: #555; }
+.badge-claimed { background: #fdf3e0; color: #9a6b00; }
+.badge-activated { background: #e8f3e8; color: #2f7d32; }
+.badge-revoked { background: #f6e8e8; color: #a04343; }
+.admin-btn { border: 1px solid #cfd3d8; background: #fff; border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+.admin-btn:hover { background: #f5f6f7; }
+.admin-btn-primary { border-color: #2b6cb0; color: #2b6cb0; }
+.admin-btn-primary:hover { background: #f0f6fc; }
+.admin-btn-danger:hover { background: #fbf0f0; border-color: #d8b0b0; }
