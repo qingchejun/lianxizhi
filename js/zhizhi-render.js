@@ -73,9 +73,10 @@
   function itemHTML(entry, lv) {
     return (
       /* data-zp-idx：题卡在题目数组里的下标（题号-1），在线玩的「试玩」按钮靠它取题；
-         答案页题卡不走这里，天然不带 */
+         答案页题卡不走这里，天然不带。题卡整体右对齐（见 zhizhi.css 的 .zhizhi-list）：
+         行线索列宽随题浮动，网格右缘才是稳定基准，对齐了页与页、题与题看起来才齐 */
       '<div class="zhizhi-item" data-zp-idx="' + (entry.idx - 1) + '">' +
-      '<p class="zhizhi-no">' + P().numLabel(entry.idx) + '</p>' +
+      '<div class="zhizhi-head"><p class="zhizhi-no">' + P().numLabel(entry.idx) + '</p></div>' +
       gridHTML(entry.q, lv) +
       '</div>'
     )

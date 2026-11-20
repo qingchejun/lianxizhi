@@ -10,16 +10,28 @@
   margin: 0 0 4mm;
 }
 
+/* 题卡右对齐：行线索列宽随题浮动（「1 1」比「5」宽），网格右缘才是稳定基准——
+   右对齐后同页几道题、页与页之间看起来都齐，版心右边也不再留一大片空白 */
 .zhizhi-list {
   display: flex;
   flex-direction: column;
   gap: 8mm;
+  align-items: flex-end;
+}
+
+/* 题卡头行：题号在左，「试玩」按钮在右（zhizhi-play.js 挂进来，打印时隐藏） */
+.zhizhi-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4mm;
+  margin: 0 0 1.5mm;
 }
 
 .zhizhi-no {
   font-weight: 600;
   font-size: 13px;
-  margin: 0 0 1.5mm;
+  margin: 0;
 }
 
 /* 涂画网格：table 拼出「列线索行 + 行线索列 + 格盘」。border-collapse 让
@@ -126,13 +138,8 @@
 
 /* ---------- 在线玩（屏幕态；打印隔离在 sheet.css 的「只出纸」清单里） ---------- */
 
-/* 题卡右上角的入口。.zhizhi-item 补 relative 做锚点，不影响打印布局 */
-.zhizhi-item { position: relative; }
-
+/* 头行右端的入口，随头行排在题号同一行、网格正上方 */
 .zhizhi-play-btn {
-  position: absolute;
-  top: 0;
-  right: 0;
   height: 26px;
   padding: 0 10px;
   font-size: 12px;

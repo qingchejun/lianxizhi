@@ -268,7 +268,9 @@
       btn.type = 'button'
       btn.className = 'zhizhi-play-btn'
       btn.textContent = '试玩'
-      items[i].appendChild(btn)
+      /* 挂进头行右端（题号在左、按钮在右）；题卡右对齐后按钮若再绝对定位在右上角，
+         会正好压住最后一列的列线索数字 */
+      ;(items[i].querySelector('.zhizhi-head') || items[i]).appendChild(btn)
       ;(function (mine) { /* var 是函数级作用域，必须逐个封进闭包，否则按钮全开同一幅 */
         btn.addEventListener('click', function () { open(mine) })
       })(pz)
