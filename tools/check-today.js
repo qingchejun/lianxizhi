@@ -22,6 +22,11 @@ require('../js/shudu-settings.js')
 require('../js/shizi-data.js')
 require('../js/shizi-core.js')
 require('../js/shizi-settings.js')
+require('../js/pinyin-syllables.js')
+require('../js/pinyin-words.js')
+require('../js/pinyin-data.js')
+require('../js/pinyin-core.js')
+require('../js/pinyin-storage.js')
 require('../js/today-core.js')
 
 var T = globalThis.SumSum.today

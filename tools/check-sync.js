@@ -118,6 +118,7 @@ console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ sync-core 合并规则
     check('init 首登推送全部（隔离前提）', pushed.length === 1 && pushed[0].length >= 1, pushed.length)
     pushed = []
     await new Promise(function (r) { setTimeout(r, 30) })
+    meta['sumsum:local:v1'] = 200
     changes.forEach(function (fn) { fn('sumsum:local:v1') })
     await new Promise(function (r) { setTimeout(r, 50) })
     check('改动触发推送（防抖后）', pushed.length === 1 && pushed[0][0].key === 'sumsum:local:v1', pushed.length)
@@ -166,6 +167,25 @@ console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ sync-core 合并规则
     changes.forEach(function (fn) { fn('sumsum:local:v1') })
     await new Promise(function (r) { setTimeout(r, 50) })
     check('断网打开后改动仍触发推送（监听必须挂上）', pushed.length >= 1, pushed.length)
+
+    throwPull = false
+    pulled = { items: [] }
+    for (var i = 0; i < 205; i++) {
+      var key = 'sumsum:pinyin:mark:v1:demo:' + i
+      mem[key] = '{"result":"ok"}'
+      meta[key] = 1000
+    }
+    pushed = []
+    await sync.init({ api: api, noReload: true, debounce: 5 })
+    check('大量逐题登记分批上传', pushed.length === 2 && pushed[0].length === 200 &&
+      pushed.flat().filter(function (it) { return it.key.indexOf('sumsum:pinyin:mark:') === 0 }).length === 205)
+    pushed = []
+    var changed = 'sumsum:pinyin:mark:v1:demo:204'
+    meta[changed] = 1001
+    changes.at(-1)(changed)
+    await new Promise(function (r) { setTimeout(r, 50) })
+    check('已确认同步的登记不重复上送', pushed.length === 1 && pushed[0].length === 1 &&
+      pushed[0][0].key === changed)
 
     finish()
   }).catch(function (e) { console.error(e); process.exit(1) })

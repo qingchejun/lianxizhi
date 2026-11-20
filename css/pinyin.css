@@ -1,0 +1,73 @@
+@page { size: A4 portrait; margin: 15mm; }
+
+.pinyin-preview { display: block; }
+.pinyin-nav, .pinyin-panel { max-width: 760px; margin: 0 auto 16px; }
+.pinyin-nav, .pinyin-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.pinyin-panel {
+  padding: clamp(16px, 4vw, 30px);
+  border-radius: 16px;
+  background: #fff;
+  color: #172033;
+  border: 1px solid #dbe2ed;
+}
+.pinyin-panel article + article { border-top: 1px solid #dbe2ed; margin-top: 18px; padding-top: 14px; }
+.pinyin-panel h2, .pinyin-panel h3 { margin: 0 0 8px; }
+.pinyin-panel p { margin: 0 0 12px; }
+.pinyin-panel a:not(.btn) { color: #174e9b; text-decoration: underline; }
+.pinyin-items { list-style: none; margin: 0; padding: 0; }
+.pinyin-item {
+  min-width: 0;
+  padding: 12px 0;
+  border-bottom: 1px solid #e0e6ef;
+}
+.pinyin-prompt { display: flex; align-items: baseline; gap: 12px; overflow-wrap: anywhere; }
+.pinyin-prompt span:first-child { flex: 0 0 3ch; white-space: nowrap; color: #4b5668; }
+.pinyin-text { font: 500 var(--pinyin-size, 32px)/1.28 system-ui, sans-serif; }
+.pinyin-parent { margin-top: 14px; background: #f0f4fa; padding: 12px; border-radius: 8px; }
+.pinyin-parent summary { color: #24466d; font-weight: 650; cursor: pointer; }
+.pinyin-parent label { display: inline-flex; align-items: center; gap: 6px; margin: 6px; }
+.pinyin-parent input[type="text"] { width: 9em; }
+.pinyin-status { margin: 10px 0; color: #324765; }
+.pinyin-print { display: none; }
+
+@media print {
+  .pinyin-nav, .pinyin-panel, .confirm-bar { display: none !important; }
+  .pinyin-print.sheet {
+    display: block;
+    width: auto;
+    min-height: 0;
+    padding: 0;
+  }
+  .pinyin-print h2 { margin: 0; font-size: 18pt; }
+  .pinyin-print h3 { margin: 0 0 2mm; font-size: 12pt; }
+  .pinyin-print section { margin-bottom: 4mm; break-inside: avoid; }
+  .pinyin-print .pinyin-items { display: flex; flex-wrap: wrap; gap: 2mm 8mm; }
+  .pinyin-print .pinyin-item { padding: 0; border: 0; }
+  .pinyin-print .pinyin-text { font-size: 18pt; }
+  .pinyin-print .pinyin-parent {
+    margin-top: 4mm;
+    padding: 3mm;
+    border: 1px solid #aaa;
+    line-height: 1.4;
+    font-size: 10pt;
+    break-inside: avoid;
+  }
+  .pinyin-print p { margin: 1.5mm 0; }
+  .pinyin-answer-line { display: inline-block; width: 26mm; border-bottom: 1px solid; }
+}
+
+@media screen {
+  .pinyin-paper-visible .pinyin-print {
+    display: flex;
+    margin: 0 auto;
+    max-width: 100%;
+    width: 210mm;
+    min-height: 0;
+    padding: clamp(16px, 4vw, 42px);
+  }
+  .pinyin-paper-visible .sheet-head { flex-wrap: wrap; }
+  .pinyin-paper-visible .pinyin-items { display: flex; flex-wrap: wrap; gap: 12px; }
+}
+
+.pinyin-preview:not([data-pinyin-printable]) .confirm-bar { display: none; }
+.pinyin-paper-visible { margin: 0 auto 16px; }

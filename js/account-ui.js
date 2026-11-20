@@ -204,7 +204,7 @@
     var sync = root.SumSum.sync
     if (!sync || syncStarted) return /* 只启动一次：重复 init 会堆 onChange 监听、重复推 */
     syncStarted = true
-    sync.init({
+    return sync.init({
       confirm: function (o) {
         return new Promise(function (resolve) {
           var lines = function (keys) {
@@ -339,8 +339,8 @@
     A.onChange(function () {
       if (dlg && dlg.open) render() /* 登录态变了，弹窗内容跟着换 */
     })
-    A.init().then(function () {
-      if (A.state.loggedIn) startSync()
+    var initialSync = A.init().then(function () {
+      if (A.state.loggedIn) return startSync()
     }).catch(function () { /* 探不到登录态就当未登录，别抛未处理的 Promise 异常 */ })
     /* ?reset=<token>：只在首页（module 页面会吃参数）。token 不留在历史记录里 */
     var m = root.location.search.match(/[?&]reset=([0-9a-f]{64})/)
@@ -349,10 +349,14 @@
       root.history.replaceState(null, '', root.location.pathname)
       open('reset')
     }
+    return initialSync
   }
 
-  if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot)
-  else boot()
+  var initialSync = new Promise(function (resolve) {
+    function start() { resolve(boot()) }
+    if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', start)
+    else start()
+  })
   root.SumSum = root.SumSum || {}
-  root.SumSum.accountUI = { open: open }
+  root.SumSum.accountUI = { open: open, initialSync: initialSync }
 })(window)

@@ -1,5 +1,5 @@
 /**
- * 「今天」首页的数据：从各板块存在浏览器里的东西，拼出四张卡片要显示的内容。
+ * 「今天」首页的数据：从各板块存在浏览器里的东西，拼出五张卡片要显示的内容。
  *
  * 只读不写。每张卡片说的都必须和点进板块后看到的一致，所以能复用板块自己的
  * sanitize / sliceOf 就复用，不另写一套规则（例：识字周次越界怎么钳，以 shizi-core 为准）。
@@ -162,16 +162,40 @@
     }
   }
 
+  function pinyinCard(storage, now) {
+    var P = root.SumSum.pinyin
+    var DB = root.SumSum.pinyinStorage
+    var date = P.dateKey(now)
+    var data = DB.read(storage)
+    var saved = DB.current(data, date)
+    var sheet = saved || P.makeSheet(date, P.derive(data.sheets, data.marks, date))
+    if (!sheet) return { title: '今天可以休息', href: 'pinyin.html?view=topics' }
+    var count = sheet.groups.reduce(function (total, group) {
+      return total + group.items.filter(function (item) {
+        var mark = data.marks[sheet.id]?.[item.id]
+        return mark && mark.result !== 'unpracticed'
+      }).length
+    }, 0)
+    return {
+      title: root.SumSum.pinyinData.directions[sheet.focus].label,
+      groups: sheet.groups.filter(function (group) { return group.phase !== 'check' }).length,
+      count: count,
+      href: 'pinyin.html',
+      printHref: 'pinyin.html#print'
+    }
+  }
+
   function build(storage, now) {
     return {
       date: dateText(now),
       aoshu: aoshuCard(storage),
       shizi: shiziCard(storage),
       kousuan: kousuanCard(storage),
-      shudu: shuduCard(storage)
+      shudu: shuduCard(storage),
+      pinyin: pinyinCard(storage, now)
     }
   }
 
   root.SumSum = root.SumSum || {}
-  root.SumSum.today = { build: build }
+  root.SumSum.today = { build: build, pinyinCard: pinyinCard }
 })(typeof window !== 'undefined' ? window : globalThis)

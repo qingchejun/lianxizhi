@@ -1,5 +1,5 @@
 /**
- * 「今天」首页：把 today-core 算好的四张卡片画出来。
+ * 「今天」首页：把 today-core 算好的五张卡片画出来。
  *
  * 卡片上半部是进入板块的链接，底栏蓝色「打印」是另一个链接（板块页 + #print），
  * 板块页会先把纸渲染出来、在纸上方弹一条「确认打印」，家长看一眼再印 —— 用户定的规矩：
@@ -130,10 +130,26 @@
     })
   }
 
+  function pinyinCard(p) {
+    return card({
+      href: p.href,
+      printHref: p.printHref || p.href,
+      miniCls: 'mini-center',
+      mini: '<div class="mini-zi"><span>b</span><span>d</span><span>p</span><span>q</span></div>',
+      tag: '拼音 · 每日练习',
+      title: p.title,
+      lines: '<span class="meta">' + (p.printHref
+        ? p.groups + ' 组 · ' + (p.count ? '已登记 ' + p.count + ' 题' : '未练')
+        : '也可以按需要手选专题') + '</span>',
+      printText: p.printHref ? '打印今日卷' : '选专题',
+      more: '约五分钟'
+    })
+  }
+
   var data = S.today.build(storage(), new Date())
-  doc.getElementById('today-date').textContent = data.date + ' · 每张卡片都是上次的设置'
+  doc.getElementById('today-date').textContent = data.date
   doc.getElementById('today-cards').innerHTML =
-    aoshuCard(data.aoshu) + shiziCard(data.shizi) + kousuanCard(data.kousuan) + shuduCard(data.shudu)
+    aoshuCard(data.aoshu) + shiziCard(data.shizi) + kousuanCard(data.kousuan) + shuduCard(data.shudu) + pinyinCard(data.pinyin)
 
   /* 完工标记：上面任何一步抛错都到不了这里；HTML 里的防护脚本据此判断并提示 */
   document.documentElement.setAttribute('data-sumsum-ready', '1')

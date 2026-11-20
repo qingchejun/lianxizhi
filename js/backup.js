@@ -137,11 +137,16 @@
     if (isObj(shizi) && shizi.week) lines.push('识字进度：第 ' + shizi.week + ' 周')
     var learned = json(data, 'sumsum:aoshu:learned:v1')
     if (Array.isArray(learned)) lines.push('奥数「已学 ✓」：' + learned.length + ' 个知识点')
+    var papers = Object.keys(data).filter(function (key) {
+      return key.indexOf('sumsum:pinyin:sheet:v1:') === 0
+    }).length
+    if (papers) lines.push('拼音练习卷：' + papers + ' 张（含已登记的结果）')
     var SETTINGS = {
       'sumsum:settings:v1': '口算',
       'sumsum:aoshu:v1': '奥数',
       'sumsum:shudu:v1': '数独',
-      'sumsum:shizi:v1': '识字'
+      'sumsum:shizi:v1': '识字',
+      'sumsum:pinyin:settings:v1': '拼音'
     }
     var mods = Object.keys(SETTINGS).filter(function (k) {
       return k in data

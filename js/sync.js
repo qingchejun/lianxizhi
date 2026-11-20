@@ -9,6 +9,7 @@
 ;(function (root) {
   'use strict'
 
+  var PUSH_BATCH_SIZE = 200 /* 与服务端每批限制一致 */
   var DEBOUNCE = 2000 /* 测试里可用 opts.debounce 调短 */
   var RELOAD_KEY = 'sumsum:sync:reloaded'
 
@@ -26,6 +27,7 @@
     if (!acct || !acct.state.loggedIn) return /* 没登录不做事，也别报错 */
 
     var store = S()
+    var pushedVersions = Object.create(null)
     var allKeys = store.keys() /* 现存可同步键，含没 mtime 的老键 */
     var metaMap = store.meta()
     var oldKeys = allKeys.filter(function (k) { return !(k in metaMap) }) /* 同步上线前的老数据 */
@@ -33,6 +35,8 @@
     try {
     var pulled = await api.pull()
     var cloudItems = (pulled && pulled.status === 200 && pulled.body && pulled.body.items) || []
+
+    cloudItems.forEach(function (it) { pushedVersions[it.key] = it.updated_at })
 
     /* 老数据里有跟云端同键的（两边都有值、没法比时间）→ 只能问用户 */
     var unresolved = cloudItems.filter(function (it) {
@@ -48,8 +52,9 @@
         /* 只给老键（同步上线前的真实数据）盖「现在」；播种键按 1 原样推，
            否则干净设备的默认值会变成云端新王，反过来清空别机的真实数据 */
         if (oldKeys.length) store.stampNow(oldKeys)
-        await pushAll(api, store)
-        return /* 本地已称王 */
+        oldKeys.forEach(function (key) { delete pushedVersions[key] })
+        await pushAll(api, store, pushedVersions)
+        cloudItems = [] /* 本地版本已推送，继续挂上后续改动监听 */
       } else if (pick === 'cloud') {
         applyAll(store, cloudItems)
         /* 云端为基准，但本地独有、云端没有的老键不丢：盖个现在，下次打开自然推上去 */
@@ -65,7 +70,7 @@
     } else if (plan === 'push-all') {
       /* 同上：只盖老键，播种键（mtime=1）与已有时钟的键按自己的时间推 */
       if (oldKeys.length) store.stampNow(oldKeys)
-      await pushAll(api, store)
+      await pushAll(api, store, pushedVersions)
       cloudItems = []
     }
 
@@ -76,10 +81,11 @@
         store.applyRemote(it.key, it.value, it.mtime)
         appliedAny = true
       })
+      var stamped = store.meta()
       var toPush = r.pushKeys.map(function (k) {
-        return { key: k, value: store.getString(k), updated_at: store.meta()[k] }
+        return { key: k, value: store.getString(k), updated_at: stamped[k] }
       }).filter(function (it) { return it.value !== null })
-      if (toPush.length) await api.push(toPush)
+      await pushBatches(api, toPush, pushedVersions)
       if (appliedAny) reload(opts)
     }
     } catch (e) {
@@ -90,7 +96,7 @@
     /* 之后本地一有改动，防抖推。store 的 fire 只传 key：删键也会走到这，
        但 pushAll 只推 meta 里还有的键，删掉的键自然不在推送里 */
     store.onChange(function () {
-      later(api, opts.debounce)
+      later(api, opts.debounce, pushedVersions)
     })
   }
 
@@ -103,21 +109,34 @@
   }
 
   var timer = null
-  function later(api, ms) {
+  function later(api, ms, pushedVersions) {
     if (timer) clearTimeout(timer)
     timer = setTimeout(function () {
       timer = null
-      pushAll(api, S()).catch(function () { /* 推失败不重试：下次改动或下次打开自然再推 */ })
+      pushAll(api, S(), pushedVersions).catch(function () { /* 推失败不重试：下次改动或下次打开自然再推 */ })
     }, ms || DEBOUNCE)
   }
 
-  async function pushAll(api, store) {
+  async function pushAll(api, store, pushedVersions) {
     var meta = store.meta()
-    var items = Object.keys(meta).filter(store.syncable).map(function (k) {
+    var items = Object.keys(meta).filter(function (key) {
+      return store.syncable(key) && !(pushedVersions[key] >= meta[key])
+    }).map(function (k) {
       var v = store.getString(k)
       return v === null ? null : { key: k, value: v, updated_at: meta[k] }
     }).filter(Boolean)
-    if (items.length) await api.push(items)
+    await pushBatches(api, items, pushedVersions)
+  }
+
+  async function pushBatches(api, items, pushedVersions) {
+    for (var offset = 0; offset < items.length; offset += PUSH_BATCH_SIZE) {
+      var batch = items.slice(offset, offset + PUSH_BATCH_SIZE)
+      var result = await api.push(batch)
+      if (!result || result.status !== 200) break
+      batch.forEach(function (item) {
+        pushedVersions[item.key] = Math.max(pushedVersions[item.key] || 0, item.updated_at)
+      })
+    }
   }
 
   function applyAll(store, items) {
