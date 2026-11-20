@@ -53,18 +53,19 @@
     return { status: r.status, body: data }
   }
 
-  var state = { loggedIn: false, email: '' }
+  var state = { loggedIn: false, email: '', admin: false }
   var listeners = []
-  function setLogin(email) {
+  function setLogin(email, admin) {
     state.loggedIn = !!email
     state.email = email || ''
+    state.admin = !!email && !!admin
     listeners.forEach(function (fn) { fn(state) })
   }
 
   /* 页面打开先探一下登录态（me 401 = 没登录，不算错） */
   async function init(fetchFn) {
     var r = await request('/api/auth/me', undefined, fetchFn)
-    if (r.status === 200 && r.body.ok) setLogin(r.body.email)
+    if (r.status === 200 && r.body.ok) setLogin(r.body.email, r.body.admin)
     return state
   }
 

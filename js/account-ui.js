@@ -55,6 +55,7 @@
       body.innerHTML =
         '<p class="account-line">已登录：<b>' + esc(A.state.email) + '</b></p>' +
         '<p class="account-sub">这台浏览器上的练习进度会自动同步到云端；换电脑登录同一账号即可带过去。</p>' +
+        (A.state.admin ? '<div class="account-row"><a class="btn" href="admin.html">管理员面板</a></div>' : '') +
         '<div class="account-row">' +
           '<button type="button" class="btn" data-act="changepw">修改密码</button>' +
           '<button type="button" class="btn" data-act="logout">退出登录</button>' +
@@ -80,6 +81,7 @@
         html: '<form data-view="register">' +
           '<label>邮箱<input type="email" name="email" required autocomplete="email"></label>' +
           '<label>密码（至少 8 位）<input type="password" name="password" required minlength="8" autocomplete="new-password"></label>' +
+          '<label>邀请码<input type="text" name="invite" required autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="K7M2-QF9W"></label>' +
           '<button type="submit" class="btn btn-primary" data-act="submit">注册</button>' +
           '<div class="account-links"><button type="button" class="link-btn" data-goto="login">已有账号，去登录</button></div>' +
           '<div class="account-msg" data-msg hidden></div></form>'
@@ -179,7 +181,7 @@
     var email = A.normEmail(dlg.__email || '')
     var r = await A.request('/api/auth/verify', { email: email, code: codeValue() })
     if (r.status === 200) {
-      A.setLogin(email)
+      A.setLogin(email, r.body.admin)
       startSync()
       view = 'account'
       render()
@@ -237,7 +239,7 @@
         var hash = await A.hashPassword(email, pw)
         if (view === 'register') {
           dlg.__hash = hash
-          var r = await A.request('/api/auth/register', { email: email, password: hash })
+          var r = await A.request('/api/auth/register', { email: email, password: hash, invite: fd.get('invite') || '' })
           if (r.status === 200) { /* 未验证过的重复注册也走 200：换密码 + 重发码（auth-core 裁定） */
             dlg.__email = email
             view = 'code'
@@ -251,7 +253,7 @@
             view = 'code'
             render()
           } else if (rl.status === 200) {
-            A.setLogin(email)
+            A.setLogin(email, rl.body.admin)
             startSync()
             view = 'account'
             render()
@@ -267,7 +269,7 @@
         var rh = await A.hashPassword(email, pw)
         var rr = await A.request('/api/auth/reset', { token: resetToken, password: rh })
         if (rr.status === 200) {
-          A.setLogin(email)
+          A.setLogin(email, rr.body.admin)
           startSync()
           view = 'account'
           render()

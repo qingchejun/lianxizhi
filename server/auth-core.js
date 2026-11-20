@@ -127,7 +127,7 @@ export async function verify(repo, now, body) {
       await repo.tokenUse(row.token_hash)
       await repo.setVerified(user.id)
       if (user.invite_id) await repo.inviteActivate(user.invite_id, now) /* 老账号 invite_id 为 null，不动 */
-      return { status: 200, body: { ok: true }, session: { uid: user.id, pwver: user.pwver } }
+      return { status: 200, body: { ok: true, admin: !!user.admin }, session: { uid: user.id, pwver: user.pwver } }
     }
   }
   await repo.limitSet(email, 'codefail', { n: (fails ? fails.n : 0) + 1, ts: now, until: 0 })
@@ -168,7 +168,7 @@ export async function login(repo, now, body) {
     r.body = { ok: false, need_verify: true }
     return r
   }
-  return { status: 200, body: { ok: true }, session: { uid: user.id, pwver: user.pwver } }
+  return { status: 200, body: { ok: true, admin: !!user.admin }, session: { uid: user.id, pwver: user.pwver } }
 }
 
 /* ---- 找回密码：无论邮箱是否存在都 200（spec：不泄露注册情况） ---- */
@@ -218,7 +218,7 @@ export async function reset(repo, now, body) {
     pw_hash: await sha256hex(pw_salt + pw), pw_salt: pw_salt,
     pwver: nextPwver, verified: 1 /* 重设顺带验证（能收到邮件就证明邮箱是本人的） */
   })
-  return { status: 200, body: { ok: true }, session: { uid: user.id, pwver: nextPwver } }
+  return { status: 200, body: { ok: true, admin: !!user.admin }, session: { uid: user.id, pwver: nextPwver } }
 }
 
 /* ---- 改密码：要登录态 + 当前密码；副作用与重设一致（pwver+1，别处登录态全失效）。
@@ -248,7 +248,7 @@ export async function changePassword(repo, session, now, body) {
   await repo.tokensClear(user.id, 'reset')
   await repo.tokensClear(user.id, 'verify')
   await repo.limitSet(user.email, 'loginfail', { n: 0, ts: now, until: 0 })
-  return { status: 200, body: { ok: true }, session: { uid: user.id, pwver: nextPwver } }
+  return { status: 200, body: { ok: true, admin: !!user.admin }, session: { uid: user.id, pwver: nextPwver } }
 }
 
 /* ---- /api/auth/me：会话有效性 + pwver 比对 ---- */
@@ -256,7 +256,7 @@ export async function meBySession(repo, session) {
   if (!session) return { status: 401, body: { ok: false } }
   const user = await repo.userById(session.uid)
   if (!user || user.pwver !== session.pwver) return { status: 401, body: { ok: false } }
-  return { status: 200, body: { ok: true, email: user.email, verified: !!user.verified } }
+  return { status: 200, body: { ok: true, email: user.email, verified: !!user.verified, admin: !!user.admin } }
 }
 
 /* ---- data 拉取 / 推送 ---- */
