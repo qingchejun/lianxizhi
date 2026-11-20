@@ -26,6 +26,9 @@ export function repo(db) {
     async setVerified(id) {
       await db.prepare('UPDATE users SET verified=1 WHERE id=?').bind(id).run()
     },
+    async setBanned(id, flag) {
+      await db.prepare('UPDATE users SET banned=? WHERE id=?').bind(flag, id).run()
+    },
     async tokenInsert(t) {
       await db.prepare('INSERT INTO tokens(token_hash,user_id,kind,expires_at) VALUES(?,?,?,?)')
         .bind(t.token_hash, t.user_id, t.kind, t.expires_at).run()
@@ -74,9 +77,12 @@ export function repo(db) {
     async inviteRevoke(id, now) {
       await db.prepare('UPDATE invites SET revoked_at=? WHERE id=? AND revoked_at IS NULL').bind(now, id).run()
     },
+    async inviteSetNote(id, note) {
+      await db.prepare('UPDATE invites SET note=? WHERE id=?').bind(note, id).run()
+    },
     async invitesList() {
       const r = await db.prepare(
-        'SELECT i.*, u.email AS claimed_email FROM invites i LEFT JOIN users u ON u.id=i.claimed_by ORDER BY i.created_at DESC'
+        'SELECT i.*, u.email AS claimed_email, u.banned AS claimed_banned FROM invites i LEFT JOIN users u ON u.id=i.claimed_by ORDER BY i.created_at DESC'
       ).all()
       return r.results || []
     },

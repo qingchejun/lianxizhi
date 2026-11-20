@@ -41,12 +41,21 @@ function memRepo() {
       var v = invites.find(function (x) { return x.id === id })
       if (v && !v.revoked_at) v.revoked_at = now
     },
+    async inviteSetNote(id, note) {
+      var v = invites.find(function (x) { return x.id === id })
+      if (v) v.note = note
+    },
+    async setBanned(id, flag) {
+      var u = users.find(function (x) { return x.id === id })
+      if (u) u.banned = flag
+    },
     async invitesList() {
       return invites.map(function (v) {
         var u = users.find(function (x) { return x.id === v.claimed_by })
         var c = {}
         for (var k in v) c[k] = v[k]
         c.claimed_email = u ? u.email : null
+        c.claimed_banned = u ? !!u.banned : false
         return c
       }).sort(function (a, b) { return b.created_at - a.created_at })
     }
@@ -136,6 +145,51 @@ Promise.all([import('../server/auth-core.js'), import('../server/admin-core.js')
   check('作废成功', (await AD.revokeInvite(dbA, { uid: 'boss' }, now + 2, { id: otherId })).status === 200)
   check('作废后该码注册被拒', (await A.register(dbA, now + 3, { email: 'w@u.co', password: clientHash('w@u.co', 'password123'), invite: dbA._invites.find(function (v) { return v.id === otherId }).code })).status === 422)
   check('作废不存在的码 404', (await AD.revokeInvite(dbA, { uid: 'boss' }, now + 4, { id: 'ghost' })).status === 404)
+
+  /* --- admin 标记贯通：me / login 的 200 body 都要带 --- */
+  var meBoss = await A.meBySession(dbA, { uid: 'boss', pwver: 1 })
+  check('me 带 admin 标记（管理员）', meBoss.status === 200 && meBoss.body.admin === true, meBoss.body)
+  var lgZ = await A.login(dbA, now + 5, { email: 'z@san.co', password: clientHash('z@san.co', 'password123') })
+  check('login 带 admin 标记（普通用户为 false）', lgZ.status === 200 && lgZ.body.admin === false, lgZ.body)
+
+  /* ===== 停用账号 + 改备注（2026-11-20 冒烟后追加） ===== */
+  var dbB = memRepo()
+  dbB.users.push({ id: 'boss', email: 'boss@m.co', pw_hash: 'x', pw_salt: 's', pwver: 1, verified: 1, admin: 1 })
+  await AD.createInvites(dbB, { uid: 'boss' }, now, { note: '旧备注', count: 2 })
+  var banId = dbB._invites[0].id
+  var regB = await A.register(dbB, now, { email: 'ban@me.co', password: clientHash('ban@me.co', 'password123'), invite: dbB._invites[0].code })
+  var banUid = dbB.users.find(function (u) { return u.email === 'ban@me.co' }).id
+
+  check('停用已占用码的账号', (await AD.setBan(dbB, { uid: 'boss' }, now + 1, { id: banId, banned: true })).status === 200)
+  check('停用后登录 403', (await A.login(dbB, now + 2, { email: 'ban@me.co', password: clientHash('ban@me.co', 'password123') })).status === 403)
+  check('停用后注册重发 403', (await A.register(dbB, now + 3, { email: 'ban@me.co', password: clientHash('ban@me.co', 'password123') })).status === 403)
+  check('停用后验证码 403', (await A.verify(dbB, now + 4, { email: 'ban@me.co', code: regB.dev.code })).status === 403)
+  var fB = await A.forgot(dbB, now + 5, { email: 'ban@me.co' })
+  check('停用后 forgot 静默 200 不发信', fB.status === 200 && !fB.mail, fB)
+  check('停用后 me 401', (await A.meBySession(dbB, { uid: banUid, pwver: 1 })).status === 401)
+  check('停用后改密码 401', (await A.changePassword(dbB, { uid: banUid, pwver: 1 }, now + 6, { old: clientHash('ban@me.co', 'password123'), new: clientHash('ban@me.co', 'password456') })).status === 401)
+  check('停用状态进列表', (await AD.listInvites(dbB, { uid: 'boss' })).body.invites.find(function (v) { return v.id === banId }).claimed_banned === true)
+
+  /* 后续节奏避开 60 秒发信闸：注册那封在 now，登录补码要 ≥61s，forgot 再 ≥61s */
+  check('解除停用', (await AD.setBan(dbB, { uid: 'boss' }, now + 60 * 1000, { id: banId, banned: false })).status === 200)
+  var lgB = await A.login(dbB, now + 61 * 1000, { email: 'ban@me.co', password: clientHash('ban@me.co', 'password123') })
+  check('解除后能登录（未验证补码）', lgB.status === 200 && lgB.body.need_verify && !!lgB.dev, lgB)
+  check('解除后验证激活', (await A.verify(dbB, now + 62 * 1000, { email: 'ban@me.co', code: lgB.dev.code })).status === 200)
+  var fB2 = await A.forgot(dbB, now + 122 * 1000, { email: 'ban@me.co' })
+  check('激活后 forgot 正常发信', fB2.status === 200 && !!fB2.mail, fB2)
+  check('再次停用（已激活）', (await AD.setBan(dbB, { uid: 'boss' }, now + 123 * 1000, { id: banId, banned: true })).status === 200)
+  check('停用后重设链接作废 422', (await A.reset(dbB, now + 124 * 1000, { token: fB2.dev.token, password: clientHash('ban@me.co', 'password456') })).status === 422)
+  check('停用后已激活登录也 403', (await A.login(dbB, now + 125 * 1000, { email: 'ban@me.co', password: clientHash('ban@me.co', 'password123') })).status === 403)
+  check('再次解除直接登录', (await AD.setBan(dbB, { uid: 'boss' }, now + 126 * 1000, { id: banId, banned: false })).status === 200 &&
+    (await A.login(dbB, now + 127 * 1000, { email: 'ban@me.co', password: clientHash('ban@me.co', 'password123') })).status === 200)
+
+  check('没被占用的码停用 422', (await AD.setBan(dbB, { uid: 'boss' }, now + 128 * 1000, { id: dbB._invites[1].id, banned: true })).status === 422)
+  check('改备注', (await AD.setNote(dbB, { uid: 'boss' }, now + 129 * 1000, { id: dbB._invites[1].id, note: '新备注' })).status === 200 && dbB._invites[1].note === '新备注')
+  var longNote = ''
+  for (var i = 0; i < 150; i++) longNote += '字'
+  check('备注超长截到 100', (await AD.setNote(dbB, { uid: 'boss' }, now + 130 * 1000, { id: dbB._invites[1].id, note: longNote })).status === 200 && dbB._invites[1].note.length === 100)
+  check('改不存在的码备注 404', (await AD.setNote(dbB, { uid: 'boss' }, now + 131 * 1000, { id: 'ghost', note: 'x' })).status === 404)
+  check('停用不存在的码 404', (await AD.setBan(dbB, { uid: 'boss' }, now + 132 * 1000, { id: 'ghost', banned: true })).status === 404)
 
   console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ invite 注册侧全部通过')
   process.exit(bad ? 1 : 0)

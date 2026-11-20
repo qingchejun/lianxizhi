@@ -25,6 +25,7 @@ function fmt(v) {
     state: v.revoked_at ? 'revoked' : v.activated_at ? 'activated' : v.claimed_by ? 'claimed' : 'unused',
     created_at: v.created_at, revoked_at: v.revoked_at || null,
     claimed_at: v.claimed_at || null, claimed_email: v.claimed_email || null,
+    claimed_banned: !!v.claimed_banned,
     activated_at: v.activated_at || null
   }
 }
@@ -62,5 +63,30 @@ export async function revokeInvite(repo, session, now, body) {
   const inv = await repo.inviteGetById(id)
   if (!inv) return { status: 404, body: { ok: false, error: '没有这张码。' } }
   await repo.inviteRevoke(id, now)
+  return { status: 200, body: { ok: true } }
+}
+
+export async function setNote(repo, session, now, body) {
+  const gate = await requireAdmin(repo, session)
+  if (gate) return gate
+  const id = (body && body.id) || ''
+  const note = String((body && body.note) || '').slice(0, 100)
+  if (!id) return { status: 422, body: { ok: false, error: '缺少邀请码 id。' } }
+  const inv = await repo.inviteGetById(id)
+  if (!inv) return { status: 404, body: { ok: false, error: '没有这张码。' } }
+  await repo.inviteSetNote(id, note)
+  return { status: 200, body: { ok: true } }
+}
+
+/* 停用/恢复的是「这张码换来的账号」，不是码本身；登录/验证/重设/登录态全被 auth-core 的 banned 门槛挡住 */
+export async function setBan(repo, session, now, body) {
+  const gate = await requireAdmin(repo, session)
+  if (gate) return gate
+  const id = (body && body.id) || ''
+  if (!id) return { status: 422, body: { ok: false, error: '缺少邀请码 id。' } }
+  const inv = await repo.inviteGetById(id)
+  if (!inv) return { status: 404, body: { ok: false, error: '没有这张码。' } }
+  if (!inv.claimed_by) return { status: 422, body: { ok: false, error: '这张码还没人用，没有账号可停。' } }
+  await repo.setBanned(inv.claimed_by, body && body.banned ? 1 : 0)
   return { status: 200, body: { ok: true } }
 }

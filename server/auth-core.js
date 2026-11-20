@@ -78,6 +78,7 @@ export async function register(repo, now, body) {
   let user = await repo.userByEmail(email)
   if (user && user.verified) return { status: 409, body: { ok: false, error: '这个邮箱已经注册过了，直接登录就行。' } }
   if (user) {
+    if (user.banned) return { status: 403, body: { ok: false, error: '账号已被停用。' } }
     /* 未验证过的邮箱重复注册 = 换密码重来（裁定 5）；码已绑在这个邮箱上，不再要 */
     await repo.updateUser(user.id, { pw_hash: await sha256hex(user.pw_salt + pw) })
   } else {
@@ -112,6 +113,7 @@ export async function verify(repo, now, body) {
   const code = (body && body.code) || ''
   const user = await repo.userByEmail(email)
   if (!user) return { status: 422, body: { ok: false, error: '验证码不对，再看一眼邮件。' } }
+  if (user.banned) return { status: 403, body: { ok: false, error: '账号已被停用。' } }
   if (!/^\d{6}$/.test(code)) return { status: 422, body: { ok: false, error: '验证码是 6 位数字。' } }
   const fails = await repo.limitGet(email, 'codefail')
   if (fails && fails.n >= CODE_MAX_FAILS) {
@@ -159,6 +161,8 @@ export async function login(repo, now, body) {
     await bumpLoginFails(repo, email, now)
     return generic
   }
+  /* 密码对但账号被站长停用：挡在发码/发 session 之前（错密码的试探仍走上面的通用文案） */
+  if (user.banned) return { status: 403, body: { ok: false, error: '账号已被停用。' } }
   await repo.limitSet(email, 'loginfail', { n: 0, ts: now, until: 0 })
   if (!user.verified) {
     const r = await issueCode(repo, user, now)
@@ -176,7 +180,7 @@ export async function forgot(repo, now, body) {
   const email = normEmail(body && body.email)
   if (!validEmail(email)) return { status: 422, body: { ok: false, error: '邮箱地址看起来不对。' } }
   const user = await repo.userByEmail(email)
-  if (!user) return { status: 200, body: { ok: true } }
+  if (!user || user.banned) return { status: 200, body: { ok: true } } /* 不存在/已停用都装作成功，不泄露注册情况 */
   if (await mailGate(repo, email, now)) return { status: 200, body: { ok: true } } /* 节流也装作成功 */
   const token = randomHex(32)
   await repo.tokenInsert({
@@ -205,7 +209,7 @@ export async function reset(repo, now, body) {
     return { status: 422, body: { ok: false, error: '重置链接已失效，请重新发一封。' } }
   }
   const user = await repo.userById(row.user_id)
-  if (!user) return { status: 422, body: { ok: false, error: '重置链接已失效，请重新发一封。' } }
+  if (!user || user.banned) return { status: 422, body: { ok: false, error: '重置链接已失效，请重新发一封。' } } /* 停用的账号不给重设回来 */
   await repo.tokenUse(row.token_hash)
   /* 密码一换，之前发出去的重设链接/验证码全部作废——不然泄漏的旧链接
      还能在有效期内反杀，界面「其他设备需要重新登录」就成了空话 */
@@ -230,7 +234,7 @@ export async function changePassword(repo, session, now, body) {
   if (!validClientHash(newHash)) return { status: 422, body: { ok: false, error: '新密码至少 8 位。' } }
   if (!validClientHash(oldHash)) return { status: 401, body: { ok: false, error: '当前密码不对。' } }
   const user = await repo.userById(session.uid)
-  if (!user) return { status: 401, body: { ok: false, error: '先登录才能改密码。' } }
+  if (!user || user.banned) return { status: 401, body: { ok: false, error: '先登录才能改密码。' } }
   const row = await repo.limitGet(user.email, 'loginfail')
   if (row && row.until > now) return { status: 429, body: { ok: false, error: '试错次数太多，等 15 分钟再来。' } }
   if (user.pw_hash !== await sha256hex(user.pw_salt + oldHash)) {
@@ -255,7 +259,7 @@ export async function changePassword(repo, session, now, body) {
 export async function meBySession(repo, session) {
   if (!session) return { status: 401, body: { ok: false } }
   const user = await repo.userById(session.uid)
-  if (!user || user.pwver !== session.pwver) return { status: 401, body: { ok: false } }
+  if (!user || user.pwver !== session.pwver || user.banned) return { status: 401, body: { ok: false } }
   return { status: 200, body: { ok: true, email: user.email, verified: !!user.verified, admin: !!user.admin } }
 }
 

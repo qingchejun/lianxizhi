@@ -149,6 +149,14 @@
         if (b.value && i < boxes.length - 1) boxes[i + 1].focus()
         if (boxes.every(function (x) { return x.value })) submitCode()
       })
+      /* 整串粘贴：6 位验证码一次性铺进六格（从邮件复制回来的人不用手敲） */
+      b.addEventListener('paste', function (e) {
+        e.preventDefault()
+        var t = String((e.clipboardData || root.clipboardData).getData('text') || '').replace(/\D/g, '')
+        if (!t) return
+        for (var j = 0; j < boxes.length && j < t.length; j++) boxes[j].value = t.charAt(j)
+        if (boxes.every(function (x) { return x.value })) submitCode()
+      })
       b.addEventListener('keydown', function (e) {
         if (e.key === 'Backspace' && !b.value && i > 0) boxes[i - 1].focus()
       })

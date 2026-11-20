@@ -81,7 +81,7 @@ export async function requireSession(context) {
   if (!raw) return null
   const payload = await verify(raw, context.env.SESSION_SECRET, Date.now())
   if (!payload) return null
-  const user = await context.env.DB.prepare('SELECT id, pwver FROM users WHERE id=?').bind(payload.uid).first()
-  if (!user || user.pwver !== payload.pwver) return null
+  const user = await context.env.DB.prepare('SELECT id, pwver, banned FROM users WHERE id=?').bind(payload.uid).first()
+  if (!user || user.pwver !== payload.pwver || user.banned) return null /* 停用账号的所有登录态立即失效 */
   return payload
 }

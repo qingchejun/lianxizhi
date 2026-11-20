@@ -25,3 +25,7 @@
 .admin-btn-primary { border-color: #2b6cb0; color: #2b6cb0; }
 .admin-btn-primary:hover { background: #f0f6fc; }
 .admin-btn-danger:hover { background: #fbf0f0; border-color: #d8b0b0; }
+.admin-ops { white-space: nowrap; }
+.admin-note-txt { cursor: pointer; }
+.admin-note-txt:hover { text-decoration: underline dotted; color: #111; }
+.admin-note-input { width: 100%; min-width: 140px; padding: 4px 6px; border: 1px solid #2b6cb0; border-radius: 4px; font-size: 13px; font-family: inherit; }

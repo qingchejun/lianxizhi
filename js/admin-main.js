@@ -37,13 +37,18 @@
   function rowHTML(v) {
     return '<tr>' +
       '<td><button type="button" class="admin-code" data-copy="' + esc(v.code) + '" title="点击复制">' + esc(displayCode(v.code)) + '</button></td>' +
-      '<td>' + esc(v.note || '') + '</td>' +
+      '<td><span class="admin-note-txt" data-editnote="' + esc(v.id) + '" title="点击修改备注">' + (v.note ? esc(v.note) : '—') + '</span></td>' +
       '<td><span class="badge badge-' + esc(v.state) + '">' + (STATE_LABEL[v.state] || v.state) + '</span></td>' +
       '<td>' + fmtTime(v.created_at) + '</td>' +
-      '<td>' + (v.claimed_email ? esc(v.claimed_email) + '<br><small>' + fmtTime(v.claimed_at) + '</small>' : '—') + '</td>' +
+      '<td>' + (v.claimed_email ? esc(v.claimed_email) + (v.claimed_banned ? ' <span class="badge badge-revoked">已停用</span>' : '') + '<br><small>' + fmtTime(v.claimed_at) + '</small>' : '—') + '</td>' +
       '<td>' + (v.activated_at ? fmtTime(v.activated_at) : '—') + '</td>' +
-      '<td>' + ((v.state === 'activated' || v.state === 'revoked') ? '' :
-        '<button type="button" class="admin-btn admin-btn-danger" data-revoke="' + esc(v.id) + '">作废</button>') + '</td>' +
+      '<td class="admin-ops">' +
+        ((v.state === 'claimed' || v.state === 'activated') ? (v.claimed_banned
+          ? '<button type="button" class="admin-btn" data-unban="' + esc(v.id) + '">解除停用</button> '
+          : '<button type="button" class="admin-btn admin-btn-danger" data-ban="' + esc(v.id) + '">停用账号</button> ') : '') +
+        ((v.state === 'activated' || v.state === 'revoked') ? '' :
+          '<button type="button" class="admin-btn admin-btn-danger" data-revoke="' + esc(v.id) + '">作废</button>') +
+      '</td>' +
     '</tr>'
   }
 
@@ -87,6 +92,38 @@
     await load()
   }
 
+  async function doBan(id, flag) {
+    var r = await api('/api/admin/invites/ban', { id: id, banned: flag })
+    if (r.status !== 200) { root.alert(r.body.error || '操作没成功，稍后再试。'); return }
+    await load()
+  }
+
+  /* 备注格内直接改：点文字变输入框，回车/失焦保存，Esc 取消 */
+  function startNoteEdit(el) {
+    var id = el.dataset.editnote
+    var v = invites.find(function (x) { return x.id === id })
+    if (!v) return
+    var td = el.parentNode
+    td.innerHTML = '<input type="text" class="admin-note-input" maxlength="100" value="' + esc(v.note || '') + '">'
+    var inp = td.firstChild
+    inp.focus()
+    inp.select()
+    var done = false
+    function save() {
+      if (done) return
+      done = true
+      api('/api/admin/invites/note', { id: id, note: inp.value.trim() }).then(function (r) {
+        if (r.status !== 200) root.alert(r.body.error || '备注没保存成功，稍后再试。')
+        load()
+      })
+    }
+    inp.addEventListener('blur', save)
+    inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); save() }
+      else if (e.key === 'Escape') { done = true; render() }
+    })
+  }
+
   function onRootClick(e) {
     var cp = e.target.closest('[data-copy]')
     if (cp) {
@@ -96,6 +133,12 @@
       setTimeout(function () { cp.textContent = old }, 1200)
       return
     }
+    var ed = e.target.closest('[data-editnote]')
+    if (ed) { startNoteEdit(ed); return }
+    var bn = e.target.closest('[data-ban]')
+    if (bn && root.confirm('停用后这个账号立刻无法登录、也收不到任何邮件，确定？')) { doBan(bn.dataset.ban, true); return }
+    var ub = e.target.closest('[data-unban]')
+    if (ub && root.confirm('恢复这个账号的登录资格？')) { doBan(ub.dataset.unban, false); return }
     var rv = e.target.closest('[data-revoke]')
     if (rv && root.confirm('作废后这张码就再也没人能用了，确定？')) doRevoke(rv.dataset.revoke)
   }
