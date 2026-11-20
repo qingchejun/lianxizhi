@@ -1,0 +1,66 @@
+/**
+ * 邀请码管理端：纯逻辑 + 传入 repo，不碰 fetch/Response。
+ * functions/api/admin/* 只做 HTTP 翻译；可测部分 node 直跑（tools/check-invite-core.js）。
+ * 门槛 = requireSession 之后再查 users.admin（页面挡体验，这里挡安全）。
+ */
+
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789' /* 31 字符：去 I/L/O/0/1 */
+
+function genCode() {
+  const b = new Uint8Array(8)
+  crypto.getRandomValues(b)
+  return [...b].map(x => CODE_ALPHABET[x % CODE_ALPHABET.length]).join('')
+}
+
+async function requireAdmin(repo, session) {
+  if (!session) return { status: 401, body: { ok: false, error: '先登录。' } }
+  const user = await repo.userById(session.uid)
+  if (!user || !user.admin) return { status: 403, body: { ok: false, error: '无权访问。' } }
+  return null
+}
+
+function fmt(v) {
+  return {
+    id: v.id, code: v.code, note: v.note,
+    state: v.revoked_at ? 'revoked' : v.activated_at ? 'activated' : v.claimed_by ? 'claimed' : 'unused',
+    created_at: v.created_at, revoked_at: v.revoked_at || null,
+    claimed_at: v.claimed_at || null, claimed_email: v.claimed_email || null,
+    activated_at: v.activated_at || null
+  }
+}
+
+export async function listInvites(repo, session) {
+  const gate = await requireAdmin(repo, session)
+  if (gate) return gate
+  return { status: 200, body: { ok: true, invites: (await repo.invitesList()).map(fmt) } }
+}
+
+export async function createInvites(repo, session, now, body) {
+  const gate = await requireAdmin(repo, session)
+  if (gate) return gate
+  const note = String((body && body.note) || '').slice(0, 100)
+  const count = Math.max(1, Math.min(20, parseInt(body && body.count, 10) || 1))
+  const made = []
+  for (let i = 0; i < count; i++) {
+    for (let t = 0; t < 10; t++) { /* UNIQUE 撞了就重生成（31^8 空间，防御性） */
+      const code = genCode()
+      if (await repo.inviteGetByCode(code)) continue
+      const v = { id: crypto.randomUUID(), code: code, note: note, created_at: now }
+      await repo.inviteInsert(v)
+      made.push(v)
+      break
+    }
+  }
+  return { status: 200, body: { ok: true, invites: made.map(fmt) } }
+}
+
+export async function revokeInvite(repo, session, now, body) {
+  const gate = await requireAdmin(repo, session)
+  if (gate) return gate
+  const id = (body && body.id) || ''
+  if (!id) return { status: 422, body: { ok: false, error: '缺少邀请码 id。' } }
+  const inv = await repo.inviteGetById(id)
+  if (!inv) return { status: 404, body: { ok: false, error: '没有这张码。' } }
+  await repo.inviteRevoke(id, now)
+  return { status: 200, body: { ok: true } }
+}

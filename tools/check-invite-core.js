@@ -62,8 +62,8 @@ var clientHash = function (email, pw) {
   return require('crypto').pbkdf2Sync(pw, email + 'lianxizhi-account-v1', 1000, 32, 'sha256').toString('hex')
 }
 
-Promise.all([import('../server/auth-core.js')]).then(async function (mods) {
-  var A = mods[0]
+Promise.all([import('../server/auth-core.js'), import('../server/admin-core.js')]).then(async function (mods) {
+  var A = mods[0], AD = mods[1]
   var now = 1700000000000
 
   /* --- 注册门槛 --- */
@@ -111,6 +111,31 @@ Promise.all([import('../server/auth-core.js')]).then(async function (mods) {
   var dbC = memRepo()
   seedInvite(dbC, 'RACETEST')
   check('原子占码第二个失败', (await dbC.inviteClaim('inv-RACETEST', 'u-a', 1)) === true && (await dbC.inviteClaim('inv-RACETEST', 'u-b', 2)) === false)
+
+  /* ===== 管理端 ===== */
+  var dbA = memRepo()
+  dbA.users.push({ id: 'boss', email: 'boss@m.co', pw_hash: 'x', pw_salt: 's', pwver: 1, verified: 1, admin: 1 })
+  dbA.users.push({ id: 'pleb', email: 'pleb@m.co', pw_hash: 'x', pw_salt: 's', pwver: 1, verified: 1, admin: 0 })
+  check('管理端未登录 401', (await AD.listInvites(dbA, null)).status === 401)
+  check('管理端非管理员 403', (await AD.listInvites(dbA, { uid: 'pleb' })).status === 403)
+
+  var mk = await AD.createInvites(dbA, { uid: 'boss' }, now, { note: '张三家长', count: 3 })
+  check('批量生成 3 张', mk.status === 200 && mk.body.invites.length === 3, mk)
+  check('码格式 8 位限定字母表（无 I/L/O/0/1）', mk.body.invites.every(function (v) { return /^[A-HJKMNP-Z2-9]{8}$/.test(v.code) }), mk.body.invites)
+  check('备注落库', dbA._invites.slice(-3).every(function (v) { return v.note === '张三家长' }))
+  check('count 钳到 20', (await AD.createInvites(dbA, { uid: 'boss' }, now, { note: 'x', count: 99 })).body.invites.length === 20)
+
+  var regA = await A.register(dbA, now, { email: 'z@san.co', password: clientHash('z@san.co', 'password123'), invite: dbA._invites[0].code })
+  await A.verify(dbA, now + 1, { email: 'z@san.co', code: regA.dev.code })
+  var ls2 = await AD.listInvites(dbA, { uid: 'boss' })
+  var used = ls2.body.invites.find(function (v) { return v.claimed_email === 'z@san.co' })
+  check('激活后状态+邮箱带出', used && used.state === 'activated', ls2.body.invites)
+
+  /* 桩行是原始字段（无 state——state 由 admin-core 的 fmt 算），挑没用过的码用原始字段判 */
+  var otherId = dbA._invites.find(function (v) { return !v.revoked_at && !v.activated_at && !v.claimed_by }).id
+  check('作废成功', (await AD.revokeInvite(dbA, { uid: 'boss' }, now + 2, { id: otherId })).status === 200)
+  check('作废后该码注册被拒', (await A.register(dbA, now + 3, { email: 'w@u.co', password: clientHash('w@u.co', 'password123'), invite: dbA._invites.find(function (v) { return v.id === otherId }).code })).status === 422)
+  check('作废不存在的码 404', (await AD.revokeInvite(dbA, { uid: 'boss' }, now + 4, { id: 'ghost' })).status === 404)
 
   console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ invite 注册侧全部通过')
   process.exit(bad ? 1 : 0)
