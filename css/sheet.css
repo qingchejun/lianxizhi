@@ -226,6 +226,10 @@ body.landscape .sheet {
     box-shadow: none;
     break-after: page;
     page-break-after: always;
+    /* 答案页的完成图/路线靠背景色区分（数织黑格、迷宫路线灰），
+       浏览器默认不印背景——这里显式要求印出来 */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   /* 注意：必须连 min-height 一起覆盖 —— 屏幕规则 body.landscape .sheet

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-把左侧板块栏写进七个页面。用法：python3 tools/rail.py
+把左侧板块栏写进八个页面。用法：python3 tools/rail.py
 
-七个页面的板块栏一模一样，只有「当前是哪一个」不同。手抄七份迟早会改漏一份，
+八个页面的板块栏一模一样，只有「当前是哪一个」不同。手抄八份迟早会改漏一份，
 所以页面里只留 <!-- rail:今天 --> … <!-- /rail --> 这对标记，内容由本脚本生成。
 改板块栏（加板块、换图标、调分组）只改这里，再跑一遍。
 
-2026-11 起分两组：练习（今天/口算/奥数/识字）与游戏（数独/密码/数织）——
+2026-11 起分两组：练习（今天/口算/奥数/识字）与游戏（数独/密码/数织/迷宫）——
 给孩子选板块时先分「做题还是玩」，再挑具体项目。
 """
 import pathlib, re
@@ -27,6 +27,7 @@ GROUPS = [
         ('数织', 'zhizhi.html', '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 4v16M4 12h16"/>'
          '<rect x="5.5" y="5.5" width="5" height="5" style="fill:currentColor;stroke:none"/>'
          '<rect x="13.5" y="13.5" width="5" height="5" style="fill:currentColor;stroke:none"/>'),
+        ('迷宫', 'migong.html', '<path d="M4 4h16v16H8V8h8v8h-4v-4"/>'),
     ]),
 ]
 
@@ -45,6 +46,7 @@ TAIL = (
 PAGES = {
     'index.html': '今天', 'kousuan.html': '口算', 'aoshu.html': '奥数',
     'shizi.html': '识字', 'shudu.html': '数独', 'mima.html': '密码', 'zhizhi.html': '数织',
+    'migong.html': '迷宫',
 }
 
 
