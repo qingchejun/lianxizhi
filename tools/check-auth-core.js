@@ -9,7 +9,7 @@ function check(name, cond, extra) {
 
 /* --- 内存 repo：D1 语义的最小镜像 --- */
 function memRepo() {
-  var users = [], tokens = [], limits = {}
+  var users = [], tokens = [], limits = {}, invites = []
   var dbData = new Map()
   return {
     users: users,
@@ -44,7 +44,34 @@ function memRepo() {
     async tokenUse(h) { tokens.find(function (t) { return t.token_hash === h }).used_at = 1 },
     async tokensClear(uid, kind) { tokens.forEach(function (t) { if (t.user_id === uid && t.kind === kind) t.used_at = 1 }) },
     async limitGet(s, k) { return limits[s + '/' + k] || null },
-    async limitSet(s, k, row) { limits[s + '/' + k] = row }
+    async limitSet(s, k, row) { limits[s + '/' + k] = row },
+    _invites: invites,
+    async inviteInsert(v) { invites.push(v) },
+    async inviteGetByCode(code) { return invites.find(function (v) { return v.code === code }) || null },
+    async inviteGetById(id) { return invites.find(function (v) { return v.id === id }) || null },
+    async inviteClaim(id, uid, now) {
+      var v = invites.find(function (x) { return x.id === id })
+      if (!v || v.claimed_by || v.revoked_at) return false
+      v.claimed_by = uid; v.claimed_at = now
+      return true
+    },
+    async inviteActivate(id, now) {
+      var v = invites.find(function (x) { return x.id === id })
+      if (v && !v.activated_at) v.activated_at = now
+    },
+    async inviteRevoke(id, now) {
+      var v = invites.find(function (x) { return x.id === id })
+      if (v && !v.revoked_at) v.revoked_at = now
+    },
+    async invitesList() {
+      return invites.map(function (v) {
+        var u = users.find(function (x) { return x.id === v.claimed_by })
+        var c = {}
+        for (var k in v) c[k] = v[k]
+        c.claimed_email = u ? u.email : null
+        return c
+      }).sort(function (a, b) { return b.created_at - a.created_at })
+    }
   }
 }
 
@@ -53,6 +80,13 @@ function clientHash(email, pw) {
   var c = require('crypto')
   return c.pbkdf2Sync(pw, email + 'lianxizhi-account-v1', 1000, 32, 'sha256').toString('hex')
   /* 迭代次数无所谓——服务端只看是不是 64 位 hex */
+}
+
+/* 邀请码门槛上线后，"新邮箱首次注册"的用例要先埋一张可用码（check-invite-core.js 另有全量用例） */
+function seedInvite(db, code) {
+  var v = { id: 'inv-' + code, code: code, note: '', created_at: 1, revoked_at: null, claimed_by: null, claimed_at: null, activated_at: null }
+  db._invites.push(v)
+  return v
 }
 
 import('../server/auth-core.js').then(async function (A) {
@@ -65,7 +99,8 @@ import('../server/auth-core.js').then(async function (A) {
   var bad2 = await A.register(db, now, { email: 'a@b.co', password: 'short' })
   check('密码不是 64hex 422', bad2.status === 422)
 
-  var r = await A.register(db, now, { email: 'A@B.CO ', password: clientHash('a@b.co', 'password123') })
+  seedInvite(db, 'TAAAAA1')
+  var r = await A.register(db, now, { email: 'A@B.CO ', password: clientHash('a@b.co', 'password123'), invite: 'TAAAAA1' })
   check('注册成功并发码', r.status === 200 && r.mail && /^\d{6}$/.test(r.dev.code), r)
   check('邮箱归一成小写', db.users[0].email === 'a@b.co')
   check('新号未验证', db.users[0].verified === 0)
@@ -90,7 +125,8 @@ import('../server/auth-core.js').then(async function (A) {
 
   /* --- 错 5 次作废 --- */
   var db2 = memRepo()
-  var reg = await A.register(db2, now, { email: 'c@d.co', password: clientHash('c@d.co', 'password123') })
+  seedInvite(db2, 'TBBBBB2')
+  var reg = await A.register(db2, now, { email: 'c@d.co', password: clientHash('c@d.co', 'password123'), invite: 'TBBBBB2' })
   var rightCode = reg.dev.code
   for (var i = 0; i < 5; i++) {
     await A.verify(db2, now + 1000 + i, { email: 'c@d.co', code: '000000' })
@@ -101,7 +137,8 @@ import('../server/auth-core.js').then(async function (A) {
 
   /* --- 邮件限流：60 秒间隔 + 每小时 3 封 --- */
   var db3 = memRepo()
-  await A.register(db3, now, { email: 'e@f.co', password: clientHash('e@f.co', 'password123') })
+  seedInvite(db3, 'TCCCCC3')
+  await A.register(db3, now, { email: 'e@f.co', password: clientHash('e@f.co', 'password123'), invite: 'TCCCCC3' })
   var again = await A.register(db3, now + 30 * 1000, { email: 'e@f.co', password: clientHash('e@f.co', 'password123') })
   check('60 秒内重发 → 429', again.status === 429, again)
   await A.register(db3, now + 61 * 1000, { email: 'e@f.co', password: clientHash('e@f.co', 'password123') })
@@ -117,7 +154,8 @@ import('../server/auth-core.js').then(async function (A) {
 
   /* --- 登录 --- */
   var dbL = memRepo()
-  var regL = await A.register(dbL, now, { email: 'l@m.co', password: clientHash('l@m.co', 'password123') })
+  seedInvite(dbL, 'TDDDD4')
+  var regL = await A.register(dbL, now, { email: 'l@m.co', password: clientHash('l@m.co', 'password123'), invite: 'TDDDD4' })
   await A.verify(dbL, now + 1000, { email: 'l@m.co', code: regL.dev.code })
 
   var good = await A.login(dbL, now + 2000, { email: 'L@M.CO', password: clientHash('l@m.co', 'password123') })
@@ -131,7 +169,8 @@ import('../server/auth-core.js').then(async function (A) {
 
   /* --- 锁定：10 次锁 15 分钟 --- */
   var dbK = memRepo()
-  var regK = await A.register(dbK, now, { email: 'k@m.co', password: clientHash('k@m.co', 'password123') })
+  seedInvite(dbK, 'TEEEE5')
+  var regK = await A.register(dbK, now, { email: 'k@m.co', password: clientHash('k@m.co', 'password123'), invite: 'TEEEE5' })
   await A.verify(dbK, now + 1000, { email: 'k@m.co', code: regK.dev.code })
   for (var j = 0; j < 10; j++) {
     await A.login(dbK, now + 2000 + j, { email: 'k@m.co', password: clientHash('k@m.co', 'wrongpw' + j) })
@@ -143,13 +182,15 @@ import('../server/auth-core.js').then(async function (A) {
 
   /* --- 未验证登录 → 补发验证码 --- */
   var dbV = memRepo()
-  await A.register(dbV, now, { email: 'v@m.co', password: clientHash('v@m.co', 'password123') })
+  seedInvite(dbV, 'TFFFF6')
+  await A.register(dbV, now, { email: 'v@m.co', password: clientHash('v@m.co', 'password123'), invite: 'TFFFF6' })
   var nv = await A.login(dbV, now + 61 * 1000, { email: 'v@m.co', password: clientHash('v@m.co', 'password123') })
   check('未验证 → need_verify + 发码', nv.status === 200 && nv.body.need_verify === true && nv.mail, nv)
 
   /* --- 找回：恒 200 不泄露 --- */
   var dbF = memRepo()
-  var regF = await A.register(dbF, now, { email: 'f@m.co', password: clientHash('f@m.co', 'password123') })
+  seedInvite(dbF, 'TGGGG7')
+  var regF = await A.register(dbF, now, { email: 'f@m.co', password: clientHash('f@m.co', 'password123'), invite: 'TGGGG7' })
   await A.verify(dbF, now + 1000, { email: 'f@m.co', code: regF.dev.code })
   var ghost = await A.forgot(dbF, now + 2000, { email: 'ghost@m.co' })
   check('不存在的邮箱 forgot 也 200 且不发信', ghost.status === 200 && ghost.body.ok === true && !ghost.mail)
@@ -180,7 +221,8 @@ import('../server/auth-core.js').then(async function (A) {
 
   /* --- 改密码：要登录态 + 当前密码对得上；副作用与重设一致（pwver+1） --- */
   var dbC = memRepo()
-  var regC = await A.register(dbC, now, { email: 'c@m.co', password: clientHash('c@m.co', 'password123') })
+  seedInvite(dbC, 'THHHH8')
+  var regC = await A.register(dbC, now, { email: 'c@m.co', password: clientHash('c@m.co', 'password123'), invite: 'THHHH8' })
   await A.verify(dbC, now + 1000, { email: 'c@m.co', code: regC.dev.code })
   var sessC = { uid: dbC.users[0].id, pwver: 1 }
   /* 改密码前埋一枚活着的重设 token 和一枚验证码（模拟改密码前泄漏出去的链接） */
@@ -206,7 +248,8 @@ import('../server/auth-core.js').then(async function (A) {
 
   /* 改密码的当前密码也吃登录锁：错 10 次锁 15 分钟（和登录共用一个计数） */
   var dbC2 = memRepo()
-  var regC2 = await A.register(dbC2, now, { email: 'c2@m.co', password: clientHash('c2@m.co', 'password123') })
+  seedInvite(dbC2, 'TJJJJ9')
+  var regC2 = await A.register(dbC2, now, { email: 'c2@m.co', password: clientHash('c2@m.co', 'password123'), invite: 'TJJJJ9' })
   await A.verify(dbC2, now + 1000, { email: 'c2@m.co', code: regC2.dev.code })
   var sessC2 = { uid: dbC2.users[0].id, pwver: 1 }
   for (var w = 0; w < 10; w++) {

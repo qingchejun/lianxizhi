@@ -23,6 +23,9 @@ function randomHex(nBytes) {
 export function normEmail(s) {
   return typeof s === 'string' ? s.trim().toLowerCase() : ''
 }
+export function normInvite(s) {
+  return typeof s === 'string' ? s.toUpperCase().replace(/[^A-Z0-9]/g, '') : ''
+}
 export function validEmail(e) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
 }
@@ -63,7 +66,10 @@ async function issueCode(repo, user, now) {
   }
 }
 
-/* ---- 注册 ---- */
+/* ---- 注册（邀请码门槛：先验码再发邮件，不浪费 Resend 额度） ---- */
+const INVITE_MAX_FAILS = 5
+const INVITE_LOCK_MS = 15 * 60 * 1000
+
 export async function register(repo, now, body) {
   const email = normEmail(body && body.email)
   const pw = (body && body.password) || ''
@@ -72,15 +78,29 @@ export async function register(repo, now, body) {
   let user = await repo.userByEmail(email)
   if (user && user.verified) return { status: 409, body: { ok: false, error: '这个邮箱已经注册过了，直接登录就行。' } }
   if (user) {
-    /* 未验证过的邮箱重复注册 = 换密码重来（裁定 5） */
+    /* 未验证过的邮箱重复注册 = 换密码重来（裁定 5）；码已绑在这个邮箱上，不再要 */
     await repo.updateUser(user.id, { pw_hash: await sha256hex(user.pw_salt + pw) })
   } else {
+    const code = normInvite(body && body.invite)
+    if (!code) return { status: 422, body: { ok: false, error: '现在需要邀请码才能注册。' } }
+    const fails = await repo.limitGet(email, 'invitefail')
+    if (fails && fails.until > now) return { status: 429, body: { ok: false, error: '邀请码错得太多，等 15 分钟再试。' } }
+    const inv = await repo.inviteGetByCode(code)
+    if (!inv || inv.revoked_at || inv.claimed_by) {
+      const n = (fails ? fails.n : 0) + 1
+      await repo.limitSet(email, 'invitefail', { n: n, ts: now, until: n >= INVITE_MAX_FAILS ? now + INVITE_LOCK_MS : 0 })
+      return { status: 422, body: { ok: false, error: '邀请码不对，找邀请你的人核对一下。' } }
+    }
     const id = crypto.randomUUID()
+    /* 占码在插用户之前：宁可"码占住没用户"（站长作废即可），不可"两个用户抢一张码" */
+    if (!(await repo.inviteClaim(inv.id, id, now))) {
+      return { status: 422, body: { ok: false, error: '邀请码不对，找邀请你的人核对一下。' } }
+    }
     const pw_salt = randomHex(16)
     await repo.insertUser({
       id: id, email: email,
       pw_hash: await sha256hex(pw_salt + pw), pw_salt: pw_salt,
-      pwver: 1, verified: 0, created_at: now
+      pwver: 1, verified: 0, created_at: now, invite_id: inv.id
     })
   }
   return issueCode(repo, await repo.userByEmail(email), now)
@@ -106,6 +126,7 @@ export async function verify(repo, now, body) {
       if (row.expires_at <= now) return { status: 422, body: { ok: false, error: '验证码过期了，请重新发送。' } }
       await repo.tokenUse(row.token_hash)
       await repo.setVerified(user.id)
+      if (user.invite_id) await repo.inviteActivate(user.invite_id, now) /* 老账号 invite_id 为 null，不动 */
       return { status: 200, body: { ok: true }, session: { uid: user.id, pwver: user.pwver } }
     }
   }

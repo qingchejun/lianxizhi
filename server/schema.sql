@@ -1,3 +1,4 @@
+-- 已存在库的增量迁移见 tools/migrate-20261120-invites.sql（只跑一次）
 CREATE TABLE IF NOT EXISTS users(
   id TEXT PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
@@ -5,6 +6,8 @@ CREATE TABLE IF NOT EXISTS users(
   pw_salt TEXT NOT NULL,
   pwver INTEGER NOT NULL DEFAULT 1,
   verified INTEGER NOT NULL DEFAULT 0,
+  admin INTEGER NOT NULL DEFAULT 0,
+  invite_id TEXT,
   created_at INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS data(
@@ -30,3 +33,14 @@ CREATE TABLE IF NOT EXISTS limits(
   until INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (scope, kind)
 );
+CREATE TABLE IF NOT EXISTS invites(
+  id TEXT PRIMARY KEY,
+  code TEXT UNIQUE NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL,
+  revoked_at INTEGER,
+  claimed_by TEXT,
+  claimed_at INTEGER,
+  activated_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_invites_claimed ON invites(claimed_by);
