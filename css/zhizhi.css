@@ -10,13 +10,15 @@
   margin: 0 0 4mm;
 }
 
-/* 题卡右对齐：行线索列宽随题浮动（「1 1」比「5」宽），网格右缘才是稳定基准——
-   右对齐后同页几道题、页与页之间看起来都齐，版心右边也不再留一大片空白 */
+/* 题卡右对齐：行线索列宽随题浮动（「1 1」比「5」宽），左缘参差时右缘也不齐。
+   以最宽题卡为基准：容器收缩到最宽题卡宽（块级默认靠左），窄题卡在组内
+   align-items:flex-end——所有题卡右缘齐平，整组留在左边，右侧留白照旧 */
 .zhizhi-list {
   display: flex;
   flex-direction: column;
   gap: 8mm;
   align-items: flex-end;
+  width: fit-content;
 }
 
 /* 题卡头行：题号在左，「试玩」按钮在右（zhizhi-play.js 挂进来，打印时隐藏） */
