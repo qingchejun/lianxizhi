@@ -915,6 +915,92 @@ select.input {
   color: var(--ink-2);
 }
 
+/* ---------- 数织示例小棋盘（help.js 的 extra 生成，只在说明弹窗里出现） ---------- */
+
+.help-nono {
+  margin: 2px 0 12px;
+}
+
+.help-nono-t {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.nono-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nono-step {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.nono-grid {
+  flex: none;
+  border-collapse: collapse;
+}
+
+.nono-clue {
+  padding: 0 5px 0 3px;
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--ink-2);
+  text-align: right;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.nono-grid tr:first-child .nono-clue {
+  padding: 0 0 3px;
+  text-align: center;
+  vertical-align: bottom;
+}
+
+.nono-grid .nono-dim,
+.nono-legend .nono-dim {
+  color: #c3c9d3; /* 与在线玩的 zp-done 同一个灰 */
+}
+
+.nono-c {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid #99a1ad;
+  background: #fff;
+  text-align: center;
+  font-size: 12px;
+  color: #94a0b0;
+}
+
+.nono-on {
+  background: #111;
+  border-color: #111;
+}
+
+.nono-new {
+  background: var(--blue);
+  border-color: var(--blue);
+}
+
+.nono-text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.nono-legend {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
 /* ---------- 窄屏：板块栏横到顶上，设置在前、纸在后，整页滚动 ---------- */
 
 /*
