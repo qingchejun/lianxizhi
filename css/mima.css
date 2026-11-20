@@ -58,22 +58,28 @@
   font-size: 13px;
 }
 
+/* 作答行：格子与线索格同宽同距，逐格对齐上面的线索格；
+   标签放在反馈点那列的空位上，垂直居中 */
 .mima-ans {
   display: flex;
   align-items: center;
-  gap: 3mm;
   margin-top: 3mm;
   font-size: 13px;
 }
 
 .mima-box {
   display: inline-block;
-  width: 10mm;
-  height: 10mm;
+  width: 9mm;
+  height: 9mm;
   margin-right: 2mm;
   border: 0.3mm solid #555;
   border-bottom: 0.7mm solid #555;
   border-radius: 1mm;
+}
+
+.mima-ans-l {
+  margin-left: 1mm;
+  color: #333;
 }
 
 /* 划掉数字带：训练轮，只在第 1、2 关出现 */

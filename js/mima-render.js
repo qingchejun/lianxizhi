@@ -81,7 +81,9 @@
       '<div class="mima-item">' +
       '<p class="mima-no">' + P().numLabel(entry.idx) + '</p>' +
       '<div class="mima-clues">' + rows + '</div>' +
-      '<div class="mima-ans"><span class="mima-ans-l">密码</span>' + boxes + '</div>' +
+      /* 作答格与上面的线索格同宽同距、逐格对齐（孩子照着猜的形状写答案）；
+         「密码」标签放在右边反馈点的空区，不占行也不推开格子 */
+      '<div class="mima-ans">' + boxes + '<span class="mima-ans-l">密码</span></div>' +
       strip +
       '</div>'
     )
