@@ -223,6 +223,8 @@ check(V.of('zhongbiao').src === 'https://video.qingchejun.com/aoshu/zhongbiao.mp
   V.of('zhongbiao').poster === 'https://video.qingchejun.com/aoshu/zhongbiao.jpg', '认识钟表整时和半时视频：' + JSON.stringify(V.of('zhongbiao')))
 check(V.of('zhongbiao2').src === 'https://video.qingchejun.com/aoshu/zhongbiao2.mp4' && V.of('zhongbiao2').dur === '4:53' &&
   V.of('zhongbiao2').poster === 'https://video.qingchejun.com/aoshu/zhongbiao2.jpg', '认识钟表几时几分视频：' + JSON.stringify(V.of('zhongbiao2')))
+check(V.of('duichen').src === 'https://video.qingchejun.com/aoshu/duichen.mp4' && V.of('duichen').dur === '4:35' &&
+  V.of('duichen').poster === 'https://video.qingchejun.com/aoshu/duichen.jpg', '轴对称图形视频：' + JSON.stringify(V.of('duichen')))
 check(V.of('daxiao') === null, '没视频的课应返回 null')
 check(V.of('__proto__') === null && V.of('toString') === null, '原型链上的名字不能当成有视频')
 Object.keys(V.list).forEach(function (id) {
