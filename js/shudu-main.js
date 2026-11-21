@@ -93,12 +93,12 @@
     var sheets = Math.ceil(count / per)
     var pages = sheets * s.copies
     var ansPages = s.answerPage ? Math.ceil(count / 6) : 0
-    var text = '一共 ' + (pages + ansPages) + ' 张纸：' + count + ' 道题'
-    if (per > 1) text += ' · 每页 ' + per + ' 道'
-    text += ' = ' + sheets + ' 页'
-    if (s.copies > 1) text += ' × 2 份 = ' + pages + ' 张'
-    if (ansPages) text += '，另加 ' + ansPages + ' 张答案页'
-    return text + '。每格 ' + (Math.floor(lay.cell * 10) / 10) + 'mm。'
+    var parts = ['共 ' + (pages + ansPages) + ' 张纸']
+    if (per > 1) parts.push('每页 ' + per + ' 道')
+    if (s.copies > 1) parts.push('印 2 份')
+    if (ansPages) parts.push('含 ' + ansPages + ' 张答案页')
+    parts.push('格子边长约 ' + (Math.round(lay.cell) / 10) + ' 厘米')
+    return parts.join(' · ')
   }
 
   /* 主流程：保存设置 → 同步表单 → 生成题目 → 渲染 → 接管在线作答 */

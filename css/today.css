@@ -1,253 +1,533 @@
-/* ============ 「今天」首页：四张卡片 ============
-   卡片上半部是进入板块的链接，底栏蓝色「打印」直接走「板块页 + 确认打印」。半径 14，内边距 20。 */
+/* ============ 「今天」首页：一张书桌，今天的纸摆在上面 ============
+ *
+ * 2026-11 改版。每个板块一张按 A4 比例缩小的纸（.pp），纸面画它真正的样子；纸下面是说明和两个按钮。
+ * 纸直接放在点阵桌面上，不再套白卡片。分「练习」「游戏」两排，与左栏分组一致。
+ * 纸面内部一律用 cqw（纸宽的百分比）排版：屏幕再大，纸也只是等比放大，不会走样。
+ */
+
+@font-face {
+  font-family: "Pinyin Kids";
+  src: url("../fonts/pinyin-kids.woff2") format("woff2");
+  font-display: swap;
+}
 
 .today {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 28px 32px 40px;
-}
-
-.today-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr));
-  gap: 20px;
-  max-width: 1180px;
-  margin: 0 auto;
-}
-
-.today-note {
-  max-width: 1180px;
-  margin: 20px auto 0;
-  font-size: 12px;
-  color: var(--ink-soft);
-}
-
-.tcard {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  background: var(--card);
-  border: 1px solid var(--card-edge);
-  border-radius: 14px;
+  padding: 32px clamp(20px, 3vw, 56px) 0;
 }
 
-.tcard:hover {
-  border-color: #aeb4be;
+.desk,
+.today-intro {
+  width: 100%;
+  max-width: 1600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.tcard-body {
-  flex: 1;
+.desk {
+  margin-bottom: 48px;
+}
+
+/* ---------- 一排 ---------- */
+
+.dk-shelf + .dk-shelf {
+  margin-top: 44px;
+}
+
+.dk-shelf h2 {
   display: flex;
-  gap: 20px;
-  padding: 20px 20px 16px;
+  align-items: center;
+  gap: 16px;
+  margin: 0 0 22px;
+  font: 24px/1.2 var(--kai);
+  letter-spacing: 4px;
   color: var(--ink);
 }
 
-.tcard-body:hover h2 {
+/* 标题后一条细线，把这一排「摆」出来 */
+.dk-shelf h2::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line-strong);
+}
+
+.dk-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 36px clamp(24px, 2.4vw, 44px);
+}
+
+/* ---------- 一张纸 ---------- */
+
+.dk-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dk-paper {
+  container-type: inline-size; /* 纸面里的 cqw 以这张纸的宽度为准（不能设在 .pp 上：.pp 自己的内边距会拿不到） */
+  display: block;
+  color: #111;
+  border-radius: 2px;
+  outline-offset: 4px;
+}
+
+.pp {
+  position: relative;
+  aspect-ratio: 210 / 297;
+  overflow: hidden;
+  padding: 9cqw 8cqw;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(20, 24, 32, 0.08), 0 10px 28px -8px rgba(20, 24, 32, 0.18);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.dk-paper:hover .pp,
+.dk-paper:focus-visible .pp {
+  transform: translateY(-4px);
+  box-shadow: 0 1px 2px rgba(20, 24, 32, 0.08), 0 18px 36px -10px rgba(20, 24, 32, 0.26);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp { transition: none; }
+  .dk-paper:hover .pp { transform: none; }
+}
+
+.pp-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 3cqw;
+  margin-bottom: 6cqw;
+  padding-bottom: 2cqw;
+  border-bottom: 0.7cqw solid #111;
+  white-space: nowrap;
+}
+
+.pp-head b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 5cqw;
+  font-weight: 700;
+  letter-spacing: 0.2cqw;
+}
+
+.pp-head span {
+  flex: none;
+  font-size: 3cqw;
+  color: #666;
+}
+
+.pp-sec {
+  margin: 4cqw 0 2.5cqw;
+  padding-bottom: 1cqw;
+  font-size: 3.4cqw;
+  font-weight: 600;
+  border-bottom: 0.3cqw solid #bbb;
+}
+
+/* 灰条 = 一行字 */
+.pp-ln {
+  display: block;
+  height: 1.8cqw;
+  margin: 2.6cqw 0;
+  background: #dcdfe4;
+  border-radius: 1cqw;
+}
+
+.pp-ln:nth-of-type(3n + 2) { width: 86%; }
+.pp-ln:nth-of-type(3n) { width: 64%; }
+
+.pp-figs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4cqw;
+  margin: 4cqw 0;
+}
+
+.pp-figs span {
+  aspect-ratio: 1;
+  border: 0.4cqw solid #9aa0aa;
+  border-radius: 1.5cqw;
+}
+
+.pp-figs-sm {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* 识字：田字格，格里是本周真字 */
+.pp-zi {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 0.4cqw solid #333;
+  border-left: 0.4cqw solid #333;
+}
+
+.pp-zi span {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  font: 12cqw/1 var(--kai);
+  border-right: 0.4cqw solid #333;
+  border-bottom: 0.4cqw solid #333;
+}
+
+.pp-zi span::before,
+.pp-zi span::after {
+  content: "";
+  position: absolute;
+  border: 0 dashed #c4c4c4;
+}
+
+.pp-zi span::before { left: 0; right: 0; top: 50%; border-top-width: 0.3cqw; }
+.pp-zi span::after { top: 0; bottom: 0; left: 50%; border-left-width: 0.3cqw; }
+
+/* 口算 */
+.pp-calc {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4.6cqw 6cqw;
+  margin: 2cqw 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 5cqw;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.pp-calc i {
+  display: inline-block;
+  width: 9cqw;
+  margin-left: 1.5cqw;
+  border-bottom: 0.4cqw solid #111;
+}
+
+/* 数独 / 数织 / 迷宫共用的方格盘 */
+.pp-board {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  width: 62%;
+  margin: 3cqw auto 8cqw;
+  border: 0.8cqw solid #111;
+}
+
+.pp-board span {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  font-size: 6.5cqw;
+  border: 0.25cqw solid #888;
+}
+
+.pp-games .pp-board:nth-of-type(2) {
+  margin-bottom: 0;
+}
+
+.pp-board-fill span.on {
+  background: #1a1d23;
+}
+
+.pp-nono {
+  padding-top: 6cqw;
+}
+
+.pp-nono .pp-board {
+  width: 70%;
+}
+
+.pp-maze span {
+  font-size: 5.5cqw;
+}
+
+.pp-maze span.path {
+  background: #e4e7ec;
+}
+
+/* 密码：一行线索 = 三个数 + 反馈点 */
+.pp-lock {
+  display: flex;
+  align-items: center;
+  gap: 2.5cqw;
+  margin: 0 0 4.5cqw 4cqw;
+}
+
+.pp-lock span {
+  display: grid;
+  place-items: center;
+  width: 11cqw;
+  aspect-ratio: 1;
+  font-size: 6cqw;
+  border: 0.4cqw solid #333;
+  border-radius: 1.2cqw;
+}
+
+.pp-lock em {
+  margin-left: 4cqw;
+  font-style: normal;
+  font-size: 5cqw;
+  letter-spacing: 0.6cqw;
+}
+
+.pp-lock-ans {
+  margin-top: 9cqw;
+}
+
+.pp-lock-ans span {
+  border-width: 0.6cqw;
+  border-color: #111;
+}
+
+/* 拼音：课本字体、带记号框 */
+.pp-py {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2cqw;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pp-py li {
+  display: flex;
+  align-items: center;
+  gap: 1.5cqw;
+  font: 12cqw/1.25 "Pinyin Kids", system-ui, sans-serif;
+}
+
+.pp-py i {
+  width: 3cqw;
+  height: 3cqw;
+  border: 0.3cqw solid #888;
+  border-radius: 0.6cqw;
+}
+
+.pp-py-sm li {
+  font-size: 9cqw;
+}
+
+.pp-parent {
+  margin-top: 6cqw;
+  padding: 1cqw 3cqw;
+  border: 0.3cqw solid #999;
+  border-radius: 1.2cqw;
+}
+
+/* ---------- 纸下面的说明 ---------- */
+
+.dk-cap {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding-top: 18px;
+}
+
+.dk-kind {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.dk-kind span {
+  font-weight: 400;
+  color: var(--ink-faint);
+}
+
+.dk-cap h3 {
+  margin: 0 0 6px;
+  font-size: 17px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.dk-cap h3 a {
+  color: var(--ink);
+}
+
+.dk-cap h3 a:hover {
   color: var(--blue);
 }
 
-.tcard-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.tcard h2 {
+.dk-meta,
+.dk-note {
   margin: 0;
-  font-size: 21px;
-  font-weight: 600;
-  line-height: 1.35;
-}
-
-.tag {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--ink-2);
-}
-
-.meta {
-  font-size: 13px;
+  line-height: 1.6;
   color: var(--ink-soft);
 }
 
-.tcard-row {
-  display: flex;
-  flex-wrap: wrap;
+.dk-note {
+  color: var(--ink-faint);
+}
+
+.dk-vid {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
+  margin-right: 8px;
+  color: var(--blue);
 }
 
-.tcard-prog,
-.tcard-end {
-  margin-top: auto;
+.dk-vid svg {
+  width: 10px;
+  height: 10px;
+  fill: currentColor;
 }
 
-.tcard-prog {
+.dk-prog {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.tcard-prog .progress {
-  flex: 1;
-  min-width: 80px;
-}
-
-.tcard-prog .meta {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--ink-soft);
   white-space: nowrap;
+}
+
+.dk-prog .progress {
+  flex: 1;
 }
 
 .weeks {
   flex: 1;
-  min-width: 80px;
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
-  gap: 3px;
+  display: flex;
+  gap: 2px;
 }
 
 .weeks i {
-  height: 6px;
+  flex: 1;
+  height: 4px;
+  background: var(--card-edge);
   border-radius: 2px;
-  background: #e4e7ec;
 }
 
-.weeks i.past {
-  background: #a9bbe9;
-}
+.weeks i.past { background: #9fb3e6; }
+.weeks i.on { background: var(--blue); }
 
-.weeks i.on {
-  background: var(--blue);
-}
-
-.vid {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 24px;
-  padding: 0 8px;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-  color: var(--blue-deep);
-  background: var(--blue-tint);
-  border-radius: 12px;
-}
-
-.vid svg {
-  width: 12px;
-  height: 12px;
-  fill: currentColor;
-}
-
-.tcard-foot {
+.dk-act {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: #fafbfc;
-  border-top: 1px solid #eef0f3;
+  gap: 14px;
+  margin-top: auto;
+  padding-top: 14px;
 }
 
-.tcard-foot .more {
-  margin-left: auto;
+.dk-more {
   font-size: 13px;
   color: var(--ink-soft);
 }
 
-/* ---------- 卡片左边的小纸样：纯装饰，示意这一张长什么样 ---------- */
+.dk-more:hover {
+  color: var(--blue);
+}
 
-.mini {
-  flex: none;
-  width: 112px;
-  height: 158px;
+/* ---------- 第一次登录：欢迎 + 三步上手（可关） ---------- */
+
+.today-intro {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr) auto;
+  gap: 16px 32px;
+  align-items: center;
+  width: 100%;
+  margin: 0 auto 32px;
+  padding: 22px 24px;
+  background: var(--card);
+  border: 1px solid #c9d5f3;
+  border-radius: 12px;
+}
+
+.ti-head h2 {
+  margin: 0 0 4px;
+  font: 22px/1.3 var(--kai);
+  letter-spacing: 1px;
+}
+
+.ti-head p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.ti-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: ti;
+}
+
+.ti-steps li {
+  position: relative;
+  padding-left: 34px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  counter-increment: ti;
+}
+
+.ti-steps li::before {
+  content: counter(ti);
+  position: absolute;
+  left: 0;
+  top: 1px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--blue);
+  border-radius: 50%;
+}
+
+.ti-steps b {
+  display: block;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.ti-actions {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 10px 9px;
-  background: #fff;
-  border: 1px solid #e4e7ec;
-  box-shadow: 0 1px 2px rgba(20, 24, 32, 0.1), 0 6px 16px rgba(20, 24, 32, 0.1);
-}
-
-.mini::before {
-  content: "";
-  width: 60%;
-  height: 5px;
-  margin: 0 auto 6px;
-  background: #9aa0aa;
-  border-radius: 1px;
-}
-
-.mini-lines > i {
-  display: block;
-  height: 4px;
-  background: #dadde3;
-  border-radius: 1px;
-}
-
-.mini-lines > i:nth-child(3n + 2) {
-  width: 70%;
-}
-
-.mini-lines > i:nth-child(3n) {
-  width: 50%;
-}
-
-.mini-groups > b {
-  display: block;
-  border-top: 1px dashed #b4bac4;
-}
-
-.mini-center {
   align-items: center;
+  gap: 8px;
 }
 
-.mini-zi {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  width: 90px;
-  font: 10px/14px "Kaiti SC", "STKaiti", "KaiTi", "楷体", serif;
-  text-align: center;
-  border-top: 1px solid #b4bac4;
-  border-left: 1px solid #b4bac4;
+/* 页脚贴在滚动区最底，左右撑满 */
+.today-foot {
+  margin: auto calc(-1 * clamp(20px, 3vw, 56px)) 0;
 }
 
-.mini-zi span {
-  border-right: 1px solid #b4bac4;
-  border-bottom: 1px solid #b4bac4;
+.today-foot .site-foot-in {
+  max-width: 1600px;
 }
 
-.mini-boards {
-  justify-content: space-around;
+@media (max-width: 1280px) {
+  .dk-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
-.mini-boards::before {
-  margin-bottom: 0;
-}
-
-.mini-boards .board {
-  width: 58px;
-  height: 58px;
-  border: 1.5px solid var(--ink);
-  background-image: linear-gradient(#b4bac4 1px, transparent 1px),
-    linear-gradient(90deg, #b4bac4 1px, transparent 1px);
-  background-size: 9.6px 9.6px;
+@media (max-width: 1180px) {
+  .today-intro { grid-template-columns: 1fr; }
+  .ti-actions { flex-direction: row; }
 }
 
 @media (max-width: 900px) {
-  .today {
-    padding: 16px 12px 32px;
-  }
-}
-
-@media (max-width: 560px) {
-  .mini {
-    display: none;
-  }
+  .today { padding: 20px 16px 0; }
+  .today-foot { margin: auto -16px 0; }
+  .dk-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 18px; }
+  .ti-steps { grid-template-columns: 1fr; gap: 12px; }
 }

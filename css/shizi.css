@@ -249,29 +249,22 @@
 
 .mark-legend {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 6px 16px;
-  width: fit-content;
-  max-width: 100%;
-  margin: 0 auto 12px;
-  padding: 6px 14px;
-  font-size: 12px;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
   color: var(--ink-2, #4a505b);
-  background: #fff;
-  border: 1px solid var(--card-edge);
-  border-radius: 8px;
 }
 
-.mark-legend b {
-  color: var(--ink);
-}
 
 .mark-legend span {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
+}
+
+.mark-legend .n {
+  width: 18px;
+  text-align: center;
 }
 
 .mark-legend .sw {

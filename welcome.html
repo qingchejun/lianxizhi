@@ -2,61 +2,97 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="theme-color" content="#f6f7f9" />
   <title>练习纸 · 给一年级孩子每天打印一页练习：口算、识字、拼音、奥数</title>
   <meta name="description" content="练习纸给一年级孩子出 A4 练习纸：口算、奥数、识字、拼音，还有数独、密码、数织、迷宫等益智游戏。按孩子的错题安排第二天练什么，打开就能打印。目前为邀请制。" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✏️</text></svg>" />
   <link rel="canonical" href="https://lianxizhi.qingchejun.com/" />
   <link rel="stylesheet" href="css/app.css" />
   <link rel="stylesheet" href="css/welcome.css" />
 </head>
 <body class="welcome">
 <!-- 没登录时首页的内容（functions/_middleware.js 在网址 / 上直接返回本页，本页没有单独网址）。
-     视觉是临时的，全站改版设计稿到了再换。 -->
+     2026-11 全站改版：左边介绍 + 登录表单（直接画在页面上，手机微信里点开就能填），右边是三张真实样式的练习纸。 -->
+
 <header class="wl-top">
-  <span class="wl-brand">练习纸</span>
-  <button type="button" class="btn" data-account>登录</button>
+  <a class="wl-brand" href="/" aria-label="练习纸"><img src="icons/mark.svg" width="30" height="30" alt=""><span>练习纸</span></a>
+  <span class="wl-invite">邀请制 · 同班家长使用</span>
 </header>
 
 <main class="wl-main">
   <section class="wl-hero">
-    <h1>每天一页，打印给一年级孩子做</h1>
-    <p class="wl-lead">口算、奥数、识字、拼音，外加数独、密码、数织、迷宫。家长在电脑上选好，打印 A4 纸给孩子做；做完登记错在哪，第二天自动安排复习。</p>
-    <div class="wl-actions">
-      <button type="button" class="btn btn-primary btn-lg" data-open="login">登录</button>
-      <button type="button" class="btn btn-lg" data-open="register">有邀请码，注册</button>
+    <div class="wl-intro">
+      <h1>每天一页，<br>打印给孩子做</h1>
+      <p class="wl-lead">给一年级孩子出 A4 练习纸：口算、奥数、识字、拼音，外加数独、密码、数织、迷宫。孩子做完，家长回来点一下哪里卡住了，第二天的纸就按这个排。</p>
+
+      <div class="wl-auth" data-account-inline="login" aria-live="polite">
+        <noscript><p class="tip warn">请打开浏览器的 JavaScript 后再登录。</p></noscript>
+      </div>
+      <p class="wl-mobile-tip">登录、查看进度用手机就行；<b>打印请在电脑上打开</b>这个网址。</p>
     </div>
-    <p class="wl-note">目前为邀请制，只对收到邀请码的家长开放。</p>
+
+    <figure class="wl-desk" aria-label="练习纸样张：口算、识字、拼音">
+      <!-- 三张样张都是照真实卷面缩小画的：页眉、日期姓名栏、题目排法与打印出来一致 -->
+      <div class="wl-sheet wl-s1" aria-hidden="true">
+        <div class="ws-head"><b>口算 · 20 以内进位加法</b><span>日期____ 姓名____</span></div>
+        <ol class="ws-calc">
+          <li>8 + 5 =</li><li>9 + 7 =</li><li>6 + 6 =</li><li>7 + 4 =</li>
+          <li>9 + 3 =</li><li>5 + 8 =</li><li>8 + 8 =</li><li>4 + 9 =</li>
+          <li>7 + 6 =</li><li>9 + 9 =</li><li>6 + 5 =</li><li>8 + 4 =</li>
+          <li>3 + 9 =</li><li>7 + 7 =</li><li>5 + 6 =</li><li>9 + 2 =</li>
+          <li>6 + 8 =</li><li>4 + 7 =</li><li>8 + 3 =</li><li>7 + 9 =</li>
+        </ol>
+      </div>
+      <div class="wl-sheet wl-s2" aria-hidden="true">
+        <div class="ws-head"><b>识字 · 每日一卷</b><span>日期____ 姓名____</span></div>
+        <div class="ws-zi"><span>汽</span><span>蜓</span><span>燕</span><span>营</span><span>童</span><span>急</span><span>还</span><span>骗</span><span>蚪</span><span>渐</span><span>宣</span><span>补</span><span>破</span><span>间</span><span>业</span><span>凤</span><span>饲</span><span>冷</span><span>通</span><span>利</span></div>
+      </div>
+      <div class="wl-sheet wl-s3" aria-hidden="true">
+        <div class="ws-head"><b>拼音练习 · 观察 b、d、p、q</b><span>卷号 11-21</span></div>
+        <p class="ws-sec">大声读出字母</p>
+        <ol class="ws-py"><li><i>1</i>d</li><li><i>2</i>p</li><li><i>3</i>b</li><li><i>4</i>q</li></ol>
+        <p class="ws-sec">拼一拼</p>
+        <ol class="ws-py ws-py2"><li><i>5</i>bā</li><li><i>6</i>pó</li><li><i>7</i>dù</li><li><i>8</i>qī</li></ol>
+        <p class="ws-sec">写一写</p>
+        <div class="ws-lines"><i></i><i></i><i></i></div>
+        <div class="ws-parent"><b>给家长</b>先读字母，再拼音节。卡住时用下面的教学卡，讲完做「换题再试」。</div>
+      </div>
+    </figure>
   </section>
 
   <section class="wl-block" aria-labelledby="wl-what">
-    <h2 id="wl-what">能练什么</h2>
-    <div class="wl-grid">
-      <article><h3>口算</h3><p>加减乘除，按进位退位、题量、版式出题，一页 A4。</p></article>
-      <article><h3>奥数</h3><p>一年级思维专题，讲解、练习、解析分开打印，部分配讲解视频。</p></article>
-      <article><h3>识字</h3><p>每日一卷 20 字，没认出的字第二天接着考，认出两次才毕业。</p></article>
-      <article><h3>拼音</h3><p>从易混字母到声调、拼读和词句，卡住时给家长一张教学卡。</p></article>
-      <article><h3>数独</h3><p>四宫、六宫到九宫，题目保证不用猜就能解出。</p></article>
-      <article><h3>密码</h3><p>看线索推出密码，四关由易到难，适合两个孩子同题对战。</p></article>
-      <article><h3>数织</h3><p>按数字提示涂格子，涂完是一幅小图。</p></article>
-      <article><h3>迷宫</h3><p>算对了才走得通的口算迷宫，只有一条正确路线。</p></article>
-    </div>
+    <h2 id="wl-what">九个板块，每天各出一页</h2>
+    <ul class="wl-mods">
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7.5h5.5M7.25 4.75v5.5M14 7.5h5.5M5 14.25l4.5 4.5M9.5 14.25L5 18.75M14 15h5.5M14 18.25h5.5"/></svg><div><b>口算</b><p>加减乘除，按进位退位、题量和版式出题。</p></div></li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.75l8.5 15.5h-17z"/><circle cx="12" cy="14" r="2.75"/></svg><div><b>奥数</b><p>一年级思维专题，讲解、练习、解析分开印，配讲解视频。</p></div></li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 4 5v13.5c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5zM12 6.5V20"/></svg><div><b>识字</b><p>每日一卷 20 字，没认出的字第二天接着考。</p></div></li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="14.25" r="4.25"/><path d="M14.75 10v8.5M7 5.25h8M4 20.25h16"/></svg><div><b>拼音</b><p>易混字母、声调、拼读到词句，卡住时给家长一张教学卡。</p></div></li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M9.33 4v16M14.67 4v16M4 9.33h16M4 14.67h16"/></svg><div><b>数独</b><p>四宫到九宫，保证不用猜就能解出。</p></div></li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M7.75 10.5V7.75a4.25 4.25 0 0 1 8.5 0v2.75M8.5 15.5h.01M12 15.5h.01M15.5 15.5h.01"/></svg><div><b>密码</b><p>看线索推出密码，适合两个孩子同题比赛。</p></div></li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 4v16M4 12h16"/><rect class="f" x="6.25" y="6.25" width="3.5" height="3.5" rx=".75"/><rect class="f" x="14.25" y="14.25" width="3.5" height="3.5" rx=".75"/></svg><div><b>数织</b><p>按数字提示涂格子，涂完是一幅小图。</p></div></li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 4H6.5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20h9M12.5 4h5A2.5 2.5 0 0 1 20 6.5V20M8.5 4v4.5h4M16 8.5V16M8 12.5V16h4"/></svg><div><b>迷宫</b><p>算对了才走得通的口算迷宫。</p></div></li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><rect class="f" x="7" y="12.5" width="4" height="4" rx="1"/></svg><div><b>今天</b><p>打开就是这一页：各板块今天该练什么，一眼看全。</p></div></li>
+    </ul>
   </section>
 
   <section class="wl-block" aria-labelledby="wl-how">
-    <h2 id="wl-how">怎么用</h2>
+    <h2 id="wl-how">三步用起来</h2>
     <ol class="wl-steps">
-      <li><b>打开「今天」</b>每个板块今天该练什么，一页看全。</li>
-      <li><b>看一眼纸</b>屏幕上的纸就是打印出来的样子。</li>
+      <li><b>选板块</b>在「今天」里挑一张，或者进板块调题型和题量。</li>
+      <li><b>看纸</b>屏幕上的纸就是打印出来的样子，不满意就换一批。</li>
       <li><b>打印、登记</b>孩子做完，回来点一下哪些没做对，下次自动安排。</li>
     </ol>
-    <p class="wl-note">建议在电脑上使用；手机可以登录、查看，打印请到电脑上。</p>
   </section>
 </main>
 
-<footer class="wl-foot">
-  <p>练习纸只保存登录邮箱和孩子的练习记录，用于在你的设备之间同步，不做他用。</p>
-  <p>有问题请在家长微信群里说。</p>
+<footer class="site-foot">
+  <div class="site-foot-in">
+    <section><h3>关于练习纸</h3><p>一位一年级家长给自己孩子做的练习纸网站，现在分享给同班几位家长一起用。</p></section>
+    <section><h3>隐私</h3><p>只保存登录邮箱和孩子的练习记录，用来在你的几台设备之间同步，不做他用。</p></section>
+    <section><h3>意见反馈</h3><p>有问题请在家长微信群里说。</p></section>
+  </div>
 </footer>
 
 <script src="js/account.js"></script>
@@ -80,18 +116,25 @@
       try { tries = Number(sessionStorage.getItem('sumsum:welcome:tries') || 0) } catch (e) {}
       if (tries >= 2) return
       try { sessionStorage.setItem('sumsum:welcome:tries', String(tries + 1)) } catch (e) {}
+      var keep = new URLSearchParams(location.search)
+      keep.delete('invite')
+      keep.delete('next') /* 不合格的 next 别带去首页，否则会被当成老口算链接转走 */
+      var rest = keep.toString()
       if (safe) location.replace(safe)
-      else location.replace('/' + location.search) /* 老口算分享链接 /?mode=… 登录后照常转到口算 */
-    })
-    document.querySelectorAll('[data-open]').forEach(function (b) {
-      b.addEventListener('click', function () { SumSum.accountUI.open(b.dataset.open) })
+      else location.replace('/' + (rest ? '?' + rest : '')) /* 老口算分享链接 /?mode=… 登录后照常转到口算 */
     })
     /* 打开时确实没登录 → 计数清零（只有「登录了却被送回这页」才累计） */
     SumSum.accountUI.initialSync.then(function () {
       if (!SumSum.account.state.loggedIn) try { sessionStorage.removeItem('sumsum:welcome:tries') } catch (e) {}
     })
-    /* 被拦下来的：直接弹出登录框 */
-    if (safe) SumSum.accountUI.initialSync.then(function () { SumSum.accountUI.open('login') })
+    /* 邀请链接 /?invite=K7M2-QF9W：直接切到注册，邀请码替家长填好 */
+    var invite = (params.get('invite') || '').toUpperCase().replace(/[^0-9A-Z]/g, '')
+    if (invite.length === 8) {
+      var tab = document.querySelector('.wl-auth [data-goto="register"]')
+      if (tab) tab.click()
+      var box = document.querySelector('.wl-auth [name="invite"]')
+      if (box) box.value = invite.slice(0, 4) + '-' + invite.slice(4)
+    }
   })()
 </script>
 </body>

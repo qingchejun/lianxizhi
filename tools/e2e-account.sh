@@ -47,12 +47,12 @@ echo "$L" | grep -q '"ok":true' || fail "登录失败：$L"
 
 sleep 62  # 注册那封邮件占了 60 秒限流窗，等它过去再走找回（生产同样限流）
 F=$(curl -s -X POST "$B/api/auth/forgot" -H 'Content-Type: application/json' -d "{\"email\":\"$EMAIL\"}")
-TOKEN=$(echo "$F" | jqget dev_token)
-[ -n "$TOKEN" ] || fail "forgot 没回 dev_token：$F"
+RCODE=$(echo "$F" | jqget dev_code)
+[ -n "$RCODE" ] || fail "forgot 没回 dev_code：$F"
 
 OLD_JAR=$(mktemp); cp "$JAR" "$OLD_JAR"
 PW2=$(hash_pw newpassword9)
-RS=$(curl -s -X POST "$B/api/auth/reset" -H 'Content-Type: application/json' -c "$JAR" -d "{\"token\":\"$TOKEN\",\"password\":\"$PW2\"}")
+RS=$(curl -s -X POST "$B/api/auth/reset" -H 'Content-Type: application/json' -c "$JAR" -d "{\"email\":\"$EMAIL\",\"code\":\"$RCODE\",\"password\":\"$PW2\"}")
 echo "$RS" | grep -q '"ok":true' || fail "重设失败：$RS"
 curl -s -b "$OLD_JAR" "$B/api/auth/me" | grep -q '"ok":false' || fail "旧登录态应已失效（pwver）"
 L2=$(curl -s -X POST "$B/api/auth/login" -H 'Content-Type: application/json' -d "{\"email\":\"$EMAIL\",\"password\":\"$(hash_pw password123)\"}")

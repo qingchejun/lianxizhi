@@ -27,14 +27,16 @@ def make_invite():
 def register(page, email, invite):
     codes = []
     page.on('response', lambda r: codes.append(r) if r.url.endswith('/api/auth/register') else None)
-    page.click('dialog[open] [data-goto="register"]') if page.is_visible('dialog[open] [data-goto="register"]') else None
-    page.fill('dialog[open] form[data-view="register"] input[name="email"]', email)
-    page.fill('dialog[open] form[data-view="register"] input[name="password"]', 'password123')
-    page.fill('dialog[open] form[data-view="register"] input[name="invite"]', invite)
-    page.click('dialog[open] form[data-view="register"] [data-act="submit"]')
-    page.wait_for_selector('dialog[open] .code-box', timeout=30000)
+    # 2026-11 改版：没登录的首页把表单直接画在页面上（.wl-auth），不再弹窗
+    if not page.is_visible('form[data-view="register"]'):
+        page.click('.wl-auth [data-goto="register"]')
+    page.fill('form[data-view="register"] input[name="email"]', email)
+    page.fill('form[data-view="register"] input[name="password"]', 'password123')
+    page.fill('form[data-view="register"] input[name="invite"]', invite)
+    page.click('form[data-view="register"] [data-act="submit"]')
+    page.wait_for_selector('.code-box', timeout=30000)
     code = json.loads(codes[-1].text())['dev_code']
-    boxes = page.query_selector_all('dialog[open] .code-box')
+    boxes = page.query_selector_all('.code-box')
     for box, digit in zip(boxes, code):
         box.type(digit)
 
@@ -53,9 +55,9 @@ with sync_playwright() as p:
 
     page.goto(BASE + '/kousuan')
     check('没登录打开口算 → 拦回首页', '/?next=' in page.url, page.url)
-    check('首页是介绍页', '每天一页' in page.inner_text('h1'))
-    page.wait_for_selector('dialog[open]', timeout=5000)
-    check('被拦下时自动弹出登录框', page.is_visible('dialog[open] form[data-view="login"]'))
+    check('首页是介绍页', page.is_visible('.wl-auth'))
+    page.wait_for_selector('form[data-view="login"]', timeout=5000)
+    check('被拦下时首页直接显示登录表单', page.is_visible('form[data-view="login"]'))
 
     a = f'gate-a-{STAMP}@test.local'
     register(page, a, make_invite())
@@ -64,20 +66,21 @@ with sync_playwright() as p:
     page.wait_for_selector('.sheet', timeout=10000)
     check('口算页正常显示', page.is_visible('.sheet'))
 
+    page.evaluate("SumSum.accountUI.initialSync")  # 等首次同步挂好监听再改数据
+    page.wait_for_load_state('networkidle')
     page.evaluate("SumSum.store.set('sumsum:e2e:mine:v1', {owner: 'A'})")
     time.sleep(4)  # 防抖 2 秒后推上 A 的云端
     a_cloud = page.evaluate("fetch('/api/data').then(r => r.json())")
     check('A 的数据推上了 A 的云端', any(it['key'] == 'sumsum:e2e:mine:v1' for it in a_cloud.get('items', [])))
 
     close_help(page)
-    page.click('[data-account]')
-    page.click('dialog[open] [data-act="logout"]')
+    page.click('[data-account-menu]')  # 2026-11 二次改版：退出登录在栏底账号菜单里
+    page.click('.rail-menu [data-logout]')
     page.wait_for_url(BASE + '/', timeout=10000)
-    check('退出登录 → 回到介绍页', '每天一页' in page.inner_text('h1'))
+    check('退出登录 → 回到介绍页', page.is_visible('.wl-auth'))
     check('本机还留着 A 的数据（还没换账号）', page.evaluate("localStorage.getItem('sumsum:e2e:mine:v1')") is not None)
 
     b = f'gate-b-{STAMP}@test.local'
-    page.click('[data-open="register"]')
     register(page, b, make_invite())
     page.wait_for_selector('.today-card, .card, .work', timeout=30000)
     time.sleep(4)  # 同步：发现换了账号 → 清本机 → 刷新

@@ -59,10 +59,10 @@
        每页 2 张的：同页双份。两种印法总页数相同，口径统一按 sheets × copies。 */
     var pages = sheets * s.copies
     var ansPages = s.answerPage ? Math.ceil(count / 4) : 0
-    var text = '一共 ' + (pages + ansPages) + ' 张纸：' + count + ' 张迷宫 · 每页 ' + per + ' 张 = ' + sheets + ' 页'
-    if (s.copies > 1) text += ' × 2 份 = ' + pages + ' 张'
-    if (ansPages) text += '，另加 ' + ansPages + ' 张答案页'
-    return text + '。'
+    var parts = ['共 ' + (pages + ansPages) + ' 张纸', '每页 ' + per + ' 张']
+    if (s.copies > 1) parts.push('印 2 份')
+    if (ansPages) parts.push('含 ' + ansPages + ' 张答案页')
+    return parts.join(' · ')
   }
 
   /* 主流程：保存设置 → 同步表单 → 生成题目 → 渲染 → 提示语 */

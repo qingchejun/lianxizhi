@@ -3,7 +3,7 @@
  * 没登录：首页显示介绍兼登录页（对谷歌公开、可收录）；其余页面一律 302 回首页，带上 next=原址，
  * 登录后回原页。静态资源与接口放行——接口各自验登录（requireSession），页面里的数据也只在登录后拉取。
  */
-const PUBLIC_PREFIXES = ['/api/', '/css/', '/js/', '/fonts/']
+const PUBLIC_PREFIXES = ['/api/', '/css/', '/js/', '/fonts/', '/icons/']
 const PUBLIC_FILES = ['/robots.txt', '/favicon.ico']
 const HOME = ['/', '/index', '/index.html']
 const WELCOME = ['/welcome', '/welcome.html']

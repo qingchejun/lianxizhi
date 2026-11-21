@@ -232,6 +232,32 @@ Object.keys(V.list).forEach(function (id) {
   check(inOutline, '视频登记了大纲里没有的知识点：' + id)
 })
 
+/* ---------- 三个游戏（2026-11 补卡片）：摘要来自上次的设置，关卡名与板块页下拉框一致 ---------- */
+;(function () {
+  var fs = require('fs')
+  var g = empty.games
+  check(g && g.length === 3 && g.map(function (x) { return x.key }).join() === 'mima,zhizhi,migong', '游戏卡顺序：' + JSON.stringify(g && g.map(function (x) { return x.key })))
+  check(g[0].title === '第 1 关 · 点点入门' && g[0].meta === '4 题 · 2 份（同题对战）' && g[0].printHref === 'mima.html#print', '密码默认：' + JSON.stringify(g[0]))
+  check(g[1].title === '第 1 关 · 迷你涂画' && g[1].meta === '4 幅 · 5×5 · 2 份（同题对战）', '数织默认：' + JSON.stringify(g[1]))
+  check(g[2].title === '第 1 关 · 起步小路' && g[2].meta === '4 张 · 10 以内加法 · 2 份（同题对战）', '迷宫默认：' + JSON.stringify(g[2]))
+  var r = T.build(fakeStorage({
+    'sumsum:mima:v1': JSON.stringify({ level: 'L3', count: 6, copies: 1 }),
+    'sumsum:zhizhi:v1': '{坏了',
+    'sumsum:migong:v1': JSON.stringify({ level: 'L9', count: 99, copies: 'x' })
+  }), NOW).games
+  check(r[0].title === '第 3 关 · 读题破译' && r[0].meta === '6 题 · 1 份', '密码读设置：' + JSON.stringify(r[0]))
+  check(r[1].title === '第 1 关 · 迷你涂画', '数织坏数据退回默认：' + JSON.stringify(r[1]))
+  check(r[2].title === '第 1 关 · 起步小路' && /^8 张/.test(r[2].meta) && /2 份/.test(r[2].meta), '迷宫越界钳位：' + JSON.stringify(r[2]))
+  /* 关卡名写死在 today-core 里，必须和板块页下拉框对得上 */
+  ;['mima', 'zhizhi', 'migong'].forEach(function (m, i) {
+    var html = fs.readFileSync(require('path').join(__dirname, '..', m + '.html'), 'utf8')
+    T.GAME_LEVELS[m].forEach(function (lv, j) {
+      var re = new RegExp('<option value="L' + (j + 1) + '"[^>]*>第 ' + (j + 1) + ' 关 · ' + lv.name)
+      check(re.test(html), m + ' L' + (j + 1) + ' 关卡名与下拉框对不上：' + lv.name)
+    })
+  })
+})()
+
 if (problems.length) {
   console.log('✗ ' + problems.length + ' 处问题：')
   problems.forEach(function (p) { console.log('  - ' + p) })

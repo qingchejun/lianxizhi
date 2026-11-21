@@ -1,0 +1,157 @@
+/* ============ 使用说明（帮助页）：左目录 + 右正文 ============
+ * 2026-11 二次改版：取代原来的大弹窗。正文沿用 app.css 里 .help-list / .help-steps / .help-backup / .nono-* 的样式。
+ */
+
+.help-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--card);
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .help-scroll { scroll-behavior: auto; }
+}
+
+.help-page {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 720px);
+  gap: 64px;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 40px 40px 120px;
+}
+
+/* 目录：贴在左边，跟着读到的那一节高亮 */
+.help-toc {
+  position: sticky;
+  top: 40px;
+  align-self: start;
+  font-size: 14px;
+}
+
+.help-toc ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.help-toc p {
+  margin: 18px 0 6px;
+  padding-left: 12px;
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+.help-toc a {
+  display: block;
+  padding: 6px 12px;
+  color: var(--ink-soft);
+  border-left: 2px solid var(--card-edge);
+}
+
+.help-toc a:hover {
+  color: var(--ink);
+}
+
+.help-toc a.active {
+  font-weight: 600;
+  color: var(--blue-deep);
+  border-left-color: var(--blue);
+}
+
+/* 正文 */
+.help-article {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--ink-2);
+}
+
+.help-article section {
+  padding: 8px 0 40px;
+  scroll-margin-top: 24px;
+}
+
+.help-article section + section {
+  padding-top: 40px;
+  border-top: 1px solid var(--card-edge);
+}
+
+.help-article h2 {
+  margin: 0 0 16px;
+  font: 28px/1.3 var(--kai);
+  letter-spacing: 2px;
+  color: var(--ink);
+}
+
+.help-article p {
+  margin: 0 0 12px;
+}
+
+.help-article b {
+  color: var(--ink);
+}
+
+.help-article .help-lead {
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.help-article .help-list li + li,
+.help-article .help-steps li + li {
+  margin-top: 10px;
+}
+
+.help-go {
+  margin-top: 18px;
+}
+
+.help-go a {
+  font-weight: 600;
+}
+
+.help-article .help-backup {
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+
+@media (max-width: 900px) {
+  .help-page {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 20px 16px 80px;
+  }
+
+  .help-toc {
+    position: static;
+  }
+
+  .help-toc ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .help-toc p {
+    display: none;
+  }
+
+  .help-toc a {
+    padding: 4px 10px;
+    border: 1px solid var(--card-edge);
+    border-radius: 999px;
+  }
+
+  .help-toc a.active {
+    border-color: var(--blue);
+  }
+}
+
+.help-article .help-list,
+.help-article .help-steps {
+  font-size: 15px;
+  line-height: 1.8;
+}

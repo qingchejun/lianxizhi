@@ -47,7 +47,8 @@ async function mailMark(repo, email, now) {
 }
 
 /* ---- 发验证码（6 位、hash 入库、10 分钟） ---- */
-async function issueCode(repo, user, now) {
+async function issueCode(repo, user, now, kind) {
+  kind = kind || 'verify'
   const gate = await mailGate(repo, user.email, now)
   if (gate === 'interval') return { status: 429, body: { ok: false, error: '发送太频繁了，一分钟后再试。' } }
   if (gate === 'hour') return { status: 429, body: { ok: false, error: '这一小时发的邮件够多了，过一小时再试。' } }
@@ -55,13 +56,16 @@ async function issueCode(repo, user, now) {
   const salt = randomHex(16)
   await repo.tokenInsert({
     token_hash: salt + '$' + await sha256hex(salt + ':' + code),
-    user_id: user.id, kind: 'verify', expires_at: now + CODE_TTL
+    user_id: user.id, kind: kind, expires_at: now + CODE_TTL
   })
   await mailMark(repo, user.email, now)
   await repo.limitSet(user.email, 'codefail', { n: 0, ts: now, until: 0 }) /* 新码配新的 5 次机会 */
+  const mail = kind === 'reset'
+    ? { to: user.email, subject: '练习纸 · 重设密码验证码', text: '重设密码的验证码：' + code + '\n10 分钟内有效，用一次就作废。如果不是你在操作，忽略这封邮件就行，密码不会变。' }
+    : { to: user.email, subject: '练习纸 · 验证码', text: '验证码：' + code + '\n10 分钟内有效。如果不是你在操作，忽略这封邮件就行。' }
   return {
     status: 200, body: { ok: true },
-    mail: { to: user.email, subject: '练习纸 · 验证码', text: '验证码：' + code + '\n10 分钟内有效。如果不是你在操作，忽略这封邮件就行。' },
+    mail: mail,
     dev: { code: code }
   }
 }
@@ -175,27 +179,15 @@ export async function login(repo, now, body) {
   return { status: 200, body: { ok: true, admin: !!user.admin }, session: { uid: user.id, pwver: user.pwver } }
 }
 
-/* ---- 找回密码：无论邮箱是否存在都 200（spec：不泄露注册情况） ---- */
+/* ---- 找回密码：发 6 位验证码到邮箱（2026-11 改版：不再发链接，手机微信里不用跳浏览器）。
+   无论邮箱是否存在都 200（spec：不泄露注册情况） ---- */
 export async function forgot(repo, now, body) {
   const email = normEmail(body && body.email)
   if (!validEmail(email)) return { status: 422, body: { ok: false, error: '邮箱地址看起来不对。' } }
   const user = await repo.userByEmail(email)
   if (!user || user.banned) return { status: 200, body: { ok: true } } /* 不存在/已停用都装作成功，不泄露注册情况 */
   if (await mailGate(repo, email, now)) return { status: 200, body: { ok: true } } /* 节流也装作成功 */
-  const token = randomHex(32)
-  await repo.tokenInsert({
-    token_hash: 'plain$' + await sha256hex(token),
-    user_id: user.id, kind: 'reset', expires_at: now + 30 * 60 * 1000
-  })
-  await mailMark(repo, email, now)
-  return {
-    status: 200, body: { ok: true },
-    mail: {
-      to: email, subject: '练习纸 · 重设密码',
-      text: '有人（希望是你）申请重设「练习纸」的密码。打开下面的链接重设，30 分钟内有效、用一次就作废：\nhttps://lianxizhi.qingchejun.com/?reset=' + token + '\n不是你的话，忽略这封邮件就行。'
-    },
-    dev: { token: token }
-  }
+  return issueCode(repo, user, now, 'reset')
 }
 
 /* ---- 重设密码：token 一次性；pwver+1 旧登录态全失效 ---- */
@@ -203,14 +195,45 @@ export async function reset(repo, now, body) {
   const token = (body && body.token) || ''
   const pw = (body && body.password) || ''
   if (!validClientHash(pw)) return { status: 422, body: { ok: false, error: '密码至少 8 位。' } }
-  if (!/^[0-9a-f]{64}$/.test(token)) return { status: 422, body: { ok: false, error: '重置链接不对。' } }
-  const row = await repo.tokenGet('plain$' + await sha256hex(token))
-  if (!row || row.kind !== 'reset' || row.used_at || row.expires_at <= now) {
-    return { status: 422, body: { ok: false, error: '重置链接已失效，请重新发一封。' } }
+  let user, used
+  if (body && body.code !== undefined) {
+    /* 新流程：邮箱 + 6 位验证码。试错计数与注册验证码共用 codefail（同一语义：猜验证码） */
+    const email = normEmail(body.email)
+    const code = String(body.code || '')
+    const bad = { status: 422, body: { ok: false, error: '验证码不对，再看一眼邮件。' } }
+    if (!/^\d{6}$/.test(code)) return { status: 422, body: { ok: false, error: '验证码是 6 位数字。' } }
+    user = await repo.userByEmail(email)
+    if (!user || user.banned) return bad
+    const fails = await repo.limitGet(email, 'codefail')
+    if (fails && fails.n >= CODE_MAX_FAILS) {
+      await repo.tokensClear(user.id, 'reset')
+      return { status: 429, body: { ok: false, error: '错得太多了，验证码已作废，请重新发送。' } }
+    }
+    for (const row of await repo.tokenListByUser(user.id, 'reset')) {
+      const salt = row.token_hash.split('$')[0]
+      if (salt === 'plain') continue
+      if (row.token_hash === salt + '$' + await sha256hex(salt + ':' + code)) {
+        if (row.used_at) break
+        if (row.expires_at <= now) return { status: 422, body: { ok: false, error: '验证码过期了，请重新发送。' } }
+        used = row
+        break
+      }
+    }
+    if (!used) {
+      await repo.limitSet(email, 'codefail', { n: (fails ? fails.n : 0) + 1, ts: now, until: 0 })
+      return bad
+    }
+  } else {
+    /* 旧流程：邮件里的重设链接（改版前发出去的链接 30 分钟内仍可用） */
+    if (!/^[0-9a-f]{64}$/.test(token)) return { status: 422, body: { ok: false, error: '重置链接不对。' } }
+    used = await repo.tokenGet('plain$' + await sha256hex(token))
+    if (!used || used.kind !== 'reset' || used.used_at || used.expires_at <= now) {
+      return { status: 422, body: { ok: false, error: '重置链接已失效，请重新发一封。' } }
+    }
+    user = await repo.userById(used.user_id)
+    if (!user || user.banned) return { status: 422, body: { ok: false, error: '重置链接已失效，请重新发一封。' } } /* 停用的账号不给重设回来 */
   }
-  const user = await repo.userById(row.user_id)
-  if (!user || user.banned) return { status: 422, body: { ok: false, error: '重置链接已失效，请重新发一封。' } } /* 停用的账号不给重设回来 */
-  await repo.tokenUse(row.token_hash)
+  await repo.tokenUse(used.token_hash)
   /* 密码一换，之前发出去的重设链接/验证码全部作废——不然泄漏的旧链接
      还能在有效期内反杀，界面「其他设备需要重新登录」就成了空话 */
   await repo.tokensClear(user.id, 'reset')

@@ -3,9 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="theme-color" content="#f6f7f9" />
+  <script>try{if(localStorage.getItem("lianxizhi:rail")==="fold")document.documentElement.classList.add("rail-folded")}catch(e){}</script>
   <title>密码 · 练习纸</title>
   <meta name="description" content="给孩子打印 A4 练习纸 · 密码推理：看点子、读线索，一步步排除出密码，四关循序渐进，每题附分步解析。" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>" />
   <link rel="stylesheet" href="css/app.css" />
   <link rel="stylesheet" href="css/sheet.css" />
   <link rel="stylesheet" href="css/mima.css" />
@@ -17,23 +20,30 @@
 <div class="app">
 <!-- rail:密码 -->
 <nav class="rail" aria-label="板块">
-  <a class="rail-brand" href="index.html">练习纸</a>
+  <div class="rail-top"><a class="rail-brand" href="index.html" aria-label="练习纸 · 今天"><img src="icons/mark.svg" width="28" height="28" alt=""><span>练习纸</span></a><button type="button" class="rail-fold" data-rail-fold aria-label="收起侧栏" title="收起侧栏"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15M15.5 10l-2 2 2 2"/></svg></button></div>
   <span class="rail-label">练习</span>
-  <a class="rail-link" href="index.html" data-module="今天"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7M6 9.5V20h12V9.5M10 20v-5h4v5"/></svg><span>今天</span></a>
-  <a class="rail-link" href="kousuan.html" data-module="口算"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h6M7 4v6M14 7h6M5 15l4 4M9 15l-4 4M14 16h6M14 19h6"/></svg><span>口算</span></a>
-  <a class="rail-link" href="aoshu.html" data-module="奥数"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg><span>奥数</span></a>
-  <a class="rail-link" href="shizi.html" data-module="识字"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c-2-1.5-5-2-8-1.5v14c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5v-14c-3-.5-6 0-8 1.5zM12 6v14"/></svg><span>识字</span></a>
-  <a class="rail-link" href="pinyin.html" data-module="拼音"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18l4-12 4 12M6.5 14h5M15 10h5M15 14h5M15 18h5"/></svg><span>拼音</span></a>
+  <a class="rail-link" href="index.html" data-module="今天" title="今天"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><rect class="f" x="7" y="12.5" width="4" height="4" rx="1"/></svg><span>今天</span></a>
+  <a class="rail-link" href="kousuan.html" data-module="口算" title="口算"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7.5h5.5M7.25 4.75v5.5M14 7.5h5.5M5 14.25l4.5 4.5M9.5 14.25L5 18.75M14 15h5.5M14 18.25h5.5"/></svg><span>口算</span></a>
+  <a class="rail-link" href="aoshu.html" data-module="奥数" title="奥数"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.75l8.5 15.5h-17z"/><circle cx="12" cy="14" r="2.75"/></svg><span>奥数</span></a>
+  <a class="rail-link" href="shizi.html" data-module="识字" title="识字"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 4 5v13.5c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5zM12 6.5V20"/></svg><span>识字</span></a>
+  <a class="rail-link" href="pinyin.html" data-module="拼音" title="拼音"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="14.25" r="4.25"/><path d="M14.75 10v8.5M7 5.25h8M4 20.25h16"/></svg><span>拼音</span></a>
   <span class="rail-label">游戏</span>
-  <a class="rail-link" href="shudu.html" data-module="数独"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16"/></svg><span>数独</span></a>
-  <a class="rail-link active" href="mima.html" data-module="密码" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>密码</span></a>
-  <a class="rail-link" href="zhizhi.html" data-module="数织"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 4v16M4 12h16"/><rect x="5.5" y="5.5" width="5" height="5" style="fill:currentColor;stroke:none"/><rect x="13.5" y="13.5" width="5" height="5" style="fill:currentColor;stroke:none"/></svg><span>数织</span></a>
-  <a class="rail-link" href="migong.html" data-module="迷宫"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H8V8h8v8h-4v-4"/></svg><span>迷宫</span></a>
+  <a class="rail-link" href="shudu.html" data-module="数独" title="数独"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M9.33 4v16M14.67 4v16M4 9.33h16M4 14.67h16"/></svg><span>数独</span></a>
+  <a class="rail-link active" href="mima.html" data-module="密码" title="密码" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M7.75 10.5V7.75a4.25 4.25 0 0 1 8.5 0v2.75M8.5 15.5h.01M12 15.5h.01M15.5 15.5h.01"/></svg><span>密码</span></a>
+  <a class="rail-link" href="zhizhi.html" data-module="数织" title="数织"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 4v16M4 12h16"/><rect class="f" x="6.25" y="6.25" width="3.5" height="3.5" rx=".75"/><rect class="f" x="14.25" y="14.25" width="3.5" height="3.5" rx=".75"/></svg><span>数织</span></a>
+  <a class="rail-link" href="migong.html" data-module="迷宫" title="迷宫"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 4H6.5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20h9M12.5 4h5A2.5 2.5 0 0 1 20 6.5V20M8.5 4v4.5h4M16 8.5V16M8 12.5V16h4"/></svg><span>迷宫</span></a>
   <span class="rail-gap"></span>
-  <button type="button" class="rail-link small" data-help><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg><span>说明</span></button>
-  <button type="button" class="rail-link small" data-account=""><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"/></svg><span>账号</span></button>
-  <button type="button" class="rail-link small" data-backup><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M8 11l4 4 4-4M5 19h14"/></svg><span>备份</span></button>
+  <a class="rail-link rail-tool" href="help.html" data-help title="使用说明"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .9-1 1.6v.3M12 16.75h.01"/></svg><span>使用说明</span></a>
+  <div class="rail-me">
+    <button type="button" class="rail-user" data-account-menu aria-haspopup="menu" aria-expanded="false" title="账号"><span class="rail-avatar" data-account-initial aria-hidden="true"></span><span class="rail-who"><b data-account-email>账号</b><small>练习进度自动同步</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 10l4-4 4 4M8 14l4 4 4-4"/></svg></button>
+    <div class="rail-menu" role="menu" hidden>
+      <button type="button" role="menuitem" data-account=""><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.25" r="3.75"/><path d="M4.75 19.75c1.4-3.3 4.1-4.75 7.25-4.75s5.85 1.45 7.25 4.75"/></svg><span>账号与密码</span></button>
+      <button type="button" role="menuitem" data-backup><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10M8 10.25L12 14l4-3.75M4.5 15v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3"/></svg><span>备份与恢复</span></button>
+      <button type="button" role="menuitem" data-logout><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4.5h3.5a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H14M10 16l-4-4 4-4M6 12h9.5"/></svg><span>退出登录</span></button>
+    </div>
+  </div>
 </nav>
+<script src="js/sidebar.js" defer></script>
 <!-- /rail -->
 
 <div class="work">
@@ -95,7 +105,7 @@
         <label class="field"><span>练习纸标题（选填）</span>
           <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：密码推理 · 第 1 关 点点入门" />
         </label>
-        <p class="hint">设置和这批题目都写进了网址：收藏或分享这个链接，打开后就是一模一样的一张卷子。</p>
+        <p class="hint">设置自动保存。复制当前网址发给别人，打开就是同一张卷子。</p>
       </section>
 
     </aside>

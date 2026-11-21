@@ -1,49 +1,45 @@
 /**
- * 使用说明：左侧板块栏底部的「说明」「备份」两个按钮 + 弹窗。
+ * 使用说明（2026-11 二次改版）：独立的帮助页 help.html，左边目录、右边内容。
  *
- * 七个页面共用这一个文件，弹窗由这里插进页面，按钮在板块栏里（tools/rail.py 生成，
- * 带 data-help / data-backup）。「备份」打开同一个弹窗，直接滚到备份那一段。
- * 打开时默认翻到当前页面那个板块。
- *
- * 2026-11-20 起，自动弹出按板块算：每个板块第一次打开时弹一次那个板块的说明
- * （key 为 sumsum:help:seen:<板块名>，读写失败就当「来过」，宁可不弹也别每次都弹）。
- * 从旧版「全站弹一次」过来的老用户自动迁移：老板块（今天/口算/奥数/识字/数独）
- * 一律当看过，只有新板块（密码/数织/迷宫）第一次点进去才会弹玩法介绍。
+ *   - 在 help.html 里（有 #help-page）：把下面的文案渲染成整页，含「备份与恢复」的导出 / 导入按钮。
+ *   - 在其他页面：侧栏「使用说明」是个链接，这里把它指向 help.html#<当前板块>；
+ *     账号菜单「备份与恢复」跳到 help.html#backup。不再自动弹窗。
  *
  * 文案全是写死的，没有任何用户输入，可以直接进 innerHTML。
- * 弹窗里还有「导出 / 导入备份」，数据逻辑在 js/backup.js，页面上须先于本文件加载。
- * 改了哪个板块的功能，记得回来同步这里的说明；新增板块要往 MODULES 里加一页。
+ * 备份数据逻辑在 js/backup.js，须先于本文件加载。改了哪个板块的功能，记得回来同步这里的说明。
  */
 ;(function (root) {
   'use strict'
 
   var doc = root.document
-  var SEEN_KEY = 'sumsum:help:seen' /* 旧版的全站一次性 key，仅迁移时读 */
-  var SEEN_PREFIX = 'sumsum:help:seen:' /* 现按板块记：sumsum:help:seen:数织 这样 */
-  /* 迁移时视为「早就看过」的板块：新板块（密码/数织/迷宫）不在此列，老用户第一次点进去会弹 */
-  var OLD_KEYS = ['今天', '口算', '奥数', '识字', '数独']
 
-  /* 四个板块都一样的部分：放在最上面，谁先看到都能明白这个站怎么用 */
-  var COMMON =
-    '<p class="help-fast"><b>最快</b>：打开网站先到「今天」，可直接查看各板块的练习。' +
-      '点卡片上的「打印」，看一眼纸没问题就打印；想改设置，点卡片进入对应板块。</p>' +
+  var START =
+    '<p>练习纸给一年级孩子出 A4 练习纸。每天打开网站，先到<b>今天</b>：每个板块今天要做的纸都摆在那里。</p>' +
     '<ol class="help-steps">' +
-      '<li><b>右边设置</b>：选题型、范围、题量。</li>' +
-      '<li><b>中间就是纸</b>：屏幕上看到的，就是打印出来的样子。</li>' +
-      '<li><b>点右上角蓝色「打印」</b>：纸张选 A4；打印对话框里把「页眉和页脚」关掉，纸面更干净。</li>' +
-    '</ol>' +
-    '<p class="help-note">口算、数独、识字、密码、数织、迷宫的设置会写进网址：<b>把链接收藏或发给别人，打开就是一模一样的那张卷子</b>。' +
-      '想换一批题，点「重新生成」。</p>'
+      '<li><b>选一张纸</b>：在「今天」点纸上的「打印」，或点进板块调整题型、范围和题量。</li>' +
+      '<li><b>看一眼</b>：板块页中间的纸，就是打印出来的样子；右边是设置。</li>' +
+      '<li><b>打印</b>：点右上角蓝色「打印」。孩子做完，回到这一页登记哪里没做对，下次会自动安排复习。</li>' +
+    '</ol>'
 
-  /* 放在弹窗最后：板块栏的「备份」按钮直接滚到这里 */
+  var PRINT =
+    '<ul class="help-list">' +
+      '<li>纸张选 <b>A4</b>，缩放选「默认」或 100%。</li>' +
+      '<li>在打印对话框的「更多设置」里<b>关掉「页眉和页脚」</b>，纸面上就不会印出网址和日期。</li>' +
+      '<li>Windows 的 Edge / Chrome 与 Mac 的 Chrome 都能直接打印；Safari 请在「显示详细信息」里同样关掉页眉页脚。</li>' +
+      '<li>口算、数独、识字、密码、数织、迷宫的设置会写进网址：复制网址发给别人，打开就是同一张卷子。想换一批题，点「重新生成」。</li>' +
+    '</ul>'
+
+  var ACCOUNT =
+    '<ul class="help-list">' +
+      '<li>登录后，奥数的「已学」标记、识字的错字集与进度、拼音的练习卷与登记都会<b>自动同步</b>到你的账号。换一台电脑，登录同一个账号就能接着用。</li>' +
+      '<li>改密码：点左下角自己的邮箱，选「账号与密码」。改完后其他设备需要重新登录。</li>' +
+      '<li>忘了密码：在登录页点「忘记密码？」，邮箱会收到 6 位验证码。没收到请看一下垃圾邮件箱。</li>' +
+      '<li>几个家长共用一台电脑时，换人前请先退出登录。另一个账号登录时，这台电脑上上一位的数据会先清掉，不会混进去。</li>' +
+    '</ul>'
+
   var BACKUP =
     '<div class="help-backup">' +
-      '<h3>换电脑、换网址</h3>' +
-      '<p>奥数「已学」标记、识字的进度和错字集、拼音练习卷与登记存在<b>这台电脑的这个浏览器</b>里。' +
-        '换之前（比如从旧网址 lianxizhi.pages.dev 搬到 lianxizhi.qingchejun.com），先在原来的地方点「导出备份」存一个文件，' +
-        '再到新的地方点「导入备份」选这个文件。</p>' +
-      '<p class="help-note">也可以不搬文件：在两台电脑上用<b>同一个账号</b>登录（侧栏「账号」），进度自动云端同步。' +
-        '导入备份和云同步不冲突——导入的数据算最新，会同步到云端。</p>' +
+      '<p>账号已经会自动同步，一般用不到备份。想自己留一份存档，或者在没登录的电脑之间搬数据时，可以用这里导出成一个文件，再在另一边导入。</p>' +
       '<div class="help-backup-btns">' +
         '<button type="button" class="btn" data-bk="export">导出备份</button>' +
         '<button type="button" class="btn" data-bk="import">导入备份</button>' +
@@ -108,8 +104,8 @@
       key: '拼音',
       lead: '每天约五分钟，先独立读，卡住时照家长卡示范，再换题试试。',
       items: [
-        '顺的题留空。提示了或没读出，展开该题登记。做完可一次确认整组，中途结束时选最后做到的题。',
-        '纸上提示画 ∨，没读出画 ×，跳题画横线。中途结束时圈最后一题，再到「历史卷与补登」按卷号登记。',
+        '顺的题什么都不点；提示了或没读出，点那一题右边的按钮。做完点「本组做完」，中途结束时选最后做到的题。',
+        '在纸上练时：提示画 ∨，没读出画 ×，跳过的题画横线，中途结束圈最后一题。之后到「历史」按卷号补登记。',
         '需要集中练某个方向时，可从「专题」或「课程」直接打开。'
       ]
     },
@@ -143,11 +139,10 @@
         '<b>每日一卷</b>：打开识字页默认就是它。一天最多一张，固定 20 个字：错字最多占 10 个、认识字凑满，顺序打乱。生成后字冻住——切去别的板块再回来，还是同一张。考完对着纸点<b>没认出</b>的字，点「登记结果」：点的记又错，没点的算认出。当天可撤销登记；不想登记就作废重来。登记完会提前把<b>明天的卷</b>出好（今晚登记的错字第二天接着考，就在上面）；出完之后又标了新的错字，还没考的明日卷会自动重排带上——考过的卷子绝不变脸。',
         '<b>毕业规则</b>：没认出的字第二天接着考，天天都在卷上；认出一次后隔 <b>3 天</b>回来复核一次，复核也认出才毕业（毕业 = 移出错字集）。复核没认出就回炉接着滚。每天带哪 10 个错字：昨晚没认出的和当天到期的先上（保证第二天接着考），空位再按最逾期、错得多、错得早的补。毕业了的字哪天又没认出，会重新收进错字集，错的次数接着累计。',
         '<b>本周复习</b>：打印这一周的字，每周 100 字，16 周复习一遍。只印字不印拼音：孩子念，你听。印完点「下一周 ▶」，进度会记住。',
-        '<b>点字标记</b>：孩子念不出来的字，在卷面上点一下（深红框）＝这次<b>没认出</b>，点「登记结果」时一起记下；点错了再点一下取消。可以边念边点，也可以先在纸上圈、事后对着点。<b>纸上不会印出任何标记</b>。',
+        '<b>点字标记</b>：孩子念不出来的字，在卷面上点一下（出现红框）＝这次<b>没认出</b>，点「登记结果」时一起记下；点错了再点一下取消。可以边念边点，也可以先在纸上圈、事后对着点。标记不会印到纸上。',
         '<b>错字集</b>：切到「错字集」打印一张全是错字的卷子。<b>红底</b>是在集里，右上角数字是还差几次认出毕业；<b>半红</b>是认出过一次、等 3 天后复核。复核认出就毕业移出。',
         '<b>历史</b>：只要错过一次的字都记着，毕业、清空都不会抹掉。「历史」页签按错的次数分组列出所有字，还有每天登记认出几个、又错几个。格子左上角「×3」这样的数字是累计错过几次。',
-        '<b>顺带复习错字</b>：在「本周复习」里打开「附一页错字」，会从错字集里抽 20 个字附在后面：错得越多越容易抽到，认出过一次的（半红）机会减半。',
-        '<b>换电脑、换网址</b>：错字集和进度只存在这个浏览器里，用下面的「导出备份 / 导入备份」带过去。'
+        '<b>顺带复习错字</b>：在「本周复习」里打开「附一页错字」，会从错字集里抽 20 个字附在后面：错得越多越容易抽到，认出过一次的（半红）机会减半。'
       ]
     },
     {
@@ -158,7 +153,7 @@
         '<b>难度滑块</b>：拖动是在选「给几个提示数」，给得越少越难。拖到哪一档都不会卡死。',
         '<b>比赛玩法</b>：「打印份数」选 2 份，同一套题印两张，父子各一张，看谁先做完。',
         '<b>在屏幕上玩</b>：打开「屏幕上可以直接玩」，先点空格子，再点纸右边作答面板上的数字（或按键盘 1～9）。方向键移动，退格键擦除，Ctrl+Z 撤销。',
-        '<b>卡住了</b>：点「💡 提示」，会填上一格并说明为什么是这个数。直接点作答面板上的数字，能把盘上所有同样的数高亮出来。',
+        '<b>卡住了</b>：点「提示」，会填上一格并说明为什么是这个数。直接点作答面板上的数字，能把盘上所有同样的数高亮出来。',
         '<b>做完了</b>：点「提交批改」（或按回车），错的格子会标红。计时从填第一个数开始，全对才停。'
       ]
     },
@@ -201,102 +196,85 @@
     }
   ]
 
+  var SLUG = { '今天': 'start', '拼音': 'pinyin', '口算': 'kousuan', '奥数': 'aoshu', '识字': 'shizi',
+    '数独': 'shudu', '密码': 'mima', '数织': 'zhizhi', '迷宫': 'migong' }
+  /* 帮助页上的板块顺序与侧栏一致 */
+  var ORDER = ['口算', '奥数', '识字', '拼音', '数独', '密码', '数织', '迷宫']
+
   function currentModuleName() {
     var a = doc.querySelector('.rail-link.active')
     return a ? (a.getAttribute('data-module') || '') : ''
   }
 
-  function currentModule() {
-    var name = currentModuleName()
-    for (var i = 0; i < MODULES.length; i++) {
-      if (MODULES[i].key === name) return i
-    }
-    return 0
+  function moduleOf(key) {
+    for (var i = 0; i < MODULES.length; i++) if (MODULES[i].key === key) return MODULES[i]
+    return null
   }
 
-  function build() {
-    var helpBtn = doc.querySelector('[data-help]')
-    var backupBtn = doc.querySelector('[data-backup]')
-    if (!helpBtn) return
-
-    var tabs = MODULES.map(function (m, i) {
-      return '<button type="button" class="stage-tab" data-i="' + i + '">' + m.key + '</button>'
-    }).join('')
-    var bodies = MODULES.map(function (m, i) {
-      return '<section class="help-mod" data-i="' + i + '">' +
+  function renderPage(host) {
+    var toc = [['start', '开始使用'], ['print', '打印设置']]
+      .concat(ORDER.map(function (k) { return [SLUG[k], k] }))
+      .concat([['account', '账号与同步'], ['backup', '备份与恢复']])
+    var secs = [
+      '<section id="start"><h2>开始使用</h2>' + START + '</section>',
+      '<section id="print"><h2>打印设置</h2>' + PRINT + '</section>'
+    ].concat(ORDER.map(function (k) {
+      var m = moduleOf(k)
+      return '<section id="' + SLUG[k] + '"><h2>' + k + '</h2>' +
         '<p class="help-lead">' + m.lead + '</p>' +
         '<ul class="help-list">' + m.items.map(function (t) { return '<li>' + t + '</li>' }).join('') + '</ul>' +
         (m.extra || '') +
-        '</section>'
-    }).join('')
+        '<p class="help-go"><a href="' + SLUG[k] + '.html">打开' + k + '</a></p></section>'
+    })).concat([
+      '<section id="account"><h2>账号与同步</h2>' + ACCOUNT + '</section>',
+      '<section id="backup"><h2>备份与恢复</h2>' + BACKUP + '</section>'
+    ])
+    host.innerHTML =
+      '<nav class="help-toc" aria-label="目录"><ol>' + toc.map(function (t, i) {
+        return (i === 2 ? '</ol><p>板块</p><ol>' : i === toc.length - 2 ? '</ol><p>账号</p><ol>' : '') +
+          '<li><a href="#' + t[0] + '" data-toc="' + t[0] + '">' + t[1] + '</a></li>'
+      }).join('') + '</ol></nav>' +
+      '<article class="help-article">' + secs.join('') + '</article>'
+    wireBackup(host.querySelector('.help-backup'))
 
-    var dlg = doc.createElement('dialog')
-    dlg.className = 'help-dialog'
-    dlg.setAttribute('aria-labelledby', 'help-title')
-    dlg.innerHTML =
-      '<div class="help-head">' +
-        '<h2 id="help-title">使用说明</h2>' +
-        '<button type="button" class="help-close" aria-label="关闭">×</button>' +
-      '</div>' +
-      '<div class="help-body">' +
-        '<h3 class="help-h">三步出一张练习纸</h3>' + COMMON +
-        '<h3 class="help-h">板块玩法</h3>' +
-        '<div class="stage-tabs help-tabs">' + tabs + '</div>' +
-        bodies + BACKUP +
-      '</div>'
-    doc.body.appendChild(dlg)
-
-    function show(i) {
-      dlg.querySelectorAll('.help-tabs .stage-tab').forEach(function (b) {
-        b.classList.toggle('active', +b.dataset.i === i)
-      })
-      dlg.querySelectorAll('.help-mod').forEach(function (s) {
-        s.hidden = +s.dataset.i !== i
-      })
+    /* 目录高亮跟着读到的那一节走 */
+    var links = host.querySelectorAll('[data-toc]')
+    function mark(id) {
+      links.forEach(function (a) { a.classList.toggle('active', a.getAttribute('data-toc') === id) })
     }
-
-    function open() {
-      show(currentModule())
-      dlg.showModal()
-      dlg.querySelector('.help-body').scrollTop = 0
+    if ('IntersectionObserver' in root) {
+      var io = new root.IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) mark(e.target.id) })
+      }, { root: host.closest('.help-scroll'), rootMargin: '0px 0px -70% 0px' })
+      host.querySelectorAll('.help-article > section').forEach(function (sec) { io.observe(sec) })
     }
-
-    /* 「备份」：同一个弹窗，直接滚到备份那一段 */
-    function openBackup() {
-      open()
-      dlg.querySelector('.help-backup').scrollIntoView({ block: 'start' })
-    }
-
-    helpBtn.addEventListener('click', open)
-    if (backupBtn) backupBtn.addEventListener('click', openBackup)
-    dlg.querySelector('.help-close').addEventListener('click', function () { dlg.close() })
-    dlg.querySelector('.help-tabs').addEventListener('click', function (e) {
-      var b = e.target.closest('.stage-tab')
-      if (b) show(+b.dataset.i)
+    /* 滚到底时最后一节可能够不着上沿，直接高亮最后一项 */
+    var scroller = host.closest('.help-scroll')
+    if (scroller) scroller.addEventListener('scroll', function () {
+      if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4) mark('backup')
     })
-    /* 点弹窗外的灰色遮罩关闭：点击落在 dialog 元素本身（而不是里面的内容）时就是点了遮罩 */
-    dlg.addEventListener('click', function (e) {
-      if (e.target === dlg) dlg.close()
+    mark((root.location.hash || '#start').slice(1))
+    if (root.location.hash) {
+      var target = doc.getElementById(root.location.hash.slice(1))
+      if (target) target.scrollIntoView()
+    }
+  }
+
+  function build() {
+    var page = doc.getElementById('help-page')
+    if (page) renderPage(page)
+    var helpLink = doc.querySelector('a[data-help]')
+    var slug = SLUG[currentModuleName()]
+    if (helpLink && slug) helpLink.href = 'help.html#' + slug
+    doc.querySelectorAll('[data-intro-help]').forEach(function (b) {
+      b.addEventListener('click', function () { root.location.href = 'help.html' })
     })
-
-    wireBackup(dlg.querySelector('.help-backup'))
-
-    /* 每个板块第一次打开自动弹一次。从旧版（全站弹一次）过来的老用户：
-       老板块一律当看过——已看过旧说明的人不用再看一遍，只有没见过的新板块（密码/数织）会弹 */
-    if (doc.body.hasAttribute('data-help-manual')) return
-    var seen = true
-    try {
-      if (root.localStorage.getItem(SEEN_KEY)) {
-        for (var i = 0; i < OLD_KEYS.length; i++) {
-          root.localStorage.setItem(SEEN_PREFIX + OLD_KEYS[i], '1')
-        }
-        root.localStorage.removeItem(SEEN_KEY)
-      }
-      var myKey = SEEN_PREFIX + (currentModuleName() || '今天')
-      seen = !!root.localStorage.getItem(myKey)
-      root.localStorage.setItem(myKey, '1')
-    } catch (e) { /* 存不了就不自动弹 */ }
-    if (!seen) open()
+    var backupBtn = doc.querySelector('[data-backup]')
+    if (backupBtn && !page) backupBtn.addEventListener('click', function () { root.location.href = 'help.html#backup' })
+    if (backupBtn && page) backupBtn.addEventListener('click', function () {
+      var b = doc.getElementById('backup')
+      if (b) b.scrollIntoView({ behavior: 'smooth' })
+    })
   }
 
   /* ---------- 备份 / 搬家（数据逻辑在 js/backup.js，这里只管按钮和提示） ---------- */
@@ -351,7 +329,7 @@
       a.remove()
       setTimeout(function () { URL.revokeObjectURL(url) }, 1000)
       say('已下载 <b>' + name + '</b>，里面有：' + list(B.describe(pack.data)) +
-        '到新电脑或新网址上，打开「使用说明」点「导入备份」选这个文件。', 'ok')
+        '到另一台电脑上，打开「使用说明 → 备份与恢复」点「导入备份」选这个文件。', 'ok')
     }
 
     function confirmImport(r) {

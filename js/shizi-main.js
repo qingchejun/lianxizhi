@@ -114,11 +114,10 @@
     var settledToday = browseIdx == null && S.shiziMark.canUndo('daily')
     if (active) {
       status.innerHTML = p.d === todayStr
-        ? '今天的卷子已生成（' + p.chars.length + ' 字：错字最多 10 个 + 认识字凑满，顺序打乱）。打印去考，回来点<b>没认出</b>的字，再点「登记结果」。'
+        ? '今天 ' + p.chars.length + ' 个字，含最多 10 个错字。打印考完，在卷面上点出<b>没认出</b>的字，再点「登记结果」。'
         : p.d > todayStr
-          ? (settledToday ? '今天的卷子已登记，明天的卷已经出好（' : '明天的卷已经出好（') + p.chars.length +
-            ' 字，今晚登记的错字都在上面）。可以今晚先打印，明天直接考；回来点<b>没认出</b>的字再登记。'
-          : '有一张 ' + md(p.d) + ' 的卷子还没登记。对着那张纸点没认出的字再登记；不想登记就作废。'
+          ? (settledToday ? '今天已登记。' : '') + '明天的 ' + p.chars.length + ' 个字已经出好，含今晚登记的错字，可以先打印。'
+          : md(p.d) + ' 的卷子还没登记。对着那张纸点出没认出的字再登记，或者作废。'
     } else {
       status.innerHTML = (p.d === todayStr ? '今天' : md(p.d)) + '的卷子已登记。' +
         (browseIdx == null ? '下一张会自动出好。' : '（往期卷只读）')
@@ -199,8 +198,8 @@
 
     $('week-hint').textContent =
       sl.week >= sl.weeks
-        ? '这是最后一周，一轮走完了。想再过一遍，把「第几周」填回 1 就行 —— 隔了三四个月再看，前面的字正好该复习了。'
-        : '印完这一张，点「下一周」往前走。进度会记住，下次打开还在这儿。'
+        ? '这是最后一周。想再来一轮，把「第几周」改回 1。'
+        : '印完这一张，点「下一周」继续。'
   }
 
   /*
@@ -218,14 +217,11 @@
     var addSheets = append && append.length
       ? Math.ceil(append.length / S.shiziRender.perPageOf(s, append.length))
       : 0
-    var text = '一共 ' + (sheets + addSheets) * s.copies + ' 张纸：' + count + ' 个字'
-    if (sheets > 1) text += ' · 每页 ' + per + ' 个 = ' + sheets + ' 页'
-    if (addSheets) text += ' + 错字附页 ' + append.length + ' 字'
-    if (s.copies > 1) text += '，× ' + s.copies + ' 份'
-    /* 「本周卷」三个字只在本周复习模式下说得通；每日一卷那张小卷不该顶着这个名 */
-    var label = s.mode === 'daily' ? '每日卷' : '本周卷'
-    return text + '。' + label + '排成 ' + lay.cols + ' 列 × ' + lay.rows + ' 行，每个字约 ' +
-      (Math.floor(lay.glyph * 10) / 10) + 'mm（课本生字约 10mm）。'
+    var parts = ['共 ' + (sheets + addSheets) * s.copies + ' 张纸', count + ' 个字']
+    if (addSheets) parts.push('含错字附页')
+    if (s.copies > 1) parts.push('印 ' + s.copies + ' 份')
+    parts.push(lay.cols + ' 列 × ' + lay.rows + ' 行，字约 ' + (Math.round(lay.glyph) / 10) + ' 厘米见方')
+    return parts.join(' · ')
   }
 
   /*
@@ -237,21 +233,17 @@
     if (!n) {
       /* 一个字都没有时，讲「怎么毕业」是没意义的 —— 不管在哪个模式，
          此刻唯一有用的信息都是「去哪儿、怎么把第一个字收进来」。 */
-      return '错字集还是空的。' +
-        (s.mode === 'week' ? '孩子念不出来的字，在卷面上点一下（深红框），'
-          : s.mode === 'daily' ? '孩子念不出来的字，在这张卷上点一下（深红框），'
-          : '切到「每日一卷」或「本周复习」，孩子念不出来的字点一下，') +
-        '再点「登记结果」收进错字集。<b>纸上不会印出任何标记。</b>'
+      return '错字集是空的。' +
+        (s.mode === 'wrong' ? '在「每日一卷」或「本周复习」里，' : '') +
+        '孩子念不出的字在卷面上点一下，再点「登记结果」。标记不会印到纸上。'
     }
     var once = S.shiziMark.onceCount()
-    var head = '错字集里有 <b>' + n + '</b> 个字' +
-      (once ? '（其中 ' + once + ' 个只差一次认出就毕业）' : '') + '。' +
-      '没认出的字第二天接着考，认出一次后隔 <b>3 天</b>回来复核一次，复核也认出才毕业；' +
-      '每天最多带 10 个：复核到期的先上，然后错得多的、错得早的。'
+    var head = '错字集 <b>' + n + '</b> 个字' + (once ? '，其中 ' + once + ' 个再认出一次就毕业' : '') + '。' +
+      '没认出的字第二天接着考，认出后隔 3 天复核，复核认出才毕业。'
     if (s.mode === 'wrong') {
-      return head + '<br>考这一张时，孩子<b>没认出</b>的字点一下（深红框）；考完点「登记结果」，没点的算认出。'
+      return head + '<br>考完点出<b>没认出</b>的字，再点「登记结果」，没点的算认出。'
     }
-    var tail = head + '孩子念不出来的字，在卷面上点一下（深红框），点「登记结果」收进来。<b>纸上不会印出任何标记。</b>'
+    var tail = head + '孩子念不出的字点一下，再点「登记结果」。'
     if (s.withWrong && appendPick.length) {
       tail += '<br>附页的 ' + appendPick.length + ' 个旧错字：没认出的点一下，考完一并「登记结果」。'
     }

@@ -24,132 +24,213 @@
 
   var PLAY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg>'
 
-  function card(o) {
-    return '<article class="tcard">' +
-      '<a class="tcard-body" href="' + o.href + '">' +
-        '<div class="mini ' + o.miniCls + '" aria-hidden="true">' + o.mini + '</div>' +
-        '<div class="tcard-main">' +
-          '<span class="tag">' + o.tag + '</span>' +
-          '<h2>' + o.title + '</h2>' +
-          o.lines +
+  /*
+   * 2026-11 改版：首页是一张「书桌」，今天每个板块的纸按 A4 比例缩小摆在上面，纸面画的是
+   * 它真正的样子（田字格里是真字、拼音是今天卷上的真题），纸下面写这张纸是什么、两个按钮。
+   * 分「练习」「游戏」两排，与左栏分组一致。纸面元素一律用 cqw（纸宽的百分比）排，纸多大都等比。
+   */
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    })
+  }
+
+  function paper(o) {
+    return '<article class="dk-item">' +
+      '<a class="dk-paper" href="' + o.href + '" aria-label="进入' + o.name + '">' +
+        '<div class="pp ' + (o.cls || '') + '" aria-hidden="true">' +
+          '<div class="pp-head"><b>' + esc(o.sheetTitle) + '</b><span>' + (o.sheetMeta || '姓名＿＿＿') + '</span></div>' +
+          o.face +
         '</div>' +
       '</a>' +
-      '<div class="tcard-foot">' +
-        '<a class="btn btn-primary" href="' + o.printHref + '">' + o.printText + '</a>' +
-        '<span class="more">' + o.more + '</span>' +
+      '<div class="dk-cap">' +
+        '<p class="dk-kind">' + o.name + '<span>' + o.kind + '</span></p>' +
+        '<h3><a href="' + o.href + '">' + esc(o.title) + '</a></h3>' +
+        (o.lines || '') +
+        '<div class="dk-act">' +
+          '<a class="btn btn-primary btn-sm" href="' + o.printHref + '">' + o.printText + '</a>' +
+          '<a class="dk-more" href="' + o.href + '">' + o.more + '</a>' +
+        '</div>' +
       '</div>' +
     '</article>'
   }
 
-  function bars(n) {
+  function rows(n, cls) {
     var out = ''
-    for (var i = 0; i < n; i++) out += '<i></i>'
+    for (var i = 0; i < n; i++) out += '<i class="' + (cls || '') + '"></i>'
     return out
   }
 
   function aoshuCard(a) {
-    var lines
-    if (a.next) {
-      lines = '<div class="tcard-row">' +
-          (a.video ? '<span class="vid">' + PLAY_SVG + '有讲解视频 ' + a.video.dur + '</span>' : '') +
-          '<span class="meta">' + a.parts + '</span></div>'
-    } else {
-      lines = '<div class="tcard-row"><span class="meta">从学过的课里混合出题，解析页标明每题出自哪一课</span></div>'
-    }
-    lines += '<div class="tcard-prog"><div class="progress"><i style="width:' + (a.learned / a.total) * 100 + '%"></i></div>' +
-      '<span class="meta">已学 ' + a.learned + ' / ' + a.total + '</span></div>'
-    return card({
-      href: a.href,
-      printHref: a.printHref,
-      miniCls: 'mini-lines',
-      mini: bars(9),
-      tag: a.next ? '奥数 · 接着学' : '奥数 · 全部学完',
+    var lines = '<p class="dk-meta">' +
+      (a.next ? (a.video ? '<span class="dk-vid">' + PLAY_SVG + '讲解视频 ' + a.video.dur + '</span>' : '') + esc(a.parts)
+        : '从学过的课里混合出题') + '</p>' +
+      '<div class="dk-prog"><div class="progress"><i style="width:' + (a.learned / a.total) * 100 + '%"></i></div>' +
+      '<span>已学 ' + a.learned + ' / ' + a.total + '</span></div>'
+    var face = '<div class="pp-sec">讲解</div>' + rows(3, 'pp-ln') +
+      '<div class="pp-figs"><span></span><span></span><span></span></div>' +
+      '<div class="pp-sec">练习</div>' + rows(2, 'pp-ln') + '<div class="pp-figs pp-figs-sm"><span></span><span></span></div>' + rows(2, 'pp-ln')
+    return paper({
+      name: '奥数', kind: a.next ? '接着学' : '全部学完',
+      href: a.href, printHref: a.printHref, cls: 'pp-aoshu',
+      sheetTitle: a.next ? '第 ' + a.next.no + ' 课 · ' + a.next.name : '综合复习',
+      face: face,
       title: a.next ? '第 ' + a.next.no + ' 课 · ' + a.next.name : '出一张综合复习卷',
       lines: lines,
-      printText: a.next ? '打印本课' : '打印综合复习卷',
-      more: '点卡片进入奥数 →'
+      printText: a.next ? '打印本课' : '打印复习卷',
+      more: '换一课'
     })
   }
 
   function shiziCard(z) {
-    var chars = S.shizi.sliceOf(z.week, 100).chars.slice(0, 36).join('')
-    var mini = '<div class="mini-zi">' + chars.split('').map(function (c) { return '<span>' + c + '</span>' }).join('') + '</div>'
-    var meta = []
-    meta.push('错字集 ' + z.wrong + ' 个')
-    if (z.repeats) meta.push('其中 ' + z.repeats + ' 个反复错')
-    if (z.mode === 'week' && z.withWrong && z.wrong) meta.push('附一页错字')
+    var chars = S.shizi.sliceOf(z.week, 100).chars.slice(0, 20)
+    var face = '<div class="pp-zi">' + chars.map(function (c) { return '<span>' + esc(c) + '</span>' }).join('') + '</div>'
+    var isWeek = z.mode === 'week'
+    var isDaily = z.mode === 'daily'
     var weeks = ''
     for (var i = 1; i <= z.weeks; i++) weeks += '<i' + (i === z.week ? ' class="on"' : i < z.week ? ' class="past"' : '') + '></i>'
-    var isWeek = z.mode === 'week'
-    /* 默认页签是每日一卷，卡片得说今天那张卷的事，不能顶着「错字卷」的名字 */
-    var isDaily = z.mode === 'daily'
-    return card({
-      href: z.href,
-      printHref: z.printHref,
-      miniCls: 'mini-center',
-      mini: mini,
-      tag: isWeek ? '识字 · 本周复习' : isDaily ? '识字 · 每日一卷' : '识字 · 错字集',
+    var meta = ['错字集 ' + z.wrong + ' 个']
+    if (z.repeats) meta.push('其中 ' + z.repeats + ' 个反复错')
+    return paper({
+      name: '识字', kind: isWeek ? '本周复习' : isDaily ? '每日一卷' : '错字集',
+      href: z.href, printHref: z.printHref, cls: 'pp-shizi',
+      sheetTitle: isWeek ? '识字 · 第 ' + z.week + ' 周' : isDaily ? '识字 · 每日一卷' : '识字 · 错字卷',
+      face: face,
       title: isWeek
         ? '第 ' + z.week + ' 周 · 第 ' + z.from + '–' + z.to + ' 字'
-        : isDaily
-          ? '今天到期 ' + z.due + ' 字 · 错字集 ' + z.wrong + ' 个'
-          : '错字卷 · ' + z.wrong + ' 个字',
-      lines: '<span class="meta">' + meta.join(' · ') + '</span>' +
-        '<div class="tcard-prog"><div class="weeks">' + weeks + '</div>' +
-        '<span class="meta">第 ' + z.week + ' / ' + z.weeks + ' 周</span></div>',
-      printText: isWeek ? '打印本周复习卷' : isDaily ? '打印今日卷' : '打印错字卷',
-      more: '点卡片去标记错字 →'
+        : isDaily ? (z.due ? '今天到期 ' + z.due + ' 个字' : '今天 20 个字') : '错字卷 · ' + z.wrong + ' 个字',
+      lines: '<p class="dk-meta">' + meta.join('，') + '</p>' +
+        '<div class="dk-prog"><div class="weeks">' + weeks + '</div><span>第 ' + z.week + ' / ' + z.weeks + ' 周</span></div>',
+      printText: isWeek ? '打印本周卷' : isDaily ? '打印今日卷' : '打印错字卷',
+      more: '标记错字'
     })
   }
 
+  /* 口算缩略图上的算式只是示意（真题每次打印都换），按 20 以内排得像一张真卷 */
+  var KS = ['8 + 5', '13 − 6', '7 + 9', '15 − 8', '6 + 6', '12 − 4', '9 + 3', '17 − 9', '4 + 8', '11 − 5', '5 + 7', '16 − 7', '8 + 8', '14 − 6', '3 + 9', '18 − 9']
   function kousuanCard(k) {
-    return card({
-      href: k.href,
-      printHref: k.printHref,
-      miniCls: 'mini-lines mini-groups',
-      mini: bars(4) + '<b></b>' + bars(4) + '<b></b>' + bars(3),
-      tag: '口算 · 上次的设置',
+    var face = '<ol class="pp-calc">' + KS.map(function (q) { return '<li>' + q + ' =<i></i></li>' }).join('') + '</ol>'
+    return paper({
+      name: '口算', kind: '上次的设置',
+      href: k.href, printHref: k.printHref, cls: 'pp-kousuan',
+      sheetTitle: k.title, sheetMeta: '得分＿＿',
+      face: face,
       title: k.title,
-      lines: '<span class="meta">' + k.meta + '</span><span class="meta tcard-end">每次打印都换一批新题</span>',
+      lines: '<p class="dk-meta">' + esc(k.meta) + '</p><p class="dk-note">每次打印都换一批新题</p>',
       printText: '打印',
-      more: '点卡片调整设置 →'
+      more: '调设置'
     })
+  }
+
+  function board(n, given) {
+    var cells = ''
+    for (var i = 0; i < n * n; i++) cells += '<span>' + (given[i] || '') + '</span>'
+    return '<div class="pp-board" style="--n:' + n + '">' + cells + '</div>'
   }
 
   function shuduCard(d) {
-    return card({
-      href: d.href,
-      printHref: d.printHref,
-      miniCls: 'mini-center mini-boards',
-      mini: '<i class="board"></i><i class="board"></i>',
-      tag: '数独 · 上次的设置',
+    var g = { 0: 1, 3: 4, 5: 3, 10: 2, 12: 4, 15: 1, 6: 2 }
+    return paper({
+      name: '数独', kind: '上次的设置',
+      href: d.href, printHref: d.printHref, cls: 'pp-games',
+      sheetTitle: '数独', face: board(4, g) + board(4, { 1: 2, 4: 3, 9: 1, 14: 4, 7: 1, 11: 3 }),
       title: d.title,
-      lines: '<span class="meta">' + d.meta + '</span><span class="meta tcard-end">也可以进去在屏幕上直接玩</span>',
+      lines: '<p class="dk-meta">' + esc(d.meta) + '</p><p class="dk-note">也能在屏幕上直接玩</p>',
       printText: '打印',
-      more: '点卡片进入数独 →'
+      more: '换难度'
     })
   }
 
   function pinyinCard(p) {
-    return card({
-      href: p.href,
-      printHref: p.printHref || p.href,
-      miniCls: 'mini-center',
-      mini: '<div class="mini-zi"><span>b</span><span>d</span><span>p</span><span>q</span></div>',
-      tag: '拼音 · 每日练习',
+    var items = (p.items && p.items.length ? p.items : ['b', 'd', 'p', 'q'])
+    var face = '<div class="pp-sec">读一读</div><ol class="pp-py">' + items.map(function (t) {
+      return '<li><span>' + esc(t) + '</span><i></i></li>'
+    }).join('') + '</ol><div class="pp-sec">拼一拼</div><ol class="pp-py pp-py-sm"><li><span>bā</span><i></i></li><li><span>dī</span><i></i></li></ol>' +
+      '<div class="pp-sec">换题再试</div><ol class="pp-py pp-py-sm"><li><span>pá</span><i></i></li><li><span>qí</span><i></i></li></ol>' +
+      '<div class="pp-parent">' + rows(3, 'pp-ln') + '</div>'
+    return paper({
+      name: '拼音', kind: '每日练习',
+      href: p.href, printHref: p.printHref || p.href, cls: 'pp-pinyin',
+      sheetTitle: '拼音练习', face: face,
       title: p.title,
-      lines: '<span class="meta">' + (p.printHref
-        ? p.groups + ' 组 · ' + (p.count ? '已登记 ' + p.count + ' 题' : '未练')
-        : '也可以按需要手选专题') + '</span>',
+      lines: '<p class="dk-meta">' + (p.printHref
+        ? p.groups + ' 组，' + (p.count ? '已登记 ' + p.count + ' 题' : '还没练') : '也可以按需要手选专题') + '</p>' +
+        '<p class="dk-note">每天约五分钟</p>',
       printText: p.printHref ? '打印今日卷' : '选专题',
-      more: '约五分钟'
+      more: '去登记'
     })
+  }
+
+  /* 三个游戏的纸面示意 */
+  var GAME_FACE = {
+    mima: function () {
+      var rowsHtml = ''
+      var marks = ['●○', '●', '○○', '●●']
+      for (var i = 0; i < 4; i++) {
+        rowsHtml += '<div class="pp-lock"><span>' + [3, 1, 4, 2][i] + '</span><span>' + [5, 2, 6, 1][i] + '</span><span>' + [2, 6, 3, 5][i] +
+          '</span><em>' + marks[i] + '</em></div>'
+      }
+      return rowsHtml + '<div class="pp-lock pp-lock-ans"><span></span><span></span><span></span></div>'
+    },
+    zhizhi: function () {
+      var heart = '0101011111111110111000100'
+      var cells = ''
+      for (var i = 0; i < 25; i++) cells += '<span' + (heart[i] === '1' ? ' class="on"' : '') + '></span>'
+      return '<div class="pp-nono"><div class="pp-board pp-board-fill" style="--n:5">' + cells + '</div></div>'
+    },
+    migong: function () {
+      var nums = [3, 7, 5, 9, 6, 2, 8, 4, 10, 1, 7, 5, 9, 3, 6, 8]
+      return '<div class="pp-board pp-maze" style="--n:4">' + nums.map(function (n, i) {
+        return '<span' + ([0, 4, 5, 9, 13, 14, 15].indexOf(i) >= 0 ? ' class="path"' : '') + '>' + n + '</span>'
+      }).join('') + '</div>'
+    }
+  }
+  var GAME_TEXT = {
+    mima: { name: '密码', note: '看线索推出密码', more: '换一关' },
+    zhizhi: { name: '数织', note: '涂完是一幅小图', more: '换一关' },
+    migong: { name: '迷宫', note: '算对了才走得通', more: '换一关' }
+  }
+  function gameCard(g) {
+    var t = GAME_TEXT[g.key]
+    return paper({
+      name: t.name, kind: '上次的设置',
+      href: g.href, printHref: g.printHref, cls: 'pp-games pp-' + g.key,
+      sheetTitle: t.name + ' · 第 ' + g.level + ' 关', face: GAME_FACE[g.key](),
+      title: g.title,
+      lines: '<p class="dk-meta">' + esc(g.meta) + '</p><p class="dk-note">' + t.note + '</p>',
+      printText: '打印',
+      more: t.more
+    })
+  }
+
+  function shelf(title, items) {
+    return '<section class="dk-shelf" aria-label="' + title + '"><h2>' + title + '</h2><div class="dk-row">' + items.join('') + '</div></section>'
   }
 
   var data = S.today.build(storage(), new Date())
   doc.getElementById('today-date').textContent = data.date
   doc.getElementById('today-cards').innerHTML =
-    aoshuCard(data.aoshu) + shiziCard(data.shizi) + kousuanCard(data.kousuan) + shuduCard(data.shudu) + pinyinCard(data.pinyin)
+    shelf('练习', [aoshuCard(data.aoshu), shiziCard(data.shizi), kousuanCard(data.kousuan), pinyinCard(data.pinyin)]) +
+    shelf('游戏', [shuduCard(data.shudu)].concat(data.games.map(gameCard)))
+
+  /* 第一次登录的三步引导 */
+  var intro = doc.getElementById('today-intro')
+  var INTRO_KEY = 'sumsum:today:intro:v1'
+  var introSeen = true
+  try { introSeen = !!root.localStorage.getItem(INTRO_KEY) } catch (e) { /* 存不了就别弹 */ }
+  if (intro && !introSeen) {
+    intro.hidden = false
+    intro.addEventListener('click', function (e) {
+      if (e.target.closest('[data-intro-help]')) {
+        var h = doc.querySelector('[data-help]')
+        if (h) h.click()
+        return
+      }
+      if (!e.target.closest('[data-intro-close]')) return
+      intro.hidden = true
+      try { root.localStorage.setItem(INTRO_KEY, '1') } catch (err) { /* 下次再关 */ }
+    })
+  }
 
   /* 完工标记：上面任何一步抛错都到不了这里；HTML 里的防护脚本据此判断并提示 */
   document.documentElement.setAttribute('data-sumsum-ready', '1')

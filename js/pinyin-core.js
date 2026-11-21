@@ -117,7 +117,7 @@
       }
     }
     const reason = first && !state.letters?.observed ? '先看看四个容易认混的字母' :
-      state[focus]?.due <= date ? state[focus].reason : '试一试' + direction.label
+      state[focus]?.due <= date ? state[focus].reason : '第一次练「' + direction.label + '」，先看看孩子掌握得怎样'
 
     return { id, date, focus, title: direction.label, reason, mode: options.mode || 'daily',
       version: D.version, groups, cards }
@@ -211,5 +211,18 @@
     }))
   }
 
-  root.SumSum.pinyin = { dateKey, addDays, makeSheet, derive, confirmRange }
+  /* 卷号：印在纸上、家长对着找，所以要短、要好认。月日 + 4 位码（去掉 0 O 1 I L 这类易混字符），
+     两台设备同一天各自离线出卷也几乎不会撞（31^4 ≈ 92 万）；本机已有的卷号撞上就重抽 */
+  const ID_CHARS = '23456789ABCDEFGHJKMNPQRSTUVWXYZ'
+  function makeId(date, taken, random = Math.random) {
+    const prefix = date.slice(5, 7) + date.slice(8, 10) + '-'
+    for (let tries = 0; ; tries++) {
+      let code = ''
+      for (let i = 0; i < 4; i++) code += ID_CHARS[Math.floor(random() * ID_CHARS.length) % ID_CHARS.length]
+      const id = prefix + code
+      if (!taken.has(id) || tries > 50) return id
+    }
+  }
+
+  root.SumSum.pinyin = { dateKey, addDays, makeSheet, derive, confirmRange, makeId }
 })(typeof window !== 'undefined' ? window : globalThis)

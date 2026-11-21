@@ -13,6 +13,21 @@ assert.deepEqual(first, P.makeSheet(d, {}))
 assert.equal(first.groups[0].items.length, 4)
 assert.equal(first.groups[1].items.length, 2)
 assert.equal(Object.keys(P.derive([first], {}, d)).length, 0)
+// 手选一个没练过的方向：理由要是一句通顺的话（曾拼成「试一试n / l 听读对照」）
+assert.equal(P.makeSheet(d, {}, { focus: 'nl', mode: 'topic' }).reason, '第一次练「n / l 听读对照」，先看看孩子掌握得怎样')
+// 卷号：日期 + 4 位短码，避开 0/O/1/I/L 这类认不清的字符；撞上已有卷号就换一个
+const ids = new Set()
+let seq = 0
+const fakeRandom = () => [0.01, 0.99, 0.5, 0.25, 0.75][seq++ % 5]
+for (let i = 0; i < 50; i++) {
+  const id = P.makeId('2026-11-21', ids, Math.random)
+  assert.match(id, /^1121-[2-9A-HJKMNP-Z]{4}$/, id)
+  assert.ok(!ids.has(id))
+  ids.add(id)
+}
+const fixed = new Set([P.makeId('2026-11-21', new Set(), fakeRandom)])
+seq = 0
+assert.notEqual(P.makeId('2026-11-21', fixed, fakeRandom), [...fixed][0])
 console.log('拼音规则通过')
 
 const group = first.groups[0]
