@@ -37,11 +37,12 @@
     bizhong: '4:54', // B02 推理比较：比轻重（L1 补充）
     zhongbiao: '4:48', // B03 认识钟表：整时和半时（L1 补充）
     zhongbiao2: '4:53', // B04 认识钟表：几时几分（L1 补充）
-    duichen: '4:35' // B05 轴对称图形（L1 补充）
+    duichen: '4:35', // B05 轴对称图形（L1 补充）
+    jingzi: '3:47' // B06 镜子里的对称（L1 补充）
   })
 
   /* 有封面图的课（aoshu/<id>.jpg） */
-  var POSTER = Object.freeze({ dengliang: true, chongdie: true, meiju: true, fendui: true, kongping: true, huochai: true, jiange: true, paidui: true, xianjing: true, fenzu: true, hebubian: true, bichang: true, bizhong: true, zhongbiao: true, zhongbiao2: true, duichen: true })
+  var POSTER = Object.freeze({ dengliang: true, chongdie: true, meiju: true, fendui: true, kongping: true, huochai: true, jiange: true, paidui: true, xianjing: true, fenzu: true, hebubian: true, bichang: true, bizhong: true, zhongbiao: true, zhongbiao2: true, duichen: true, jingzi: true })
 
   function has(obj, id) {
     return Object.prototype.hasOwnProperty.call(obj, id)
