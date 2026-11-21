@@ -436,6 +436,95 @@ function checkZhongbiao2() {
   })
 }
 
+/*
+ * B05 轴对称：从 key 的方格编码独立重算（不调生成器）：哪几个对称、轴的条数、哪组成轴对称、补全后几格；
+ * 标准图形的对称轴条数单独列表核对；方格图要连成一块。
+ */
+function checkDuichen() {
+  if (!A.topics.duichen) return
+  var CI = ['①', '②', '③', '④']
+  function dec(s) {
+    var p = s.split('.'), w = +p[0], h = +p[1], c = []
+    for (var r = 0; r < h; r++) c.push(p[2].slice(r * w, r * w + w).split('').map(Number))
+    return { w: w, h: h, c: c }
+  }
+  function cellsOf(g) { var o = []; g.c.forEach(function (row, r) { row.forEach(function (v, k) { if (v) o.push([r, k]) }) }); return o }
+  /* 用坐标集合判断对称：先算外框，再看每个格子的对称位置是否也有格子 */
+  function axes(g) {
+    var cs = cellsOf(g)
+    var r0 = Math.min.apply(null, cs.map(function (x) { return x[0] })), r1 = Math.max.apply(null, cs.map(function (x) { return x[0] }))
+    var k0 = Math.min.apply(null, cs.map(function (x) { return x[1] })), k1 = Math.max.apply(null, cs.map(function (x) { return x[1] }))
+    var set = {}
+    cs.forEach(function (x) { set[x[0] + ',' + x[1]] = 1 })
+    function ok(f) { return cs.every(function (x) { var y = f(x[0], x[1]); return set[y[0] + ',' + y[1]] }) }
+    var n = 0
+    if (ok(function (r, k) { return [r, k0 + k1 - k] })) n++
+    if (ok(function (r, k) { return [r0 + r1 - r, k] })) n++
+    if (r1 - r0 === k1 - k0) {
+      if (ok(function (r, k) { return [r0 + (k - k0), k0 + (r - r0)] })) n++
+      if (ok(function (r, k) { return [r0 + (k1 - k), k0 + (r1 - r)] })) n++
+    }
+    return n
+  }
+  function conn(g) {
+    var cs = cellsOf(g), set = {}, seen = {}
+    cs.forEach(function (x) { set[x.join()] = 1 })
+    var st = [cs[0]], m = 0
+    seen[cs[0].join()] = 1
+    while (st.length) {
+      var x = st.pop(); m++
+      ;[[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (d) {
+        var y = [x[0] + d[0], x[1] + d[1]].join()
+        if (set[y] && !seen[y]) { seen[y] = 1; st.push(y.split(',').map(Number)) }
+      })
+    }
+    return m === cs.length
+  }
+  function mirror(g, dir) {
+    return g.c.map(function (row, r) { return row.map(function (v, k) { return dir === 'v' ? g.c[r][g.w - 1 - k] : g.c[g.h - 1 - r][k] }) }).map(function (r) { return r.join('') }).join('')
+  }
+  var TABLE = { square: 4, rect: 2, circle: '无数条', iso: 1, heart: 1, semi: 1, equi: 3, trap: 1, rhombus: 2, seg: 2, angle: 1, para: 0, right: 0, hexa: 6, star5: 5, star4: 4 }
+  function txt(n) { return typeof n === 'string' ? n : n + ' 条' }
+  each('duichen', 'judge', function (q, d) {
+    var gs = q.key.slice(6).split('|').map(dec)
+    var yes = []
+    gs.forEach(function (g, i) { if (axes(g) > 0) yes.push(CI[i]); if (!conn(g)) bad('B05 判断题的图没连成一块：' + q.key) })
+    if (q.answer !== yes.join('')) bad('B05 判断题答案错：' + q.key + ' 给的 ' + q.answer + ' 算出 ' + yes.join(''))
+    if (gs.length !== (d === 'L1' ? 3 : 4) || yes.length !== (d === 'L3' ? 2 : 1)) bad('B05 判断题个数不对：' + q.key)
+  })
+  each('duichen', 'axes', function (q, d) {
+    var items = q.key.slice(5).split('|')
+    var want = items.map(function (it, i) {
+      var n = it[0] === 'g' ? axes(dec(it.slice(1))) : TABLE[it]
+      if (n === undefined) bad('B05 不认识的图形：' + it)
+      return CI[i] + ' ' + txt(n)
+    }).join('　')
+    if (q.answer !== want) bad('B05 对称轴条数错：' + q.key + ' 给的 ' + q.answer + ' 算出 ' + want)
+    if (items[0] === items[1]) bad('B05 两个图形一样：' + q.key)
+  })
+  each('duichen', 'pair', function (q, d) {
+    var parts = q.key.slice(5).split('|')
+    var dir = parts[0]
+    var prs = parts.slice(1).map(function (x) { return x.split('~').map(dec) })
+    var ok = []
+    prs.forEach(function (pr, i) { if (mirror(pr[0], dir) === pr[1].c.map(function (r) { return r.join('') }).join('')) ok.push(CI[i]) })
+    if (ok.length !== 1) bad('B05 成轴对称的不是正好一组：' + q.key)
+    else if (q.answer !== ok[0]) bad('B05 成轴对称答案错：' + q.key)
+    if (prs.length !== (d === 'L3' ? 4 : 3)) bad('B05 组数不对：' + q.key)
+    if (d !== 'L3' && dir !== 'v') bad('B05 入门提高应是左右成对：' + q.key)
+    if (axes(prs[0][0]) !== 0) bad('B05 成对题左边的图自己就对称：' + q.key)
+  })
+  each('duichen', 'fill', function (q, d) {
+    var parts = q.key.slice(5).split('|')
+    var dir = parts[0], g = dec(parts[1])
+    if (mirror(g, dir) !== g.c.map(function (r) { return r.join('') }).join('')) bad('B05 补全的图不对称：' + q.key)
+    var n = cellsOf(g).length
+    if (q.answer !== n) bad('B05 补全格数错：' + q.key + ' 给的 ' + q.answer + ' 算出 ' + n)
+    if (!conn(g)) bad('B05 补全的图没连成一块：' + q.key)
+    if (d !== 'L3' && (dir !== 'v' || g.w % 2)) bad('B05 入门提高应是竖轴在格线上：' + q.key)
+  })
+}
+
 function checkFloors() {
   each('daxiao', 'num', function (q) {
     var n = nums(q.stem)
@@ -617,6 +706,7 @@ checkBichang()
 checkBizhong()
 checkZhongbiao()
 checkZhongbiao2()
+checkDuichen()
 checkSupply()
 
 if (problems.length) {
