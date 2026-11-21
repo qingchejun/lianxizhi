@@ -199,6 +199,31 @@ import('../server/auth-core.js').then(async function (A) {
   check('重设信里有验证码、没有链接', real.mail.text.indexOf(real.dev.code) >= 0 && real.mail.text.indexOf('http') < 0)
   check('重设验证码不能拿去验证注册', (await A.verify(dbF, now + 66 * 1000, { email: 'f@m.co', code: real.dev.code })).status === 422)
 
+  /* --- 重设：错太多次时，注册过和没注册的邮箱回一样的话（不能拿来试探邮箱是否注册） --- */
+  async function sixWrong(db, email) {
+    var last
+    for (var i = 0; i < 6; i++) last = await A.reset(db, now + 2100 + i, { email: email, code: '000000', password: clientHash(email, 'whatever99') })
+    return last
+  }
+  var dbE = memRepo()
+  seedInvite(dbE, 'TEEEE5')
+  var regE = await A.register(dbE, now, { email: 'e@m.co', password: clientHash('e@m.co', 'password123'), invite: 'TEEEE5' })
+  await A.verify(dbE, now + 1000, { email: 'e@m.co', code: regE.dev.code })
+  check('（准备）e@m.co 已注册', !!(await dbE.userByEmail('e@m.co')))
+  await A.forgot(dbE, now + 65 * 1000, { email: 'e@m.co' })
+  var exist6 = await sixWrong(dbE, 'e@m.co')
+  var ghost6 = await sixWrong(dbE, 'nobody@m.co')
+  var dbE2 = memRepo()
+  seedInvite(dbE2, 'TEEEE6')
+  await A.register(dbE2, now, { email: 'e2@m.co', password: clientHash('e2@m.co', 'password123'), invite: 'TEEEE6' })
+  var v6a, v6b
+  for (var vi = 0; vi < 6; vi++) {
+    v6a = await A.verify(dbE2, now + 100 + vi, { email: 'e2@m.co', code: '000000' })
+    v6b = await A.verify(dbE2, now + 100 + vi, { email: 'nobody2@m.co', code: '000000' })
+  }
+  check('注册验证第 6 次错码：注册过和没注册的邮箱回应一样', v6a.status === v6b.status && v6a.body.error === v6b.body.error, [v6a.status, v6b.status])
+  check('第 6 次错码：注册过和没注册的邮箱回应一样', exist6.status === ghost6.status && exist6.body.error === ghost6.body.error, [exist6.status, ghost6.status])
+
   /* --- 重设：一次性、pwver 失效 --- */
   var newHash = clientHash('f@m.co', 'newpassword9')
   /* 重设前埋第二枚活 token（模拟同时泄漏出去的两封重设邮件） */

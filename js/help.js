@@ -211,10 +211,24 @@
     return null
   }
 
+  /* 更新记录：数据在 js/changelog.js，新的在前 */
+  function changelogHtml() {
+    var log = (root.SumSum && root.SumSum.changelog && root.SumSum.changelog.list) || []
+    if (!log.length) return '<p>暂无。</p>'
+    function esc(t) {
+      return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] })
+    }
+    return '<div class="help-log">' + log.map(function (e) {
+      var d = e.date.split('-')
+      return '<div class="help-log-day"><time datetime="' + esc(e.date) + '">' + d[0] + ' 年 ' + (+d[1]) + ' 月 ' + (+d[2]) + ' 日</time>' +
+        '<ul class="help-list">' + e.items.map(function (t) { return '<li>' + esc(t) + '</li>' }).join('') + '</ul></div>'
+    }).join('') + '</div>'
+  }
+
   function renderPage(host) {
     var toc = [['start', '开始使用'], ['print', '打印设置']]
       .concat(ORDER.map(function (k) { return [SLUG[k], k] }))
-      .concat([['account', '账号与同步'], ['backup', '备份与恢复']])
+      .concat([['account', '账号与同步'], ['backup', '备份与恢复'], ['changelog', '更新记录']])
     var secs = [
       '<section id="start"><h2>开始使用</h2>' + START + '</section>',
       '<section id="print"><h2>打印设置</h2>' + PRINT + '</section>'
@@ -227,11 +241,12 @@
         '<p class="help-go"><a href="' + SLUG[k] + '.html">打开' + k + '</a></p></section>'
     })).concat([
       '<section id="account"><h2>账号与同步</h2>' + ACCOUNT + '</section>',
-      '<section id="backup"><h2>备份与恢复</h2>' + BACKUP + '</section>'
+      '<section id="backup"><h2>备份与恢复</h2>' + BACKUP + '</section>',
+      '<section id="changelog"><h2>更新记录</h2>' + changelogHtml() + '</section>'
     ])
     host.innerHTML =
       '<nav class="help-toc" aria-label="目录"><ol>' + toc.map(function (t, i) {
-        return (i === 2 ? '</ol><p>板块</p><ol>' : i === toc.length - 2 ? '</ol><p>账号</p><ol>' : '') +
+        return (i === 2 ? '</ol><p>板块</p><ol>' : t[0] === 'account' ? '</ol><p>账号</p><ol>' : t[0] === 'changelog' ? '</ol><p>其他</p><ol>' : '') +
           '<li><a href="#' + t[0] + '" data-toc="' + t[0] + '">' + t[1] + '</a></li>'
       }).join('') + '</ol></nav>' +
       '<article class="help-article">' + secs.join('') + '</article>'
@@ -251,7 +266,7 @@
     /* 滚到底时最后一节可能够不着上沿，直接高亮最后一项 */
     var scroller = host.closest('.help-scroll')
     if (scroller) scroller.addEventListener('scroll', function () {
-      if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4) mark('backup')
+      if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4) mark(toc[toc.length - 1][0])
     })
     mark((root.location.hash || '#start').slice(1))
     if (root.location.hash) {

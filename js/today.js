@@ -213,6 +213,19 @@
     shelf('练习', [aoshuCard(data.aoshu), shiziCard(data.shizi), kousuanCard(data.kousuan), pinyinCard(data.pinyin)]) +
     shelf('游戏', [shuduCard(data.shudu)].concat(data.games.map(gameCard)))
 
+  /* 最近更新：只摆最近两次，全部的在使用说明页 */
+  var news = doc.getElementById('today-news')
+  var log = (S.changelog && S.changelog.list) || []
+  if (news && log.length) {
+    news.innerHTML = '<h2 id="tn-title">最近更新</h2><div class="tn-list">' +
+      log.slice(0, 2).map(function (e) {
+        return '<div class="tn-day"><time datetime="' + esc(e.date) + '">' + +e.date.slice(5, 7) + ' 月 ' + (+e.date.slice(8)) + ' 日</time>' +
+          '<ul>' + e.items.map(function (t) { return '<li>' + esc(t) + '</li>' }).join('') + '</ul></div>'
+      }).join('') +
+      '</div><p class="tn-more"><a href="help.html#changelog">全部更新记录</a></p>'
+    news.hidden = false
+  }
+
   /* 第一次登录的三步引导 */
   var intro = doc.getElementById('today-intro')
   var INTRO_KEY = 'sumsum:today:intro:v1'

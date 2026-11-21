@@ -115,15 +115,19 @@ export async function register(repo, now, body) {
 export async function verify(repo, now, body) {
   const email = normEmail(body && body.email)
   const code = (body && body.code) || ''
-  const user = await repo.userByEmail(email)
-  if (!user) return { status: 422, body: { ok: false, error: '验证码不对，再看一眼邮件。' } }
-  if (user.banned) return { status: 403, body: { ok: false, error: '账号已被停用。' } }
   if (!/^\d{6}$/.test(code)) return { status: 422, body: { ok: false, error: '验证码是 6 位数字。' } }
+  /* 和 reset 一样：试错计数按邮箱、先于查账号，没注册的邮箱错满也回 429，免得被拿来试探邮箱 */
   const fails = await repo.limitGet(email, 'codefail')
+  const user = await repo.userByEmail(email)
   if (fails && fails.n >= CODE_MAX_FAILS) {
-    await repo.tokensClear(user.id, 'verify')
+    if (user) await repo.tokensClear(user.id, 'verify')
     return { status: 429, body: { ok: false, error: '错得太多了，验证码已作废，请重新发送。' } }
   }
+  if (!user) {
+    await repo.limitSet(email, 'codefail', { n: (fails ? fails.n : 0) + 1, ts: now, until: 0 })
+    return { status: 422, body: { ok: false, error: '验证码不对，再看一眼邮件。' } }
+  }
+  if (user.banned) return { status: 403, body: { ok: false, error: '账号已被停用。' } }
   const rows = await repo.tokenListByUser(user.id, 'verify')
   for (const row of rows) {
     const salt = row.token_hash.split('$')[0]
@@ -202,12 +206,17 @@ export async function reset(repo, now, body) {
     const code = String(body.code || '')
     const bad = { status: 422, body: { ok: false, error: '验证码不对，再看一眼邮件。' } }
     if (!/^\d{6}$/.test(code)) return { status: 422, body: { ok: false, error: '验证码是 6 位数字。' } }
-    user = await repo.userByEmail(email)
-    if (!user || user.banned) return bad
+    /* 试错计数按邮箱记、先于查账号：没注册的邮箱错满 5 次也回同一句 429，
+       不然能靠「429 还是 422」试出邮箱有没有注册 */
     const fails = await repo.limitGet(email, 'codefail')
+    user = await repo.userByEmail(email)
     if (fails && fails.n >= CODE_MAX_FAILS) {
-      await repo.tokensClear(user.id, 'reset')
+      if (user) await repo.tokensClear(user.id, 'reset')
       return { status: 429, body: { ok: false, error: '错得太多了，验证码已作废，请重新发送。' } }
+    }
+    if (!user || user.banned) {
+      await repo.limitSet(email, 'codefail', { n: (fails ? fails.n : 0) + 1, ts: now, until: 0 })
+      return bad
     }
     for (const row of await repo.tokenListByUser(user.id, 'reset')) {
       const salt = row.token_hash.split('$')[0]

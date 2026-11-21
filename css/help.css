@@ -155,3 +155,16 @@
   font-size: 15px;
   line-height: 1.8;
 }
+
+/* 更新记录：日期在上，条目在下，每天之间留白 */
+.help-log-day + .help-log-day {
+  margin-top: 24px;
+}
+
+.help-log-day time {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}

@@ -508,6 +508,51 @@
 }
 
 /* 页脚贴在滚动区最底，左右撑满 */
+/* ---------- 最近更新：一排安静的文字，和上面的纸用同一种排头 ---------- */
+
+.today-news {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto 56px;
+}
+
+.tn-list {
+  display: grid;
+  gap: 18px;
+}
+
+.tn-day {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 16px;
+  max-width: 960px;
+}
+
+.tn-day time {
+  padding-top: 1px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.tn-day ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--ink-2);
+}
+
+.tn-day li + li {
+  margin-top: 4px;
+}
+
+.tn-more {
+  margin: 16px 0 0 136px;
+  font-size: 14px;
+}
+
 .today-foot {
   margin: auto calc(-1 * clamp(20px, 3vw, 56px)) 0;
 }
@@ -530,4 +575,6 @@
   .today-foot { margin: auto -16px 0; }
   .dk-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 18px; }
   .ti-steps { grid-template-columns: 1fr; gap: 12px; }
+  .tn-day { grid-template-columns: 1fr; gap: 4px; }
+  .tn-more { margin-left: 0; }
 }

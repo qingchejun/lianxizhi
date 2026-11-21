@@ -5,9 +5,22 @@
  * 唯一的「花」在标题：系统自带的楷体，和孩子课本同一种字。别的都安静。
  */
 
+/* 页面比屏幕矮时，页脚贴到底，不在下面留一截白 */
 body.welcome {
+  display: flex;
+  flex-direction: column;
   background: var(--card);
   min-height: 100vh;
+  min-height: 100svh;
+}
+
+body.welcome .wl-top,
+body.welcome .wl-main {
+  width: 100%;
+}
+
+body.welcome .wl-main {
+  flex: 1 0 auto;
 }
 
 .wl-top {

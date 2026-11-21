@@ -60,6 +60,7 @@
 
   function emptyPaper(title, text) {
     paper.innerHTML = '<div class="empty py-empty">' + ICON.paper + '<b>' + title + '</b><p>' + text + '</p></div>'
+    paper.style.zoom = ''
     printButton.disabled = true
   }
 
@@ -112,6 +113,7 @@
   function catalogPage(title, lead, body) {
     printButton.disabled = true
     paper.innerHTML = '<div class="py-catalog"><header class="py-cat-head"><h2>' + title + '</h2><p>' + lead + '</p></header>' + body + '</div>'
+    paper.style.zoom = ''
   }
 
   function catalog() {
@@ -321,6 +323,7 @@
 
   function renderPaper() {
     paper.innerHTML = R.print(sheet)
+    if (S.shell && S.shell.fit) S.shell.fit()
   }
 
   function showKid(on) {
@@ -465,4 +468,5 @@
     const ready = doc.fonts?.load ? doc.fonts.load('30pt "Pinyin Kids"', 'ɑ') : Promise.resolve()
     ready.catch(() => {}).then(() => root.print())
   })
+  root.addEventListener('resize', function () { if (S.shell && S.shell.fit) S.shell.fit() })
 })(window)

@@ -1421,11 +1421,31 @@ select.input {
     min-height: 0;
   }
 
+  /* 手机上板块一排横着滑；标识钉在左边、自己的头像钉在右边，滑到哪都点得到账号菜单 */
+  .rail-top,
+  .rail-folded .rail-top {
+    position: sticky;
+    left: -8px;
+    z-index: 1;
+    align-self: stretch;
+    align-items: center;
+    padding: 0 6px 0 8px;
+    margin-left: -8px;
+    background: var(--side);
+  }
+
   .rail-me {
-    position: static;
-    margin: 0;
-    padding: 0;
+    position: sticky;
+    right: -8px;
+    z-index: 1;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    margin: 0 -8px 0 0;
+    padding: 0 8px 0 6px;
     border: 0;
+    background: var(--side);
+    box-shadow: -10px 0 10px -6px rgba(20, 30, 50, 0.12);
   }
 
   .rail-user {

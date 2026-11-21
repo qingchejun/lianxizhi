@@ -107,7 +107,8 @@
     var wrap = doc.getElementById('preview-wrap')
     var preview = doc.getElementById('preview')
     var sheet = doc.querySelector('#preview .sheet')
-    if (!wrap || !preview || !sheet) return
+    if (!wrap || !preview) return
+    if (!sheet) { preview.style.zoom = ''; return }
     var cs = root.getComputedStyle(wrap)
     var avail = wrap.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - (reserve || 0)
     var factor = Math.min(1, avail / sheet.offsetWidth)
