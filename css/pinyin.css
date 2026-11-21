@@ -1,5 +1,13 @@
 @page { size: A4 portrait; margin: 15mm; }
 
+/* 拼音专用字体：Andika 7.000 截取拼音字母后改名（OFL 保留名称要求，见 fonts/Andika-OFL.txt）。
+   单层 ɑ、ɡ 与课本一致，一年级孩子不会把印刷体 a、g 当成生字母。 */
+@font-face {
+  font-family: "Pinyin Kids";
+  src: url("../fonts/pinyin-kids.woff2") format("woff2");
+  font-display: block;
+}
+
 .pinyin-preview { display: block; }
 .pinyin-nav, .pinyin-panel { max-width: 760px; margin: 0 auto 16px; }
 .pinyin-nav, .pinyin-actions { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -22,7 +30,7 @@
 }
 .pinyin-prompt { display: flex; align-items: baseline; gap: 12px; overflow-wrap: anywhere; }
 .pinyin-prompt span:first-child { flex: 0 0 3ch; white-space: nowrap; color: #4b5668; }
-.pinyin-text { font: 500 var(--pinyin-size, 32px)/1.28 system-ui, sans-serif; }
+.pinyin-text { font: 400 var(--pinyin-size, 32px)/1.28 "Pinyin Kids", system-ui, sans-serif; }
 .pinyin-parent { margin-top: 14px; background: #f0f4fa; padding: 12px; border-radius: 8px; }
 .pinyin-parent summary { color: #24466d; font-weight: 650; cursor: pointer; }
 .pinyin-parent label { display: inline-flex; align-items: center; gap: 6px; margin: 6px; }
@@ -30,43 +38,77 @@
 .pinyin-status { margin: 10px 0; color: #324765; }
 .pinyin-print { display: none; }
 
+/* ---------- 纸卷（屏幕预览与打印同一套 mm 尺寸） ---------- */
+
+.pinyin-print .sheet-title { letter-spacing: 1px; white-space: normal; }
+.py-group { margin-bottom: 5mm; break-inside: avoid; }
+.py-group h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 3mm;
+  margin: 0 0 2mm;
+  padding-bottom: 1mm;
+  border-bottom: 0.3mm solid #bbb;
+  font-size: 12pt;
+}
+.py-group h3 small { font-size: 9pt; font-weight: 400; color: #555; }
+.py-cells {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1mm 6mm;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.py-cell { display: flex; align-items: center; gap: 2.5mm; min-height: 15mm; }
+.py-cell.py-wide { grid-column: span 2; }
+.py-cell.py-full { grid-column: 1 / -1; }
+.py-cell.py-write { grid-column: span 2; flex-wrap: wrap; }
+.py-no { flex: 0 0 5mm; font-size: 9pt; color: #555; text-align: right; }
+.pinyin-print .pinyin-text { font-size: 30pt; line-height: 1.15; }
+.py-write .pinyin-text { font-size: 18pt; }
+.py-box {
+  flex: 0 0 5mm;
+  height: 5mm;
+  margin-left: 3mm;
+  border: 0.3mm solid #888;
+  border-radius: 0.8mm;
+}
+/* 四线三格：四条线、三个等高格，第三条线（基线）略深 */
+.py-break { flex: 0 0 100%; height: 0; }
+.py-lines {
+  flex: 0 0 55mm;
+  height: 15mm;
+  margin: 1mm 0 1mm 7.5mm;
+  border-top: 0.25mm solid #777;
+  box-sizing: border-box;
+}
+.py-lines i { display: block; height: 5mm; border-bottom: 0.25mm solid #777; box-sizing: border-box; }
+.py-lines i:nth-child(2) { border-bottom-color: #333; }
+.py-parent {
+  margin-top: 2mm;
+  padding: 3mm 4mm;
+  border: 0.3mm solid #999;
+  border-radius: 1.5mm;
+  font-size: 10pt;
+  line-height: 1.5;
+  break-inside: avoid;
+}
+.py-parent h3 { margin: 0 0 1mm; font-size: 11pt; }
+.py-parent h4 { margin: 2.5mm 0 0.5mm; font-size: 10pt; }
+.py-parent p { margin: 0.8mm 0; }
+.py-parent b { font-weight: 600; }
+
 @media print {
   .pinyin-nav, .pinyin-panel, .confirm-bar { display: none !important; }
-  .pinyin-print.sheet {
-    display: block;
-    width: auto;
-    min-height: 0;
-    padding: 0;
-  }
-  .pinyin-print h2 { margin: 0; font-size: 18pt; }
-  .pinyin-print h3 { margin: 0 0 2mm; font-size: 12pt; }
-  .pinyin-print section { margin-bottom: 4mm; break-inside: avoid; }
-  .pinyin-print .pinyin-items { display: flex; flex-wrap: wrap; gap: 2mm 8mm; }
-  .pinyin-print .pinyin-item { padding: 0; border: 0; }
-  .pinyin-print .pinyin-text { font-size: 18pt; }
-  .pinyin-print .pinyin-parent {
-    margin-top: 4mm;
-    padding: 3mm;
-    border: 1px solid #aaa;
-    line-height: 1.4;
-    font-size: 10pt;
-    break-inside: avoid;
-  }
-  .pinyin-print p { margin: 1.5mm 0; }
-  .pinyin-answer-line { display: inline-block; width: 26mm; border-bottom: 1px solid; }
+  .pinyin-print.sheet { display: block; }
 }
 
 @media screen {
   .pinyin-paper-visible .pinyin-print {
-    display: flex;
+    display: block;
     margin: 0 auto;
-    max-width: 100%;
-    width: 210mm;
-    min-height: 0;
-    padding: clamp(16px, 4vw, 42px);
   }
-  .pinyin-paper-visible .sheet-head { flex-wrap: wrap; }
-  .pinyin-paper-visible .pinyin-items { display: flex; flex-wrap: wrap; gap: 12px; }
 }
 
 .pinyin-preview:not([data-pinyin-printable]) .confirm-bar { display: none; }

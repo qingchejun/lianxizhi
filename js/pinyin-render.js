@@ -7,15 +7,40 @@
     })[char])
   }
 
-  function teaching(card) {
-    return '<p>' + escape(card.probe) + '</p><p>' + escape(card.tip) + '</p><p>' +
-      escape(card.demo) + '</p><ol>' + card.guide.map(text => '<li>' + escape(text) + '</li>').join('') + '</ol>'
+  const circled = ['①', '②', '③', '④', '⑤', '⑥']
+
+  function steps(list) {
+    return list.map((text, index) => (circled[index] || (index + 1) + '.') + ' ' + escape(text)).join('　')
   }
 
-  function prompt(item, printing) {
+  // Teaching card as labelled lines: what to watch, how to explain, a demo, then numbered guide steps.
+  function teachingLines(card) {
+    return (card.probe ? '<p><b>先观察</b>　' + escape(card.probe) + '</p>' : '') +
+      '<p><b>怎么讲</b>　' + escape(card.tip) + '</p>' +
+      '<p><b>示范</b>　' + escape(card.demo) + '</p>' +
+      '<p><b>引导</b>　' + steps(card.guide) + '</p>'
+  }
+
+  function teaching(card) {
+    return teachingLines(card)
+  }
+
+  function prompt(item) {
     return '<div class="pinyin-prompt"><span>' + escape(item.id) + '.</span><span class="pinyin-text">' +
-      escape(item.text) + '</span>' +
-      (printing && item.kind === 'write' ? '<span class="pinyin-answer-line"></span>' : '') + '</div>'
+      escape(item.text) + '</span></div>'
+  }
+
+  // Paper cell width: letters fit four to a row, words take half a row, sentences a full row.
+  function span(item) {
+    const length = Array.from(item.text).length
+    return item.kind === 'write' ? '' : length > 10 ? ' py-full' : length > 5 ? ' py-wide' : ''
+  }
+
+  function cell(item) {
+    const write = item.kind === 'write'
+    return '<li class="py-cell' + span(item) + (write ? ' py-write' : '') + '"><span class="py-no">' + escape(item.id) +
+      '</span><span class="pinyin-text">' + escape(item.text) + '</span><span class="py-box" aria-hidden="true"></span>' +
+      (write ? '<span class="py-break"></span><span class="py-lines" aria-hidden="true"><i></i><i></i><i></i></span>' : '') + '</li>'
   }
 
   function answers(groups) {
@@ -23,29 +48,31 @@
       .map(item => escape(item.id) + '. ' + escape(item.answer)).join('　')
   }
 
+  const when = { check: '卡住时才做', observe: '有余量再做' }
+
   function print(sheet) {
     const first = sheet.focus === 'letters'
     const instructions = sheet.mode === 'lesson'
-      ? '照教学卡示范并引导，盖住家长区，再让孩子独立完成上面的题。'
+      ? '照下面的教学卡示范并引导，然后盖住家长区，让孩子独立完成上面的题。'
       : first
-        ? '先读字母，再做音节应用。都顺利就继续复习，有余量再做观察题。卡住时选下面对应的一条教学和检验，随后可以收工。'
-        : '先做重点题。顺利再做复习，有余量再做观察。卡住时用下面的教学卡，换题检验后即可收工。'
+        ? '先读字母，再拼音节。都顺利就接着做后面的组，有余量再做「试一试」。卡住时选下面对应的一条教学，讲完做「换题再试」，随后可以收工。'
+        : '先做重点题。顺利再做复习，有余量再做「试一试」。卡住时用下面的教学卡，讲完做「换题再试」，随后可以收工。'
     const keys = answers(sheet.groups)
-    return '<article class="sheet pinyin-print"><header class="sheet-head"><h2>拼音练习</h2><div>' +
-      escape(sheet.date) + ' · 卷号 ' + escape(sheet.id) + '</div></header>' +
+    const range = ids => ids.length > 2 ? ids[0] + '–' + ids.at(-1) : ids.join('、')
+    return '<article class="sheet pinyin-print"><header class="sheet-head"><h2 class="sheet-title">拼音练习 · ' +
+      escape(sheet.title) + '</h2><div class="sheet-meta">' + escape(sheet.date) + '　卷号 ' + escape(sheet.id) +
+      '</div></header>' +
       sheet.groups.map(group =>
-        '<section><h3>' + (group.phase === 'check' ? '换题再试 · ' : '') + escape(group.label) +
-        '</h3><ol class="pinyin-items">' + group.items.map(item =>
-          '<li class="pinyin-item">' + prompt(item, true) + '</li>').join('') + '</ol></section>'
-      ).join('') + '<aside class="pinyin-parent"><h3>给家长</h3><p>' + instructions + '</p>' +
-      '<p>顺的不用标，提示画 ∨，没读出画 ×。中途停止圈最后一题，跳题画横线。</p>' +
-      (keys ? '<p>家长核对 · ' + keys + '</p>' : '') +
+        '<section class="py-group"><h3>' + (group.phase === 'check' ? '换题再试 · ' : '') + escape(group.label) +
+        (when[group.phase] ? '<small>' + when[group.phase] + '</small>' : '') +
+        '</h3><ol class="py-cells">' + group.items.map(cell).join('') + '</ol></section>'
+      ).join('') + '<aside class="py-parent"><h3>给家长</h3><p>' + instructions + '</p>' +
+      '<p>每题右边的小方框：顺的不用标，提示过画 ∨，没读出画 ×。中途停止圈最后一题，跳过的题画横线。</p>' +
+      (keys ? '<p><b>答案</b>　' + keys + '</p>' : '') +
       sheet.cards.map(card => {
         const group = sheet.groups.find(entry => entry.id === card.group)
-        return '<div><strong>' + escape(card.label) + (group ? ' · 检验第 ' +
-          group.items.map(item => escape(item.id)).join('、') + ' 题' : '') + '</strong>' +
-          (card.probe ? '<p>' + escape(card.probe) + '</p>' : '') +
-          '<p>' + escape([card.tip, card.demo, ...card.guide].join(' ')) + '</p></div>'
+        return '<div class="py-card"><h4>' + escape(card.label) + (group ? ' · 讲完做第 ' +
+          range(group.items.map(item => escape(item.id))) + ' 题' : '') + '</h4>' + teachingLines(card) + '</div>'
       }).join('') + '</aside></article>'
   }
 

@@ -63,9 +63,16 @@
     function branch(directionId, samples, ref) {
       const dir = D.directions[directionId]
       const alternatives = Array.from(new Set(choose(directionId, samples).filter(text => !samples.includes(text))))
-      const candidates = alternatives.length >= 2 ? alternatives : choose(directionId, samples)
       const firstLetters = directionId === 'letters'
-      const items = candidates.slice(0, firstLetters ? 4 : 2)
+      const size = firstLetters ? 4 : 2
+      const same = list => list.slice(0, size).join('/') === samples.slice(0, size).join('/')
+      let candidates = alternatives.length >= 2 ? alternatives : choose(directionId, samples)
+      // Re-test must never repeat the exact paper above; with only a few letters, at least reorder them.
+      if (same(candidates)) {
+        candidates = dir.samples.find(variant => variant.length >= size && !same(variant)) ||
+          samples.slice().reverse()
+      }
+      const items = candidates.slice(0, size)
       const entry = group(directionId, dir.label, items, 'check')
       cards.push({ group: entry.id, startsAt: ref?.id, label: dir.label, tip: dir.tip, demo: dir.demo, guide: dir.guide })
       if (firstLetters) {

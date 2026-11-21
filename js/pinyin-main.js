@@ -247,5 +247,10 @@
     if (field.matches('[data-heard]')) save(id, { ...current, heard: field.value.trim() })
     if (field.matches('[data-tone]')) save(id, { ...current, tone: field.checked })
   })
-  printButton.addEventListener('click', () => { if (sheet) root.print() })
+  // Wait for the pinyin font so the paper never prints in the fallback double-storey a/g.
+  printButton.addEventListener('click', () => {
+    if (!sheet) return
+    const ready = doc.fonts?.load ? doc.fonts.load('30pt "Pinyin Kids"', 'ɑ') : Promise.resolve()
+    ready.catch(() => {}).then(() => root.print())
+  })
 })(window)

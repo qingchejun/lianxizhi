@@ -105,6 +105,18 @@ for (const focus of D.order) {
   }))
 }
 
+// 换题再试必须真的换题：不能和触发它的那组一模一样（字母只有四个时至少换顺序）。
+for (const day of Array.from({ length: 14 }, (_, index) => P.addDays(d, index))) for (const state of [{}, Object.fromEntries(D.order.map(id => [id, { observed: true, due: day }]))]) {
+  for (const focus of D.order) {
+    const sheet = P.makeSheet(day, state, { focus })
+    for (const card of sheet.cards.filter(card => card.startsAt)) {
+      const texts = id => sheet.groups.find(group => group.id === id).items.map(item => item.text)
+      assert.notEqual(texts(card.group).join('/'), texts(card.startsAt).join('/'), focus + ' 换题再试与原题相同')
+    }
+  }
+}
+assert.notEqual(first.groups.at(-2).items.map(item => item.text).join('/'), group.items.map(item => item.text).join('/'))
+
 const mem = new Map()
 globalThis.localStorage = {
   get length() { return mem.size },
