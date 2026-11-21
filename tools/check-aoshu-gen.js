@@ -525,6 +525,65 @@ function checkDuichen() {
   })
 }
 
+/*
+ * B06 镜子：从 key 独立重算：钟 = 12 时 − 镜子里的时间，并量题干两根针对上镜子里的时间；
+ * 数 / 选一选用七段编码逐段左右（上下）互换、镜子再倒序，和题图（key）对上。
+ */
+function checkJingzi() {
+  if (!A.topics.jingzi) return
+  var CI = ['①', '②', '③', '④']
+  var SEG = ['abcdef', 'bc', 'abdeg', 'abcdg', 'bcfg', 'acdfg', 'acdefg', 'abc', 'abcdefg', 'abcdfg']
+  var M = { a: 'a', b: 'f', c: 'e', d: 'd', e: 'c', f: 'b', g: 'g' }
+  var W = { a: 'd', b: 'c', c: 'b', d: 'a', e: 'f', f: 'e', g: 'g' }
+  function tr(s, m) { return s.split('').map(function (c) { return m[c] }).sort().join('') }
+  function img(num, how) {
+    var d = num.split('').map(function (c) { return SEG[+c] })
+    if (how === 'mirror') return d.map(function (x) { return tr(x, M) }).reverse().join('.')
+    return d.map(function (x) { return tr(x, W) }).join('.')
+  }
+  function hm(s) { var p = s.split(':'); return (+p[0] % 12) * 60 + +p[1] }
+  each('jingzi', 'clock', function (q, d) {
+    var p = q.key.slice(6).split('|')
+    if (q.answer !== p[0]) bad('B06 钟答案和 key 不一致：' + q.key)
+    if ((hm(p[0]) + hm(p[1])) % 720 !== 0) bad('B06 镜子钟两个时间合起来不是 12 时：' + q.key)
+    if (p[0] === p[1]) bad('B06 镜子钟翻过来不变：' + q.key)
+    var m = +p[0].split(':')[1]
+    if (d === 'L1' && m !== 0) bad('B06 入门应是整时：' + q.key)
+    if (d === 'L2' && m !== 30) bad('B06 提高应是半时：' + q.key)
+    if (d === 'L3' && (m === 0 || m === 30 || m % 5)) bad('B06 挑战应是几时几分（5 的倍数）：' + q.key)
+    /* 量题干两根针 = 镜子里的时间 */
+    var lines = []
+    var re = /<line class="(mh|hh)" x1="([\d.]+)" y1="([\d.]+)" x2="([-\d.]+)" y2="([-\d.]+)"/g, mm
+    while ((mm = re.exec(q.stemHTML))) lines.push((Math.atan2(+mm[4] - +mm[2], -(+mm[5] - +mm[3])) * 180 / Math.PI + 360) % 360)
+    var seen = p[1].split(':').map(Number)
+    function gap(a, b) { var x = Math.abs(a - b) % 360; return Math.min(x, 360 - x) }
+    if (lines.length !== 2 || gap(lines[0], seen[1] * 6) > 0.6 || gap(lines[1], ((seen[0] % 12) + seen[1] / 60) * 30) > 0.6) bad('B06 题干钟面和镜子里的时间对不上：' + q.key)
+  })
+  each('jingzi', 'num', function (q, d) {
+    var p = q.key.slice(4).split('|')
+    if (q.answer !== +p[1]) bad('B06 镜子数答案错：' + q.key)
+    var len = p[1].length
+    if ((d === 'L1' && len !== 2) || (d === 'L2' && (len < 3 || len > 4)) || (d === 'L3' && len !== 5)) bad('B06 镜子数位数不对：' + q.key)
+    var shown = img(p[1], p[0]).split('.')
+    if (shown.every(function (x) { return SEG.indexOf(x) >= 0 })) bad('B06 镜子里的数能直接读，太容易：' + q.key)
+    var rects = (q.stemHTML.match(/<rect x="[\d.]+" y="[\d.]+" width="[\d.]+" height="[\d.]+" rx="2"/g) || []).length
+    var want = shown.reduce(function (n, x) { return n + x.length }, 0)
+    if (rects !== want) bad('B06 镜子数题图段数对不上：' + q.key)
+  })
+  each('jingzi', 'pick', function (q, d) {
+    var p = q.key.slice(5).split('|')
+    var how = p[0], real = p[1], opts = p.slice(2)
+    var right = img(real, how)
+    var hit = []
+    opts.forEach(function (o, i) { if (o === right) hit.push(i) })
+    if (hit.length !== 1) bad('B06 选一选对的不是正好一个：' + q.key)
+    else if (q.answer !== CI[hit[0]]) bad('B06 选一选答案错：' + q.key)
+    if (new Set(opts).size !== opts.length) bad('B06 选项重复：' + q.key)
+    if (opts.length !== (d === 'L1' ? 3 : 4)) bad('B06 选项个数不对：' + q.key)
+    if (q.stem.indexOf(real) < 0) bad('B06 题干没写真实号码：' + q.key)
+  })
+}
+
 function checkFloors() {
   each('daxiao', 'num', function (q) {
     var n = nums(q.stem)
@@ -707,6 +766,7 @@ checkBizhong()
 checkZhongbiao()
 checkZhongbiao2()
 checkDuichen()
+checkJingzi()
 checkSupply()
 
 if (problems.length) {
