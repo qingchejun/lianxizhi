@@ -1,0 +1,52 @@
+/* 没登录时的首页（介绍兼登录）。临时视觉，全站改版设计稿到了再换。手机要能用（家长多半在微信里点开）。 */
+
+body.welcome { background: var(--card); }
+
+.wl-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--card-edge);
+}
+.wl-brand { font-size: 18px; font-weight: 700; letter-spacing: 2px; }
+
+.wl-main { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+.wl-hero { padding: 64px 0 48px; border-bottom: 1px solid var(--card-edge); }
+.wl-hero h1 { margin: 0 0 16px; font-size: 34px; line-height: 1.3; letter-spacing: 1px; }
+.wl-lead { max-width: 36em; margin: 0 0 28px; font-size: 16px; color: var(--ink-2); }
+.wl-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.wl-note { margin: 16px 0 0; color: var(--ink-soft); }
+
+.wl-block { padding: 40px 0; border-bottom: 1px solid var(--card-edge); }
+.wl-block h2 { margin: 0 0 20px; font-size: 20px; }
+.wl-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--card-edge); border: 1px solid var(--card-edge); }
+.wl-grid article { padding: 18px; background: var(--card); }
+.wl-grid h3 { margin: 0 0 6px; font-size: 15px; }
+.wl-grid p { margin: 0; color: var(--ink-2); }
+
+.wl-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin: 0; padding: 0; list-style: none; counter-reset: step; }
+.wl-steps li { counter-increment: step; color: var(--ink-2); }
+.wl-steps li::before {
+  content: counter(step);
+  display: block;
+  margin-bottom: 8px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--blue);
+}
+.wl-steps b { display: block; margin-bottom: 4px; color: var(--ink); font-size: 15px; }
+
+.wl-foot { max-width: 960px; margin: 0 auto; padding: 28px 24px 48px; color: var(--ink-soft); font-size: 13px; }
+.wl-foot p { margin: 0 0 4px; }
+
+@media (max-width: 760px) {
+  .wl-hero { padding: 36px 0 32px; }
+  .wl-hero h1 { font-size: 26px; }
+  .wl-grid { grid-template-columns: 1fr 1fr; }
+  .wl-steps { grid-template-columns: 1fr; gap: 16px; }
+  .wl-actions .btn { flex: 1 1 auto; }
+}

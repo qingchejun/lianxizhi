@@ -27,6 +27,24 @@
     if (!acct || !acct.state.loggedIn) return /* 没登录不做事，也别报错 */
 
     var store = S()
+    /* 换账号：本机数据属于别的账号 → 先清空再同步，一条都不许推进当前账号。
+       没有归属记录（修复前的老用户）→ 认领给当前账号，数据保留 */
+    var me = String(acct.state.email || '').trim().toLowerCase()
+    var owner = store.owner()
+    var wiped = false
+    if (owner && owner !== me) {
+      store.wipe()
+      wiped = true
+    }
+    if (owner !== me) store.setOwner(me)
+    session = me
+    if (!storageWatched && root.addEventListener) {
+      storageWatched = true
+      /* 别的标签页换了账号：本页的数据是上一个人的，立刻刷新（刷新后按新账号重来） */
+      root.addEventListener('storage', function (e) {
+        if (e.key === 'sumsum:sync:owner' && e.newValue && e.newValue !== session && !opts.noReload) root.location.reload()
+      })
+    }
     var pushedVersions = Object.create(null)
     var allKeys = store.keys() /* 现存可同步键，含没 mtime 的老键 */
     var metaMap = store.meta()
@@ -93,6 +111,13 @@
          之后一有改动防抖推会自愈（本地 mtime 还新着） */
     }
 
+    /* 页面是用上一个账号的数据画的，清完必须刷新（归属已改，刷新后不会再清，不会循环） */
+    if (wiped) {
+      if (opts.onWipe) opts.onWipe()
+      else if (!opts.noReload) root.location.reload()
+      return
+    }
+
     /* 之后本地一有改动，防抖推。store 的 fire 只传 key：删键也会走到这，
        但 pushAll 只推 meta 里还有的键，删掉的键自然不在推送里 */
     store.onChange(function () {
@@ -109,7 +134,11 @@
   }
 
   var timer = null
+  var session = '' /* 本页签登录的账号（小写邮箱） */
+  var storageWatched = false
+  var lastPush = null /* flush 用：最近一次 init 的 api 与已推版本 */
   function later(api, ms, pushedVersions) {
+    lastPush = { api: api, pushedVersions: pushedVersions }
     if (timer) clearTimeout(timer)
     timer = setTimeout(function () {
       timer = null
@@ -117,7 +146,18 @@
     }, ms || DEBOUNCE)
   }
 
+  /* 退出登录前调：防抖里还没推的改动立刻推掉，免得换账号时被清掉 */
+  async function flush() {
+    if (!timer || !lastPush) return
+    clearTimeout(timer)
+    timer = null
+    try { await pushAll(lastPush.api, S(), lastPush.pushedVersions) } catch (e) { /* 推不上就算了 */ }
+  }
+
   async function pushAll(api, store, pushedVersions) {
+    /* 归属已不是本页签的账号（别的页签换了号）：本页的数据不属于当前登录的人，一条都不推 */
+    var holder = store.owner ? store.owner() : null
+    if (holder && holder !== session) return
     var meta = store.meta()
     var items = Object.keys(meta).filter(function (key) {
       return store.syncable(key) && !(pushedVersions[key] >= meta[key])
@@ -153,5 +193,5 @@
   }
 
   root.SumSum = root.SumSum || {}
-  root.SumSum.sync = { init: init }
+  root.SumSum.sync = { init: init, flush: flush }
 })(typeof window !== 'undefined' ? window : globalThis)

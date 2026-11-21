@@ -19,7 +19,7 @@
   var APP = 'lianxizhi'
   var VERSION = 1
   var PREFIX = 'sumsum:'
-  var SKIP = { 'sumsum:sync:meta': true }
+  var SKIP = { 'sumsum:sync:meta': true, 'sumsum:sync:owner': true } /* owner：本机归属哪个账号，搬走会误清别机数据 */
   /* 「看过说明」的 key 都以这个开头：旧版是 sumsum:help:seen 一个，现在每个板块一个 */
   var SKIP_PREFIX = 'sumsum:help:seen'
   var MAX_CHARS = 2 * 1024 * 1024 // 真实数据几十 KB；再大就不是我们导出的文件了

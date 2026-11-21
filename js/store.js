@@ -16,7 +16,10 @@
   'use strict'
 
   var META_KEY = 'sumsum:sync:meta'
-  var SKIP = { 'sumsum:help:seen': true, 'sumsum:sync:meta': true }
+  /* 本机这份数据属于哪个账号（小写邮箱）。只在本机、不同步不备份：换账号登录时据此先清本机，
+     否则上一个人的进度会被当成新账号的推上云端 */
+  var OWNER_KEY = 'sumsum:sync:owner'
+  var SKIP = { 'sumsum:help:seen': true, 'sumsum:sync:meta': true, 'sumsum:sync:owner': true }
 
   var listeners = []
 
@@ -149,6 +152,20 @@
     return out
   }
 
+  function owner() {
+    try { return root.localStorage.getItem(OWNER_KEY) } catch (e) { return null }
+  }
+  function setOwner(v) {
+    try { root.localStorage.setItem(OWNER_KEY, v) } catch (e) { /* 存不了就算了 */ }
+  }
+  /* 清掉本机全部练习数据和同步时间表（不广播：清的是别人的数据，不能触发推送） */
+  function wipe() {
+    keys().forEach(function (k) {
+      try { root.localStorage.removeItem(k) } catch (e) { /* 忽略 */ }
+    })
+    try { root.localStorage.removeItem(META_KEY) } catch (e) { /* 忽略 */ }
+  }
+
   function onChange(fn) {
     listeners.push(fn)
     return fn
@@ -167,6 +184,9 @@
     stampNow: stampNow,
     keys: keys,
     meta: meta,
+    owner: owner,
+    setOwner: setOwner,
+    wipe: wipe,
     onChange: onChange
   }
 })(typeof window !== 'undefined' ? window : globalThis)

@@ -310,9 +310,10 @@
       view = b.dataset.goto
       render()
     } else if (b.dataset.act === 'logout') {
+      if (root.SumSum.sync && root.SumSum.sync.flush) await root.SumSum.sync.flush()
       await A.logout()
-      view = 'login'
-      render()
+      /* 全站要登录才能看：退出后回首页（介绍兼登录页） */
+      root.location.href = '/'
     } else if (b.dataset.act === 'changepw') {
       view = 'changepw'
       render()

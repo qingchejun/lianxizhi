@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>练习纸 · 给一年级孩子每天打印一页练习：口算、识字、拼音、奥数</title>
+  <meta name="description" content="练习纸给一年级孩子出 A4 练习纸：口算、奥数、识字、拼音，还有数独、密码、数织、迷宫等益智游戏。按孩子的错题安排第二天练什么，打开就能打印。目前为邀请制。" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✏️</text></svg>" />
+  <link rel="canonical" href="https://lianxizhi.qingchejun.com/" />
+  <link rel="stylesheet" href="css/app.css" />
+  <link rel="stylesheet" href="css/welcome.css" />
+</head>
+<body class="welcome">
+<!-- 没登录时首页的内容（functions/_middleware.js 在网址 / 上直接返回本页，本页没有单独网址）。
+     视觉是临时的，全站改版设计稿到了再换。 -->
+<header class="wl-top">
+  <span class="wl-brand">练习纸</span>
+  <button type="button" class="btn" data-account>登录</button>
+</header>
+
+<main class="wl-main">
+  <section class="wl-hero">
+    <h1>每天一页，打印给一年级孩子做</h1>
+    <p class="wl-lead">口算、奥数、识字、拼音，外加数独、密码、数织、迷宫。家长在电脑上选好，打印 A4 纸给孩子做；做完登记错在哪，第二天自动安排复习。</p>
+    <div class="wl-actions">
+      <button type="button" class="btn btn-primary btn-lg" data-open="login">登录</button>
+      <button type="button" class="btn btn-lg" data-open="register">有邀请码，注册</button>
+    </div>
+    <p class="wl-note">目前为邀请制，只对收到邀请码的家长开放。</p>
+  </section>
+
+  <section class="wl-block" aria-labelledby="wl-what">
+    <h2 id="wl-what">能练什么</h2>
+    <div class="wl-grid">
+      <article><h3>口算</h3><p>加减乘除，按进位退位、题量、版式出题，一页 A4。</p></article>
+      <article><h3>奥数</h3><p>一年级思维专题，讲解、练习、解析分开打印，部分配讲解视频。</p></article>
+      <article><h3>识字</h3><p>每日一卷 20 字，没认出的字第二天接着考，认出两次才毕业。</p></article>
+      <article><h3>拼音</h3><p>从易混字母到声调、拼读和词句，卡住时给家长一张教学卡。</p></article>
+      <article><h3>数独</h3><p>四宫、六宫到九宫，题目保证不用猜就能解出。</p></article>
+      <article><h3>密码</h3><p>看线索推出密码，四关由易到难，适合两个孩子同题对战。</p></article>
+      <article><h3>数织</h3><p>按数字提示涂格子，涂完是一幅小图。</p></article>
+      <article><h3>迷宫</h3><p>算对了才走得通的口算迷宫，只有一条正确路线。</p></article>
+    </div>
+  </section>
+
+  <section class="wl-block" aria-labelledby="wl-how">
+    <h2 id="wl-how">怎么用</h2>
+    <ol class="wl-steps">
+      <li><b>打开「今天」</b>每个板块今天该练什么，一页看全。</li>
+      <li><b>看一眼纸</b>屏幕上的纸就是打印出来的样子。</li>
+      <li><b>打印、登记</b>孩子做完，回来点一下哪些没做对，下次自动安排。</li>
+    </ol>
+    <p class="wl-note">建议在电脑上使用；手机可以登录、查看，打印请到电脑上。</p>
+  </section>
+</main>
+
+<footer class="wl-foot">
+  <p>练习纸只保存登录邮箱和孩子的练习记录，用于在你的设备之间同步，不做他用。</p>
+  <p>有问题请在家长微信群里说。</p>
+</footer>
+
+<script src="js/account.js"></script>
+<script src="js/account-ui.js"></script>
+<script>
+  /* 登录成功 → 回到被拦下时想去的页面（只认站内路径，防跳到外站），否则刷新首页进「今天」 */
+  ;(function () {
+    var params = new URLSearchParams(location.search)
+    var next = params.get('next') || ''
+    /* 只认本站网址：浏览器会吞掉网址里的制表/换行符，/%09/evil.com 能变成 //evil.com，
+       所以按浏览器的解析结果比来源，不靠正则 */
+    var safe = ''
+    try {
+      var u = new URL(next, location.origin)
+      if (next && !/[\u0000-\u001f\\]/.test(next) && u.origin === location.origin) safe = u.pathname + u.search + u.hash
+    } catch (e) { /* 不是合法网址就回首页 */ }
+    SumSum.account.onChange(function (state) {
+      if (!state.loggedIn) return
+      /* 服务器没认出登录态（数据库抖动等）却又回到这页：最多自动跳两次，免得来回打转 */
+      var tries = 0
+      try { tries = Number(sessionStorage.getItem('sumsum:welcome:tries') || 0) } catch (e) {}
+      if (tries >= 2) return
+      try { sessionStorage.setItem('sumsum:welcome:tries', String(tries + 1)) } catch (e) {}
+      if (safe) location.replace(safe)
+      else location.replace('/' + location.search) /* 老口算分享链接 /?mode=… 登录后照常转到口算 */
+    })
+    document.querySelectorAll('[data-open]').forEach(function (b) {
+      b.addEventListener('click', function () { SumSum.accountUI.open(b.dataset.open) })
+    })
+    /* 打开时确实没登录 → 计数清零（只有「登录了却被送回这页」才累计） */
+    SumSum.accountUI.initialSync.then(function () {
+      if (!SumSum.account.state.loggedIn) try { sessionStorage.removeItem('sumsum:welcome:tries') } catch (e) {}
+    })
+    /* 被拦下来的：直接弹出登录框 */
+    if (safe) SumSum.accountUI.initialSync.then(function () { SumSum.accountUI.open('login') })
+  })()
+</script>
+</body>
+</html>

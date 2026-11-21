@@ -52,6 +52,7 @@ console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ sync-core 合并规则
   var mem = {}
   var meta = {}
   var changes = []
+  var ownerVal = null
   globalThis.SumSum.store = {
     getString: function (k) { return k in mem ? mem[k] : null },
     set: function (k, v) { mem[k] = JSON.stringify(v); meta[k] = meta[k] || 1 },
@@ -61,7 +62,13 @@ console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ sync-core 合并规则
     meta: function () { return meta },
     keys: function () { return Object.keys(mem).filter(function (k) { return k.indexOf('sumsum:') === 0 && k !== 'sumsum:help:seen' && k !== 'sumsum:sync:meta' }) },
     syncable: function (k) { return k.indexOf('sumsum:') === 0 && k !== 'sumsum:help:seen' && k !== 'sumsum:sync:meta' },
-    onChange: function (fn) { changes.push(fn) }
+    onChange: function (fn) { changes.push(fn) },
+    owner: function () { return ownerVal },
+    setOwner: function (v) { ownerVal = v },
+    wipe: function () {
+      Object.keys(mem).forEach(function (k) { if (globalThis.SumSum.store.syncable(k)) delete mem[k] })
+      Object.keys(meta).forEach(function (k) { delete meta[k] })
+    }
   }
   globalThis.SumSum.account = { state: { loggedIn: true, email: 'a@b.co' }, onChange: function () {} }
   delete require.cache[require.resolve('../js/sync.js')]
@@ -100,6 +107,7 @@ console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ sync-core 合并规则
     check('老键盖「现在」推上去', by1['sumsum:old:v1'].updated_at === 123 && meta['sumsum:old:v1'] === 123, by1['sumsum:old:v1'])
     check('已有 mtime 的键按自己的时间推', by1['sumsum:local:v1'].updated_at === 100 && meta['sumsum:local:v1'] === 100, by1['sumsum:local:v1'])
     check('播种键按 1 推（默认值不得变云端新王）', by1['sumsum:seed:v1'].updated_at === 1 && meta['sumsum:seed:v1'] === 1, by1['sumsum:seed:v1'])
+    check('首次同步：本机数据认领给当前账号（老用户升级不清数据）', ownerVal === 'a@b.co', ownerVal)
 
     /* 再打开：拉到云端新键 → 应用 */
     pulled = { items: [ { key: 'sumsum:cloud:v1', value: '{"a":1}', updated_at: 500 } ] }
@@ -186,6 +194,48 @@ console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ sync-core 合并规则
     await new Promise(function (r) { setTimeout(r, 50) })
     check('已确认同步的登记不重复上送', pushed.length === 1 && pushed[0].length === 1 &&
       pushed[0][0].key === changed)
+
+    /* 换账号登录：本机是 a@b.co 的数据，朋友登录自己的账号 →
+       旧数据一条都不能推进朋友账号，本机先清空再拉朋友自己的云端数据 */
+    mem['sumsum:shizi:wrong:v3'] = '{"mine":1}'
+    meta['sumsum:shizi:wrong:v3'] = 5000
+    globalThis.SumSum.account.state.email = 'Friend@X.co'
+    pulled = { items: [ { key: 'sumsum:friend:v1', value: '{"f":1}', updated_at: 700 } ] }
+    pushed = []
+    var wiped = 0
+    await sync.init({ api: api, noReload: true, debounce: 5, onWipe: function () { wiped++ } })
+    await new Promise(function (r) { setTimeout(r, 50) })
+    var leaked = pushed.flat().filter(function (it) { return it.key !== 'sumsum:friend:v1' })
+    check('换账号：上一个账号的数据不推进新账号', leaked.length === 0, leaked.map(function (it) { return it.key }))
+    check('换账号：本机旧数据清掉', !('sumsum:shizi:wrong:v3' in mem) && !('sumsum:local:v1' in mem), Object.keys(mem))
+    check('换账号：拉到新账号自己的数据', mem['sumsum:friend:v1'] === '{"f":1}')
+    check('换账号：归属改成新账号（邮箱不分大小写）', ownerVal === 'friend@x.co', ownerVal)
+    check('换账号：通知页面刷新', wiped === 1, wiped)
+
+    /* 同一账号再打开：不清数据 */
+    pushed = []
+    await sync.init({ api: api, noReload: true, onWipe: function () { wiped++ } })
+    check('同账号再打开不清数据', mem['sumsum:friend:v1'] === '{"f":1}' && wiped === 1)
+
+    /* 另一个标签页换了账号（归属变了）：这个页签之后的改动一条都不许推 */
+    await sync.init({ api: api, noReload: true, debounce: 5 })
+    await new Promise(function (r) { setTimeout(r, 30) })
+    ownerVal = 'other@x.co'
+    pushed = []
+    mem['sumsum:late:v1'] = '{"late":1}'
+    meta['sumsum:late:v1'] = 9000
+    changes.at(-1)('sumsum:late:v1')
+    await new Promise(function (r) { setTimeout(r, 50) })
+    check('别的页签换了账号 → 本页签停推', pushed.length === 0, pushed.length)
+    ownerVal = 'friend@x.co'
+
+    /* 退出登录前把防抖里没推的改动先推掉 */
+    await sync.init({ api: api, noReload: true, debounce: 5000 })
+    pushed = []
+    meta['sumsum:late:v1'] = 9100
+    changes.at(-1)('sumsum:late:v1')
+    await sync.flush()
+    check('退出前 flush 立即推送未推的改动', pushed.length === 1 && pushed[0].some(function (it) { return it.key === 'sumsum:late:v1' }), pushed.length)
 
     finish()
   }).catch(function (e) { console.error(e); process.exit(1) })
