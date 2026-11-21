@@ -43,6 +43,19 @@ Promise.resolve().then(async function () {
   var rb = await A.request('/bad', {}, fake)
   check('request 非 2xx 也给 body', rb.status === 500 && rb.body.error === '服务器开小差了')
 
+  /* 退出登录：没真正退出（断网、服务器出错）就不能当成已退出——共用电脑时，下一个人会以为前一个人已经走了 */
+  A.setLogin('a@b.co')
+  var down = async function () { throw new Error('offline') }
+  var failed = false
+  try { await A.logout(down) } catch (e) { failed = true }
+  check('退出时断网 → 报错、仍是登录状态', failed && A.state.loggedIn === true)
+  var err500 = async function () { return { ok: false, status: 500, text: async function () { return '{}' } } }
+  failed = false
+  try { await A.logout(err500) } catch (e) { failed = true }
+  check('退出时服务器出错 → 报错、仍是登录状态', failed && A.state.loggedIn === true)
+  await A.logout(fake)
+  check('退出成功 → 变成未登录', A.state.loggedIn === false)
+
   console.log(bad ? '\n有 ' + bad + ' 项没过' : '\n全部通过（' + n + ' 项）')
   process.exit(bad ? 1 : 0)
 }).catch(function (e) { console.error(e); process.exit(1) })

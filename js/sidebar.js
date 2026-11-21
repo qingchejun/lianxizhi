@@ -83,9 +83,12 @@
     try {
       if (S.sync && S.sync.flush) await S.sync.flush() /* 防抖里还没推的改动先推掉 */
       if (S.account) await S.account.logout()
-    } finally {
-      root.location.href = '/' /* 全站要登录才能看：退出后回首页（介绍兼登录页） */
+    } catch (e) {
+      /* 没退成就别跳走：跳回首页会因为还登录着直接进「今天」，看着像退出了其实没有 */
+      root.alert('退出没有成功，请检查网络后再试一次。')
+      return
     }
+    root.location.href = '/' /* 全站要登录才能看：退出后回首页（介绍兼登录页） */
   }
 
   /* 显示当前登录的邮箱（账号状态由 account.js 探到后广播） */

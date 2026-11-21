@@ -420,7 +420,12 @@
       if (em2 && mem.email && !em2.value) em2.value = mem.email
     } else if (b.dataset.act === 'logout') {
       if (root.SumSum.sync && root.SumSum.sync.flush) await root.SumSum.sync.flush()
-      await A.logout()
+      try {
+        await A.logout()
+      } catch (err) {
+        say('退出没有成功，请检查网络后再试一次。', 'bad') /* 没退成就别跳走，免得看着像退出了 */
+        return
+      }
       /* 全站要登录才能看：退出后回首页（介绍兼登录页） */
       root.location.href = '/'
     } else if (b.dataset.act === 'changepw') {

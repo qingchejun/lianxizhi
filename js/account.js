@@ -69,8 +69,10 @@
     return state
   }
 
+  /* 只有服务器确认清掉了登录 cookie 才算退出；断网 / 出错就抛出，由界面提示重试（共用电脑时别让人误以为退出了） */
   async function logout(fetchFn) {
-    await request('/api/auth/logout', {}, fetchFn)
+    var r = await request('/api/auth/logout', {}, fetchFn)
+    if (r.status !== 200) throw new Error('logout failed: ' + r.status)
     setLogin('')
   }
 
