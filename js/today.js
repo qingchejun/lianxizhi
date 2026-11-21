@@ -234,11 +234,7 @@
   if (intro && !introSeen) {
     intro.hidden = false
     intro.addEventListener('click', function (e) {
-      if (e.target.closest('[data-intro-help]')) {
-        var h = doc.querySelector('[data-help]')
-        if (h) h.click()
-        return
-      }
+      if (e.target.closest('[data-intro-help]')) return /* help.js 负责跳到使用说明页 */
       if (!e.target.closest('[data-intro-close]')) return
       intro.hidden = true
       try { root.localStorage.setItem(INTRO_KEY, '1') } catch (err) { /* 下次再关 */ }

@@ -1091,9 +1091,8 @@ select.input {
   color: var(--ink-soft);
 }
 
-/* ---------- 使用说明弹窗（js/help.js 插入；打印时隐藏，见 sheet.css） ---------- */
+/* ---------- 弹窗骨架（账号弹窗用；打印时隐藏，见 sheet.css） ---------- */
 
-.help-dialog,
 .account-dialog {
   width: min(680px, calc(100vw - 32px));
   max-height: min(820px, calc(100vh - 48px));
@@ -1105,13 +1104,11 @@ select.input {
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
 }
 
-.help-dialog[open],
 .account-dialog[open] {
   display: flex;
   flex-direction: column;
 }
 
-.help-dialog::backdrop,
 .account-dialog::backdrop {
   background: rgba(20, 24, 32, 0.45);
 }
@@ -1147,27 +1144,8 @@ select.input {
   background: #e4e7ec;
 }
 
-.help-body {
-  padding: 4px 24px 24px;
-  overflow-y: auto;
-  line-height: 1.6;
-}
 
-.help-h {
-  margin: 18px 0 10px;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--ink);
-}
 
-.help-fast {
-  margin: 0 0 10px;
-  padding: 10px 12px;
-  font-size: 13px;
-  color: var(--blue-deep);
-  background: var(--blue-tint);
-  border-radius: var(--radius);
-}
 
 .help-steps,
 .help-list {
@@ -1185,15 +1163,6 @@ select.input {
   margin-top: 6px;
 }
 
-.help-note {
-  margin: 12px 0 0;
-  padding: 10px 12px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--ink-2);
-  background: var(--field);
-  border-radius: var(--radius);
-}
 
 .help-backup {
   margin-top: 18px;
@@ -1249,9 +1218,6 @@ select.input {
   background: var(--red-tint);
 }
 
-.help-tabs {
-  margin-bottom: 14px;
-}
 
 .help-lead {
   margin: 0 0 10px;
@@ -1509,7 +1475,7 @@ select.input {
   border-radius: 3px;
 }
 
-/* ---------- 账号弹窗（js/account-ui.js 插入；骨架同 help-dialog，打印时隐藏见 sheet.css） ---------- */
+/* ---------- 账号弹窗（js/account-ui.js 插入；打印时隐藏见 sheet.css） ---------- */
 
 .account-dialog {
   width: min(420px, calc(100vw - 32px));

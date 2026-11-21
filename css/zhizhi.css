@@ -157,7 +157,7 @@
   border-color: var(--blue);
 }
 
-/* 弹层：原生 dialog，观感与说明弹窗（app.css 的 .help-dialog）一致 */
+/* 弹层：原生 dialog，观感与账号弹窗（app.css 的 .account-dialog）一致 */
 .zhizhi-play-dialog {
   width: min(560px, calc(100vw - 32px));
   max-height: min(820px, calc(100vh - 48px));
