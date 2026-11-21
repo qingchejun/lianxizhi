@@ -573,6 +573,7 @@ function build(sceneIdx, timing) {
 
 function clamp(x) { return x < 0 ? 0 : x > 1 ? 1 : x }
 function easeOut(x) { return 1 - Math.pow(1 - x, 3) }
+function easeInOut(x) { return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2 }
 function easeBack(x) { var c = 1.9; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2) }
 
 
@@ -718,6 +719,19 @@ function render(t) {
     if (r.onRec && r.onRec.dy) extra += ' translateY(' + r.onRec.dy[r.e.on[1]] + 'px)'
     if (r.tm !== undefined) { var mf = 1 - easeOut(clamp((t - r.tm) / 0.7)); extra += ' translate(' + r.e.move[1] * mf + 'px,' + r.e.move[2] * mf + 'px)' }
     if (r.e.scale) sc *= r.e.scale
+    /* fold: [[锚点, 'x'|'y', 原点x, 原点y, 秒?], …] —— 绕元素内 (原点x, 原点y) 那条竖线（x）或横线（y）翻折过去，再来一次就翻回来（讲对折） */
+    if (r.e.fold) {
+      var fs = 1, fdir = 'x'
+      r.e.fold.forEach(function (k, i) {
+        var tf = beatTime(k[0]); if (tf === null || t < tf) return
+        var f = easeInOut(clamp((t - tf) / (k[4] || 1.2)))
+        var from = i % 2 ? -1 : 1
+        fs = from * Math.cos(Math.PI * f); fdir = k[1]
+        n.style.transformOrigin = k[2] + 'px ' + k[3] + 'px'
+      })
+      if (Math.abs(fs) < 0.02) fs = fs < 0 ? -0.02 : 0.02
+      extra += fdir === 'x' ? ' scaleX(' + fs + ')' : ' scaleY(' + fs + ')'
+    }
     n.style.opacity = op
     n.style.transform = 'rotate(' + r.rot + 'deg) scale(' + sc + ')' + extra
   })
