@@ -23,6 +23,8 @@ require("../js/store.js") // 写入收口：shizi-settings 的 save 走它（对
 require('../js/shizi-settings.js') // 只为验 sanitize 的钳位；load/save 碰 DOM，这里不调
 globalThis.SumSum.render = { parts: {} } // shizi-render 在模块顶层不碰 DOM，但留个壳更保险
 require('../js/shizi-render.js')
+require('../js/shizi-xie-data.js')
+require('../js/shizi-xie.js')
 
 var D = globalThis.SumSum.shiziData
 var Z = globalThis.SumSum.shizi
@@ -918,18 +920,58 @@ function checkRj() {
   if (u5.unitName !== '第五单元' || u5.chars.indexOf('秋') < 0 || u5.chars.indexOf('对') >= 0) bad('unitSlice：第五单元取错')
   if (Z.unitSlice('rj1a', 99).week !== 8 || Z.unitSlice('rj1a', -3).week !== 1) bad('unitSlice：单元号没钳位')
 
-  /* 每日一卷：认识字只从学到的课里出；错字位不受字表限制（错字集两套共用） */
+  /* 每日一卷（随机）：认识字只从学到的课里出；错字位只取课本里的字（2026-11-22 站长定：
+     洪恩独有的错字不上人教版的卷；课本里的错字整本都算，不管教没教到） */
   for (var lesson = 1; lesson <= 38; lesson += 5) {
-    Z.useBook('rj1a', lesson)
+    Z.useBook('rj1a', lesson, 'rand')
     var ok = Z.learnedChars('rj1a', lesson)
-    var marks = { 龙: { add: '2026-11-20', n: 1, due: '2026-11-22' } }
+    var marks = {
+      龙: { add: '2026-11-20', n: 1, due: '2026-11-22' }, /* 洪恩有、课本没有 */
+      爪: { add: '2026-11-20', n: 1, due: '2026-11-22' } /* 课本最后一课 */
+    }
     for (var k = 0; k < 20; k++) {
       var d = Z.buildDaily(marks, '2026-11-22')
       if (d.known.some(function (ch) { return ok.indexOf(ch) < 0 })) { bad('每日一卷（人教版学到第 ' + lesson + ' 课）出了没教过的字'); break }
-      if (d.wrong.indexOf('龙') < 0) { bad('每日一卷（人教版）：洪恩里的到期错字没上卷'); break }
+      if (d.wrong.indexOf('龙') >= 0) { bad('每日一卷（人教版）：洪恩独有的错字上了卷'); break }
+      if (d.wrong.indexOf('爪') < 0) { bad('每日一卷（人教版）：课本里的到期错字没上卷'); break }
       if (d.chars.length !== Math.min(20, ok.length + 1)) { bad('每日一卷（人教版学到第 ' + lesson + ' 课）字数不对：' + d.chars.length); break }
     }
   }
+  Z.useBook('hongen')
+  var hw = Z.buildDaily({ 龙: { add: '2026-11-20', n: 1, due: '2026-11-22' } }, '2026-11-22')
+  if (hw.wrong.indexOf('龙') < 0) bad('洪恩模式：错字没上卷')
+  Z.useBook('rj1a', 0)
+  if (Z.inScope('龙') || !Z.inScope('爪')) bad('inScope：人教版范围不对')
+
+  /* 顺序模式：一轮内不重复、按课本顺序、跳过错字集里的字、走完回到开头下一轮 */
+  Z.useBook('rj1a', 24, 'seq')
+  var list = Z.learnedChars('rj1a', 24) /* 146 字 */
+  var from = null, seenSeq = {}, order = [], rounds = []
+  for (var day = 0; day < 9; day++) {
+    var sq = Z.buildDaily({ 秋: { add: '2026-11-20', n: 1, due: '2026-11-22' } }, '2026-11-22', null, from)
+    if (!sq.seq) { bad('顺序模式：卷子没记进度'); break }
+    if (sq.known.indexOf('秋') >= 0) bad('顺序模式：错字集里的字混进了认识字')
+    if (sq.wrong.join('') !== '秋') bad('顺序模式：错字位不对 ' + sq.wrong.join(''))
+    rounds.push(sq.seq.round)
+    sq.known.forEach(function (ch) {
+      if (sq.seq.round === 1 || rounds[rounds.length - 2] === 1) {
+        if (seenSeq[ch] && rounds[0] === sq.seq.round) bad('顺序模式：一轮内重复「' + ch + '」')
+      }
+      seenSeq[ch] = (seenSeq[ch] || 0) + 1
+      order.push(ch)
+    })
+    from = sq.seq
+  }
+  var expect = list.filter(function (ch) { return ch !== '秋' })
+  if (order.slice(0, expect.length).join('') !== expect.join('')) bad('顺序模式：没按课本顺序往下走')
+  if (order.slice(expect.length, expect.length + 5).join('') !== expect.slice(0, 5).join('')) bad('顺序模式：走完没有回到开头')
+  if (rounds[rounds.length - 1] !== 2) bad('顺序模式：第二轮轮次应为 2，实际 ' + rounds[rounds.length - 1])
+  var w = Z.seqWhere('rj1a', 24, 0, 1)
+  if (!w.lesson || w.lesson.t !== '识字 1' || w.ch !== '天') bad('seqWhere：开头应是识字 1「天」')
+  /* 学校进度往回改：记着的下标超出范围 → 从头、下一轮 */
+  var back = Z.seqPick(Z.learnedChars('rj1a', 1), 100, 3, 4, {})
+  if (back.chars.join('') !== '天地人你' || back.round !== 4) bad('seqPick：进度往回改没从头开始 ' + back.chars.join('') + ' ' + back.round)
+  Z.useBook('hongen')
   /* 切回洪恩：认识字池回到洪恩全表，和加人教版之前一样 */
   Z.useBook('hongen')
   var pool = Z.pool()
@@ -952,6 +994,10 @@ function checkRj() {
   var t2 = T.sanitize({ book: '<script>', lesson: 5 })
   if (t2.book !== 'hongen') bad('sanitize：不认识的字表没退回洪恩')
   if (T.sanitize({}).book !== 'hongen' || T.sanitize({}).lesson !== 0) bad('sanitize：默认应是洪恩、整册')
+  var tx = T.sanitize({ pane: 'xie', xieLesson: -5, xieSize: 'huge', xieTrace: 9 })
+  if (tx.pane !== 'xie' || tx.xieLesson !== 0 || tx.xieSize !== 'l' || tx.xieTrace !== 4) bad('sanitize：写字设置没钳位 ' + JSON.stringify(tx))
+  if (T.sanitize({ pane: 'x' }).pane !== 'ren') bad('sanitize：pane 默认认字')
+  if (T.sanitize({}).order !== 'seq' || T.sanitize({ order: 'rand' }).order !== 'rand' || T.sanitize({ order: 'x' }).order !== 'seq') bad('sanitize：order 不对')
   if (Z.titleFor({ book: 'rj1a', unit: 5 }) !== '识字检查 · 第五单元') bad('titleFor：人教版标题不对')
 
   /* 按课统计 */
@@ -962,6 +1008,63 @@ function checkRj() {
   if (st.length !== 38) bad('lessonStats：应有 38 行')
   if (st[20].wrong.join('') !== '秋' || !st[20].taught) bad('lessonStats：课文 1 应有没认出的「秋」')
   if (st[21].out.join('') !== '江' || st[21].taught) bad('lessonStats：课文 2 应是已学会「江」、还没教')
+}
+
+/* ---------- 写字（人教版写字表 + 笔顺数据） ---------- */
+function checkXie() {
+  var X = globalThis.SumSum.shiziXie
+  var C = globalThis.SumSum.shiziXieData.CHARS
+  var ls = X.lessons('rj1a')
+  var all = []
+  ls.forEach(function (l) {
+    if (!l.i) bad('写字表：「' + l.t + '」在识字表里找不到这一课')
+    Array.prototype.push.apply(all, l.chars)
+    /* 写字表的字，这一课为止的识字表里必须都有（先认后写） */
+    var learned = Z.learnedChars('rj1a', l.i)
+    l.chars.forEach(function (ch) { if (learned.indexOf(ch) < 0) bad('写字表：' + l.t + ' 的「' + ch + '」这一课还没认过') })
+  })
+  if (all.length !== 100 || new Set(all).size !== 100) bad('写字表：应为 100 个不重复的字，实际 ' + all.length + ' / ' + new Set(all).size)
+  var NAMES = ['横', '竖', '撇', '捺', '点', '提', '横折', '横撇', '横钩', '横折钩', '横折弯钩', '横折折折', '横折提', '横斜钩',
+    '竖弯', '竖折', '竖弯钩', '竖折折钩', '竖提', '竖钩', '撇折', '撇点', '弯钩', '斜钩', '卧钩']
+  all.forEach(function (ch) {
+    var c = C[ch]
+    if (!c) return bad('写字数据：没有「' + ch + '」')
+    if (!c.py || !/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü]|^le$/.test(c.py)) bad('写字数据：「' + ch + '」拼音不像带声调的拼音：' + c.py)
+    if (c.s.length !== c.n.length || c.s.length !== c.m.length) bad('写字数据：「' + ch + '」笔画数对不上')
+    c.n.forEach(function (n) { if (NAMES.indexOf(n) < 0) bad('写字数据：「' + ch + '」有不认识的笔画名「' + n + '」') })
+  })
+  /* 几个容易叫错的笔画名，按课本叫法钉死（cnchar 原始数据不区分的那几对） */
+  var FIX = { 山: [2, '竖折'], 出: [1, '竖折'], 四: [4, '竖弯'], 九: [2, '横折弯钩'], 你: [4, '横钩'], 又: [1, '横撇'], 心: [2, '卧钩'], 我: [5, '斜钩'], 火: [1, '点'] }
+  Object.keys(FIX).forEach(function (ch) {
+    if (C[ch].n[FIX[ch][0] - 1] !== FIX[ch][1]) bad('写字数据：「' + ch + '」第 ' + FIX[ch][0] + ' 笔应叫' + FIX[ch][1] + '，实际 ' + C[ch].n[FIX[ch][0] - 1])
+  })
+  if (C['长'].py !== 'cháng' || C['只'].py !== 'zhī') bad('写字数据：多音字按课本读音（长 cháng、只 zhī）')
+
+  /* 练哪一课：跟着学校进度取学到的最后一个有写字的课；拼音课没有写字，退到前一课 */
+  if (X.pick('rj1a', 0, 24).t !== '课文 4') bad('写字：学到课文 4 时应练课文 4')
+  if (X.pick('rj1a', 0, 7).t !== '语文园地一') bad('写字：学到拼音 4（第 7 课，没有写字）应退到语文园地一，实际 ' + X.pick('rj1a', 0, 7).t)
+  if (X.pick('rj1a', 0, 8).t !== '语文园地二') bad('写字：学到语文园地二就练它')
+  if (X.pick('rj1a', 0, 1).t !== '识字 2') bad('写字：识字 1 没有写字，应给第一课有写字的')
+  if (X.pick('rj1a', 0, 0).t !== '语文园地八') bad('写字：整册学完应练最后一课')
+  if (X.pick('rj1a', 22, 38).t !== '课文 2') bad('写字：指定了课就练那一课')
+  if (X.pick('hongen', 0, 0) !== null) bad('写字：洪恩没有写字表')
+  var i24 = X.pick('rj1a', 0, 24).i
+  if (X.neighbor('rj1a', i24, 1) !== X.pick('rj1a', 25, 0).i) bad('写字：下一课不对')
+  if (X.neighbor('rj1a', X.pick('rj1a', 0, 1).i, -1) !== 0) bad('写字：第一课没有上一课')
+
+  /* 练字纸：一页 5 / 6 个字，份数连印；每个字有范字、笔顺分解（一笔一格）、描红格 */
+  var head = function (t) { return '<h2>' + t + '</h2>' }
+  var l4 = X.pick('rj1a', 0, 24)
+  var sh = X.sheets({ size: 'l', trace: 3, copies: 2 }, l4, head)
+  if (sh.length !== 2) bad('练字纸：5 个字大格一页，印 2 份应是 2 张，实际 ' + sh.length)
+  var steps = (sh[0].match(/class="xz-step"/g) || []).length
+  var expectSteps = l4.chars.reduce(function (n, ch) { return n + C[ch].s.length }, 0)
+  if (steps !== expectSteps) bad('练字纸：笔顺分解格数应等于总笔画数 ' + expectSteps + '，实际 ' + steps)
+  if ((sh[0].match(/#d6d6d6/g) || []).length < 3) bad('练字纸：没有描红')
+  var many = { t: 'x', label: 'x', unitName: '', chars: Array.from('一二三上口耳目') }
+  if (X.sheets({ size: 'l', trace: 3, copies: 1 }, many, head).length !== 2) bad('练字纸：7 个字大格应分 2 页')
+  if (X.sheets({ size: 'm', trace: 3, copies: 1 }, many, head).length !== 2) bad('练字纸：7 个字中格应分 2 页（一页 6 个）')
+  if (X.sheets({ size: 'l', trace: 2, copies: 1 }, null, head).length !== 0) bad('练字纸：没有课时不出纸')
 }
 
 function main() {
@@ -982,7 +1085,8 @@ function main() {
     ['每日一卷：登记', checkSettle],
     ['附页抽字：边界 / 顺序 / 均匀性 / 按权重偏向（2 万轮）', checkSample],
     ['设置钳位', checkSettings],
-    ['人教版字表：结构 / 总数 280 / 按进度取字 / 单元检查 / 洪恩不受影响', checkRj]
+    ['人教版字表：结构 / 总数 280 / 按进度取字 / 单元检查 / 洪恩不受影响', checkRj],
+    ['写字：写字表 100 字 / 笔画名与拼音 / 练哪一课 / 练字纸分页', checkXie]
   ]
   steps.forEach(function (st) {
     var before = problems.length

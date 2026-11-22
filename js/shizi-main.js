@@ -25,14 +25,38 @@
     withWrong: $('f-withwrong'),
     title: $('f-title'),
     book: $('f-book'),
-    lesson: $('f-lesson')
+    lesson: $('f-lesson'),
+    order: $('f-order'),
+    xieLesson: $('f-xielesson'),
+    xieSize: $('f-xiesize'),
+    xieTrace: $('f-xietrace')
   }
 
   var settings = S.shiziSettings.load()
-  S.shizi.useBook(settings.book, settings.lesson)
+  S.shizi.useBook(settings.book, settings.lesson, settings.order)
 
   function isRj(s) {
     return s.book !== S.shizi.HONGEN
+  }
+
+  /* 错字集只有一份；用人教版时只看课本里的字（洪恩独有的错字不上人教版的卷，见 shizi-core 的 inScope） */
+  function wrongAll() {
+    return S.shiziMark.all().filter(S.shizi.inScope)
+  }
+  function wrongSize() {
+    return isRj(settings) ? wrongAll().length : S.shiziMark.size()
+  }
+  function wrongOnce() {
+    if (!isRj(settings)) return S.shiziMark.onceCount()
+    return wrongAll().filter(function (ch) { return S.shiziMark.remainingOf(ch) === 1 }).length
+  }
+  /* 历史统计：人教版下也只算课本里的字 */
+  function historyNow() {
+    var h = S.shiziMark.history()
+    if (!isRj(settings)) return h
+    var m = {}
+    Object.keys(h.marks || {}).forEach(function (ch) { if (S.shizi.inScope(ch)) m[ch] = h.marks[ch] })
+    return { stats: S.shizi.historyStats(m), marks: m, log: h.log }
   }
 
   /* 错字集卷面渲染时用的那一份快照。渲染之后用户还会继续点，
@@ -58,7 +82,7 @@
      按权重抽：错得越多越容易抽到（见 shizi-core 的 reviewWeight） */
   function repick() {
     appendPick = S.shizi.sampleWrong(
-      S.shiziMark.all(),
+      wrongAll(),
       S.shizi.slice(settings).chars,
       APPEND_MAX,
       null,
@@ -90,7 +114,7 @@
   /* 当前卷面是不是已经和错字集对不上了（只在错字集模式下有意义） */
   function isStale() {
     if (settings.mode !== 'wrong') return false
-    if (S.shiziMark.size() !== renderedWrong.length) return true
+    if (wrongSize() !== renderedWrong.length) return true
     return renderedWrong.some(function (ch) {
       return !S.shiziMark.has(ch)
     })
@@ -153,12 +177,13 @@
     }
     /* 页签上直接带字数，不用切进去才知道攒了多少（每日一卷不带：到期数跟
        错字集总数常年一样大，摆出来只让人多问一句是什么） */
-    var n = S.shiziMark.size()
+    var n = wrongSize()
     $('wrong-n').textContent = n ? ' · ' + n : ''
     $('wrong-title-n').textContent = n ? n + ' 个' : ''
   }
 
   function fillForm(s) {
+    fillPane(s)
     $('sec-daily').hidden = s.mode !== 'daily'
     /* 非「本周复习」模式下，周次与每周字数这两块控件不起作用，直接收起来。
        留着变灰只是噪音 —— 上面的页签已经说清楚现在在看哪张卷子。 */
@@ -199,6 +224,12 @@
          切回人教版时进度还在（sanitize 会按所选那一册钳位） */
       lesson: els.book.value === settings.book && isRj(settings) ? els.lesson.value : settings.lesson,
       unit: settings.unit,
+      order: isRj(settings) && els.order.value ? els.order.value : settings.order,
+      pane: settings.pane, // 认字/写字 由顶上的开关管
+      /* 写字的三项只在写字面板开着时从表单读（认字时那几个框没填过，读出来是第一个选项） */
+      xieLesson: settings.pane === 'xie' && els.xieLesson.value !== '' ? els.xieLesson.value : settings.xieLesson,
+      xieSize: settings.pane === 'xie' ? els.xieSize.value || settings.xieSize : settings.xieSize,
+      xieTrace: settings.pane === 'xie' ? els.xieTrace.value || settings.xieTrace : settings.xieTrace,
       mode: settings.mode, // 模式不是表单项，由页签管
       title: els.title.value.trim()
     })
@@ -256,7 +287,7 @@
    * 返回的是 HTML，里面全是写死的文案，没有任何用户输入，可以直接进 innerHTML。
    */
   function markHint(s) {
-    var n = S.shiziMark.size()
+    var n = wrongSize()
     if (!n) {
       /* 一个字都没有时，讲「怎么毕业」是没意义的 —— 不管在哪个模式，
          此刻唯一有用的信息都是「去哪儿、怎么把第一个字收进来」。 */
@@ -264,7 +295,7 @@
         (s.mode === 'wrong' ? '在「每日一卷」或「本周复习」里，' : '') +
         '孩子念不出的字在卷面上点一下，再点「登记结果」。标记不会印到纸上。'
     }
-    var once = S.shiziMark.onceCount()
+    var once = wrongOnce()
     var head = '错字集 <b>' + n + '</b> 个字' + (once ? '，其中 ' + once + ' 个再认出一次就毕业' : '') + '。' +
       '没认出的字第二天接着考，认出后隔 3 天复核，复核认出才毕业。'
     if (s.mode === 'wrong') {
@@ -282,17 +313,22 @@
 
   /* 主流程：保存设置 → 同步表单 → 渲染 → 把错字标记投影回新 DOM */
   function refresh() {
-    S.shizi.useBook(settings.book, settings.lesson)
+    S.shizi.useBook(settings.book, settings.lesson, settings.order)
     S.shiziSettings.save(settings)
     fillTabs(settings)
     fillForm(settings)
+    if (settings.pane === 'xie') {
+      renderXie()
+      return
+    }
     if (settings.mode === 'week') fillProgress(settings)
 
     /* 错字集模式下，渲染用的是【进入时的快照】；之后用户再点就只改 class，
        不动卷面结构，直到他自己点「重新排版」或切走再切回来。 */
-    renderedWrong = settings.mode === 'wrong' ? S.shiziMark.all() : []
+    renderedWrong = settings.mode === 'wrong' ? wrongAll() : []
     if (settings.mode === 'daily') {
       renderDaily()
+      fillBook(settings) /* 卷子刚生成（可能刚往下走了一段），顺序进度的提示要按新卷重算 */
       fitPreview()
       var dp = dailyPaper()
       $('pages-hint').textContent = pagesHint(settings, dp ? dp.chars.length : 0, null)
@@ -316,7 +352,7 @@
       $('pages-hint').textContent = ''
       $('notice').hidden = true
       refreshMarkPanel()
-      var st = S.shiziMark.history().stats
+      var st = historyNow().stats
       S.shell.summary(['历史错字', st.total + ' 个字', '累计错 ' + st.times + ' 次'])
       return
     }
@@ -351,7 +387,7 @@
    * 以前这里直接列「反复错的字」，有了历史页之后挪过去了，面板上只留个入口。
    */
   function repeatsHtml() {
-    var st = S.shiziMark.history().stats
+    var st = historyNow().stats
     if (!st.total) return ''
     var rep = S.shiziMark.repeats().length
     return '<p class="hint">历史上错过 <b>' + st.total + '</b> 个字' +
@@ -464,7 +500,7 @@
    * 下半：最近的复习记录。字来自字表、其余是数字和日期，没有用户输入，可以直接进 innerHTML。
    */
   function renderHistory() {
-    var h = S.shiziMark.history()
+    var h = historyNow()
     var st = h.stats
     var box = $('preview')
     var lessonBox = isRj(settings) ? lessonTable(settings, h.marks) : ''
@@ -559,7 +595,7 @@
 
     /* 附页开关只在「本周复习」下露面；错字集空的时候留着但点不动，
        比整个藏起来好 —— 至少看得见有这么个东西，攒够字自己会亮。 */
-    var n = S.shiziMark.size()
+    var n = wrongSize()
     $('sec-append').hidden = settings.mode !== 'week'
     els.withWrong.disabled = !n
     /* 挑够了 APPEND_MAX 才说明是「抽」出来的，才有得换；
@@ -576,7 +612,7 @@
       }).length
       relayout.textContent = gone ? '重新排版（移出 ' + gone + ' 字）' : '重新排版'
     }
-    $('btn-clear-wrong').disabled = !S.shiziMark.size()
+    $('btn-clear-wrong').disabled = !wrongSize()
   }
 
   /* 纸张区放不下一整张 A4 时整体缩小（见 js/shell.js 的 fit）；错字集空着时没有纸，清掉缩放 */
@@ -595,7 +631,7 @@
 
   /* perWeek 单独绑（见下），不要进这个循环，否则改每周字数会走通用路径、把进度弄丢 */
   Object.keys(els).forEach(function (k) {
-    if (k === 'perWeek' || k === 'book' || k === 'lesson') return
+    if (k === 'perWeek' || k === 'book' || k === 'lesson' || k === 'order') return
     els[k].addEventListener('change', onFormChange)
   })
 
@@ -633,10 +669,10 @@
    * （不然切到人教版，卷上还是洪恩的字）；点过字的不动，免得把孩子的标记弄丢，下一张自然按新字表出。
    */
   function onBookChange() {
-    var before = settings.book + ':' + settings.lesson
+    var before = settings.book + ':' + settings.lesson + ':' + settings.order
     settings = readForm()
-    if (settings.book + ':' + settings.lesson !== before) {
-      S.shizi.useBook(settings.book, settings.lesson)
+    if (settings.book + ':' + settings.lesson + ':' + settings.order !== before) {
+      S.shizi.useBook(settings.book, settings.lesson, settings.order)
       var last = S.shiziMark.paperCount() ? S.shiziMark.paperAt(S.shiziMark.paperCount() - 1) : null
       if (last && !last.settled && !S.shiziMark.pickCount()) {
         S.shiziMark.discardPaper()
@@ -647,6 +683,7 @@
   }
   els.book.addEventListener('change', onBookChange)
   els.lesson.addEventListener('change', onBookChange)
+  els.order.addEventListener('change', onBookChange)
 
   /* 字表那一块：人教版时填「学校学到」的课表（按单元分组），提示每日一卷考的范围 */
   var lessonsFor = ''
@@ -654,6 +691,7 @@
     els.book.value = s.book
     var rj = isRj(s)
     $('lesson-field').hidden = !rj
+    $('order-field').hidden = !rj
     var weekTab = $('mode-tabs').querySelector('[data-mode="week"]')
     if (weekTab) weekTab.textContent = rj ? '单元检查' : '本周复习'
     if (!rj) {
@@ -675,9 +713,125 @@
       lessonsFor = s.book
     }
     els.lesson.value = String(s.lesson)
+    els.order.value = s.order
     var n = S.shizi.learnedChars(s.book, s.lesson).length
-    $('book-hint').textContent = '每日一卷只考学校已经教过的 ' + n + ' 个字，跟着学校进度改这里。错字两套字表共用。'
+    var hint = '每日一卷只考学校已经教过的 ' + n + ' 个字，跟着学校进度改这里。'
+    if (s.order === 'seq') {
+      /* 顺序进度：下一张从哪一课接着出 */
+      var q = S.shiziMark.lastSeq() || { next: 0, round: 1 }
+      var w = S.shizi.seqWhere(s.book, s.lesson, q.next, q.round)
+      hint = '按课本顺序：第 ' + w.round + ' 轮，下一张从' + (w.lesson ? S.shizi.lessonLabel(w.lesson) + '的「' + w.ch + '」' : '开头') +
+        '接着出，一轮里不重复。' + hint
+    }
+    $('book-hint').textContent = hint + '人教版只考课本里的错字。'
   }
+
+  /* ================= 写字（2026-11-22） ================= */
+
+  var XIE_SECS = ['sec-xie', 'sec-xie-off']
+  var REN_SECS = ['sec-tabs', 'sec-daily', 'mark-legend', 'sec-progress', 'sec-history', 'sec-layout', 'sec-wrong']
+
+  /* 认字 / 写字 两大块的显隐；认字里各节自己的显隐照旧在 fillForm 里算，这里只在写字时整块收起 */
+  function fillPane(s) {
+    var xie = s.pane === 'xie'
+    var tabs = $('pane-tabs').querySelectorAll('.pane-tab')
+    for (var i = 0; i < tabs.length; i++) {
+      var on = tabs[i].dataset.pane === s.pane
+      tabs[i].classList.toggle('active', on)
+      tabs[i].setAttribute('aria-selected', String(on))
+    }
+    if (!xie) XIE_SECS.forEach(function (id) { $(id).hidden = true })
+  }
+
+  function xieLessonNow(s) {
+    return S.shiziXie.pick(s.book, s.xieLesson, s.lesson)
+  }
+
+  var xieFor = ''
+  function fillXie(s) {
+    var rj = isRj(s)
+    REN_SECS.forEach(function (id) { $(id).hidden = true })
+    $('order-field').hidden = true
+    $('sec-xie').hidden = !rj
+    $('sec-xie-off').hidden = rj
+    if (!rj) return null
+    var ls = S.shiziXie.lessons(s.book)
+    var auto = S.shiziXie.pick(s.book, 0, s.lesson)
+    if (xieFor !== s.book + ':' + s.lesson) {
+      var html = '<option value="0">跟着学校进度（' + (auto ? auto.label : '') + '）</option>'
+      var unit = ''
+      ls.forEach(function (l) {
+        if (l.unitName !== unit) {
+          html += (unit ? '</optgroup>' : '') + '<optgroup label="' + l.unitName + '">'
+          unit = l.unitName
+        }
+        html += '<option value="' + l.i + '">' + l.label + '（' + l.chars.join('') + '）</option>'
+      })
+      els.xieLesson.innerHTML = html + '</optgroup>'
+      xieFor = s.book + ':' + s.lesson
+    }
+    els.xieLesson.value = String(s.xieLesson)
+    if (els.xieLesson.value === '') els.xieLesson.value = '0'
+    els.xieSize.value = s.xieSize
+    els.xieTrace.value = String(s.xieTrace)
+    var l = xieLessonNow(s)
+    $('xie-now').textContent = l ? l.label : ''
+    $('xie-sub').textContent = l ? l.unitName + '　·　' + l.chars.join(' ') + '　·　' + l.chars.length + ' 个字' : ''
+    $('btn-xie-prev').disabled = !l || !S.shiziXie.neighbor(s.book, l.i, -1)
+    $('btn-xie-next').disabled = !l || !S.shiziXie.neighbor(s.book, l.i, 1)
+    return l
+  }
+
+  function renderXie() {
+    delete $('preview').dataset.locked
+    $('notice').hidden = true
+    var l = fillXie(settings)
+    var box = $('preview')
+    if (!l) {
+      box.innerHTML = '<div class="empty"><b>写字要用人教版字表</b><p>在右边「字表」里选「人教版 一年级上册」，这里就会按课出田字格练字纸。</p></div>'
+      $('btn-print').disabled = true
+      $('pages-hint').textContent = ''
+      S.shell.summary(['写字'])
+      fitPreview()
+      return
+    }
+    box.innerHTML = S.shiziXie.sheets({ size: settings.xieSize, trace: settings.xieTrace, copies: settings.copies, title: settings.title },
+      l, function (title) {
+        return '<header class="sheet-head"><h2 class="sheet-title">' + S.render.parts.esc(title) + '</h2>' + S.render.parts.metaHTML() + '</header>'
+      }).join('')
+    $('btn-print').disabled = false
+    $('btn-print').hidden = false
+    $('btn-print').querySelector('.txt').textContent = '打印练字纸'
+    S.shell.summary(['写字', l.label, l.chars.length + ' 个字'])
+    fitPreview()
+  }
+
+  $('pane-tabs').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-pane]')
+    if (!b || b.dataset.pane === settings.pane) return
+    settings = S.shiziSettings.sanitize(Object.assign({}, settings, { pane: b.dataset.pane }))
+    $('btn-print').disabled = false
+    refresh()
+  })
+
+  function xieStep(delta) {
+    return function () {
+      var l = xieLessonNow(settings)
+      var to = l ? S.shiziXie.neighbor(settings.book, l.i, delta) : 0
+      if (!to) return
+      settings = S.shiziSettings.sanitize(Object.assign({}, settings, { xieLesson: to }))
+      refresh()
+    }
+  }
+  $('btn-xie-prev').addEventListener('click', xieStep(-1))
+  $('btn-xie-next').addEventListener('click', xieStep(1))
+
+  /* 点范字看笔顺动画（只在写字纸上；卷面的点字标记在认字里，互不相干） */
+  $('preview').addEventListener('click', function (ev) {
+    if (settings.pane !== 'xie') return
+    var m = ev.target.closest('[data-anim]')
+    if (m) S.shiziXie.animate(m.getAttribute('data-anim'))
+  })
 
   function gotoMode(mode) {
     if (mode === settings.mode) return
@@ -721,11 +875,12 @@
   })
 
   $('btn-clear-wrong').addEventListener('click', function () {
-    var n = S.shiziMark.size()
+    var n = wrongSize()
     if (!n) return
-    /* 清空是不可逆的，而且攒了几个月的东西 —— 值得拦一道 */
-    if (!root.confirm('清空错字集里的 ' + n + ' 个字？这一步撤不回来。\n\n每个字累计进过几次的记录会留着。')) return
-    S.shiziMark.clear()
+    /* 清空是不可逆的，而且攒了几个月的东西 —— 值得拦一道。人教版下只清课本里的字 */
+    if (!root.confirm('清空错字集里的 ' + n + ' 个字？这一步撤不回来。\n\n' +
+      (isRj(settings) ? '只清人教版课本里的字，洪恩的错字不动。' : '') + '每个字累计进过几次的记录会留着。')) return
+    S.shiziMark.clear(isRj(settings) ? S.shizi.inScope : null)
     refresh()
   })
 
@@ -742,8 +897,22 @@
    * 标记变化时【只刷面板】，绝不重渲染卷面。
    * 这是这个功能好不好用的关键，理由见 js/shizi-mark.js 的文件头。
    */
+  /*
+   * 用人教版时，最新那张还没考的卷子上如果有课本外的字（旧版规则下出的卷：洪恩的错字也上卷），
+   * 而且还没点过字，就按现在的规则重出一张。点过字的不动，免得丢标记；登记过的卷绝不改。
+   */
+  function refreshStalePaper() {
+    if (!isRj(settings)) return
+    var n = S.shiziMark.paperCount()
+    var last = n ? S.shiziMark.paperAt(n - 1) : null
+    if (!last || last.settled || S.shiziMark.pickCount()) return
+    var off = Array.from(last.chars).some(function (ch) { return !S.shizi.inScope(ch) })
+    if (off) S.shiziMark.discardPaper()
+  }
+
   S.shiziMark.onChange(refreshMarkPanel)
   S.shiziMark.bind()
+  refreshStalePaper()
   refresh()
 
   /* 完工标记：上面任何一步抛错都到不了这里；HTML 里的防护脚本据此判断并提示 */

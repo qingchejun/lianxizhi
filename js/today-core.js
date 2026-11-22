@@ -121,6 +121,11 @@
       lessonLabel: at ? (s.lesson ? Z.lessonLabel(at) : '整册') : '',
       bookShort: rj ? (root.SumSum.shiziRjData.BOOKS[s.book] || {}).short || '' : '',
       unitName: rj ? slice.unitName : '',
+      /* 写字（人教版写字表）：跟着学校进度该练哪一课 */
+      xie: rj && root.SumSum.shiziXie ? (function () {
+        var xl = root.SumSum.shiziXie.pick(s.book, s.xieLesson, s.lesson)
+        return xl ? { label: xl.label, chars: xl.chars.join(''), href: 'shizi.html?pane=xie' } : null
+      })() : null,
       chars: slice.chars.slice(0, 20),
       week: slice.week,
       weeks: slice.weeks,

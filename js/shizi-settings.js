@@ -41,7 +41,15 @@
      */
     book: 'hongen',
     lesson: 0,
-    unit: 1
+    unit: 1,
+    /* 人教版每日一卷的认识字：'seq' 按课本顺序往下、一轮内不重复（默认）| 'rand' 随机。洪恩不用这项 */
+    order: 'seq',
+    /* 认字 / 写字 两大块（写字只用人教版）。和 mode 一样不记：打开识字页永远先是认字 */
+    pane: 'ren',
+    /* 写字：练哪一课（识字表课号，0 = 跟着「学校学到」）、格子大小、描红几格 */
+    xieLesson: 0,
+    xieSize: 'l',
+    xieTrace: 3
   })
 
   /*
@@ -57,6 +65,9 @@
    * 每次刷新这个开关就被抹回 false。
    */
   var LOCAL_ONLY = ['withWrong']
+
+  /* 只决定「打开哪一块」的参数：网址里只有它们时照常叠加本机设置（见 load） */
+  var NAV_ONLY = ['pane', 'mode']
 
   var FONTS = ['kai', 'hei']
 
@@ -137,7 +148,12 @@
       title: String(s.title == null ? '' : s.title).slice(0, 30),
       book: Z().hasBook(String(s.book)) ? String(s.book) : DEFAULTS.book,
       lesson: clampLesson(s),
-      unit: clampUnit(s)
+      unit: clampUnit(s),
+      order: s.order === 'rand' ? 'rand' : 'seq',
+      pane: s.pane === 'xie' ? 'xie' : 'ren',
+      xieLesson: clampInt(s.xieLesson, 0, 999, 0),
+      xieSize: s.xieSize === 'm' ? 'm' : 'l',
+      xieTrace: clampInt(s.xieTrace, 2, 4, 3)
     }
   }
 
@@ -155,7 +171,9 @@
         if (LOCAL_ONLY.indexOf(k) >= 0) return
         if (Object.prototype.hasOwnProperty.call(DEFAULTS, k)) {
           fromUrl[k] = v
-          hasUrl = true
+          /* pane / mode 只是「打开哪一块」，不是卷子参数：「今天」页链到 ?pane=xie 时
+             不能因此丢掉本机的字表和进度 */
+          if (NAV_ONLY.indexOf(k) < 0) hasUrl = true
         }
       })
     } catch (e) {
@@ -180,6 +198,8 @@
       /* 看哪张卷子不该被记住：打开页面永远回到「每日一卷」这个主场景。
          想直达别的页签，存一个带 ?mode=wrong 这样的链接即可。 */
       delete base.mode
+      delete base.pane
+      /* 网址只带了 pane / mode：上面删掉的记忆值由网址补上（下面 assign fromUrl） */
     }
     return sanitize(Object.assign({}, base, fromUrl))
   }

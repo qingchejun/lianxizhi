@@ -22,6 +22,7 @@ require('../js/shudu-settings.js')
 require('../js/shizi-data.js')
 require('../js/shizi-rj-data.js')
 require('../js/shizi-core.js')
+require('../js/shizi-xie.js')
 require('../js/shizi-settings.js')
 require('../js/pinyin-syllables.js')
 require('../js/pinyin-words.js')
@@ -113,6 +114,9 @@ check(used.shizi.withWrong === true, '识字附错字页的开关要带出来')
 var rjCard = T.build(fakeStorage({ 'sumsum:shizi:v1': JSON.stringify({ book: 'rj1a', lesson: 24, unit: 5 }) }), new Date(2026, 10, 22)).shizi
 check(rjCard.book === 'rj1a' && rjCard.bookShort === '人教一上', '人教版卡片：字表名 ' + rjCard.bookShort)
 check(rjCard.lessonLabel === '课文 4《四季》', '人教版卡片：学到 ' + rjCard.lessonLabel)
+check(rjCard.xie && rjCard.xie.label === '课文 4《四季》' && rjCard.xie.chars === '四小鸟是天', '人教版卡片：写字练课文 4 ' + JSON.stringify(rjCard.xie))
+check(rjCard.xie.href === 'shizi.html?pane=xie', '人教版卡片：写字链接直达写字面板')
+check(T.build(fakeStorage({}), new Date(2026, 10, 22)).shizi.xie === null, '洪恩卡片没有写字')
 check(rjCard.unitName === '第五单元' && rjCard.chars.length === 20, '人教版卡片：单元与缩略字 ' + rjCard.unitName + ' ' + rjCard.chars.length)
 var rjAll = T.build(fakeStorage({ 'sumsum:shizi:v1': JSON.stringify({ book: 'rj1a' }) }), new Date(2026, 10, 22)).shizi
 var lastTab = T.build(fakeStorage({ 'sumsum:shizi:v1': JSON.stringify({ mode: 'history' }) }), new Date(2026, 10, 22)).shizi

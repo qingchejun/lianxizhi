@@ -102,7 +102,8 @@
         : isDaily ? (z.due ? '今天到期 ' + z.due + ' 个字' : '今天 20 个字') : '错字卷 · ' + z.wrong + ' 个字',
       lines: '<p class="dk-meta">' + meta.join('，') + '</p>' +
         (rj
-          ? '<p class="dk-note">' + esc(z.bookShort) + ' · 学到 ' + esc(z.lessonLabel) + '</p>'
+          ? '<p class="dk-note">' + esc(z.bookShort) + ' · 学到 ' + esc(z.lessonLabel) + '</p>' +
+            (z.xie ? '<p class="dk-note dk-xie">写字：<a href="' + z.xie.href + '">' + esc(z.xie.label) + ' · ' + esc(z.xie.chars) + '</a></p>' : '')
           : '<div class="dk-prog"><div class="weeks">' + weeks + '</div><span>第 ' + z.week + ' / ' + z.weeks + ' 周</span></div>'),
       printText: isWeek ? (rj ? '打印检查卷' : '打印本周卷') : isDaily ? '打印今日卷' : '打印错字卷',
       more: '标记错字'

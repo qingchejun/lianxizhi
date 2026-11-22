@@ -65,8 +65,16 @@
     <!-- ======== 设置 ======== -->
     <aside class="panel" id="panel" aria-label="设置">
 
+      <!-- 认字 / 写字（2026-11-22）：写字用人教版写字表出田字格练字纸 -->
+      <section class="group pane-switch">
+        <div class="pane-tabs" id="pane-tabs" role="tablist" aria-label="认字还是写字">
+          <button type="button" class="pane-tab" data-pane="ren" role="tab">认字</button>
+          <button type="button" class="pane-tab" data-pane="xie" role="tab">写字</button>
+        </div>
+      </section>
+
       <!-- 看哪一张卷子。两种模式下字格都能点，点一下就是加入/移出错字集 -->
-      <section class="group">
+      <section class="group" id="sec-tabs">
         <div class="stage-tabs" id="mode-tabs">
           <button type="button" class="stage-tab" data-mode="daily">每日一卷</button>
           <button type="button" class="stage-tab" data-mode="week">本周复习</button>
@@ -88,6 +96,12 @@
         <label class="field" id="lesson-field" hidden><span>学校学到</span>
           <select id="f-lesson" class="input"></select>
         </label>
+        <div class="field" id="order-field" hidden><span>认识字怎么出</span>
+          <select id="f-order" class="input" data-seg aria-label="认识字怎么出">
+            <option value="seq" data-short="按课本顺序">按课本顺序</option>
+            <option value="rand" data-short="随机">随机</option>
+          </select>
+        </div>
         <p class="hint" id="book-hint"></p>
       </section>
 
@@ -191,6 +205,39 @@
         </div>
       </section>
 
+      <!-- 写字：一课一张田字格练字纸（范字 + 笔顺分解 + 描红 + 自己写） -->
+      <section class="group" id="sec-xie" hidden>
+        <p class="week-now" id="xie-now"></p>
+        <p class="week-sub" id="xie-sub"></p>
+        <div class="btn-pair">
+          <button type="button" id="btn-xie-prev" class="btn btn-sm">◀ 上一课</button>
+          <button type="button" id="btn-xie-next" class="btn btn-sm">下一课 ▶</button>
+        </div>
+        <label class="field"><span>练哪一课</span>
+          <select id="f-xielesson" class="input"></select>
+        </label>
+        <div class="pair">
+          <div class="field"><span>格子</span>
+            <select id="f-xiesize" class="input" data-seg aria-label="格子大小">
+              <option value="l" data-short="大格">大格（1.8 厘米）</option>
+              <option value="m" data-short="中格">中格（1.5 厘米）</option>
+            </select>
+          </div>
+          <div class="field"><span>描红</span>
+            <select id="f-xietrace" class="input" data-seg aria-label="描红几格">
+              <option value="2">2 格</option>
+              <option value="3">3 格</option>
+              <option value="4">4 格</option>
+            </select>
+          </div>
+        </div>
+        <p class="hint" id="xie-hint">在屏幕上点范字，可以看这个字一笔一笔怎么写。</p>
+      </section>
+
+      <section class="group" id="sec-xie-off" hidden>
+        <p class="hint">写字用的是人教版课本的「写字表」（学校要求会写的字）。请先在上面的「字表」里选人教版。</p>
+      </section>
+
       <section class="group" id="sec-title">
         <label class="field"><span>练习纸标题（选填）</span>
           <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：识字复习 · 第 3 周" />
@@ -212,6 +259,9 @@
 <script src="js/shizi-core.js"></script>
 <script src="js/shizi-settings.js"></script>
 <script src="js/shizi-render.js"></script>
+<script src="js/shizi-xie-data.js"></script>
+<script src="js/vendor/hanzi-writer.min.js"></script>
+<script src="js/shizi-xie.js"></script>
 <script src="js/shizi-mark.js"></script>
 <script src="js/shizi-main.js"></script>
 <script src="js/backup.js"></script>

@@ -552,3 +552,172 @@
   padding: 0 2px;
   font-size: 17px;
 }
+
+/* ================= 认字 / 写字 开关（面板最上面） ================= */
+
+.pane-switch {
+  padding-bottom: 4px;
+}
+
+.pane-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--card-edge);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.pane-tab {
+  padding: 10px 0;
+  font: inherit;
+  font-size: 15px;
+  letter-spacing: 4px;
+  color: var(--ink-soft);
+  background: var(--card);
+  border: 0;
+  cursor: pointer;
+}
+
+.pane-tab + .pane-tab {
+  border-left: 1px solid var(--card-edge);
+}
+
+.pane-tab:hover {
+  color: var(--ink);
+}
+
+.pane-tab.active {
+  font-weight: 600;
+  color: #fff;
+  background: var(--blue);
+}
+
+/* ================= 写字：田字格练字纸 ================= */
+
+.sheet-xie .xz-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 5mm;
+  margin-top: 4mm;
+}
+
+.xz-char {
+  display: flex;
+  flex-direction: column;
+  gap: 2mm;
+  break-inside: avoid;
+}
+
+.xz-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 3mm;
+}
+
+.xz-box {
+  flex: none;
+  line-height: 0;
+}
+
+.xz-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.xz-model {
+  cursor: pointer;
+}
+
+.xz-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 17mm;
+  min-height: 15mm;
+  line-height: 1.3;
+}
+
+.xz-info b {
+  font-size: 15pt;
+  font-weight: 500;
+  font-family: "Pinyin Kids", "Helvetica Neue", Arial, sans-serif;
+}
+
+.xz-info span {
+  font-size: 8.5pt;
+  color: #555;
+}
+
+.xz-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2mm;
+}
+
+.xz-step {
+  margin: 0;
+  text-align: center;
+}
+
+.xz-step figcaption {
+  margin-top: 0.6mm;
+  font-size: 6.5pt;
+  line-height: 1.1;
+  color: #333;
+  white-space: nowrap;
+}
+
+.xz-row {
+  display: flex;
+}
+
+.xz-row .xz-box + .xz-box {
+  margin-left: -0.25mm; /* 相邻格子共用一条边框，不叠成粗线 */
+}
+
+/* 屏幕上的笔顺动画弹窗 */
+.xz-anim {
+  width: min(360px, calc(100vw - 32px));
+}
+
+.xz-anim-body {
+  padding: 18px 24px 24px;
+  text-align: center;
+}
+
+.xz-anim-stage {
+  position: relative;
+  width: 260px;
+  height: 260px;
+  margin: 0 auto 12px;
+}
+
+.xz-anim-stage > svg {
+  position: absolute;
+  inset: 0;
+  width: 260px;
+  height: 260px;
+}
+
+.xz-anim-names {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+
+.xz-anim .account-row {
+  justify-content: center;
+}
+
+.xz-anim-title {
+  font-family: "Pinyin Kids", inherit;
+}
+
+/* 拼音用课本同款字形（单层 ɑ、ɡ），和拼音板块同一个字体文件 */
+@font-face {
+  font-family: "Pinyin Kids";
+  src: url("../fonts/pinyin-kids.woff2") format("woff2");
+  font-display: block;
+}

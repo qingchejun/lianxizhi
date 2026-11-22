@@ -15,6 +15,7 @@
 'use strict'
 
 require('../js/shizi-data.js')
+require('../js/shizi-rj-data.js')
 require("../js/store.js") // 写入收口：shizi-mark 的 writeJSON 走它，落到本文件的 localStorage 桩上
 require('../js/shizi-core.js')
 
@@ -222,6 +223,21 @@ M.settle(['觅'], null) // 周卷上登记觅（点了＝没认出）
 var pv7 = M.ensurePaper()
 check(pv7 && pv7.d === T1 && pv7.wrong.indexOf('觅') >= 0 && pv7.wrong.length === 10,
   'S7：积压满 10 个，今晚新标的觅仍上明天的卷（位子从逾期老字里匀）', pv7 && pv7.wrong)
+
+/* ---------- S8：人教版顺序模式——每张卷接着上一张往下；作废重来退回原处、出同一批字 ---------- */
+globalThis.SumSum.shizi.useBook('rj1a', 24, 'seq')
+M = fresh({})
+M.setToday(function () { return T0 })
+var q1 = M.ensurePaper()
+check(q1.book === 'rj1a' && q1.seq && q1.seq.next === 20, 'S8：第一张顺序卷记下取到第 20 个字', q1.seq)
+check(q1.chars === '天地人你我他一二三四五上下口耳目手足站坐', 'S8：第一张按课本顺序从「天」开始', q1.chars)
+M.discardPaper()
+var q1b = M.ensurePaper()
+check(q1b.chars === q1.chars, 'S8：作废重来退回原处、还是同一批字', q1b.chars)
+M.settle(Array.from(q1b.chars), q1b)
+var q2 = M.ensurePaper()
+check(q2.chars.charAt(0) === '日' && q2.seq.next === 40, 'S8：登记后下一张从第 21 个字「日」接着', q2.chars)
+globalThis.SumSum.shizi.useBook('hongen')
 
 if (problems.length) {
   console.log('✗ ' + problems.length + ' 处问题：')

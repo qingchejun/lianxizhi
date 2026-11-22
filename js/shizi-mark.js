@@ -163,6 +163,16 @@
    *   - 全新的一天，或只是把往日的欠账卷结清 → 出今天的。
    * 一天一卷由「papers 只在生成时追加」保证；作废（discardPaper）是唯一的删法。
    */
+  /* 最近一张同一字表的顺序卷记到哪了；从没出过就从头 */
+  function lastSeq() {
+    var book = C().currentBook()
+    for (var i = papers.papers.length - 1; i >= 0; i--) {
+      var q = papers.papers[i]
+      if (q && q.seq && q.book === book) return q.seq
+    }
+    return null
+  }
+
   function ensurePaper() {
     var t = today()
     var last = papers.papers[papers.papers.length - 1] || null
@@ -171,8 +181,10 @@
     if (last && last.d >= t) nextD = C().addDays(last.d, 1)
     else if (undoSlot && undoSlot.d === t && undoSlot.kind === 'sheet') nextD = C().addDays(t, 1)
     else nextD = t
-    var b = C().buildDaily(marks, nextD)
+    var b = C().buildDaily(marks, nextD, null, lastSeq())
     var p = { d: nextD, chars: b.chars.join(''), wrong: b.wrong.join(''), settled: false }
+    /* 人教版顺序模式：记下这张取到哪了，下一张从这里接着（作废 / 重排把这张删掉，就自然退回去） */
+    if (b.seq) { p.book = C().currentBook(); p.seq = b.seq }
     papers.papers.push(p)
     savePapers()
     return p
@@ -421,11 +433,13 @@
   /* 「清空错字集」：在集的一律当作今天毕业（n 与 first 留着，历史统计不丢）。
      跟登记一样不可逆（面板上有 confirm 拦一道），点选集顺手全清，免得残留的选择
      把刚毕业的字又收回来。 */
-  function clear() {
+  /* only：可选，只清这些字（人教版下只清课本里的字，洪恩的错字留着） */
+  function clear(only) {
     var t = today()
     Object.keys(marks).forEach(function (ch) {
       var e = marks[ch]
       if (!e || e.out) return
+      if (typeof only === 'function' && !only(ch)) return
       var o = { n: C().markCount(e), out: t }
       if (e.first) o.first = e.first
       marks[ch] = o
@@ -515,6 +529,7 @@
       return C().reviewWeight(marks[ch])
     },
     ensurePaper: ensurePaper,
+    lastSeq: lastSeq,
     discardPaper: discardPaper,
     paperAt: paperAt,
     paperCount: paperCount

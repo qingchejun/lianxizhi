@@ -89,7 +89,7 @@
    * 洪恩那一套（pool / sliceOf / clampWeek / remapWeek）原样不动，周次照旧只按洪恩算。
    */
   var HONGEN = 'hongen'
-  var cur = { book: HONGEN, lesson: 0 }
+  var cur = { book: HONGEN, lesson: 0, order: 'rand' }
 
   function rjBooks() {
     var d = root.SumSum.shiziRjData
@@ -169,8 +169,49 @@
     return /^拼音/.test(l.t) ? l.t + ' ' + l.name : l.t + '《' + l.name + '》'
   }
 
-  function useBook(book, lesson) {
-    cur = { book: hasBook(book) ? book : HONGEN, lesson: Number(lesson) || 0 }
+  /* order：人教版认识字怎么取 —— 'seq' 按课本顺序往下、不重复；'rand' 随机（洪恩永远随机） */
+  function useBook(book, lesson, order) {
+    cur = { book: hasBook(book) ? book : HONGEN, lesson: Number(lesson) || 0, order: order === 'seq' ? 'seq' : 'rand' }
+  }
+
+  /*
+   * 错字算不算「这套字表的」（2026-11-22 站长定）：错字集只有一份，人教版里没认出的字
+   * 照样进去、洪恩也考得到；但用人教版时只考整本课本里的字，洪恩独有的错字不上人教版的卷。
+   */
+  function inScope(ch) {
+    if (cur.book === HONGEN) return true
+    return learnedChars(cur.book, 0).indexOf(ch) >= 0
+  }
+
+  /*
+   * 顺序模式取认识字：从 start（已学字表里的下标）往后取 n 个，跳过错字集里的字；
+   * 走到已学的最后一个字就回到开头、轮次 +1。返回 { chars, next, round }，
+   * next/round 记在卷子上，下一张从这里接着（作废 / 重排时卷子被删，自然退回去）。
+   */
+  function seqPick(list, start, round, n, skip) {
+    var L = list.length
+    var i = start >= 0 && start < L ? start : 0
+    var r = round || 1
+    if (start >= L && L) r++ /* 学校进度往回改、或上一张正好用完：从头开始下一轮 */
+    var out = []
+    for (var steps = 0; steps < L && out.length < n; steps++) {
+      if (i >= L) { i = 0; r++ }
+      var ch = list[i++]
+      if (!skip[ch]) out.push(ch)
+    }
+    if (i >= L) { i = 0; r++ }
+    return { chars: out, next: i, round: r }
+  }
+
+  /* 顺序进度给人看：下一个要考的字在哪一课 */
+  function seqWhere(book, lesson, next, round) {
+    var list = learnedChars(book, lesson)
+    var ch = list[next >= 0 && next < list.length ? next : 0]
+    var ls = lessonsOf(book)
+    for (var k = 0; k < ls.length; k++) {
+      if (ls[k].chars.indexOf(ch) >= 0) return { round: round || 1, lesson: ls[k], ch: ch, at: next, of: list.length }
+    }
+    return { round: round || 1, lesson: null, ch: ch, at: next, of: list.length }
   }
 
   function currentBook() {
@@ -489,7 +530,7 @@
    * 认识字池 = 当前字表（knownPool：洪恩全表 / 人教版学到的课）里不在错字集的字（毕业的算认识），完全随机。
    * 卷子一经生成就冻结，由 shizi-mark 存进 daily:v1。
    */
-  function buildDaily(marks, t, rnd) {
+  function buildDaily(marks, t, rnd, seqFrom) {
     var r = rnd || Math.random
     var inSet = {}
     Object.keys(marks || {}).forEach(function (ch) {
@@ -502,9 +543,17 @@
     var fresh = []
     var late = []
     dueList(marks, t, r).forEach(function (ch) {
+      if (!inScope(ch)) return /* 人教版只考课本里的错字 */
       ;((marks[ch].due || '') === t ? fresh : late).push(ch)
     })
     var wrong = fresh.concat(late).slice(0, DAILY_WRONG_MAX)
+    if (cur.book !== HONGEN && cur.order === 'seq') {
+      /* 顺序模式：认识字按课本顺序接着上一张往下取；卷面也按课本顺序排（错字落在各自的位置） */
+      var from = seqFrom || {}
+      var pk = seqPick(knownPool(), from.next || 0, from.round || 1, DAILY_SIZE - wrong.length, inSet)
+      return { wrong: wrong, known: pk.chars, chars: sortByTable(wrong.concat(pk.chars)),
+        seq: { next: pk.next, round: pk.round } }
+    }
     var known = shuffle(knownPool().filter(function (ch) {
       return !inSet[ch]
     }), r).slice(0, DAILY_SIZE - wrong.length)
@@ -659,6 +708,10 @@
     useBook: useBook,
     currentBook: currentBook,
     knownPool: knownPool,
+    inScope: inScope,
+    seqPick: seqPick,
+    seqWhere: seqWhere,
+    currentOrder: function () { return cur.order },
     slice: slice,
     lessonStats: lessonStats,
     titleFor: titleFor
