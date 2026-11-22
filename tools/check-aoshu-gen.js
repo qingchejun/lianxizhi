@@ -843,6 +843,37 @@ function checkWoniu() {
   })
 }
 
+/* B10 间隔问题（补充）：页数按一页一页数，夹子按一块一块挂上去数，剪绳子把绳子展开一个个找剪口，独立重算 */
+function checkJiangebc() {
+  if (!A.topics.jiangebc) return
+  each('jiangebc', 'page', function (q, d) {
+    var f = q.key.slice(5).split(','), kind = f[0], a = +f[1], want
+    if (kind === 'count') { var b = +f[2], c = 0; for (var p = a; p <= b; p++) c++; want = c }
+    else if (kind === 'left') { var b2 = +f[2], N = +f[3], seen = 0; for (var p2 = a; p2 <= b2; p2++) seen++; want = N - seen; if (b2 > N) bad('B10 看过的页超出计划：' + q.key) }
+    else { var n = +f[2], last = a; for (var i = 1; i < n; i++) last++; want = last }
+    if (q.answer !== want) bad('B10 页数答案错：' + q.key + ' 给的 ' + q.answer + ' 算出 ' + want)
+    if (d === 'L1' && kind !== 'count') bad('B10 入门只问一共几页：' + q.key)
+  })
+  each('jiangebc', 'clip', function (q) {
+    var f = q.key.slice(5).split(','), kind = f[0], v = +f[1], want
+    function together(n) { var c = 0; for (var i = 0; i < n; i++) c += i ? 1 : 2; return c }
+    if (kind === 'min') want = together(v)
+    else if (kind === 'max') { want = 0; for (var i = 0; i < v; i++) want += 2 }
+    else { want = 0; while (together(want + 1) <= v) want++ }
+    if (q.answer !== want) bad('B10 夹子答案错：' + q.key + ' 给的 ' + q.answer + ' 算出 ' + want)
+  })
+  each('jiangebc', 'fold', function (q, d) {
+    var f = q.key.slice(5).split(','), k = +f[0], xs = f[1].split('-').map(Number)
+    /* 折好的绳子长 12，展开后第 j 股：偶数股正着、奇数股倒着；剪口去重后数段 */
+    var st = 1; for (var i = 0; i < k; i++) st *= 2
+    var pts = {}
+    for (var j = 0; j < st; j++) xs.forEach(function (x) { if (x <= 0 || x >= 12) bad('B10 剪在折弯上：' + q.key); pts[j % 2 ? (j + 1) * 12 - x : j * 12 + x] = true })
+    var want = Object.keys(pts).length + 1
+    if (q.answer !== want) bad('B10 剪绳子答案错：' + q.key + ' 给的 ' + q.answer + ' 算出 ' + want)
+    if (d === 'L1' && k !== 1) bad('B10 入门只对折一次：' + q.key)
+  })
+}
+
 function checkFloors() {
   each('daxiao', 'num', function (q) {
     var n = nums(q.stem)
@@ -1029,6 +1060,7 @@ checkJingzi()
 checkDiefang()
 checkFanzhuan()
 checkWoniu()
+checkJiangebc()
 checkSupply()
 
 if (problems.length) {
