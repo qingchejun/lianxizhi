@@ -560,6 +560,7 @@
     { no: 'B06', stage: 'L1B', id: 'jingzi', name: '镜子里的对称' },
     { no: 'B07', stage: 'L1B', id: 'diefang', name: '叠加覆盖：叠放顺序' },
     { no: 'B08', stage: 'L1B', id: 'fanzhuan', name: '叠加覆盖：翻转问题' },
+    { no: 'B09', stage: 'L1B', id: 'woniu', name: '蜗牛爬井' },
     { no: '21', stage: 'L2', id: 'wenzimi', name: '加减法文字谜' },
     { no: '22', stage: 'L2', id: 'kuohao1', name: '加减法添去括号（一）' },
     { no: '23', stage: 'L2', id: 'kuohao2', name: '加减法添去括号（二）' },

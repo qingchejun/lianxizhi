@@ -809,6 +809,40 @@ function checkFanzhuan() {
   })
 }
 
+/* B09 蜗牛爬井：从 key 一天一天模拟（白天加、到顶就出去、晚上减），过河一趟一趟模拟，独立重算答案 */
+function checkWoniu() {
+  if (!A.topics.woniu) return
+  function climb(H, a, b) { var h = 0; for (var d = 1; d < 500; d++) { h += a; if (h >= H) return d; h -= b } return -1 }
+  each('woniu', 'well', function (q, d) {
+    var f = q.key.slice(5).split(','), H = +f[1], a = +f[2], b = +f[3]
+    if (!(a > b && b > 0 && H > a)) bad('B09 爬井参数不对：' + q.key)
+    var want = climb(H, a, b)
+    if (q.answer !== want) bad('B09 几天爬出答案错：' + q.key + ' 给的 ' + q.answer + ' 算出 ' + want)
+    if (H % (a - b) === 0 && H / (a - b) === want) bad('B09 陷阱不成立（直接除也对）：' + q.key)
+    if (d === 'L1' && H > 8) bad('B09 入门井太深：' + q.key)
+  })
+  each('woniu', 'where', function (q, d) {
+    var f = q.key.slice(6).split(','), H = +f[1], a = +f[2], b = +f[3], n = +f[4], eve = +f[5]
+    var h = 0, at = null
+    for (var day = 1; day <= n; day++) {
+      h += a
+      if (h >= H) { bad('B09 问的那天已经爬出去了：' + q.key); return }
+      if (day === n && eve) at = h
+      h -= b
+      if (day === n && !eve) at = h
+    }
+    if (q.answer !== at) bad('B09 第几天在哪答案错：' + q.key + ' 给的 ' + q.answer + ' 算出 ' + at)
+    if (d === 'L1' && eve) bad('B09 入门不问傍晚：' + q.key)
+  })
+  each('woniu', 'boat', function (q) {
+    var f = q.key.slice(5).split(','), N = +f[0], k = +f[1]
+    var left = N, t = 0
+    while (left > 0) { t++; if (left <= k) break; left = left - k + 1 }
+    if (q.answer !== t) bad('B09 过河答案错：' + q.key + ' 给的 ' + q.answer + ' 算出 ' + t)
+    if (Math.ceil(N / k) === t) bad('B09 过河陷阱不成立：' + q.key)
+  })
+}
+
 function checkFloors() {
   each('daxiao', 'num', function (q) {
     var n = nums(q.stem)
@@ -994,6 +1028,7 @@ checkDuichen()
 checkJingzi()
 checkDiefang()
 checkFanzhuan()
+checkWoniu()
 checkSupply()
 
 if (problems.length) {
