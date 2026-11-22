@@ -23,10 +23,17 @@
     font: $('f-font'),
     copies: $('f-copies'),
     withWrong: $('f-withwrong'),
-    title: $('f-title')
+    title: $('f-title'),
+    book: $('f-book'),
+    lesson: $('f-lesson')
   }
 
   var settings = S.shiziSettings.load()
+  S.shizi.useBook(settings.book, settings.lesson)
+
+  function isRj(s) {
+    return s.book !== S.shizi.HONGEN
+  }
 
   /* 错字集卷面渲染时用的那一份快照。渲染之后用户还会继续点，
      集合和卷面就会对不上 —— 用它判断要不要提示「重新排版」。 */
@@ -52,12 +59,17 @@
   function repick() {
     appendPick = S.shizi.sampleWrong(
       S.shiziMark.all(),
-      S.shizi.sliceOf(settings.week, settings.perWeek).chars,
+      S.shizi.slice(settings).chars,
       APPEND_MAX,
       null,
       S.shiziMark.weightOf
     )
-    pickedForWeek = settings.week
+    pickedForWeek = sliceKey(settings)
+  }
+
+  /* 附页缓存认的是「哪一段」：洪恩看周次，人教版看单元 */
+  function sliceKey(s) {
+    return s.book + ':' + (isRj(s) ? s.unit : s.week)
   }
 
   /*
@@ -71,7 +83,7 @@
     appendPick = appendPick.filter(function (ch) {
       return S.shiziMark.has(ch)
     })
-    if (!appendPick.length || pickedForWeek !== settings.week) repick()
+    if (!appendPick.length || pickedForWeek !== sliceKey(settings)) repick()
     return appendPick
   }
 
@@ -151,7 +163,9 @@
     /* 非「本周复习」模式下，周次与每周字数这两块控件不起作用，直接收起来。
        留着变灰只是噪音 —— 上面的页签已经说清楚现在在看哪张卷子。 */
     $('sec-progress').hidden = s.mode !== 'week'
-    $('sec-range').hidden = s.mode !== 'week'
+    $('sec-range').hidden = s.mode !== 'week' || isRj(s)
+    fillBook(s)
+    $('hist-append-hint').hidden = isRj(s)
     /* 「历史」是屏幕上的统计页，不印，排版、标题、错字集这几块都用不上 */
     var hist = s.mode === 'history'
     $('sec-history').hidden = !hist
@@ -180,6 +194,11 @@
       font: els.font.value,
       copies: els.copies.value,
       withWrong: els.withWrong.checked,
+      book: els.book.value,
+      /* 「学到第几课」只在人教版下从下拉框读；洪恩下下拉框是空的，沿用记着的值，
+         切回人教版时进度还在（sanitize 会按所选那一册钳位） */
+      lesson: els.book.value === settings.book && isRj(settings) ? els.lesson.value : settings.lesson,
+      unit: settings.unit,
       mode: settings.mode, // 模式不是表单项，由页签管
       title: els.title.value.trim()
     })
@@ -187,14 +206,22 @@
 
   /* 面板顶部那块进度：大号周次 + 字序区间 + 进度条 + 前后按钮的可用状态 */
   function fillProgress(s) {
-    var sl = S.shizi.sliceOf(s.week, s.perWeek)
+    var sl = S.shizi.slice(s)
+    $('week-fill').style.width = (sl.week / sl.weeks) * 100 + '%'
+    $('btn-prev').disabled = sl.week <= 1
+    $('btn-next').disabled = sl.week >= sl.weeks
+    $('btn-prev').textContent = '◀ 上一' + sl.unitWord
+    $('btn-next').textContent = '下一' + sl.unitWord + ' ▶'
+    if (isRj(s)) {
+      $('week-now').textContent = sl.unitName + ' · ' + sl.kind
+      $('week-sub').textContent = sl.range + '　·　' + sl.chars.length + ' 字　·　共 ' + sl.weeks + ' 个单元'
+      $('week-hint').textContent = '学完一个单元考一次：整个单元的字印一张，没认出的点一下再登记，错字会进每日一卷。'
+      return
+    }
     $('week-now').textContent = '第 ' + sl.week + ' 周'
     $('week-sub').textContent =
       '第 ' + sl.from + '–' + sl.to + ' 字　·　共 ' + sl.weeks + ' 周　·　字表 ' +
       S.shizi.poolSize() + ' 字'
-    $('week-fill').style.width = (sl.week / sl.weeks) * 100 + '%'
-    $('btn-prev').disabled = sl.week <= 1
-    $('btn-next').disabled = sl.week >= sl.weeks
 
     $('week-hint').textContent =
       sl.week >= sl.weeks
@@ -255,6 +282,7 @@
 
   /* 主流程：保存设置 → 同步表单 → 渲染 → 把错字标记投影回新 DOM */
   function refresh() {
+    S.shizi.useBook(settings.book, settings.lesson)
     S.shiziSettings.save(settings)
     fillTabs(settings)
     fillForm(settings)
@@ -300,9 +328,10 @@
 
     var count = settings.mode === 'wrong'
       ? renderedWrong.length
-      : S.shizi.sliceOf(settings.week, settings.perWeek).chars.length
+      : S.shizi.slice(settings).chars.length
     $('pages-hint').textContent = pagesHint(settings, count, append)
-    $('btn-print').querySelector('.txt').textContent = PRINT_LABEL[settings.mode]
+    $('btn-print').querySelector('.txt').textContent =
+      settings.mode === 'week' && isRj(settings) ? '打印检查卷' : PRINT_LABEL[settings.mode]
     $('btn-print').disabled = settings.mode === 'wrong' && !renderedWrong.length
     refreshMarkPanel()
     paintSummary(settings, count)
@@ -438,9 +467,10 @@
     var h = S.shiziMark.history()
     var st = h.stats
     var box = $('preview')
+    var lessonBox = isRj(settings) ? lessonTable(settings, h.marks) : ''
     if (!st.total) {
-      box.innerHTML = '<div class="hist"><p class="hist-empty">还没有错过的字。' +
-        '在「本周复习」卷面上点孩子念不出来的字，就会记到这里。</p></div>'
+      box.innerHTML = '<div class="hist">' + lessonBox + '<p class="hist-empty">还没有错过的字。' +
+        '在每日一卷或' + (isRj(settings) ? '单元检查' : '本周复习') + '的卷面上点孩子念不出来的字，登记后就会记到这里。</p></div>'
       return
     }
     var cards = [
@@ -464,7 +494,7 @@
       return '<tr><td>' + md(r.d) + '</td><td>' + r.seen.length + '</td><td>' + (r.ok || 0) + '</td><td>' +
         (r.miss || 0) + '</td><td>' + (r.out || 0) + '</td></tr>'
     }).join('')
-    box.innerHTML = '<div class="hist">' +
+    box.innerHTML = '<div class="hist">' + lessonBox +
       '<div class="hist-cards">' + cards + '</div>' +
       '<h3 class="hist-h">按错的次数<span class="hist-key"><i class="hc wrong"></i>在错字集里' +
         '<i class="hc once"></i>认出过一次，等复核<i class="hc out"></i>已毕业</span></h3>' +
@@ -477,17 +507,41 @@
       '</div>'
   }
 
+  /*
+   * 人教版「按课看掌握情况」：每课一行，红 = 还在错字集，半红 = 认出过一次等复核，灰 = 错过已学会。
+   * 学校还没教到的课整行变淡。字都来自字表，可以直接进 innerHTML。
+   */
+  function lessonTable(s, marks) {
+    var rows = S.shizi.lessonStats(s.book, s.lesson, marks || {})
+    var unit = 0
+    var body = rows.map(function (r) {
+      var head = r.unit !== unit ? '<tr class="lt-unit"><th colspan="3">' + r.unitName + '</th></tr>' : ''
+      unit = r.unit
+      var miss = r.wrong.length + r.once.length
+      var chips = r.wrong.map(function (ch) { return '<span class="hc wrong">' + ch + '</span>' }).join('') +
+        r.once.map(function (ch) { return '<span class="hc once">' + ch + '</span>' }).join('') +
+        r.out.map(function (ch) { return '<span class="hc out">' + ch + '</span>' }).join('')
+      var state = !r.taught ? '还没教' : miss ? miss + ' 个没掌握' : r.out.length ? '已掌握（错过 ' + r.out.length + ' 个）' : '没错过'
+      return head + '<tr class="' + (r.taught ? '' : 'lt-later') + (miss && r.taught ? ' lt-miss' : '') + '">' +
+        '<td>' + r.label + '<small>' + r.total + ' 字</small></td><td>' + state + '</td><td class="lt-chars">' + chips + '</td></tr>'
+    }).join('')
+    return '<h3 class="hist-h">按课看掌握情况<span class="hist-key"><i class="hc wrong"></i>没认出' +
+      '<i class="hc once"></i>认出过一次，等复核<i class="hc out"></i>错过、已学会</span></h3>' +
+      '<table class="hist-log lesson-table"><thead><tr><th>课</th><th>情况</th><th>错过的字</th></tr></thead><tbody>' +
+      body + '</tbody></table>'
+  }
+
   /* 顶栏摘要：现在印的是哪一张、多少字 */
   function paintSummary(s, count) {
     if (s.mode === 'wrong') {
       S.shell.summary(['错字集', count + ' 个字'])
       return
     }
-    var sl = S.shizi.sliceOf(s.week, s.perWeek)
+    var sl = S.shizi.slice(s)
     S.shell.summary([
-      '本周复习',
-      '第 ' + sl.week + ' 周',
-      '第 ' + sl.from + '–' + sl.to + ' 字',
+      isRj(s) ? '单元检查' : '本周复习',
+      sl.label,
+      isRj(s) ? sl.chars.length + ' 字' : sl.range,
       s.withWrong && appendPick.length ? '附 ' + appendPick.length + ' 个错字' : ''
     ])
   }
@@ -541,7 +595,7 @@
 
   /* perWeek 单独绑（见下），不要进这个循环，否则改每周字数会走通用路径、把进度弄丢 */
   Object.keys(els).forEach(function (k) {
-    if (k === 'perWeek') return
+    if (k === 'perWeek' || k === 'book' || k === 'lesson') return
     els[k].addEventListener('change', onFormChange)
   })
 
@@ -574,6 +628,57 @@
     fillProgress(S.shiziSettings.sanitize(Object.assign({}, settings, { week: v })))
   })
 
+  /*
+   * 换字表 / 改「学校学到」：今天那张每日卷如果还没点过字，按新字表重出一张
+   * （不然切到人教版，卷上还是洪恩的字）；点过字的不动，免得把孩子的标记弄丢，下一张自然按新字表出。
+   */
+  function onBookChange() {
+    var before = settings.book + ':' + settings.lesson
+    settings = readForm()
+    if (settings.book + ':' + settings.lesson !== before) {
+      S.shizi.useBook(settings.book, settings.lesson)
+      var last = S.shiziMark.paperCount() ? S.shiziMark.paperAt(S.shiziMark.paperCount() - 1) : null
+      if (last && !last.settled && !S.shiziMark.pickCount()) {
+        S.shiziMark.discardPaper()
+        browseIdx = null
+      }
+    }
+    refresh()
+  }
+  els.book.addEventListener('change', onBookChange)
+  els.lesson.addEventListener('change', onBookChange)
+
+  /* 字表那一块：人教版时填「学校学到」的课表（按单元分组），提示每日一卷考的范围 */
+  var lessonsFor = ''
+  function fillBook(s) {
+    els.book.value = s.book
+    var rj = isRj(s)
+    $('lesson-field').hidden = !rj
+    var weekTab = $('mode-tabs').querySelector('[data-mode="week"]')
+    if (weekTab) weekTab.textContent = rj ? '单元检查' : '本周复习'
+    if (!rj) {
+      $('book-hint').textContent = '按洪恩识字的顺序，每日一卷从全部 1600 字里抽。'
+      return
+    }
+    var ls = S.shizi.lessonsOf(s.book)
+    if (lessonsFor !== s.book) {
+      var html = '<option value="0">整册都学完了</option>'
+      var unit = 0
+      ls.forEach(function (l) {
+        if (l.unit !== unit) {
+          html += (unit ? '</optgroup>' : '') + '<optgroup label="' + l.unitName + ' · ' + l.kind + '">'
+          unit = l.unit
+        }
+        html += '<option value="' + l.i + '">' + S.shizi.lessonLabel(l) + '</option>'
+      })
+      els.lesson.innerHTML = html + '</optgroup>'
+      lessonsFor = s.book
+    }
+    els.lesson.value = String(s.lesson)
+    var n = S.shizi.learnedChars(s.book, s.lesson).length
+    $('book-hint').textContent = '每日一卷只考学校已经教过的 ' + n + ' 个字，跟着学校进度改这里。错字两套字表共用。'
+  }
+
   function gotoMode(mode) {
     if (mode === settings.mode) return
     browseIdx = null // 离开又回来，先看最新一张，别停在刚才翻的往期上
@@ -595,9 +700,10 @@
 
   function step(delta) {
     return function () {
-      settings = S.shiziSettings.sanitize(
-        Object.assign({}, settings, { week: settings.week + delta })
-      )
+      var k = isRj(settings) ? 'unit' : 'week'
+      var patch = {}
+      patch[k] = settings[k] + delta
+      settings = S.shiziSettings.sanitize(Object.assign({}, settings, patch))
       refresh()
     }
   }

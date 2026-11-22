@@ -20,6 +20,7 @@ require('../js/aoshu-videos.js')
 require('../js/shudu-core.js')
 require('../js/shudu-settings.js')
 require('../js/shizi-data.js')
+require('../js/shizi-rj-data.js')
 require('../js/shizi-core.js')
 require('../js/shizi-settings.js')
 require('../js/pinyin-syllables.js')
@@ -107,6 +108,16 @@ check(used.shizi.wrong === 3, '错字集 3 个（已移出的瓜不算）：' + 
 check(used.shizi.repeats === 3, '反复错 3 个（鸟、闪、瓜，移出的也算）：' + used.shizi.repeats)
 check(used.shizi.due === 3, '每日一卷到期 3 个（鸟/闪/伞 due 空=今天到期，瓜毕业不算）：' + used.shizi.due)
 check(used.shizi.withWrong === true, '识字附错字页的开关要带出来')
+
+/* 人教版：卡片写学到哪一课，单元检查是第几单元 */
+var rjCard = T.build(fakeStorage({ 'sumsum:shizi:v1': JSON.stringify({ book: 'rj1a', lesson: 24, unit: 5 }) }), new Date(2026, 10, 22)).shizi
+check(rjCard.book === 'rj1a' && rjCard.bookShort === '人教一上', '人教版卡片：字表名 ' + rjCard.bookShort)
+check(rjCard.lessonLabel === '课文 4《四季》', '人教版卡片：学到 ' + rjCard.lessonLabel)
+check(rjCard.unitName === '第五单元' && rjCard.chars.length === 20, '人教版卡片：单元与缩略字 ' + rjCard.unitName + ' ' + rjCard.chars.length)
+var rjAll = T.build(fakeStorage({ 'sumsum:shizi:v1': JSON.stringify({ book: 'rj1a' }) }), new Date(2026, 10, 22)).shizi
+var lastTab = T.build(fakeStorage({ 'sumsum:shizi:v1': JSON.stringify({ mode: 'history' }) }), new Date(2026, 10, 22)).shizi
+check(lastTab.mode === 'daily', '识字页上次停在「历史」，卡片仍是每日一卷：' + lastTab.mode)
+check(rjAll.lessonLabel === '整册', '人教版没设进度时写「整册」：' + rjAll.lessonLabel)
 
 check(used.kousuan.title === '20以内进退位', '命中预设时用预设名：' + used.kousuan.title)
 check(used.kousuan.meta === '加减法混合 · 40 题 · 2 列 · A4 纵向', '口算摘要：' + used.kousuan.meta)

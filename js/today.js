@@ -83,7 +83,8 @@
   }
 
   function shiziCard(z) {
-    var chars = S.shizi.sliceOf(z.week, 100).chars.slice(0, 20)
+    var chars = z.chars || []
+    var rj = z.book && z.book !== 'hongen'
     var face = '<div class="pp-zi">' + chars.map(function (c) { return '<span>' + esc(c) + '</span>' }).join('') + '</div>'
     var isWeek = z.mode === 'week'
     var isDaily = z.mode === 'daily'
@@ -94,14 +95,16 @@
     return paper({
       name: '识字', kind: isWeek ? '本周复习' : isDaily ? '每日一卷' : '错字集',
       href: z.href, printHref: z.printHref, cls: 'pp-shizi',
-      sheetTitle: isWeek ? '识字 · 第 ' + z.week + ' 周' : isDaily ? '识字 · 每日一卷' : '识字 · 错字卷',
+      sheetTitle: isWeek ? (rj ? '识字检查 · ' + z.unitName : '识字 · 第 ' + z.week + ' 周') : isDaily ? '识字 · 每日一卷' : '识字 · 错字卷',
       face: face,
       title: isWeek
-        ? '第 ' + z.week + ' 周 · 第 ' + z.from + '–' + z.to + ' 字'
+        ? (rj ? z.unitName + ' · 单元检查' : '第 ' + z.week + ' 周 · 第 ' + z.from + '–' + z.to + ' 字')
         : isDaily ? (z.due ? '今天到期 ' + z.due + ' 个字' : '今天 20 个字') : '错字卷 · ' + z.wrong + ' 个字',
       lines: '<p class="dk-meta">' + meta.join('，') + '</p>' +
-        '<div class="dk-prog"><div class="weeks">' + weeks + '</div><span>第 ' + z.week + ' / ' + z.weeks + ' 周</span></div>',
-      printText: isWeek ? '打印本周卷' : isDaily ? '打印今日卷' : '打印错字卷',
+        (rj
+          ? '<p class="dk-note">' + esc(z.bookShort) + ' · 学到 ' + esc(z.lessonLabel) + '</p>'
+          : '<div class="dk-prog"><div class="weeks">' + weeks + '</div><span>第 ' + z.week + ' / ' + z.weeks + ' 周</span></div>'),
+      printText: isWeek ? (rj ? '打印检查卷' : '打印本周卷') : isDaily ? '打印今日卷' : '打印错字卷',
       more: '标记错字'
     })
   }

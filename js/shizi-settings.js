@@ -33,7 +33,15 @@
      * 本周复习卷后面要不要再附一页错字。见 LOCAL_ONLY —— 这一项不进网址。
      */
     withWrong: false,
-    title: ''
+    title: '',
+    /*
+     * 字表（2026-11 加）：'hongen' 洪恩识字（默认，原来的一切照旧）| 'rj1a' 人教版一年级上册……
+     * lesson：人教版「学校学到第几课」（跨单元连续编号，0 = 整册都算学过）；
+     * unit：人教版「单元检查」页签印第几单元。两项在洪恩下不起作用。
+     */
+    book: 'hongen',
+    lesson: 0,
+    unit: 1
   })
 
   /*
@@ -90,6 +98,26 @@
     return oneOf(merged.mode, MODES, DEFAULTS.mode)
   }
 
+  function Z() {
+    return root.SumSum.shizi
+  }
+
+  /* 学到第几课：0 = 整册；超出本册课数的钳到最后一课 */
+  function clampLesson(s) {
+    var book = Z().hasBook(String(s.book)) ? String(s.book) : DEFAULTS.book
+    var n = Math.round(Number(s.lesson))
+    if (!Number.isFinite(n) || n <= 0) return 0
+    /* 洪恩下这一项不起作用，但原样留着：切回人教版时进度还在 */
+    var max = Z().lessonsOf(book).length
+    return max ? Math.min(max, n) : Math.min(999, n)
+  }
+
+  function clampUnit(s) {
+    var book = Z().hasBook(String(s.book)) ? String(s.book) : DEFAULTS.book
+    var max = Z().unitCount(book) || 1
+    return clampInt(s.unit, 1, max, DEFAULTS.unit)
+  }
+
   /* 把任意来源（表单 / localStorage / URL）的原始值清洗成合法设置对象 */
   function sanitize(raw) {
     var s = Object.assign({}, DEFAULTS, raw)
@@ -106,7 +134,10 @@
       mode: pickMode(raw || {}, s),
       withWrong: toBool(s.withWrong, DEFAULTS.withWrong),
       copies: clampInt(s.copies, 1, 2, DEFAULTS.copies),
-      title: String(s.title == null ? '' : s.title).slice(0, 30)
+      title: String(s.title == null ? '' : s.title).slice(0, 30),
+      book: Z().hasBook(String(s.book)) ? String(s.book) : DEFAULTS.book,
+      lesson: clampLesson(s),
+      unit: clampUnit(s)
     }
   }
 

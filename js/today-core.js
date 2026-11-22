@@ -83,7 +83,10 @@
     var Z = root.SumSum.shizi
     var raw = readJson(storage, 'sumsum:shizi:v1')
     var s = root.SumSum.shiziSettings.sanitize(isObj(raw) ? raw : {})
-    var slice = Z.sliceOf(s.week, s.perWeek)
+    var slice = Z.slice(s)
+    var rj = s.book !== Z.HONGEN
+    var lessons = rj ? Z.lessonsOf(s.book) : []
+    var at = rj ? (s.lesson ? lessons[s.lesson - 1] : lessons[lessons.length - 1]) : null
 
     /* 2026-11 起错字集是 v3；老备份导入前的 v2 也认（在集的都当红底数） */
     var marks = readJson(storage, 'sumsum:shizi:wrong:v3')
@@ -110,7 +113,15 @@
     }
 
     return {
-      mode: s.mode,
+      /* 识字页打开永远是「每日一卷」（shizi-settings 的 load 不记页签），卡片跟它一致；
+         存着的 mode 只是上次停在哪个页签，不能拿来决定卡片印什么 */
+      mode: 'daily',
+      book: s.book,
+      /* 人教版：学到哪一课（今天卡片上写给家长看）、单元检查印的是哪个单元 */
+      lessonLabel: at ? (s.lesson ? Z.lessonLabel(at) : '整册') : '',
+      bookShort: rj ? (root.SumSum.shiziRjData.BOOKS[s.book] || {}).short || '' : '',
+      unitName: rj ? slice.unitName : '',
+      chars: slice.chars.slice(0, 20),
       week: slice.week,
       weeks: slice.weeks,
       from: slice.from,

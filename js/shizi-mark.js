@@ -319,6 +319,7 @@
   function history() {
     return {
       stats: C().historyStats(marks),
+      marks: marks, /* 只读：人教版按课统计要逐字看状态 */
       log: log.slice().reverse()
     }
   }

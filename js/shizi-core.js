@@ -80,6 +80,155 @@
     return clampWeek(Math.floor((from - 1) / to) + 1, to)
   }
 
+  /* ================= 人教版字表（2026-11 加） =================
+   *
+   * 洪恩是一张长表、按周往下走；人教版是按课排的，家长设「学校学到第几课」，
+   * 每日一卷的认识字只从已经教过的课里抽，「单元检查」按单元整块印。
+   * 当前用哪套字由 useBook() 设定（页面按设置调一次）。它只影响：
+   *   每日一卷的认识字池 knownPool()、sortByTable 的排序依据、slice() 印哪一段。
+   * 洪恩那一套（pool / sliceOf / clampWeek / remapWeek）原样不动，周次照旧只按洪恩算。
+   */
+  var HONGEN = 'hongen'
+  var cur = { book: HONGEN, lesson: 0 }
+
+  function rjBooks() {
+    var d = root.SumSum.shiziRjData
+    return (d && d.BOOKS) || {}
+  }
+
+  function hasBook(book) {
+    return book === HONGEN || Object.prototype.hasOwnProperty.call(rjBooks(), book)
+  }
+
+  /* 一册书拍平成课的列表：i 从 1 起算，跨单元连续编号（「学到第几课」存的就是它） */
+  function lessonsOf(book) {
+    var b = rjBooks()[book]
+    if (!b) return []
+    var out = []
+    b.units.forEach(function (u, ui) {
+      u.lessons.forEach(function (l) {
+        out.push({ i: out.length + 1, unit: ui + 1, unitName: u.name, kind: u.kind, t: l[0], name: l[1], chars: Array.from(l[2]) })
+      })
+    })
+    return out
+  }
+
+  function clampIndex(v, max, dflt) {
+    var n = Math.round(Number(v))
+    if (!Number.isFinite(n) || n <= 0) n = dflt /* 0 / 空 = 取默认（学到第几课的 0 表示整册） */
+    return Math.min(max, Math.max(1, n))
+  }
+
+  /* 按字去重、保持先后（书上蓝色的多音字第二次出现时不重复算） */
+  function uniq(chars) {
+    var seen = {}
+    return chars.filter(function (ch) {
+      if (seen[ch]) return false
+      seen[ch] = true
+      return true
+    })
+  }
+
+  /* 学到第 lesson 课为止教过的全部字 */
+  function learnedChars(book, lesson) {
+    var ls = lessonsOf(book)
+    if (!ls.length) return []
+    var n = clampIndex(lesson, ls.length, ls.length)
+    var all = []
+    ls.slice(0, n).forEach(function (l) { Array.prototype.push.apply(all, l.chars) })
+    return uniq(all)
+  }
+
+  function unitCount(book) {
+    var b = rjBooks()[book]
+    return b ? b.units.length : 0
+  }
+
+  /* 一个单元的全部字（单元内去重），给「单元检查」整块印 */
+  function unitSlice(book, unit) {
+    var units = unitCount(book)
+    var u = clampIndex(unit, Math.max(1, units), 1)
+    var ls = lessonsOf(book).filter(function (l) { return l.unit === u })
+    var all = []
+    ls.forEach(function (l) { Array.prototype.push.apply(all, l.chars) })
+    var b = rjBooks()[book]
+    return {
+      week: u,
+      weeks: units,
+      chars: uniq(all),
+      unitName: b ? b.units[u - 1].name : '',
+      kind: b ? b.units[u - 1].kind : '',
+      range: ls.length ? ls[0].t + ' – ' + ls[ls.length - 1].t : ''
+    }
+  }
+
+  /* 课的显示名：「课文 4《四季》」「语文园地五」「拼音 3 b p m f」 */
+  function lessonLabel(l) {
+    if (!l) return ''
+    if (!l.name) return l.t
+    return /^拼音/.test(l.t) ? l.t + ' ' + l.name : l.t + '《' + l.name + '》'
+  }
+
+  function useBook(book, lesson) {
+    cur = { book: hasBook(book) ? book : HONGEN, lesson: Number(lesson) || 0 }
+  }
+
+  function currentBook() {
+    return cur.book
+  }
+
+  /* 每日一卷的认识字池：洪恩 = 前 TOTAL 个字；人教版 = 学到的课为止 */
+  function knownPool() {
+    return cur.book === HONGEN ? pool() : learnedChars(cur.book, cur.lesson)
+  }
+
+  /*
+   * 「本周复习 / 单元检查」这一页签印哪一段，统一出口。
+   * 洪恩：照旧按周（sliceOf）；人教版：按 s.unit 整个单元。
+   * 返回里 week/weeks 是给进度条和前后按钮用的序号（人教版就是第几单元/共几单元）。
+   */
+  function slice(s) {
+    var book = s && hasBook(s.book) ? s.book : HONGEN
+    if (book === HONGEN) {
+      var sl = sliceOf(s.week, s.perWeek)
+      sl.book = HONGEN
+      sl.label = '第 ' + sl.week + ' 周'
+      sl.unitWord = '周'
+      sl.range = '第 ' + sl.from + '–' + sl.to + ' 字'
+      return sl
+    }
+    var u = unitSlice(book, s.unit)
+    u.book = book
+    u.from = 1
+    u.to = u.chars.length
+    u.label = u.unitName
+    u.unitWord = '单元'
+    return u
+  }
+
+  /*
+   * 按课的掌握情况（人教版「历史」页签用）：每课的字里，
+   *   wrong 现在还在错字集（没认出 / 等复核）、out 错过但已学会；其余是没错过的。
+   * 一个字出现在两课（书上蓝字）时两课都算。
+   */
+  function lessonStats(book, lesson, marks) {
+    var ls = lessonsOf(book)
+    var learned = clampIndex(lesson, Math.max(1, ls.length), ls.length)
+    return ls.map(function (l) {
+      var row = { i: l.i, unit: l.unit, unitName: l.unitName, label: lessonLabel(l), total: uniq(l.chars).length,
+        wrong: [], once: [], out: [], taught: l.i <= learned }
+      uniq(l.chars).forEach(function (ch) {
+        var e = marks && marks[ch]
+        if (!e || typeof e !== 'object') return
+        var st = stateOf(e)
+        if (st === 'out') row.out.push(ch)
+        else if (st === 'once') row.once.push(ch)
+        else row.wrong.push(ch)
+      })
+      return row
+    })
+  }
+
   /*
    * 把一批字按【字表顺序】排好，顺带去重。
    *
@@ -92,7 +241,8 @@
    */
   function sortByTable(chars) {
     if (!chars || !chars.length) return []
-    var all = list()
+    /* 用人教版时按课本顺序排（同一课的字聚在一起），课本外的字再按洪恩顺序 */
+    var all = cur.book === HONGEN ? list() : learnedChars(cur.book, 9999).concat(list())
     var rank = {}
     for (var i = 0; i < all.length; i++) {
       /* 同一个字在表里只应出现一次；万一重复，以第一次出现的位置为准 */
@@ -336,7 +486,7 @@
   /*
    * 构建今天这一卷：≤10 个到期错字 + 认识字补满 20，显示顺序整体打乱
    * （错字混在认识字里，卷面上看不出哪些是复习位）。
-   * 认识字池 = 字表里不在错字集里的全部字（毕业的算认识），完全随机。
+   * 认识字池 = 当前字表（knownPool：洪恩全表 / 人教版学到的课）里不在错字集的字（毕业的算认识），完全随机。
    * 卷子一经生成就冻结，由 shizi-mark 存进 daily:v1。
    */
   function buildDaily(marks, t, rnd) {
@@ -355,7 +505,7 @@
       ;((marks[ch].due || '') === t ? fresh : late).push(ch)
     })
     var wrong = fresh.concat(late).slice(0, DAILY_WRONG_MAX)
-    var known = shuffle(pool().filter(function (ch) {
+    var known = shuffle(knownPool().filter(function (ch) {
       return !inSet[ch]
     }), r).slice(0, DAILY_SIZE - wrong.length)
     return { wrong: wrong, known: known, chars: shuffle(wrong.concat(known), r) }
@@ -466,6 +616,7 @@
    * 字序区间页脚里本来就有（「第 1 周 / 共 16 周 · 第 1–100 字」），标题不必再说一遍。
    */
   function titleFor(s) {
+    if (s && s.book && s.book !== HONGEN && hasBook(s.book)) return '识字检查 · ' + unitSlice(s.book, s.unit).unitName
     return '识字复习 · 第 ' + clampWeek(s.week, s.perWeek) + ' 周'
   }
 
@@ -498,6 +649,18 @@
     refreshRow: refreshRow,
     historyStats: historyStats,
     sliceOf: sliceOf,
+    HONGEN: HONGEN,
+    hasBook: hasBook,
+    lessonsOf: lessonsOf,
+    learnedChars: learnedChars,
+    unitCount: unitCount,
+    unitSlice: unitSlice,
+    lessonLabel: lessonLabel,
+    useBook: useBook,
+    currentBook: currentBook,
+    knownPool: knownPool,
+    slice: slice,
+    lessonStats: lessonStats,
     titleFor: titleFor
   }
 })(typeof window !== 'undefined' ? window : globalThis)

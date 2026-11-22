@@ -76,6 +76,21 @@
       </section>
 
 
+      <!-- 字表：洪恩 / 人教版（按课）。人教版时多一个「学校学到」，每日一卷只考教过的课 -->
+      <section class="group" id="sec-book">
+        <h2 class="group-title">字表</h2>
+        <label class="field"><span>考哪套字</span>
+          <select id="f-book" class="input">
+            <option value="hongen">洪恩识字（1600 字）</option>
+            <option value="rj1a">人教版 一年级上册（280 字）</option>
+          </select>
+        </label>
+        <label class="field" id="lesson-field" hidden><span>学校学到</span>
+          <select id="f-lesson" class="input"></select>
+        </label>
+        <p class="hint" id="book-hint"></p>
+      </section>
+
       <!-- 每日一卷的状态与操作。卷面在左边纸张区：生成后字固定，登记/作废才出下一张 -->
       <section class="group" id="sec-daily" hidden>
         <p class="hint" id="daily-status"></p>
@@ -127,7 +142,7 @@
         <h2 class="group-title">历史错字</h2>
         <p class="hint">只要错过一次的字都记在这里，学会移出了也不删。<b>次数</b>是一共错过几次：
           收进错字集算一次，之后每次复习结算时没认出来再加一次。</p>
-        <p class="hint">「本周复习」附的错字页按次数抽字：错得越多越容易被抽到；上次复习认出来的（半红），机会减半。</p>
+        <p class="hint" id="hist-append-hint">「本周复习」附的错字页按次数抽字：错得越多越容易被抽到；上次复习认出来的（半红），机会减半。</p>
       </section>
 
       <section class="group" id="sec-layout">
@@ -193,6 +208,7 @@
 <script src="js/shell.js"></script>
 <script src="js/render.js"></script>
 <script src="js/shizi-data.js"></script>
+<script src="js/shizi-rj-data.js"></script>
 <script src="js/shizi-core.js"></script>
 <script src="js/shizi-settings.js"></script>
 <script src="js/shizi-render.js"></script>

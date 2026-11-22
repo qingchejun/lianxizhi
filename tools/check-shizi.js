@@ -17,6 +17,7 @@
 'use strict'
 
 require('../js/shizi-data.js')
+require('../js/shizi-rj-data.js')
 require('../js/shizi-core.js')
 require("../js/store.js") // 写入收口：shizi-settings 的 save 走它（对缺 localStorage 静默，node 下无害）
 require('../js/shizi-settings.js') // 只为验 sanitize 的钳位；load/save 碰 DOM，这里不调
@@ -876,6 +877,93 @@ function checkSettings() {
 
 /* ---------- 跑 ---------- */
 
+/* ---------- 人教版字表（2026-11） ----------
+ * 结构和总数对照课本（书后识字表「共 280 个生字」）；每课不重复、都是汉字；
+ * 按「学到第几课」取字、每日一卷不越过进度、单元检查按单元整块；洪恩模式不受影响。 */
+function checkRj() {
+  var B = globalThis.SumSum.shiziRjData.BOOKS
+  var b = B.rj1a
+  if (!b) return bad('人教版：没有 rj1a')
+  if (b.units.length !== 8) bad('人教版一上：应为 8 个单元，实际 ' + b.units.length)
+  var all = [], uniqSet = {}, lessons = 0
+  b.units.forEach(function (u, ui) {
+    u.lessons.forEach(function (l) {
+      lessons++
+      var cs = Array.from(l[2])
+      if (!cs.length) bad('人教版：' + l[0] + ' 没有字')
+      var seen = {}
+      cs.forEach(function (ch) {
+        if (!/^[一-鿿]$/.test(ch)) bad('人教版：' + l[0] + ' 有非汉字「' + ch + '」')
+        if (seen[ch]) bad('人教版：' + l[0] + ' 课内重复「' + ch + '」')
+        seen[ch] = true
+        uniqSet[ch] = true
+        all.push(ch)
+      })
+    })
+  })
+  var n = Object.keys(uniqSet).length
+  if (n !== b.total) bad('人教版一上：去重后应为 ' + b.total + ' 字（书上的总数），实际 ' + n)
+  if (all.length - n !== 4) bad('人教版一上：书上蓝字（重复出现的多音字）应为 4 个，实际 ' + (all.length - n))
+  if (lessons !== 38) bad('人教版一上：应为 38 课（含语文园地），实际 ' + lessons)
+
+  if (Z.lessonsOf('rj1a').length !== 38) bad('lessonsOf：应为 38 课')
+  if (Z.learnedChars('rj1a', 0).length !== 280) bad('learnedChars：0 = 整册，应为 280 字')
+  if (Z.learnedChars('rj1a', 1).join('') !== '天地人你我他') bad('learnedChars：学到第 1 课只有识字 1 的字')
+  /* 第 24 课是课文 4《四季》，里面的「地」第一课就学过，不能算两次 */
+  var l24 = Z.learnedChars('rj1a', 24)
+  if (l24.length !== new Set(l24).size) bad('learnedChars：有重复字')
+  if (l24.indexOf('冬') < 0 || l24.indexOf('男') >= 0) bad('learnedChars：第 24 课的边界不对')
+
+  var u5 = Z.unitSlice('rj1a', 5)
+  if (u5.unitName !== '第五单元' || u5.chars.indexOf('秋') < 0 || u5.chars.indexOf('对') >= 0) bad('unitSlice：第五单元取错')
+  if (Z.unitSlice('rj1a', 99).week !== 8 || Z.unitSlice('rj1a', -3).week !== 1) bad('unitSlice：单元号没钳位')
+
+  /* 每日一卷：认识字只从学到的课里出；错字位不受字表限制（错字集两套共用） */
+  for (var lesson = 1; lesson <= 38; lesson += 5) {
+    Z.useBook('rj1a', lesson)
+    var ok = Z.learnedChars('rj1a', lesson)
+    var marks = { 龙: { add: '2026-11-20', n: 1, due: '2026-11-22' } }
+    for (var k = 0; k < 20; k++) {
+      var d = Z.buildDaily(marks, '2026-11-22')
+      if (d.known.some(function (ch) { return ok.indexOf(ch) < 0 })) { bad('每日一卷（人教版学到第 ' + lesson + ' 课）出了没教过的字'); break }
+      if (d.wrong.indexOf('龙') < 0) { bad('每日一卷（人教版）：洪恩里的到期错字没上卷'); break }
+      if (d.chars.length !== Math.min(20, ok.length + 1)) { bad('每日一卷（人教版学到第 ' + lesson + ' 课）字数不对：' + d.chars.length); break }
+    }
+  }
+  /* 切回洪恩：认识字池回到洪恩全表，和加人教版之前一样 */
+  Z.useBook('hongen')
+  var pool = Z.pool()
+  var hd = Z.buildDaily({}, '2026-11-22')
+  if (hd.known.some(function (ch) { return pool.indexOf(ch) < 0 })) bad('洪恩模式：每日一卷出了洪恩表外的字')
+  if (Z.knownPool().length !== pool.length) bad('洪恩模式：认识字池变了')
+  Z.useBook('nonsense', 3)
+  if (Z.currentBook() !== 'hongen') bad('useBook：不认识的字表应退回洪恩')
+
+  /* slice：洪恩和以前的 sliceOf 一模一样；人教版按单元 */
+  var hs = Z.slice({ book: 'hongen', week: 3, perWeek: 100 })
+  if (hs.chars.join('') !== Z.sliceOf(3, 100).chars.join('')) bad('slice：洪恩结果和 sliceOf 不一致')
+  var rs = Z.slice({ book: 'rj1a', unit: 6 })
+  if (rs.label !== '第六单元' || rs.weeks !== 8) bad('slice：人教版单元信息不对')
+
+  /* 设置钳位 */
+  var t1 = T.sanitize({ book: 'rj1a', lesson: 99, unit: 0 })
+  if (t1.lesson !== 38 || t1.unit !== 1) bad('sanitize：lesson/unit 没钳位 ' + t1.lesson + '/' + t1.unit)
+  if (T.sanitize({ book: 'hongen', lesson: 24 }).lesson !== 24) bad('sanitize：洪恩下要留着人教版的进度（切回来还在）')
+  var t2 = T.sanitize({ book: '<script>', lesson: 5 })
+  if (t2.book !== 'hongen') bad('sanitize：不认识的字表没退回洪恩')
+  if (T.sanitize({}).book !== 'hongen' || T.sanitize({}).lesson !== 0) bad('sanitize：默认应是洪恩、整册')
+  if (Z.titleFor({ book: 'rj1a', unit: 5 }) !== '识字检查 · 第五单元') bad('titleFor：人教版标题不对')
+
+  /* 按课统计 */
+  var st = Z.lessonStats('rj1a', 21, {
+    秋: { add: '2026-11-20', n: 1, due: '2026-11-22' },
+    江: { add: '', out: '2026-11-21', n: 1 }
+  })
+  if (st.length !== 38) bad('lessonStats：应有 38 行')
+  if (st[20].wrong.join('') !== '秋' || !st[20].taught) bad('lessonStats：课文 1 应有没认出的「秋」')
+  if (st[21].out.join('') !== '江' || st[21].taught) bad('lessonStats：课文 2 应是已学会「江」、还没教')
+}
+
 function main() {
   var t0 = Date.now()
   var steps = [
@@ -893,7 +981,8 @@ function main() {
     ['每日一卷：到期挑选与构建', checkDailyBuild],
     ['每日一卷：登记', checkSettle],
     ['附页抽字：边界 / 顺序 / 均匀性 / 按权重偏向（2 万轮）', checkSample],
-    ['设置钳位', checkSettings]
+    ['设置钳位', checkSettings],
+    ['人教版字表：结构 / 总数 280 / 按进度取字 / 单元检查 / 洪恩不受影响', checkRj]
   ]
   steps.forEach(function (st) {
     var before = problems.length
@@ -913,6 +1002,7 @@ function main() {
   console.log('')
   console.log('注意：本脚本抓不住「把未认成末」这类【字对字】的转录错误 ——')
   console.log('两个都是合法汉字、都不重复。改字表时要拿洪恩的字表截图逐屏人工对一遍。')
+  console.log('人教版字表取自课本 PDF 的文字层，加新一册时同样要和课本逐课对。')
 }
 
 main()

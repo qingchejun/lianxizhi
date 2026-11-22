@@ -219,7 +219,7 @@
     if (s.mode === 'wrong') {
       html = renderWrong(s, wrongChars)
     } else {
-      var sl = Z.sliceOf(s.week, s.perWeek)
+      var sl = Z.slice(s)
       var title = s.title || Z.titleFor(s)
       var per = perPageOf(s, sl.chars.length)
       /*
@@ -233,9 +233,10 @@
       html = []
       for (var p = 0; p < pageTotal; p++) {
         var chunk = sl.chars.slice(p * per, (p + 1) * per)
-        var foot =
-          '第 ' + sl.week + ' 周 / 共 ' + sl.weeks + ' 周　·　第 ' +
-          (sl.from + p * per) + '–' + (sl.from + p * per + chunk.length - 1) + ' 字' +
+        var foot = (sl.book && sl.book !== Z.HONGEN
+          ? sl.unitName + '　·　' + sl.range + '　·　' + sl.chars.length + ' 字'
+          : '第 ' + sl.week + ' 周 / 共 ' + sl.weeks + ' 周　·　第 ' +
+            (sl.from + p * per) + '–' + (sl.from + p * per + chunk.length - 1) + ' 字') +
           (pageTotal > 1 ? '　·　第 ' + (p + 1) + ' 页 / 共 ' + pageTotal + ' 页' : '')
         /* 对战/双份在这一层做：同一页原样连印，两张内容完全一致。
            末页字少时仍用同一个 lay，否则末页的字会突然变大、像另一张卷子。 */

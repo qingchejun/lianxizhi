@@ -502,3 +502,53 @@
 .hist-log td:first-child {
   text-align: left;
 }
+
+/* ---------- 人教版：按课看掌握情况（历史页签顶部） ---------- */
+
+.lesson-table {
+  margin-bottom: 28px;
+}
+
+.lesson-table th,
+.lesson-table td {
+  text-align: left;
+  vertical-align: middle;
+}
+
+.lesson-table td:first-child {
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.lesson-table td:first-child small {
+  margin-left: 8px;
+  color: var(--ink-faint);
+}
+
+.lesson-table td:nth-child(2) {
+  white-space: nowrap;
+  color: var(--ink-soft);
+}
+
+.lesson-table .lt-miss td:nth-child(2) {
+  font-weight: 600;
+  color: var(--red);
+}
+
+.lesson-table .lt-unit th {
+  padding-top: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  background: none;
+}
+
+.lesson-table .lt-later td {
+  opacity: 0.45;
+}
+
+.lesson-table .lt-chars .hc {
+  min-width: 28px;
+  margin: 2px 4px 2px 0;
+  padding: 0 2px;
+  font-size: 17px;
+}
