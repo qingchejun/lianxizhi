@@ -892,13 +892,14 @@
 
   /* ---------------- 讲解页插图 ---------------- */
 
-  var HOOK_SHAPES = [mk('tri', 64, 40, 44, 0, 's'), mk('circle', 44, 62, 50, 0, 'g'), mk('square', 80, 70, 46, 0, 'w')]
+  /* 从上到下：斜线三角形、白方块、灰圆（灰圆被挡住两块，在最下面） */
+  var HOOK_SHAPES = [mk('tri', 64, 40, 44, 0, 's'), mk('square', 80, 70, 46, 0, 'w'), mk('circle', 44, 62, 50, 0, 'g')]
   function hookSVG(withPieces) {
     var u = ++uid
     var p = ['<svg viewBox="0 0 ' + (withPieces ? 250 : 120) + ' 110" width="' + (withPieces ? 250 : 120) * 1.2 + '" height="132">', defs(u)]
     for (var i = HOOK_SHAPES.length - 1; i >= 0; i--) p.push(shapeSVG(HOOK_SHAPES[i], u, 0, 0))
     if (withPieces) {
-      var order = [1, 2, 0]
+      var order = [2, 0, 1]
       order.forEach(function (idx, j) {
         var sh = HOOK_SHAPES[idx], k = 0.7
         var cx = 150 + j * 38, cy = 52
