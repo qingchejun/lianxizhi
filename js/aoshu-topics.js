@@ -558,6 +558,7 @@
     { no: 'B04', stage: 'L1B', id: 'zhongbiao2', name: '认识钟表：几时几分' },
     { no: 'B05', stage: 'L1B', id: 'duichen', name: '轴对称图形' },
     { no: 'B06', stage: 'L1B', id: 'jingzi', name: '镜子里的对称' },
+    { no: 'B07', stage: 'L1B', id: 'diefang', name: '叠加覆盖：叠放顺序' },
     { no: '21', stage: 'L2', id: 'wenzimi', name: '加减法文字谜' },
     { no: '22', stage: 'L2', id: 'kuohao1', name: '加减法添去括号（一）' },
     { no: '23', stage: 'L2', id: 'kuohao2', name: '加减法添去括号（二）' },

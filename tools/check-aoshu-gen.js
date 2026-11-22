@@ -584,6 +584,173 @@ function checkJingzi() {
   })
 }
 
+/*
+ * B07 叠放顺序：从 key 独立重算（自己逐点算遮挡，不调生成器）。
+ * 排顺序 / 摆的顺序：每个图形露出一块；按「叠住处露出来的是谁」推出的先后，所有排法里只有一种对得上，且就是答案。
+ * 至少拿几张：★ 纸往上倒推的张数 + 1；要拿的纸和 ★ 纸的压着关系都看得见；有一张在上面却不用拿。
+ * 取铅笔：重算交叉，每个交叉都指定了谁在上；模拟每步只有一支能取，最后剩 ≥ 3 支卡住，轮到的人输。
+ */
+function checkDiefang() {
+  if (!A.topics.diefang) return
+  var CI = ['①', '②', '③', '④', '⑤']
+  function poly(t, x, y, s, r) {
+    var o = [], i, a
+    if (t === 'square') return [[x - s / 2, y - s / 2], [x + s / 2, y - s / 2], [x + s / 2, y + s / 2], [x - s / 2, y + s / 2]]
+    if (t === 'rect') { var w = r ? s * 0.75 : s * 1.4, h = r ? s * 1.4 : s * 0.75; return [[x - w / 2, y - h / 2], [x + w / 2, y - h / 2], [x + w / 2, y + h / 2], [x - w / 2, y + h / 2]] }
+    if (t === 'tri') return [[x, y - s * 0.55], [x + s * 0.58, y + s * 0.45], [x - s * 0.58, y + s * 0.45]]
+    if (t === 'diamond') return [[x, y - s * 0.62], [x + s * 0.48, y], [x, y + s * 0.62], [x - s * 0.48, y]]
+    if (t === 'hex') { for (i = 0; i < 6; i++) { a = i * Math.PI / 3; o.push([x + s * 0.56 * Math.cos(a), y + s * 0.56 * Math.sin(a)]) } return o }
+    if (t === 'star') { for (i = 0; i < 10; i++) { a = -Math.PI / 2 + i * Math.PI / 5; var q = i % 2 ? s * 0.3 : s * 0.66; o.push([x + q * Math.cos(a), y + q * Math.sin(a)]) } return o }
+    if (t === 'trap') return [[x - s * 0.33, y - s * 0.38], [x + s * 0.33, y - s * 0.38], [x + s * 0.66, y + s * 0.38], [x - s * 0.66, y + s * 0.38]]
+    if (t === 'paper') { var hh = s / 2; return r ? [[x, y - hh * 1.3], [x + hh * 1.3, y], [x, y + hh * 1.3], [x - hh * 1.3, y]] : [[x - hh, y - hh], [x + hh, y - hh], [x + hh, y + hh], [x - hh, y + hh]] }
+    return null
+  }
+  function hit(sh, px, py) {
+    if (sh.t === 'circle') return (px - sh.x) * (px - sh.x) + (py - sh.y) * (py - sh.y) <= sh.s * sh.s / 4
+    var v = sh.v, c = false
+    for (var i = 0, j = v.length - 1; i < v.length; j = i++) {
+      if ((v[i][1] > py) !== (v[j][1] > py) && px < (v[j][0] - v[i][0]) * (py - v[i][1]) / (v[j][1] - v[i][1]) + v[i][0]) c = !c
+    }
+    return c
+  }
+  /* 步长 1 逐点：面积、露出、叠住、叠住处露出的是上面那个 */
+  function scan(sh, W, H) {
+    var n = sh.length, area = [], vis = [], ov = [], ev = []
+    for (var i = 0; i < n; i++) { area.push(0); vis.push(0); ov.push(new Array(n).fill(0)); ev.push(new Array(n).fill(0)) }
+    for (var y = 0.5; y < H; y += 1) for (var x = 0.5; x < W; x += 1) {
+      var c = []
+      for (i = 0; i < n; i++) if (hit(sh[i], x, y)) c.push(i)
+      if (!c.length) continue
+      vis[c[0]]++
+      for (var a = 0; a < c.length; a++) { area[c[a]]++; for (var b = a + 1; b < c.length; b++) { ov[c[a]][c[b]]++; if (a === 0) ev[c[a]][c[b]]++ } }
+    }
+    return { area: area, vis: vis, ov: ov, ev: ev }
+  }
+  function perms(a) {
+    if (a.length <= 1) return [a]
+    var out = []
+    a.forEach(function (x, i) { perms(a.slice(0, i).concat(a.slice(i + 1))).forEach(function (p) { out.push([x].concat(p)) }) })
+    return out
+  }
+  ;['order', 'build'].forEach(function (vid) {
+    each('diefang', vid, function (q, d) {
+      var items = q.key.slice(vid.length + 1).split('|').map(function (it) {
+        var f = it.split(',')
+        var sh = { t: f[0], x: +f[1], y: +f[2], s: +f[3], r: +f[4], p: f[5], lab: f[6] }
+        sh.v = poly(sh.t, sh.x, sh.y, sh.s, sh.r)
+        return sh
+      })
+      var n = items.length
+      if (n !== (d === 'L1' ? 3 : d === 'L2' ? 4 : 5)) bad('B07 图形个数不对：' + q.key)
+      if (new Set(items.map(function (x) { return x.t })).size !== n || new Set(items.map(function (x) { return x.p })).size !== n) bad('B07 图形或图案重复：' + q.key)
+      var R = scan(items, 140, 120)
+      var seen = []
+      for (var i = 0; i < n; i++) {
+        if (R.vis[i] < R.area[i] * 0.25) bad('B07 有图形露得太少：' + q.key)
+        for (var j = i + 1; j < n; j++) if (R.ov[i][j] > 0) {
+          if (R.ov[i][j] < 30) bad('B07 两个图形只碰到一点点：' + q.key)
+          if (R.ev[i][j] < 30) bad('B07 叠住处看不出谁在上：' + q.key)
+          seen.push([i, j])
+        }
+      }
+      /* 按看得见的先后，所有排法里只能有一种 */
+      var ok = perms(items.map(function (_, i) { return i })).filter(function (p) {
+        return seen.every(function (e) { return p.indexOf(e[0]) < p.indexOf(e[1]) })
+      })
+      if (ok.length !== 1) bad('B07 排法不唯一（' + ok.length + ' 种）：' + q.key)
+      var down = items.map(function (x) { return x.lab }).join('、')
+      var want = vid === 'order' ? down : items.map(function (x) { return x.lab }).reverse().join('、')
+      if (q.answer !== want) bad('B07 ' + vid + ' 答案错：' + q.key + ' 给的 ' + q.answer + ' 算出 ' + want)
+      if (vid === 'build' && q.answer === down) bad('B07 摆的顺序和从上到下一样：' + q.key)
+      var labs = items.map(function (x) { return x.lab }).sort().join('')
+      if (labs !== CI.slice(0, n).join('')) bad('B07 编号不全：' + q.key)
+      if ((q.stemHTML.replace(/<defs>.*?<\/defs>/g, '').match(/<(polygon|circle) /g) || []).length !== n * 2) bad('B07 题图图形个数不对：' + q.key)
+    })
+  })
+  each('diefang', 'take', function (q, d) {
+    var parts = q.key.slice(5).split('|')
+    var wh = parts[0].split(',').map(Number), ti = +parts[1]
+    var ps = parts.slice(2).map(function (it) {
+      var f = it.split(',').map(Number)
+      var sh = { t: 'paper', x: f[0], y: f[1], s: 40, r: f[2] }
+      sh.v = poly('paper', sh.x, sh.y, 40, sh.r)
+      return sh
+    })
+    var n = ps.length
+    if (n !== (d === 'L1' ? 5 : d === 'L2' ? 7 : 9)) bad('B07 纸的张数不对：' + q.key)
+    var R = scan(ps, wh[0], wh[1])
+    var need = {}, stack = [ti], depth = {}
+    depth[ti] = 0
+    while (stack.length) {
+      var b = stack.pop()
+      for (var a = 0; a < b; a++) if (R.ov[a][b] > 0 && !(a in need)) { need[a] = true; depth[a] = depth[b] + 1; stack.push(a) }
+    }
+    var ks = Object.keys(need).map(Number)
+    if (q.answer !== ks.length + 1) bad('B07 拿几张答案错：' + q.key + ' 给的 ' + q.answer + ' 算出 ' + (ks.length + 1))
+    var lo = d === 'L1' ? 2 : d === 'L2' ? 3 : 4, hi = d === 'L1' ? 3 : d === 'L2' ? 5 : 6
+    if (q.answer < lo || q.answer > hi) bad('B07 拿几张超出本档范围：' + q.key)
+    if (d === 'L3' && !ks.some(function (k) { return depth[k] >= 2 })) bad('B07 挑战档没有「压着压着它的」：' + q.key)
+    var spare = false
+    for (var i = 0; i < ti; i++) if (!need[i]) spare = true
+    if (!spare) bad('B07 ★ 上面没有不用拿的纸：' + q.key)
+    var S = ks.concat([ti])
+    for (i = 0; i < n; i++) {
+      if (R.vis[i] < R.area[i] * 0.18) bad('B07 有纸露得太少：' + q.key)
+      for (var j = i + 1; j < n; j++) {
+        if (R.ov[i][j] > 0 && (S.indexOf(i) >= 0 || S.indexOf(j) >= 0) && R.ev[i][j] < 40) bad('B07 要拿的纸压着关系看不清：' + q.key)
+      }
+    }
+  })
+  var wins = { first: 0, second: 0 }
+  each('diefang', 'game', function (q, d) {
+    var parts = q.key.slice(5).split('|')
+    var who = parts[0].split(',')
+    var segs = {}, L = []
+    parts.slice(1, -1).forEach(function (it) { var f = it.split(':'); segs[f[0]] = f[1].split(',').map(Number); L.push(f[0]) })
+    var over = {}
+    parts[parts.length - 1].split(',').forEach(function (e) { over[e] = true })
+    function cross(a, b) {
+      var r = [a[2] - a[0], a[3] - a[1]], s2 = [b[2] - b[0], b[3] - b[1]], den = r[0] * s2[1] - r[1] * s2[0]
+      if (!den) return false
+      var t = ((b[0] - a[0]) * s2[1] - (b[1] - a[1]) * s2[0]) / den, u = ((b[0] - a[0]) * r[1] - (b[1] - a[1]) * r[0]) / den
+      return t > 0 && t < 1 && u > 0 && u < 1
+    }
+    var pairs = 0
+    L.forEach(function (a) {
+      L.forEach(function (b) {
+        if (a >= b) return
+        var c = cross(segs[a], segs[b])
+        var o = (over[a + b] ? 1 : 0) + (over[b + a] ? 1 : 0)
+        if (c && o !== 1) bad('B07 交叉没指定谁在上：' + a + b + ' ' + q.key)
+        if (!c && o) bad('B07 不交叉却写了谁压谁：' + a + b + ' ' + q.key)
+        if (c) {
+          pairs++
+          var t1 = Math.atan2(segs[a][3] - segs[a][1], segs[a][2] - segs[a][0]), t2 = Math.atan2(segs[b][3] - segs[b][1], segs[b][2] - segs[b][0])
+          var x = Math.abs(t1 - t2) % Math.PI
+          if (Math.min(x, Math.PI - x) < Math.PI / 6 - 1e-9) bad('B07 两支铅笔交叉太斜：' + q.key)
+        }
+      })
+    })
+    var left = L.slice(), taken = 0
+    while (true) {
+      var free = left.filter(function (a) { return !left.some(function (b) { return over[b + a] }) })
+      if (!free.length) break
+      if (free.length > 1) { bad('B07 有一步能取的不止一支：' + q.key); break }
+      left.splice(left.indexOf(free[0]), 1)
+      taken++
+    }
+    if (left.length < 3) bad('B07 最后没卡住 3 支以上：' + q.key)
+    var lo = d === 'L1' ? 1 : d === 'L2' ? 2 : 3
+    if (taken < lo || taken > lo + 1) bad('B07 被迫取走的支数不在本档范围：' + q.key)
+    var winner = taken % 2 ? who[0] : who[1]
+    if (q.answer !== winner) bad('B07 取铅笔答案错：' + q.key + ' 给的 ' + q.answer + ' 算出 ' + winner)
+    wins[taken % 2 ? 'first' : 'second']++
+    if (q.stem.indexOf(who[0] + '先取') < 0) bad('B07 题干没写谁先取：' + q.key)
+  })
+  var tot = wins.first + wins.second
+  if (tot && (wins.first < tot * 0.3 || wins.second < tot * 0.3)) bad('B07 取铅笔先取 / 后取赢得太偏：' + JSON.stringify(wins))
+}
+
 function checkFloors() {
   each('daxiao', 'num', function (q) {
     var n = nums(q.stem)
@@ -767,6 +934,7 @@ checkZhongbiao()
 checkZhongbiao2()
 checkDuichen()
 checkJingzi()
+checkDiefang()
 checkSupply()
 
 if (problems.length) {
