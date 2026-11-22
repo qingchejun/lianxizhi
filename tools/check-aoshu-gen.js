@@ -751,6 +751,64 @@ function checkDiefang() {
   if (tot && (wins.first < tot * 0.3 || wins.second < tot * 0.3)) bad('B07 取铅笔先取 / 后取赢得太偏：' + JSON.stringify(wins))
 }
 
+/*
+ * B08 翻转问题：从 key 独立重做变换。
+ * key = 模式:方向|第一段前后+入口边+出口边|洞的顺序|四个选项各用哪种变换（0 = 正确）。
+ * 检查：洞相邻、不重复；答案字母 = 正确变换所在位置；四张两两不同、也都和图 1 不同；
+ * 正确变换：翻一次 = 那个方向反 + 前后换，翻两次 = 左右上下都反 + 前后不变。
+ */
+function checkFanzhuan() {
+  if (!A.topics.fanzhuan) return
+  var LETTERS = 'ABCD'
+  function flip(r, mx, my, sw) {
+    var fs = { L: mx ? 'R' : 'L', R: mx ? 'L' : 'R', T: my ? 'B' : 'T', B: my ? 'T' : 'B' }
+    return { p: r.p.map(function (q) { return [my ? 2 - q[0] : q[0], mx ? 2 - q[1] : q[1]] }), f: sw ? 1 - r.f : r.f, a: fs[r.a], b: fs[r.b] }
+  }
+  /* 画出来的样子：每段（端点 + 前后），不管正着倒着走 */
+  function look(r) {
+    var pts = ['E' + r.a + r.p[0].join('')].concat(r.p.map(function (q) { return q.join('') })).concat(['E' + r.b + r.p[r.p.length - 1].join('')])
+    var out = []
+    for (var i = 0; i + 1 < pts.length; i++) out.push([pts[i], pts[i + 1]].sort().join('-') + '/' + ((r.f + i) % 2))
+    return out.sort().join(' ')
+  }
+  ;['lr', 'ud', 'twice'].forEach(function (vid) {
+    var cnt = {}
+    each('fanzhuan', vid, function (q, d) {
+      var f = q.key.slice(vid.length + 1).split('|')
+      var dir = f[0], r = { f: +f[1][0], a: f[1][1], b: f[1][2], p: f[2].split(',').map(function (t) { return [+t[0], +t[1]] }) }
+      var order = f[3].split('').map(Number)
+      var k = r.p.length
+      var lo = d === 'L1' ? 3 : d === 'L2' ? 4 : 6, hi = d === 'L1' ? 3 : d === 'L2' ? 5 : 7
+      if (k < lo || k > hi) bad('B08 洞数不在本档范围：' + q.key)
+      var seen = {}
+      r.p.forEach(function (q2, i) {
+        if (seen[q2.join()]) bad('B08 洞重复：' + q.key)
+        seen[q2.join()] = true
+        if (i && (Math.abs(q2[0] - r.p[i - 1][0]) > 1 || Math.abs(q2[1] - r.p[i - 1][1]) > 1)) bad('B08 洞不相邻：' + q.key)
+      })
+      var mx, my, sw
+      if (vid === 'twice') { mx = 1; my = 1; sw = 0; if (!/^[LR][UD]$/.test(dir)) bad('B08 翻两次方向不对：' + q.key) }
+      else { mx = vid === 'lr' ? 1 : 0; my = 1 - mx; sw = 1; if (vid === 'lr' ? !/^[LR]$/.test(dir) : !/^[UD]$/.test(dir)) bad('B08 方向不对：' + q.key) }
+      var rightLook = look(flip(r, mx, my, sw))
+      var looks = [look(r)]
+      /* 四个选项的变换（和生成器的约定独立写一遍） */
+      var kinds = vid === 'twice' ? [[1, 1, 0], [1, 1, 1], [1, 0, 1], [0, 1, 1]] : [[mx, my, 1], [mx, my, 0], [0, 0, 1], [my, mx, 1]]
+      var hit = []
+      order.forEach(function (kk, i) {
+        var L = look(flip(r, kinds[kk][0], kinds[kk][1], kinds[kk][2]))
+        looks.push(L)
+        if (L === rightLook) hit.push(LETTERS[i])
+      })
+      if (new Set(looks).size !== 5) bad('B08 选项画出来有一样的：' + q.key)
+      if (hit.length !== 1 || q.answer !== hit[0]) bad('B08 答案错：' + q.key + ' 给的 ' + q.answer + ' 算出 ' + hit.join(''))
+      cnt[q.answer] = (cnt[q.answer] || 0) + 1
+      if ((q.stemHTML.match(/<rect /g) || []).length !== 5) bad('B08 题图卡片数不对：' + q.key)
+    })
+    var tot = Object.keys(cnt).reduce(function (a, b) { return a + cnt[b] }, 0)
+    'ABCD'.split('').forEach(function (L) { if ((cnt[L] || 0) < tot * 0.15) bad('B08 ' + vid + ' 答案 ' + L + ' 太少：' + JSON.stringify(cnt)) })
+  })
+}
+
 function checkFloors() {
   each('daxiao', 'num', function (q) {
     var n = nums(q.stem)
@@ -935,6 +993,7 @@ checkZhongbiao2()
 checkDuichen()
 checkJingzi()
 checkDiefang()
+checkFanzhuan()
 checkSupply()
 
 if (problems.length) {
