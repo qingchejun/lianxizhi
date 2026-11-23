@@ -6,7 +6,7 @@
 所以页面里只留 <!-- rail:今天 --> … <!-- /rail --> 这对标记，内容由本脚本生成。
 改板块栏（加板块、换图标、调分组）只改这里，再跑一遍。
 
-2026-11 起分两组：练习（今天/口算/奥数/识字/拼音）与游戏（数独/密码/数织/迷宫）——
+2026-11 起分两组：练习（今天/口算/奥数/识字/拼音）与游戏（数独/火柴/密码/迷宫/数织，按受欢迎程度排）——
 给孩子选板块时先分「做题还是玩」，再挑具体项目。
 """
 import pathlib, re
@@ -25,9 +25,10 @@ GROUPS = [
     ]),
     ('游戏', [
         ('数独', 'shudu.html', 'shudu', '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M9.33 4v16M14.67 4v16M4 9.33h16M4 14.67h16"/>'),
+        ('火柴', 'huochai.html', 'huochai', '<path d="M6 18L15.5 8.5M17.5 6.5h.01M9 19.5h10"/><circle class="f" cx="17" cy="7" r="1.75"/>'),
         ('密码', 'mima.html', 'mima', '<rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M7.75 10.5V7.75a4.25 4.25 0 0 1 8.5 0v2.75M8.5 15.5h.01M12 15.5h.01M15.5 15.5h.01"/>'),
-        ('数织', 'zhizhi.html', 'zhizhi', '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 4v16M4 12h16"/><rect class="f" x="6.25" y="6.25" width="3.5" height="3.5" rx=".75"/><rect class="f" x="14.25" y="14.25" width="3.5" height="3.5" rx=".75"/>'),
         ('迷宫', 'migong.html', 'migong', '<path d="M8.5 4H6.5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20h9M12.5 4h5A2.5 2.5 0 0 1 20 6.5V20M8.5 4v4.5h4M16 8.5V16M8 12.5V16h4"/>'),
+        ('数织', 'zhizhi.html', 'zhizhi', '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 4v16M4 12h16"/><rect class="f" x="6.25" y="6.25" width="3.5" height="3.5" rx=".75"/><rect class="f" x="14.25" y="14.25" width="3.5" height="3.5" rx=".75"/>'),
     ]),
 ]
 
@@ -78,7 +79,7 @@ FOLD_BOOT = ('<script>try{if(localStorage.getItem("lianxizhi:rail")==="fold")'
 PAGES = {
     'index.html': '今天', 'kousuan.html': '口算', 'aoshu.html': '奥数',
     'shizi.html': '识字', 'shudu.html': '数独', 'mima.html': '密码', 'zhizhi.html': '数织',
-    'migong.html': '迷宫', 'pinyin.html': '拼音', 'help.html': '使用说明', 'admin.html': '邀请码管理',
+    'migong.html': '迷宫', 'huochai.html': '火柴', 'pinyin.html': '拼音', 'help.html': '使用说明', 'admin.html': '邀请码管理',
 }
 
 

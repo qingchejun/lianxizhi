@@ -165,8 +165,22 @@
     })
   }
 
-  /* 三个游戏的纸面示意 */
+  /* 几个游戏的纸面示意 */
   var GAME_FACE = {
+    /* 火柴：一道错的小火柴算式 6+3=8（纸面示意，不是题） */
+    huochai: function () {
+      var S = { a: [2, 2, 8, 2], b: [8, 2, 8, 9], c: [8, 9, 8, 16], d: [2, 16, 8, 16], e: [2, 9, 2, 16], f: [2, 2, 2, 9], g: [2, 9, 8, 9] }
+      var D = { 6: 'acdefg', 3: 'abcdg', 8: 'abcdefg' }
+      function line(p, dx) {
+        return '<line x1="' + (p[0] + dx) + '" y1="' + p[1] + '" x2="' + (p[2] + dx) + '" y2="' + p[3] + '"/>'
+      }
+      function digit(d, dx) {
+        return D[d].split('').map(function (k) { return line(S[k], dx) }).join('')
+      }
+      var body = digit(6, 0) + line([11, 9, 17, 9], 0) + line([14, 6, 14, 12], 0) + digit(3, 18) +
+        line([29, 7, 35, 7], 0) + line([29, 11, 35, 11], 0) + digit(8, 36)
+      return '<svg class="pp-match" viewBox="0 0 46 18" aria-hidden="true">' + body + '</svg>'
+    },
     mima: function () {
       var rowsHtml = ''
       var marks = ['●○', '●', '○○', '●●']
@@ -190,6 +204,7 @@
     }
   }
   var GAME_TEXT = {
+    huochai: { name: '火柴', note: '动一根火柴让算式变对', more: '换一关' },
     mima: { name: '密码', note: '看线索推出密码', more: '换一关' },
     zhizhi: { name: '数织', note: '涂完是一幅小图', more: '换一关' },
     migong: { name: '迷宫', note: '算对了才走得通', more: '换一关' }
@@ -208,7 +223,7 @@
   }
 
   function shelf(title, items) {
-    return '<section class="dk-shelf" aria-label="' + title + '"><h2>' + title + '</h2><div class="dk-row">' + items.join('') + '</div></section>'
+    return '<section class="dk-shelf" aria-label="' + title + '"><h2>' + title + '</h2><div class="dk-row' + (items.length === 5 ? ' dk-row-5' : '') + '">' + items.join('') + '</div></section>'
   }
 
   var data = S.today.build(storage(), new Date())

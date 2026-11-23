@@ -1,0 +1,135 @@
+/*
+ * 火柴棒算式练习纸。卷面件（.hc-*）屏幕预览与打印共用，只用黑灰两色。
+ * 注意：body 的 font/line-height 是卷面继承的，不许在本文件改动。
+ */
+
+.sheet-huochai .hc-rule {
+  font-size: 12px;
+  color: #444;
+  margin: 0 0 4mm;
+}
+
+.hc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4mm;
+}
+
+.hc-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 4mm;
+  border: 0.3mm solid #999;
+  border-radius: 2mm;
+  padding: 2.5mm 5mm 3mm;
+  break-inside: avoid;
+}
+
+/* 左栏：题号 + 改法标签上下摆 */
+.hc-head {
+  flex: 0 0 22mm;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.5mm;
+}
+
+.hc-no {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.hc-kind {
+  font-size: 12px;
+  border: 0.3mm solid #555;
+  border-radius: 1mm;
+  padding: 0 1.5mm;
+}
+
+.hc-body {
+  flex: 1;
+}
+
+.hc-figwrap {
+  display: flex;
+  justify-content: center;
+  padding: 0 0 2mm;
+}
+
+.hc-fig {
+  display: block;
+  overflow: visible;
+}
+
+/* 火柴：粗线 + 火柴头 */
+.hc-fig line {
+  stroke-width: 1.15;
+  stroke-linecap: round;
+}
+.hc-stick line,
+.hc-added line { stroke: #2b2b2b; }
+.hc-stick circle,
+.hc-added circle { fill: #000; }
+
+/* 空位：淡虚线，只是提示能放哪 */
+.hc-slot line {
+  stroke: #bdbdbd;
+  stroke-width: 0.35;
+  stroke-dasharray: 0.9 0.9;
+}
+
+/* 答案页标注：拿走的变淡打 ×，添上的加粗 */
+.hc-removed line { stroke: #c4c4c4; }
+.hc-removed circle { fill: #c4c4c4; }
+.hc-removed .hc-x {
+  fill: none;
+  stroke: #000;
+  stroke-width: 0.55;
+  stroke-linecap: round;
+}
+.hc-added line { stroke-width: 1.5; }
+.hc-added line.hc-halo {
+  stroke: #cfcfcf;
+  stroke-width: 3.2;
+}
+
+.hc-write {
+  font-size: 13px;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 2mm;
+}
+
+.hc-line {
+  display: inline-block;
+  width: 70mm;
+  border-bottom: 0.3mm solid #555;
+  height: 6mm;
+}
+
+/* 答案页：两列，每页 10 道 */
+.hc-ans-legend {
+  font-size: 12px;
+  color: #444;
+  margin: 0 0 4mm;
+}
+
+.hc-ans-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5mm 8mm;
+}
+
+.hc-ans-item {
+  break-inside: avoid;
+}
+
+.hc-ans-head {
+  display: flex;
+  gap: 2mm;
+  align-items: baseline;
+  font-size: 12px;
+  margin: 0 0 1mm;
+}

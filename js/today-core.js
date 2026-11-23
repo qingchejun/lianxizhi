@@ -202,14 +202,16 @@
     }
   }
 
-  /* 三个游戏的关卡名：照抄各 *-core.js 的 LEVELS 与板块页下拉框（check-today 对着下拉框校验）。
+  /* 数独以外几个游戏的关卡名：照抄各 *-core.js 的 LEVELS 与板块页下拉框（check-today 对着下拉框校验）。
      首页不为三行字加载三个题目引擎，所以设置也在这里按同样的钳位规则读 */
   var GAME_LEVELS = {
+    huochai: [{ name: '拿走一根', note: '10 以内' }, { name: '添上一根', note: '10 以内' }, { name: '挪一挪', note: '10 以内' }, { name: '两位数挑战', note: '20 以内' }],
     mima: [{ name: '点点入门' }, { name: '双色点' }, { name: '读题破译' }, { name: '大侦探' }],
     zhizhi: [{ name: '迷你涂画', note: '5×5' }, { name: '小小图案', note: '8×8' }, { name: '大发现', note: '10×10' }, { name: '像素大师', note: '12×12' }],
     migong: [{ name: '起步小路', note: '10 以内加法' }, { name: '岔路寻踪', note: '10 以内加减' }, { name: '进位翻山', note: '20 以内进位加' }, { name: '终极大冒险', note: '20 以内加减' }]
   }
   var GAME_RULES = {
+    huochai: { unit: '题', max: 10, def: 5 },
     mima: { unit: '题', max: 12 },
     zhizhi: { unit: '幅', max: 8 },
     migong: { unit: '张', max: 8 }
@@ -226,7 +228,7 @@
     var s = isObj(raw) ? raw : {}
     var no = /^L[1-4]$/.test(s.level) ? Number(s.level.slice(1)) : 1
     var lv = GAME_LEVELS[key][no - 1]
-    var count = clamp(s.count, 1, GAME_RULES[key].max, 4)
+    var count = clamp(s.count, 1, GAME_RULES[key].max, GAME_RULES[key].def || 4)
     var copies = clamp(s.copies, 1, 2, 2)
     var meta = [count + ' ' + GAME_RULES[key].unit]
     if (lv.note) meta.push(lv.note)
@@ -249,7 +251,7 @@
       kousuan: kousuanCard(storage),
       shudu: shuduCard(storage),
       pinyin: pinyinCard(storage, now),
-      games: ['mima', 'zhizhi', 'migong'].map(function (k) { return gameCard(storage, k) })
+      games: ['huochai', 'mima', 'migong', 'zhizhi'].map(function (k) { return gameCard(storage, k) })
     }
   }
 

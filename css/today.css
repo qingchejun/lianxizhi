@@ -62,6 +62,11 @@
   gap: 36px clamp(24px, 2.4vw, 44px);
 }
 
+/* 游戏一排 5 张（数独、火柴、密码、迷宫、数织）：宽屏一行摆下，不让最后一张单独掉一行 */
+.dk-row-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 /* ---------- 一张纸 ---------- */
 
 .dk-item {
@@ -248,6 +253,19 @@
 
 .pp-maze span.path {
   background: #e4e7ec;
+}
+
+/* 火柴：一道小火柴算式 */
+.pp-match {
+  display: block;
+  width: 78%;
+  margin: 16cqw auto 0;
+}
+
+.pp-match line {
+  stroke: #1a1d23;
+  stroke-width: 1.1;
+  stroke-linecap: round;
 }
 
 /* 密码：一行线索 = 三个数 + 反馈点 */
@@ -564,7 +582,8 @@
 }
 
 @media (max-width: 1280px) {
-  .dk-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .dk-row,
+  .dk-row-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (max-width: 1180px) {
@@ -575,7 +594,8 @@
 @media (max-width: 900px) {
   .today { padding: 20px 16px 0; }
   .today-foot { margin: auto -16px 0; }
-  .dk-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 18px; }
+  .dk-row,
+  .dk-row-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 18px; }
   .ti-steps { grid-template-columns: 1fr; gap: 12px; }
   .tn-day { grid-template-columns: 1fr; gap: 4px; }
   .tn-more { margin-left: 0; }
