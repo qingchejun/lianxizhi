@@ -208,22 +208,106 @@
   }
 
   /* 立刻把指定的键推上云（不等防抖、不依赖 init 是否已挂好监听）：打印时记下的纸要马上能被手机扫到。
-     没登录、键不存在就什么也不做；失败静默（之后的普通同步还会再推） */
+     推不上（网络慢、断网、登录态还没确认）不放弃：留在待推清单里，2、4、8…秒后重试，最多约 10 分钟；
+     每次状态变化通知 onOutbox 的监听（打印页据此提示「已存到云端，可以扫码了」）。
+     2026-11-24：之前推失败静默放弃，电脑打印的纸没上云、手机扫了一直找不到 */
+  var outbox = Object.create(null)
+  var outboxBusy = false
+  var outboxAgain = false
+  var outboxTimer = null
+  var outboxTries = 0
+  var outboxFns = []
+  var RETRY_MS = [2000, 4000, 8000, 15000, 30000]
+  var RETRY_MAX = 25
+
+  function outboxEmit(state) {
+    var info = { state: state, tries: outboxTries, left: Object.keys(outbox).length }
+    outboxFns.forEach(function (fn) { try { fn(info) } catch (e) { /* 监听出错不影响推送 */ } })
+  }
+
   function pushNow(keys) {
+    ;(keys || []).forEach(function (k) { outbox[k] = true })
+    outboxTries = 0
+    if (outboxTimer) { clearTimeout(outboxTimer); outboxTimer = null }
+    return drainOutbox()
+  }
+
+  async function drainOutbox() {
+    if (outboxBusy) { outboxAgain = true; return false }
+    var keys = Object.keys(outbox)
+    if (!keys.length) return true
+    outboxBusy = true
+    var ok = false
+    try {
+      var A = root.SumSum.account
+      if (A && A.state && A.state.loggedIn) {
+        if (!outboxTries) outboxEmit('sending') /* 重试中就一直显示「正在重试」，别跳回「正在存」 */
+        var store = S()
+        var meta = store.meta()
+        var items = keys.map(function (k) {
+          var v = store.getString(k)
+          return v === null ? null : { key: k, value: v, updated_at: meta[k] || Date.now() }
+        }).filter(Boolean)
+        var r = items.length ? await defaultApi().push(items) : { status: 200 }
+        ok = !!(r && r.status === 200)
+        if (ok) items.forEach(function (it) {
+          /* 推的途中又改过（比如刚打了分）就留着下一轮再推 */
+          if (store.getString(it.key) === it.value) delete outbox[it.key]
+        })
+        keys.forEach(function (k) { if (store.getString(k) === null) delete outbox[k] })
+      }
+    } catch (e) {
+      ok = false
+    }
+    outboxBusy = false
+    var left = Object.keys(outbox).length
+    if (!left) {
+      outboxTries = 0
+      outboxEmit('ok')
+      return true
+    }
+    if (outboxAgain || ok) { outboxAgain = false; return drainOutbox() }
+    outboxTries++
+    if (outboxTries > RETRY_MAX) { outboxEmit('failed'); return false }
+    outboxEmit('retrying')
+    outboxTimer = setTimeout(function () {
+      outboxTimer = null
+      drainOutbox()
+    }, RETRY_MS[Math.min(outboxTries - 1, RETRY_MS.length - 1)])
+    return false
+  }
+
+  if (root.addEventListener) {
+    /* 网络恢复：立刻再推一次，不等计时器 */
+    root.addEventListener('online', function () {
+      if (!Object.keys(outbox).length) return
+      if (outboxTimer) { clearTimeout(outboxTimer); outboxTimer = null }
+      drainOutbox()
+    })
+  }
+
+  function onOutbox(fn) {
+    if (typeof fn === 'function') outboxFns.push(fn)
+  }
+
+  /* 只拉取、只补本机没有或更旧的键（登记页等电脑上传那张纸时用）：返回补了几条 */
+  async function pullMissing(filter) {
     var A = root.SumSum.account
-    if (!A || !A.state || !A.state.loggedIn) return Promise.resolve(false)
+    if (!A || !A.state || !A.state.loggedIn) return 0
+    var r = await defaultApi().pull()
+    if (!r || r.status !== 200 || !r.body || !r.body.items) return 0
     var store = S()
     var meta = store.meta()
-    var items = keys.map(function (k) {
-      var v = store.getString(k)
-      return v === null ? null : { key: k, value: v, updated_at: meta[k] || Date.now() }
-    }).filter(Boolean)
-    if (!items.length) return Promise.resolve(false)
-    return defaultApi().push(items).then(function (r) {
-      return !!(r && r.status === 200)
-    }, function () { return false })
+    var n = 0
+    r.body.items.forEach(function (it) {
+      if (filter && !filter(it.key)) return
+      if (store.getString(it.key) !== null && (meta[it.key] || 0) >= it.updated_at) return
+      store.applyRemote(it.key, it.value, it.updated_at)
+      n++
+    })
+    return n
   }
 
   root.SumSum = root.SumSum || {}
-  root.SumSum.sync = { init: init, flush: flush, pushNow: pushNow }
+  root.SumSum.sync = { init: init, flush: flush, pushNow: pushNow, onOutbox: onOutbox, pullMissing: pullMissing }
 })(typeof window !== 'undefined' ? window : globalThis)

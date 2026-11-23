@@ -112,7 +112,7 @@ with sync_playwright() as p:
     # 找不到的纸号
     m.goto(BASE + '/mark?id=zzzzzz')
     m.wait_for_selector('.mcard-empty', timeout=15000)
-    check('找不到的纸号给提示', '还没同步好' in m.inner_text('.mcard-empty'))
+    check('还没传上来的纸号：提示在等电脑上传', '还在上传' in m.inner_text('.mcard-empty'))
     m.goto(BASE + '/mark?id=../x')
     m.wait_for_selector('.mcard-empty', timeout=15000)
     check('乱码纸号给提示', '看不懂' in m.inner_text('.mcard-empty'))

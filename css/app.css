@@ -1855,3 +1855,39 @@ select.input {
     padding: 24px 16px calc(32px + env(safe-area-inset-bottom));
   }
 }
+
+/* 打印后「存到云端」的状态条（js/sheets.js）：手机要扫的纸得先传上云 */
+.cloud-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 50;
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--card-edge);
+  background: var(--card);
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.6;
+  box-shadow: 0 6px 24px rgba(20, 24, 32, 0.12);
+}
+.cloud-toast.ok {
+  border-color: #bfe0cb;
+  background: var(--green-tint);
+  color: var(--green);
+}
+.cloud-toast.warn {
+  border-color: var(--amber-edge);
+  background: var(--amber-tint);
+  color: var(--amber);
+}
+.cloud-toast.bad {
+  border-color: var(--mark);
+  background: var(--red-tint);
+  color: var(--red-deep);
+}
+@media print {
+  .cloud-toast { display: none !important; }
+}

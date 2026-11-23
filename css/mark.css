@@ -228,3 +228,10 @@
   color: var(--ink-faint);
   text-align: center;
 }
+
+.skip-btn {
+  display: block;
+  margin-top: 8px;
+  color: var(--ink-faint);
+  font-size: 13px;
+}

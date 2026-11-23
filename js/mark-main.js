@@ -213,7 +213,15 @@
       '<header class="mcard-head"><span class="tag">' + esc(SC.MODULE_LABEL[rec.module] || '') + '</span>' +
       '<b class="mcard-title">' + esc(rec.title) + '</b>' +
       '<span class="mcard-date">' + md(rec.date) + (done ? ' · <span class="ok">已打分</span>' : '') + '</span></header>' +
-      body + effectHTML(rec) + '</section>'
+      body + effectHTML(rec) +
+      /* 打印了没做（预览、重印、换一批）的纸：一点就从列表里拿掉，免得越积越多 */
+      (rec.id !== mainId && !done && !hasPicks(rec)
+        ? '<button type="button" class="link-btn skip-btn" data-sheet="' + rec.id + '" data-skip>这张没做，不用打分</button>' : '') +
+      '</section>'
+  }
+  function hasPicks(rec) {
+    var st = ui[rec.id]
+    return !!(st && (st.wrong.size || Object.keys(st.levels).length))
   }
 
   /* ---------- 整页 ---------- */
@@ -227,12 +235,15 @@
     } else if (!main && tSync == null) {
       /* 同步还没回来（国内连海外服务器常要十几秒）：别说「电脑没同步好」吓人，读到了会自动重画 */
       html += notice('网络有点慢，还在读取', '读到了会自动显示，不用刷新。')
+    } else if (!main && !waitGaveUp) {
+      /* 同步完了还没有：多半是电脑刚打印、还在上传。自动隔几秒再查，查到直接显示 */
+      startWait()
+      html += notice('电脑那边还在上传这张纸', '正在自动等，传上来了会直接显示，不用刷新。已等 ' +
+        Math.round((Date.now() - waitStart) / 1000) + ' 秒。')
     } else if (!main) {
-      var tries = 0
-      try { tries = Number(root.sessionStorage.getItem('sumsum:mark:retry:' + mainId)) || 0 } catch (e) { /* 忽略 */ }
-      html += tries < 2
-        ? notice('电脑那边还没同步好', '刚点完打印的话，等几秒再刷新一下。', true)
-        : notice('找不到这张纸', '可能是别的账号打印的，或者已经超过 60 天。换成打印这张纸的账号登录再扫。', true)
+      html += notice('找不到这张纸',
+        '等了两分钟，电脑那边还是没把这张纸传上来。请看电脑上打印后有没有出现「已存到云端」：没有的话，在电脑上刷新页面，再点一次打印。' +
+        '如果这张纸是别的账号打印的，要换成那个账号登录再扫。', true)
     } else {
       html += cardHTML(main)
     }
@@ -245,7 +256,7 @@
     var left = rest.filter(function (r) { return !isDone(r) }).length
     var total = left + (main && !isDone(main) ? 1 : 0)
     if (rest.length) {
-      html += '<h2 class="mark-sub">今天打印的其他纸' + (left ? ' · ' + left + ' 张没打分' : '') + '</h2>' + rest.map(cardHTML).join('')
+      html += '<h2 class="mark-sub">最近打印的其他纸' + (left ? ' · ' + left + ' 张没打分' : '') + '</h2>' + rest.map(cardHTML).join('')
     }
     if (main && !total) html += '<p class="mark-all">今天的纸都打好分了。</p>'
     page.innerHTML = html
@@ -292,6 +303,12 @@
       else st.wrong.add(key)
       st.levels = SC.autoLevel(rec, st.levels, st.wrong, key) /* 只重算这道题所在的那一课 */
       save(rec, st)
+    } else if (b.hasAttribute('data-skip')) {
+      rec.done = true
+      rec.skipped = true
+      rec.doneAt = Date.now()
+      S.store.set(SC.keyOf(rec.id), rec)
+      listIds = listIds.filter(function (x) { return x !== rec.id })
     } else if (b.hasAttribute('data-ch')) {
       S.shiziMark.togglePick(b.dataset.ch)
     } else if (b.hasAttribute('data-settle')) {
@@ -304,6 +321,25 @@
     }
     render()
   })
+
+  /* ---------- 等电脑上传：每 4 秒只拉一次云端补纸，最多等 2 分钟 ---------- */
+  var waitStart = 0
+  var waitTimer = null
+  var waitGaveUp = false
+  var WAIT_MAX = 120000
+  function startWait() {
+    if (waitTimer || waitGaveUp) return
+    if (!waitStart) waitStart = Date.now()
+    waitTimer = setTimeout(function () {
+      var sync = S.sync
+      var pull = sync && sync.pullMissing ? sync.pullMissing(SC.isSheetKey) : Promise.resolve(0)
+      pull.catch(function () { return 0 }).then(function () {
+        waitTimer = null
+        if (!load(mainId) && Date.now() - waitStart >= WAIT_MAX) waitGaveUp = true
+        safeRender()
+      })
+    }, 4000)
+  }
 
   /* ---------- 启动：等登录与同步，但最多等 8 秒；出错把原因写在页面底部，方便家长截图给站长 ---------- */
   var problems = []

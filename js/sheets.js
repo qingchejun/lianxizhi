@@ -120,7 +120,7 @@
     var key = C().keyOf(current.id)
     if (S.get(key)) {
       /* 已经记过（重复打印）：不覆盖打分，但再推一次，万一上次没推上去 */
-      if (root.SumSum.sync && root.SumSum.sync.pushNow) root.SumSum.sync.pushNow([key])
+      pushSheet(key)
       return current.id
     }
     var i = current.info
@@ -135,7 +135,7 @@
     }, Date.now()))
     S.stampNow([key])
     /* 马上推上云：家长打印完常常立刻拿手机扫，不能等普通同步（见 js/sync.js pushNow） */
-    if (root.SumSum.sync && root.SumSum.sync.pushNow) root.SumSum.sync.pushNow([key])
+    pushSheet(key)
     return current.id
   }
 
@@ -152,6 +152,47 @@
     rec.doneAt = Date.now()
     S.set(key, rec)
   }
+
+  /* 打印后提示纸有没有存上云端（sync.js 的待推清单会自动重试）。只在本页打印过才提示 */
+  var toastWatching = false
+  var toastHide = null
+  var TOAST = {
+    sending: ['', '正在把这张纸存到云端…'],
+    retrying: ['warn', '网络不太好，这张纸还没存到云端，正在自动重试。先别关这个页面。'],
+    failed: ['bad', '这张纸没能存到云端，手机扫码会找不到。请检查网络，刷新页面后再点一次打印。'],
+    ok: ['ok', '已存到云端，手机可以扫码打分了。']
+  }
+  function toast(state) {
+    var doc = root.document
+    var t = TOAST[state]
+    if (!doc || !t || !toastWatching) return
+    var el = doc.getElementById('cloud-toast')
+    if (!el) {
+      el = doc.createElement('div')
+      el.id = 'cloud-toast'
+      el.setAttribute('role', 'status')
+      doc.body.appendChild(el)
+    }
+    el.className = 'cloud-toast' + (t[0] ? ' ' + t[0] : '')
+    el.textContent = t[1]
+    el.hidden = false
+    if (toastHide) { clearTimeout(toastHide); toastHide = null }
+    if (state === 'ok') {
+      toastWatching = false
+      toastHide = setTimeout(function () { el.hidden = true }, 6000)
+    }
+  }
+  function pushSheet(key) {
+    var sync = root.SumSum.sync
+    if (!sync || !sync.pushNow) return
+    if (!toastHooked && sync.onOutbox) {
+      toastHooked = true
+      sync.onOutbox(function (info) { toast(info.state) })
+    }
+    toastWatching = true
+    sync.pushNow([key])
+  }
+  var toastHooked = false
 
   function ensureButton(doc) {
     if (doc.getElementById('btn-mark')) return

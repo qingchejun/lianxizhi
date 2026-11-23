@@ -64,6 +64,14 @@
 
   /* 页面打开先探一下登录态（me 401 = 没登录，不算错） */
   async function init(fetchFn) {
+    /* 服务器发网页时已经验过登录、写进了页面（functions/_middleware.js），直接用，省一个请求。
+       只用一次：之后（测试里、或没注入的页面）照常问 /api/auth/me */
+    var pre = !fetchFn && root.__SUMSUM_ME
+    if (pre && typeof pre === 'object') {
+      root.__SUMSUM_ME = null
+      if (pre.ok) setLogin(pre.email, pre.admin)
+      return state
+    }
     var r = await request('/api/auth/me', undefined, fetchFn)
     if (r.status === 200 && r.body.ok) setLogin(r.body.email, r.body.admin)
     return state
