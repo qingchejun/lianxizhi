@@ -1283,6 +1283,137 @@ function checkSanjiao() {
   })
 }
 
+/*
+ * B14 认识四边形：不看 key，直接量题干 SVG 重算答案。
+ * 钉子板上的图形 <polygon class="qd">、选点题的 <polyline class="abc"> 和圈出的 <circle class="pc"> 都换算成格点坐标再用整数判断平行。
+ */
+function checkSibian() {
+  if (!A.topics.sibian) return
+  var CIRC = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧']
+  function groups(html) { return html.split('<g class="it"').slice(1).map(function (g) { return g.split('</g>')[0] }) }
+  function ptsOf(str) { return str.trim().split(/\s+/).map(function (t) { return t.split(',').map(Number) }) }
+  function circles(html, cls) {
+    var o = []
+    html.replace(new RegExp('<circle class="' + cls + '" cx="([-\\d.]+)" cy="([-\\d.]+)"', 'g'), function (m, x, y) { o.push([+x, +y]) })
+    return o
+  }
+  /* 像素 → 格点：以最左上的钉子为原点，间距用相邻钉子量 */
+  function lattice(html) {
+    var ds = circles(html, 'dot')
+    var x0 = Math.min.apply(null, ds.map(function (p) { return p[0] })), y0 = Math.min.apply(null, ds.map(function (p) { return p[1] }))
+    var xs = ds.map(function (p) { return p[0] }).filter(function (x) { return x > x0 + 0.01 })
+    var sp = Math.min.apply(null, xs) - x0
+    return function (p) {
+      var gx = (p[0] - x0) / sp, gy = (p[1] - y0) / sp
+      if (Math.abs(gx - Math.round(gx)) > 0.01 || Math.abs(gy - Math.round(gy)) > 0.01) bad('B14：顶点不在钉子上')
+      return [Math.round(gx), Math.round(gy)]
+    }
+  }
+  function sub(a, b) { return [a[0] - b[0], a[1] - b[1]] }
+  function cr(u, v) { return u[0] * v[1] - u[1] * v[0] }
+  function dt(u, v) { return u[0] * v[0] + u[1] * v[1] }
+  function deg(u, v) { var a = Math.abs(Math.atan2(cr(u, v), dt(u, v))) * 180 / Math.PI; return a > 90 ? 180 - a : a }
+  function kind(Q, tag) {
+    var s = [0, 1, 2, 3].map(function (i) { return sub(Q[(i + 1) % 4], Q[i]) })
+    var sg = 0
+    for (var i = 0; i < 4; i++) { var c = cr(s[i], s[(i + 1) % 4]); if (!c || (sg && Math.sign(c) !== sg)) bad(tag + '：四边形不凸 / 自交'); sg = Math.sign(c) }
+    var p1 = cr(s[0], s[2]) === 0, p2 = cr(s[1], s[3]) === 0
+    if (!p1 && deg(s[0], s[2]) < 13.5) bad(tag + '：一组对边差一点平行，看不准')
+    if (!p2 && deg(s[1], s[3]) < 13.5) bad(tag + '：一组对边差一点平行，看不准')
+    if (p1 && p2) {
+      var r = dt(s[0], s[1]) === 0, e = dt(s[0], s[0]) === dt(s[1], s[1])
+      return r && e ? 'zf' : r ? 'cf' : e ? 'lx' : 'px'
+    }
+    if (p1 || p2) {
+      var o = p1 ? [s[0], s[2]] : [s[1], s[3]]
+      if (dt(o[0], o[0]) === dt(o[1], o[1])) bad(tag + '：梯形两条平行边一样长')
+      return 'ti'
+    }
+    return 'qt'
+  }
+  var PX = { px: 1, cf: 1, zf: 1, lx: 1 }
+  function nums(arr) { return arr.map(function (i) { return CIRC[i] }).join('') || '没有' }
+  function norm(P) {
+    var mx = Math.min.apply(null, P.map(function (p) { return p[0] })), my = Math.min.apply(null, P.map(function (p) { return p[1] }))
+    return P.map(function (p) { return (p[0] - mx) + '.' + (p[1] - my) }).sort().join('_')
+  }
+
+  each('sibian', 'yuan', function (q, d) {
+    var by = { yc: [], ye: [], ys: [] }
+    groups(q.stemHTML).forEach(function (g, i) {
+      if (/<circle class="yc"/.test(g)) by.yc.push(i)
+      else if (/<ellipse class="ye"/.test(g)) {
+        var m = g.match(/rx="([\d.]+)" ry="([\d.]+)"/)
+        var r = +m[1] / +m[2]
+        if (r < 1.25) bad('B14 圆椭圆：椭圆太接近圆 ' + r.toFixed(2))
+        by.ye.push(i)
+      } else if (/<path class="ys"/.test(g)) {
+        var dd = g.match(/<path class="ys"[^>]* d="([^"]+)"/)[1]
+        if (!/^M[-\d. ]+L[-\d. ]+A[-\d. ]+Z$/.test(dd)) bad('B14 扇形路径不对：' + dd)
+        by.ys.push(i)
+      } else if (!/class="oth"/.test(g)) bad('B14 圆椭圆：认不出的图形')
+    })
+    var want = '圆 ' + nums(by.yc) + '；椭圆 ' + nums(by.ye) + '；扇形 ' + nums(by.ys)
+    if (q.answer !== want) bad('B14 圆椭圆答案错：给的 ' + q.answer + ' 应为 ' + want)
+    if (!by.yc.length || !by.ye.length || !by.ys.length) bad('B14 圆椭圆缺一类')
+  })
+
+  each('sibian', 'sibian', function (q, d) {
+    var by = { ti: [], px: [], lx: [] }
+    groups(q.stemHTML).forEach(function (g, i) {
+      var L = lattice(g)
+      var Q = ptsOf(g.match(/<polygon class="qd" points="([^"]+)"/)[1]).map(L)
+      var k = kind(Q, 'B14 梯形平行四边形')
+      if (k === 'ti') {
+        by.ti.push(i)
+        if (d === 'L1') {
+          var s = [0, 1, 2, 3].map(function (j) { return sub(Q[(j + 1) % 4], Q[j]) })
+          var pv = cr(s[0], s[2]) === 0 ? s[0] : s[1]
+          if (pv[1] !== 0) bad('B14 梯形入门：平行边不是横的')
+        }
+      }
+      if (PX[k]) by.px.push(i)
+      if (k === 'lx' || k === 'zf') by.lx.push(i)
+      if (k === 'lx') {
+        var d1 = sub(Q[2], Q[0]), d2 = sub(Q[3], Q[1])
+        if (!((d1[0] === 0 && d2[1] === 0) || (d1[1] === 0 && d2[0] === 0))) bad('B14 菱形对角线不是一横一竖')
+      }
+    })
+    var want = '梯形 ' + nums(by.ti) + '；平行四边形 ' + nums(by.px) + (q.ansFields.length === 3 ? '；菱形 ' + nums(by.lx) : '')
+    if (q.answer !== want) bad('B14 梯形平行四边形答案错：给的 ' + q.answer + ' 应为 ' + want)
+    if (!by.ti.length || !by.px.length) bad('B14 梯形平行四边形缺一类')
+    if (d === 'L3' && q.ansFields.length !== 3) bad('B14 挑战档没问菱形')
+  })
+
+  each('sibian', 'pingyi', function (q, d) {
+    var gs = groups(q.stemHTML)
+    var P = gs.map(function (g) { return ptsOf(g.match(/<polygon class="qd" points="([^"]+)"/)[1]).map(lattice(g)) })
+    var yes = []
+    P.forEach(function (Q, i) { if (i && norm(Q) === norm(P[0])) yes.push(i) })
+    if (q.answer !== nums(yes)) bad('B14 平移答案错：给的 ' + q.answer + ' 应为 ' + nums(yes))
+    if (!yes.length || yes.length === P.length - 1) bad('B14 平移：全能重合或全不能 ' + q.key)
+    var pos = {}
+    P.forEach(function (Q) { var k = Q.map(function (p) { return p.join('.') }).sort().join('_'); if (pos[k]) bad('B14 平移：两个图形位置一样'); pos[k] = 1 })
+  })
+
+  each('sibian', 'huasi', function (q, d) {
+    var L = lattice(q.stemHTML)
+    var abc = ptsOf(q.stemHTML.match(/<polyline class="abc" points="([^"]+)"/)[1]).map(L)
+    var C = circles(q.stemHTML, 'pc').map(L)
+    var hit = { '梯形': [], '平行四边形': [] }
+    C.forEach(function (D, i) {
+      var k = kind([abc[0], abc[1], abc[2], D], 'B14 选点')
+      if (k === 'ti') hit['梯形'].push(i)
+      if (PX[k]) hit['平行四边形'].push(i)
+    })
+    var parts = q.ansFields.map(function (f) {
+      if (hit[f].length !== 1) bad('B14 选点：' + f + '不是正好一个点（' + hit[f].length + '）')
+      return f + ' ' + nums(hit[f])
+    })
+    if (q.answer !== parts.join('；')) bad('B14 选点答案错：给的 ' + q.answer + ' 应为 ' + parts.join('；'))
+  })
+}
+
 function checkFloors() {
   each('daxiao', 'num', function (q) {
     var n = nums(q.stem)
@@ -1473,6 +1604,7 @@ checkJiangebc()
 checkRenxian()
 checkRenjiao()
 checkSanjiao()
+checkSibian()
 checkSupply()
 
 if (problems.length) {
