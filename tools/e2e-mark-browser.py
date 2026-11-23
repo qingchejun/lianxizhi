@@ -47,6 +47,9 @@ with sync_playwright() as p:
     for m, url in [('kousuan', '/kousuan'), ('huochai', '/huochai'), ('shizi', '/shizi'), ('aoshu', '/aoshu?review=0')]:
         d.goto(BASE + url)
         time.sleep(2.5)
+        if d.query_selector('#btn-regen'):  # 换一批：重复跑本脚本时不撞上次已登记的同一张纸
+            d.click('#btn-regen')
+            time.sleep(1.5)
         check(m + ' 页眉有二维码', d.evaluate("document.querySelectorAll('#preview .sheet-qr svg').length") == 1)
         d.evaluate("window.dispatchEvent(new Event('beforeprint'))")
         ids[m] = d.evaluate('SumSum.sheets.current().id')
