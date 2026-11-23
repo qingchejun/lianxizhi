@@ -312,7 +312,14 @@ async function pushMark(repo, userId, now) {
   await repo.limitSet('push:' + userId, 'min', { n: n, ts: now, until: 0 })
 }
 
-export async function dataPull(repo, userId) {
+/* 纸记录（扫码登记）只留 60 天。同步不传播删除，所以服务器拉取时删一次、本机同步前删一次（js/sync.js），
+   两头规则一致：这里看行的 updated_at（最后一次打印 / 打分推上来的时间） */
+const SHEET_PREFIX = 'sumsum:sheet:v1:'
+const SHEET_KEEP_MS = 60 * 86400 * 1000
+
+export async function dataPull(repo, userId, now) {
+  now = now || Date.now()
+  if (repo.dataDeletePrefixBefore) await repo.dataDeletePrefixBefore(userId, SHEET_PREFIX, now - SHEET_KEEP_MS)
   const items = await repo.dataRows(userId)
   return { status: 200, body: { ok: true, items: items } }
 }

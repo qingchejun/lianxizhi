@@ -45,6 +45,7 @@
         if (e.key === 'sumsum:sync:owner' && e.newValue && e.newValue !== session && !opts.noReload) root.location.reload()
       })
     }
+    pruneSheets(store, Date.now())
     var pushedVersions = Object.create(null)
     var allKeys = store.keys() /* 现存可同步键，含没 mtime 的老键 */
     var metaMap = store.meta()
@@ -123,6 +124,17 @@
     store.onChange(function () {
       later(api, opts.debounce, pushedVersions)
     })
+  }
+
+  /* 纸记录（扫码登记）只留 60 天：拉之前先删本机的旧纸，否则合并时它算「本地独有」又被推回云端。
+     服务器拉取时按同一规则删（server/auth-core.js dataPull）。sheets-core 没加载的页面跳过 */
+  function pruneSheets(store, now) {
+    var SC = root.SumSum.sheetsCore
+    if (!SC) return
+    var entries = store.keys().filter(SC.isSheetKey).map(function (k) {
+      return { key: k, value: store.getString(k) }
+    })
+    SC.staleKeys(entries, now).forEach(function (k) { store.remove(k) })
   }
 
   function defaultApi(fetchFn) {

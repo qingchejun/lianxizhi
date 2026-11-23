@@ -28,6 +28,13 @@ function memRepo() {
       dbData.set(k, { value: value, updated_at: updated_at })
       return true
     },
+    async dataDeletePrefixBefore(uid, prefix, before) {
+      var n = 0
+      dbData.forEach(function (v, k) {
+        if (k.indexOf(uid + '/' + prefix) === 0 && v.updated_at < before) { dbData.delete(k); n++ }
+      })
+      return n
+    },
     async dataBytes(uid) {
       var n = 0
       dbData.forEach(function (v, k) { if (k.indexOf(uid + '/') === 0) n += v.value.length })
@@ -313,6 +320,19 @@ import('../server/auth-core.js').then(async function (A) {
   for (var q = 0; q < 201; q++) tooMany.push({ key: 'sumsum:k' + q, value: '1', updated_at: now })
   var pBig = await A.dataPush(dbF, uid, tooMany)
   check('超过 200 条整批拒绝', pBig.status === 413)
+
+  /* --- 纸记录 60 天清理：拉取时先删服务器上的旧纸（同步不传播删除，只能两头各删） --- */
+  var DAYMS = 86400000
+  await A.dataPush(dbF, uid, [
+    { key: 'sumsum:sheet:v1:oldold', value: '{}', updated_at: now - 61 * DAYMS },
+    { key: 'sumsum:sheet:v1:newnew', value: '{}', updated_at: now - 59 * DAYMS },
+    { key: 'sumsum:oldother:v1', value: '{}', updated_at: now - 400 * DAYMS }
+  ], now + 120000)
+  var pullS = await A.dataPull(dbF, uid, now)
+  var keysS = pullS.body.items.map(function (it) { return it.key })
+  check('拉取时删 60 天前的纸', keysS.indexOf('sumsum:sheet:v1:oldold') < 0, keysS)
+  check('新纸保留', keysS.indexOf('sumsum:sheet:v1:newnew') >= 0, keysS)
+  check('别的旧数据不动', keysS.indexOf('sumsum:oldother:v1') >= 0, keysS)
 
   /* --- push 总量配额：一个账号 5MB 封顶，防写爆免费档 D1 --- */
   var dbQ = memRepo()

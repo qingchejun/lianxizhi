@@ -237,6 +237,26 @@ console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ sync-core 合并规则
     await sync.flush()
     check('退出前 flush 立即推送未推的改动', pushed.length === 1 && pushed[0].some(function (it) { return it.key === 'sumsum:late:v1' }), pushed.length)
 
+    /* 纸记录 60 天清理：拉之前先删本机旧纸，否则它会被当成「本地独有」再推回云端 */
+    require('../js/sheets-core.js')
+    var SC = globalThis.SumSum.sheetsCore
+    var nowMs = Date.now()
+    var oldRec = SC.newRecord({ id: 'oldold', module: 'kousuan', title: 't', date: '2026-01-01', units: [], items: [] }, nowMs - 70 * 86400000)
+    var newRec = SC.newRecord({ id: 'newnew', module: 'kousuan', title: 't', date: '2026-11-23', units: [], items: [] }, nowMs)
+    mem[SC.keyOf('oldold')] = JSON.stringify(oldRec)
+    meta[SC.keyOf('oldold')] = nowMs - 70 * 86400000
+    mem[SC.keyOf('newnew')] = JSON.stringify(newRec)
+    meta[SC.keyOf('newnew')] = nowMs
+    pulled = { items: [] }
+    pushed = []
+    ownerVal = String(globalThis.SumSum.account.state.email).toLowerCase() /* 别触发换号清空 */
+    await sync.init({ api: api, noReload: true })
+    await new Promise(function (r) { setTimeout(r, 30) })
+    var pushedKeys = [].concat.apply([], pushed).map(function (it) { return it.key })
+    check('同步前删掉本机 60 天前的纸', !(SC.keyOf('oldold') in mem), Object.keys(mem))
+    check('旧纸不再推回云端', pushedKeys.indexOf(SC.keyOf('oldold')) < 0, pushedKeys)
+    check('新纸保留', SC.keyOf('newnew') in mem)
+
     finish()
   }).catch(function (e) { console.error(e); process.exit(1) })
 

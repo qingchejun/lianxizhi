@@ -6,6 +6,6 @@ import { repo } from '../../../server/repo-d1.js'
 export async function onRequestGet(context) {
   const session = await requireSession(context)
   if (!session) return json({ ok: false, error: '请先登录。' }, 401)
-  const r = await dataPull(repo(context.env.DB), session.uid)
+  const r = await dataPull(repo(context.env.DB), session.uid, Date.now())
   return json(r.body, r.status)
 }
