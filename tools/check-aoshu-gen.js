@@ -1117,6 +1117,172 @@ function checkRenjiao() {
   })
 }
 
+/*
+ * B13 认识三角形：不看 key，直接量题干 SVG 重算答案。
+ * 钉子板上的三角形 <polygon class="tri"> 的顶点要落在钉子 <circle class="dot"> 上；
+ * 标边长的三角形读 <text class="len">，再量三条边，比例要和数对得上。
+ */
+function checkSanjiao() {
+  if (!A.topics.sanjiao) return
+  var CIRC = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧']
+  var CN = { rui: '锐角', zhi: '直角', dun: '钝角' }
+  function groups(html) {
+    return html.split('<g class="it"').slice(1).map(function (g) { return g.split('</g>')[0] })
+  }
+  function polyPts(g) {
+    var m = g.match(/<polygon class="tri" points="([^"]+)"/)
+    return m ? m[1].split(' ').map(function (t) { return t.split(',').map(Number) }) : null
+  }
+  function dots(g) {
+    var out = []
+    g.replace(/<circle class="dot" cx="([-\d.]+)" cy="([-\d.]+)"/g, function (m, x, y) { out.push([+x, +y]) })
+    return out
+  }
+  function onDot(p, ds) { return ds.some(function (q) { return Math.abs(p[0] - q[0]) < 0.01 && Math.abs(p[1] - q[1]) < 0.01 }) }
+  function sub(a, b) { return [a[0] - b[0], a[1] - b[1]] }
+  function L2(a, b) { var v = sub(a, b); return v[0] * v[0] + v[1] * v[1] }
+  function angs(T) {
+    return [0, 1, 2].map(function (i) {
+      var u = sub(T[(i + 1) % 3], T[i]), v = sub(T[(i + 2) % 3], T[i])
+      var dt = u[0] * v[0] + u[1] * v[1]
+      return { deg: Math.acos(dt / Math.sqrt((u[0] * u[0] + u[1] * u[1]) * (v[0] * v[0] + v[1] * v[1]))) * 180 / Math.PI, dot: dt, u: u, v: v }
+    })
+  }
+  function kind(T) {
+    var a = angs(T)
+    if (a.some(function (x) { return Math.abs(x.dot) < 0.01 })) return 'zhi'
+    return a.some(function (x) { return x.dot < 0 }) ? 'dun' : 'rui'
+  }
+  function maxA(T) { return Math.max.apply(null, angs(T).map(function (x) { return x.deg })) }
+  function eqLen(a, b) { return Math.abs(a - b) < 0.01 }
+  function anyEq(T) { var a = L2(T[0], T[1]), b = L2(T[1], T[2]), c = L2(T[2], T[0]); return eqLen(a, b) || eqLen(b, c) || eqLen(a, c) }
+  function seenIso(T) {
+    for (var i = 0; i < 3; i++) {
+      var P = T[i], Q = T[(i + 1) % 3], R = T[(i + 2) % 3]
+      var b = sub(R, Q)
+      var nice = Math.abs(b[0]) < 0.01 || Math.abs(b[1]) < 0.01 || Math.abs(Math.abs(b[0]) - Math.abs(b[1])) < 0.01
+      if (eqLen(L2(P, Q), L2(P, R)) && nice) return true
+    }
+    return false
+  }
+  function scalene(T) {
+    var l = [L2(T[0], T[1]), L2(T[1], T[2]), L2(T[2], T[0])].map(Math.sqrt).sort(function (a, b) { return a - b })
+    return l[1] / l[0] >= 1.149 && l[2] / l[1] >= 1.149
+  }
+  function axisLegs(T) {
+    var a = angs(T).filter(function (x) { return Math.abs(x.dot) < 0.01 })[0]
+    return a && (Math.abs(a.u[0]) < 0.01 || Math.abs(a.u[1]) < 0.01)
+  }
+  function clear(T, d, tag) {
+    var k = kind(T), m = maxA(T)
+    if (k === 'rui' && m > (d === 'L1' ? 70.5 : 72.5)) bad(tag + '：锐角三角形最大角 ' + m.toFixed(1) + '° 太接近直角')
+    if (k === 'dun' && m < (d === 'L1' ? 124.5 : 114.5)) bad(tag + '：钝角三角形最大角 ' + m.toFixed(1) + '° 太接近直角')
+    if (Math.min.apply(null, angs(T).map(function (x) { return x.deg })) < 17.5) bad(tag + '：三角形太扁')
+  }
+  function nums(arr) { return arr.map(function (i) { return CIRC[i] }).join('') || '没有' }
+
+  each('sanjiao', 'bian', function (q, d) {
+    var by = { bu: [], yao: [], deng: [] }
+    groups(q.stemHTML).forEach(function (g, i) {
+      var P = polyPts(g)
+      var labs = []
+      g.replace(/<text x="([-\d.]+)" y="([-\d.]+)"[^>]*class="len">(\d+)</g, function (m, x, y, v) { labs.push({ p: [+x, +y - 4], v: +v }) })
+      if (!P || P.length !== 3 || labs.length !== 3) { bad('B13 按边分：一格里不是一个标了三条边的三角形 ' + q.key); return }
+      var ratio = []
+      for (var e = 0; e < 3; e++) {
+        var a = P[e], b = P[(e + 1) % 3]
+        var mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
+        var best = labs.slice().sort(function (x, y) { return L2(x.p, mid) - L2(y.p, mid) })[0]
+        ratio.push(Math.sqrt(L2(a, b)) / best.v)
+      }
+      var rs = ratio.slice().sort(function (x, y) { return x - y })
+      if (rs[2] / rs[0] > 1.03) bad('B13 按边分：画的边长和数对不上 ' + q.key)
+      var v = labs.map(function (l) { return l.v })
+      var t = v[0] === v[1] && v[1] === v[2] ? 'deng' : v[0] === v[1] || v[1] === v[2] || v[0] === v[2] ? 'yao' : 'bu'
+      by[t].push(i)
+    })
+    var yao = by.yao.concat(by.deng).sort()
+    var f = q.ansFields.join(',')
+    var want = f === '等腰' ? '等腰 ' + nums(yao) : f === '等腰,等边' ? '等腰 ' + nums(yao) + '；等边 ' + nums(by.deng) : '不等边 ' + nums(by.bu) + '；等腰 ' + nums(yao) + '；等边 ' + nums(by.deng)
+    if (q.answer !== want) bad('B13 按边分答案错：给的 ' + q.answer + ' 应为 ' + want)
+    if (!by.bu.length || !by.yao.length) bad('B13 按边分：缺不等边或等腰 ' + q.key)
+    if (d !== 'L1' && !by.deng.length) bad('B13 按边分 ' + d + ' 没有等边（等边也是等腰的陷阱）')
+    if (d === 'L1' && f !== '等腰') bad('B13 按边分入门只问等腰')
+  })
+
+  each('sanjiao', 'jiao', function (q, d) {
+    var by = { rui: [], zhi: [], dun: [] }
+    var tilted = false
+    groups(q.stemHTML).forEach(function (g, i) {
+      var P = polyPts(g), ds = dots(g)
+      if (!P || P.length !== 3 || !P.every(function (p) { return onDot(p, ds) })) { bad('B13 按角分：顶点不在钉子上 ' + q.key); return }
+      var k = kind(P)
+      clear(P, d, 'B13 按角分')
+      if (k === 'zhi' && !axisLegs(P)) { tilted = true; if (d !== 'L3') bad('B13 按角分 ' + d + '：直角斜着放') }
+      by[k].push(i)
+    })
+    var want = '锐角 ' + nums(by.rui) + '；直角 ' + nums(by.zhi) + '；钝角 ' + nums(by.dun)
+    if (q.answer !== want) bad('B13 按角分答案错：给的 ' + q.answer + ' 应为 ' + want)
+    if (!by.rui.length || !by.zhi.length || !by.dun.length) bad('B13 按角分缺了一类：' + q.answer)
+    if (d === 'L3' && !tilted) bad('B13 按角分挑战没有斜着的直角')
+  })
+
+  each('sanjiao', 'pan', function (q, d) {
+    var says = []
+    q.stemHTML.split('<div class="sj-says">')[1].replace(/<div>([^<]+)<\/div>/g, function (m, t) { says.push(t) })
+    var yes = []
+    var gs = groups(q.stemHTML)
+    if (says.length !== gs.length) bad('B13 判断：句子和图数不一样 ' + q.key)
+    gs.forEach(function (g, i) {
+      var P = polyPts(g), ds = dots(g)
+      if (!P || !P.every(function (p) { return onDot(p, ds) })) { bad('B13 判断：顶点不在钉子上'); return }
+      clear(P, d, 'B13 判断')
+      var k = kind(P), iso = seenIso(P)
+      var t = says[i].slice(1)
+      var edge = /等腰|边/.test(t)
+      if (edge && anyEq(P) && !iso) bad('B13 判断：两条边一样长但看不出来 ' + q.key)
+      if (edge && !anyEq(P) && !scalene(P)) bad('B13 判断：不等腰却有两条边差不多长 ' + q.key)
+      if (d !== 'L3' && k === 'zhi' && !axisLegs(P)) bad('B13 判断 ' + d + '：直角斜着放')
+      var truth
+      var m1 = t.match(/^是(锐角|直角|钝角)三角形。$/)
+      var m2 = t.match(/^既是等腰三角形，又是(锐角|直角|钝角)三角形。$/)
+      if (t === '是等腰三角形。') truth = iso
+      else if (m1) truth = CN[k] === m1[1]
+      else if (m2) truth = iso && CN[k] === m2[1]
+      else if (t === '有一个锐角，所以它是锐角三角形。') { truth = k === 'rui'; if (k === 'rui') bad('B13 判断：「有一个锐角」配了锐角三角形（理由不对、结论对，有歧义）') }
+      else if (t === '有两条边相等，所以它是等腰直角三角形。') { truth = iso && k === 'zhi'; if (!iso || k === 'zhi') bad('B13 判断：「两条边相等所以等腰直角」配错了图') }
+      else { bad('B13 判断：认不出的句子 ' + t); return }
+      if (truth) yes.push(i)
+    })
+    if (q.answer !== nums(yes)) bad('B13 判断答案错：给的 ' + q.answer + ' 应为 ' + nums(yes))
+    if (!yes.length || yes.length === gs.length) bad('B13 判断：全对或全错 ' + q.key)
+  })
+
+  each('sanjiao', 'dian', function (q, d) {
+    var svg = q.stemHTML
+    function pts(cls) { var o = []; svg.replace(new RegExp('<circle class="' + cls + '" cx="([-\\d.]+)" cy="([-\\d.]+)"', 'g'), function (m, x, y) { o.push([+x, +y]) }); return o }
+    var AB = pts('pa'), C = pts('pc'), ds = pts('dot')
+    if (AB.length !== 2) { bad('B13 选点：A、B 没画好'); return }
+    AB.concat(C).forEach(function (p) { if (!onDot(p, ds)) bad('B13 选点：点不在钉子上') })
+    var hit = { '直角': [], '钝角': [], '等腰': [] }
+    C.forEach(function (c, i) {
+      var T = [AB[0], AB[1], c]
+      var k = kind(T)
+      clear(T, d === 'L1' ? 'L1' : 'L2', 'B13 选点')
+      if (k === 'zhi') hit['直角'].push(i)
+      if (k === 'dun') hit['钝角'].push(i)
+      if (anyEq(T)) { hit['等腰'].push(i); if (q.ansFields.indexOf('等腰') >= 0 && !seenIso(T)) bad('B13 选点：等腰看不出来') }
+      else if (q.ansFields.indexOf('等腰') >= 0 && !scalene(T)) bad('B13 选点：不等腰的点两条边差不多长')
+    })
+    for (var i = 0; i < C.length; i++) for (var j = i + 1; j < C.length; j++) if (Math.max(Math.abs(C[i][0] - C[j][0]), Math.abs(C[i][1] - C[j][1])) < 35) bad('B13 选点：两个圈出的点挨着')
+    var parts = q.ansFields.map(function (f) {
+      if (hit[f].length !== 1) bad('B13 选点：' + f + '三角形不是正好一个点（' + hit[f].length + '）' + q.key)
+      return f + ' ' + nums(hit[f])
+    })
+    if (q.answer !== parts.join('；')) bad('B13 选点答案错：给的 ' + q.answer + ' 应为 ' + parts.join('；'))
+  })
+}
+
 function checkFloors() {
   each('daxiao', 'num', function (q) {
     var n = nums(q.stem)
@@ -1306,6 +1472,7 @@ checkWoniu()
 checkJiangebc()
 checkRenxian()
 checkRenjiao()
+checkSanjiao()
 checkSupply()
 
 if (problems.length) {

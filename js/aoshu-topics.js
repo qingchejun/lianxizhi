@@ -564,6 +564,7 @@
     { no: 'B10', stage: 'L1B', id: 'jiangebc', name: '间隔问题（补充）' },
     { no: 'B11', stage: 'L1B', id: 'renxian', name: '线角初步：认识线' },
     { no: 'B12', stage: 'L1B', id: 'renjiao', name: '线角初步：认识角' },
+    { no: 'B13', stage: 'L1B', id: 'sanjiao', name: '平面图形：认识三角形' },
     { no: '21', stage: 'L2', id: 'wenzimi', name: '加减法文字谜' },
     { no: '22', stage: 'L2', id: 'kuohao1', name: '加减法添去括号（一）' },
     { no: '23', stage: 'L2', id: 'kuohao2', name: '加减法添去括号（二）' },
