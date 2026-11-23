@@ -105,7 +105,7 @@
   }
 
   function lastTouched(rec) {
-    var t = Number(rec.printedAt) || 0
+    var t = Math.max(Number(rec.printedAt) || 0, Number(rec.doneAt) || 0)
     if (rec.rating && typeof rec.rating === 'object') {
       Object.keys(rec.rating).forEach(function (k) {
         var r = rec.rating[k]

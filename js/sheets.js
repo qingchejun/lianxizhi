@@ -96,7 +96,9 @@
     current = { id: id, info: info, date: date }
     if (root.document) {
       placeQr(root.document, id)
-      ensureButton(root.document)
+      /* 识字、拼音本页就能逐字 / 逐题登记，不加「登记」按钮（拼音的登记页本身就跳回这里） */
+      var kind = C().MODULE_KIND[info.module]
+      if (kind === 'three' || kind === 'game') ensureButton(root.document)
     }
     return id
   }
@@ -119,6 +121,20 @@
     }, Date.now()))
     S.stampNow([key])
     return current.id
+  }
+
+  /* 在板块页上登记完（识字「登记结果」、拼音逐题登记）：把当前这张纸标成已登记，登记页的待办列表里就不再出现。
+     没打印过（没有记录）就不新建 */
+  function markDone(id) {
+    id = id || (current && current.id)
+    if (!id) return
+    var S = root.SumSum.store
+    var key = C().keyOf(id)
+    var rec = C().parse(S.getString(key))
+    if (!rec || rec.done) return
+    rec.done = true
+    rec.doneAt = Date.now()
+    S.set(key, rec)
   }
 
   function ensureButton(doc) {
@@ -146,6 +162,7 @@
   root.SumSum.sheets = {
     use: use,
     ensureSaved: ensureSaved,
+    markDone: markDone,
     current: function () { return current },
     qrSvg: qrSvg,
     markUrl: markUrl,

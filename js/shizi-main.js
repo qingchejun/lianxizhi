@@ -146,6 +146,7 @@
     }).join('')
     root.document.body.classList.remove('landscape')
     S.shiziMark.paint()
+    if (browseIdx == null) registerSheet('daily', '识字 · 每日一卷', Array.from(p.chars), { kind: 'daily', d: p.d })
     var status = $('daily-status')
     var settledToday = browseIdx == null && S.shiziMark.canUndo('daily')
     if (active) {
@@ -360,6 +361,10 @@
     S.shiziRender.render($('preview'), settings, renderedWrong, append)
     /* 渲染之后立刻把集合投影到新 DOM 上 —— 位置对应数独 render() 紧跟 attach() 的那两行 */
     S.shiziMark.paint()
+    if (settings.mode === 'week' || settings.mode === 'wrong') {
+      var label = settings.mode === 'week' ? (isRj(settings) ? '检查卷' : '本周卷') : '错字卷'
+      registerSheet(settings.mode, '识字 · ' + label, sheetChars(), { kind: settings.mode })
+    }
     fitPreview()
 
     var count = settings.mode === 'wrong'
@@ -398,6 +403,19 @@
   /* ---------- 复习结算 ---------- */
 
   /* 卷面上现在有哪些字（去重）。份数 = 2 时同一个字有两格 */
+  /* 扫码登记：纸角二维码 + 打印时记下这张。手机登记页按字点「没认出」，结算和这里的「登记结果」同一套 */
+  function registerSheet(kind, title, chars, ref) {
+    if (!S.sheets || !chars.length) return
+    S.sheets.use({
+      module: 'shizi',
+      title: title,
+      idParts: kind + '|' + chars.join(''),
+      units: [],
+      items: chars.map(function (ch) { return { key: ch, label: ch } }),
+      ref: ref
+    })
+  }
+
   function sheetChars() {
     var seen = {}
     var out = []
@@ -443,8 +461,10 @@
   $('settle').addEventListener('click', function (ev) {
     var b = ev.target.closest('[data-settle]')
     if (!b) return
-    if (b.getAttribute('data-settle') === 'go') S.shiziMark.settle(sheetChars())
-    else S.shiziMark.undoSettle()
+    if (b.getAttribute('data-settle') === 'go') {
+      S.shiziMark.settle(sheetChars())
+      if (S.sheets) S.sheets.markDone()
+    } else S.shiziMark.undoSettle()
     /* 只改格子的颜色，卷面不重排（理由同 shizi-mark 的文件头）；面板由 onChange 刷 */
     S.shiziMark.paint()
   })
@@ -455,6 +475,7 @@
     var p = dailyPaper()
     if (!p || p.settled) return
     S.shiziMark.settle(Array.from(p.chars), p)
+    if (S.sheets) S.sheets.markDone()
     refresh()
   })
 

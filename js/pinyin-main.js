@@ -192,6 +192,7 @@
     const prior = savedMarks()[id]
     if (prior?.result === value.result && prior.heard === value.heard && prior.tone === value.tone && Boolean(prior.skipped) === Boolean(value.skipped) && prior.previousResult === value.previousResult) return
     savedMarks()[id] = DB.saveMark(sheet, id, value)
+    if (S.sheets) S.sheets.markDone() /* 登记过就不再出现在扫码登记页的待办里 */
   }
 
   /* 一组的状态：记了几题、是不是做完了（「本组做完」会给每题都写上结果） */
@@ -323,6 +324,17 @@
 
   function renderPaper() {
     paper.innerHTML = R.print(sheet)
+    /* 扫码登记：拼音的登记规则多（顺 / 提示了 / 没读出 / 停在哪题），手机扫码后跳回本页这张卷登记 */
+    if (S.sheets) {
+      S.sheets.use({
+        module: 'pinyin',
+        title: '拼音练习 · ' + sheet.title,
+        idParts: sheet.id,
+        units: [],
+        items: [],
+        ref: { sheetId: sheet.id }
+      })
+    }
     if (S.shell && S.shell.fit) S.shell.fit()
   }
 
@@ -383,6 +395,8 @@
       group = firstOpen()
       renderPaper()
       render()
+      /* 从扫码登记页跳过来（#mark）：手机上纸在上、登记区在下，直接滚到登记区 */
+      if (root.location.hash === '#mark') host.scrollIntoView({ block: 'start' })
     } else {
       sumEl.textContent = '今天没有到期的内容'
       host.innerHTML = '<section class="group"><div class="empty">' + ICON.rest + '<b>今天可以休息</b>' +
