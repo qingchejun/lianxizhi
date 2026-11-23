@@ -1013,6 +1013,110 @@ function checkRenxian() {
   })
 }
 
+/*
+ * B12 认识角：不看 key，直接量题干 SVG 重算答案。
+ * 每个编号一个 <g class="it">；直的边 <line class="ln">，弯的边 <path>，小板凳 <polyline class="mk">。
+ */
+function checkRenjiao() {
+  if (!A.topics.renjiao) return
+  var CIRC = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧']
+  function groups(html) {
+    return html.split('<g class="it"').slice(1).map(function (g) { return g.split('</g>')[0] })
+  }
+  function lines(g) {
+    var out = []
+    g.replace(/<line class="ln" x1="([-\d.]+)" y1="([-\d.]+)" x2="([-\d.]+)" y2="([-\d.]+)"/g, function (m, a, b, c, d) {
+      out.push([[+a, +b], [+c, +d]])
+    })
+    return out
+  }
+  function near(p, q) { return Math.hypot(p[0] - q[0], p[1] - q[1]) < 0.05 }
+  function len(l) { return Math.hypot(l[1][0] - l[0][0], l[1][1] - l[0][1]) }
+  /* 两条边共用的端点（顶点）；没有就 null */
+  function vertex(a, b) {
+    for (var i = 0; i < 2; i++) for (var j = 0; j < 2; j++) if (near(a[i], b[j])) return [a[i], a[1 - i], b[1 - j]]
+    return null
+  }
+  function angAt(V, P, Q) {
+    var u = [P[0] - V[0], P[1] - V[1]], v = [Q[0] - V[0], Q[1] - V[1]]
+    return Math.acos((u[0] * v[0] + u[1] * v[1]) / (Math.hypot(u[0], u[1]) * Math.hypot(v[0], v[1]))) * 180 / Math.PI
+  }
+  function cls(g) { return Math.abs(g - 90) < 0.5 ? 'zhi' : g < 90 ? 'rui' : 'dun' }
+  function nums(arr) { return arr.map(function (i) { return CIRC[i] }).join('') || '没有' }
+
+  each('renjiao', 'isjiao', function (q, d) {
+    var yes = [], no = 0
+    groups(q.stemHTML).forEach(function (g, i) {
+      var ls = lines(g)
+      var bent = /<path/.test(g)
+      var v = ls.length === 2 && vertex(ls[0], ls[1])
+      if (v && !bent) yes.push(i)
+      else {
+        no++
+        /* 不是角的：没碰到的两条边，端点之间要离得够远，一年级看得出来 */
+        if (ls.length === 2 && !bent) {
+          var gap = Math.min.apply(null, [0, 1].map(function (a) { return Math.min(Math.hypot(ls[0][a][0] - ls[1][0][0], ls[0][a][1] - ls[1][0][1]), Math.hypot(ls[0][a][0] - ls[1][1][0], ls[0][a][1] - ls[1][1][1])) }))
+          if (gap < 8) bad('B12 认角：没碰到的两条边离得太近 ' + gap.toFixed(1) + ' ' + q.key)
+        }
+      }
+    })
+    if (q.answer !== nums(yes)) bad('B12 认角答案错：给的 ' + q.answer + ' 应为 ' + nums(yes))
+    if (yes.length < 2 || no < 2) bad('B12 认角：是角 / 不是角太少 ' + q.key)
+  })
+
+  each('renjiao', 'kind', function (q, d) {
+    var by = { rui: [], zhi: [], dun: [] }
+    groups(q.stemHTML).forEach(function (g, i) {
+      var ls = lines(g)
+      var v = ls.length === 2 && vertex(ls[0], ls[1])
+      if (!v) { bad('B12 锐直钝：一格里不是一个角 ' + q.key); return }
+      var a = angAt(v[0], v[1], v[2])
+      var k = cls(a)
+      if (k !== 'zhi' && Math.abs(a - 90) < 29.5) bad('B12 锐直钝：离直角太近 ' + a.toFixed(1))
+      if (d === 'L1' && k === 'zhi' && !/class="mk"/.test(g)) bad('B12 锐直钝入门：直角没画小板凳')
+      if (d !== 'L1' && /class="mk"/.test(g)) bad('B12 锐直钝 ' + d + '：不该画小板凳')
+      by[k].push(i)
+    })
+    var want = '锐角 ' + nums(by.rui) + '；直角 ' + nums(by.zhi) + '；钝角 ' + nums(by.dun)
+    if (q.answer !== want) bad('B12 锐直钝答案错：给的 ' + q.answer + ' 应为 ' + want)
+    if (!by.rui.length || !by.zhi.length || !by.dun.length) bad('B12 锐直钝缺了一类：' + q.answer)
+  })
+
+  function fanOf(q) {
+    var ls = lines(q.stemHTML.split('<svg')[1])
+    var V = ls[0][0]
+    ls.forEach(function (l) { if (!near(l[0], V)) bad('B12 数角：边不是从同一个顶点出发 ' + q.key) })
+    var dirs = ls.map(function (l) { return (Math.atan2(V[1] - l[1][1], l[1][0] - V[0]) * 180 / Math.PI + 360) % 360 }).sort(function (a, b) { return a - b })
+    /* 方向绕一圈排好后，从最大的空档后面那条开始，展开成从小到大（避免跨过 0°） */
+    var gi = 0, gmax = -1
+    dirs.forEach(function (x, i) { var gap = (i ? x - dirs[i - 1] : x + 360 - dirs[dirs.length - 1]); if (gap > gmax) { gmax = gap; gi = i } })
+    dirs = dirs.slice(gi).concat(dirs.slice(0, gi).map(function (x) { return x + 360 }))
+    return { V: V, dirs: dirs, n: ls.length, html: q.stemHTML }
+  }
+  each('renjiao', 'count', function (q, d) {
+    var F = fanOf(q)
+    var want = F.n * (F.n - 1) / 2
+    if (q.answer !== want) bad('B12 数角答案错：给的 ' + q.answer + ' 应为 ' + want)
+    for (var i = 1; i < F.n; i++) if (F.dirs[i] - F.dirs[i - 1] < 20) bad('B12 数角：两条边挨得太近 ' + (F.dirs[i] - F.dirs[i - 1]).toFixed(1))
+    if (F.dirs[F.n - 1] - F.dirs[0] >= 175) bad('B12 数角：张开快成平角了')
+  })
+  each('renjiao', 'sortcount', function (q, d) {
+    var F = fanOf(q)
+    var c = { rui: 0, zhi: 0, dun: 0 }
+    for (var i = 0; i < F.n; i++) for (var j = i + 1; j < F.n; j++) {
+      var g = F.dirs[j] - F.dirs[i]
+      var k = cls(g)
+      c[k]++
+      if (k !== 'zhi' && Math.abs(g - 90) < 14.5) bad('B12 数角分类：有个角离直角太近 ' + g.toFixed(1))
+      if (k === 'zhi' && j !== i + 1) bad('B12 数角分类：不相邻的两条边成了直角（没法画小板凳）')
+    }
+    var marks = (F.html.match(/class="mk"/g) || []).length
+    if (marks !== c.zhi) bad('B12 数角分类：小板凳 ' + marks + ' 个，直角 ' + c.zhi + ' 个')
+    var want = '锐角 ' + c.rui + ' 个；直角 ' + c.zhi + ' 个；钝角 ' + c.dun + ' 个'
+    if (q.answer !== want) bad('B12 数角分类答案错：给的 ' + q.answer + ' 应为 ' + want)
+  })
+}
+
 function checkFloors() {
   each('daxiao', 'num', function (q) {
     var n = nums(q.stem)
@@ -1201,6 +1305,7 @@ checkFanzhuan()
 checkWoniu()
 checkJiangebc()
 checkRenxian()
+checkRenjiao()
 checkSupply()
 
 if (problems.length) {
