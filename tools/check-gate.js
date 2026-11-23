@@ -18,6 +18,9 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
     .every(function (p) { return d(p, '', false).action === 'pass' }))
   check('接口放行（接口自己验登录）', d('/api/auth/login', '', false).action === 'pass')
   check('没登录打开首页 → 介绍兼登录页', d('/', '', false).action === 'welcome')
+  check('扫码登记页：登录后放行', d('/mark', '?id=abc234', true).action === 'pass')
+  check('扫码登记页：没登录 → 登录后回到这张纸', d('/mark', '?id=abc234', false).location === '/?next=' + encodeURIComponent('/mark?id=abc234'))
+  check('二维码库放行', d('/js/vendor/qrcode.js', '', false).action === 'pass')
   check('密码重设邮件链接 /?reset= 落在介绍页', d('/', '?reset=ab', false).action === 'welcome')
   var r = d('/kousuan', '?mode=add&seed=3', false)
   check('没登录打开板块页 → 跳首页并记住原址', r.action === 'redirect' &&

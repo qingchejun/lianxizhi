@@ -264,3 +264,26 @@ body.landscape .sheet {
     page-break-after: auto;
   }
 }
+
+/* ---------- 纸角二维码（扫码登记，js/sheets.js 插进第一张题目页的页眉末尾） ---------- */
+.sheet-qr {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5mm;
+  flex: none;
+  margin-left: -4mm; /* 页眉 gap 8mm，二维码贴近右侧的姓名栏 */
+}
+
+.sheet-qr svg {
+  display: block;
+  width: 11mm;
+  height: 11mm;
+}
+
+.sheet-qr small {
+  font-size: 8px;
+  line-height: 1.25;
+  color: #000;
+  text-align: right;
+  white-space: nowrap;
+}

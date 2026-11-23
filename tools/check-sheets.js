@@ -144,6 +144,16 @@ check(C.gameStep('shudu', { shape: 's4', clues: 12 }, 'bad', { min: 5, max: 12 }
 check(C.gameStep('shudu', { shape: 's4', clues: 6 }, 'good', { min: 5, max: 12 }).next.clues === 5, '数独不低于下限')
 check(C.gameLevelText('huochai', { level: 'L3' }) === '第 3 关' && C.gameLevelText('shudu', { clues: 31 }) === '31 个提示数', 'gameLevelText')
 
+/* ---------- 二维码 ---------- */
+globalThis.qrcode = require('../js/vendor/qrcode.js')
+require('../js/sheets.js')
+var Q = globalThis.SumSum.sheets
+var svg1 = Q.qrSvg('https://example.test/mark?id=abc234')
+check(/^<svg[^>]*viewBox="0 0 \d+ \d+"/.test(svg1) && svg1.indexOf('<path') > 0, '二维码 SVG 格式 ' + svg1.slice(0, 80))
+check(svg1 === Q.qrSvg('https://example.test/mark?id=abc234'), '同一网址二维码要相同')
+check(svg1 !== Q.qrSvg('https://example.test/mark?id=abc235'), '不同网址二维码要不同')
+check(Q.today(new Date(2026, 0, 5)) === '2026-01-05', 'today 补零')
+
 if (problems.length) {
   console.log('✗ ' + problems.length + ' 处不对：\n  ' + problems.join('\n  '))
   process.exit(1)
