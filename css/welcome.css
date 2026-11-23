@@ -296,6 +296,26 @@ body.welcome .wl-main {
   letter-spacing: 1px;
 }
 
+/* 为什么做练习纸：站长的话，一段一段读下来，两条主张加粗领起 */
+.wl-why p {
+  max-width: 40em;
+  margin: 0 0 14px;
+  font-size: 16px;
+  line-height: 1.85;
+  color: var(--ink-2, #3a3f47);
+}
+
+.wl-why .wl-why-point b {
+  display: block;
+  margin-bottom: 2px;
+  font: 19px/1.5 var(--kai);
+  color: var(--ink, #1a1d23);
+}
+
+.wl-why p:last-child {
+  margin-bottom: 0;
+}
+
 .wl-mods {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
