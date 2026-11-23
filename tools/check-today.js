@@ -300,6 +300,68 @@ Object.keys(V.list).forEach(function (id) {
   check(T.minutes(0) === 5 && T.minutes(7.4) === 5 && T.minutes(7.6) === 10, '按 5 分钟取整、最少 5')
 })()
 
+/* ---------- 扫码登记带来的提示 ---------- */
+;(function () {
+  require('../js/sheets-core.js')
+  var SC = globalThis.SumSum.sheetsCore
+  function memStore() {
+    var m = {}
+    return {
+      get: function (k) { return k in m ? JSON.parse(m[k]) : null },
+      getString: function (k) { return k in m ? m[k] : null },
+      set: function (k, v) { m[k] = JSON.stringify(v) },
+      keys: function () { return Object.keys(m) }
+    }
+  }
+  var T0 = Date.UTC(2026, 10, 23, 12)
+  function put(st, id, module, date, at, extra) {
+    var r = Object.assign(SC.newRecord({ id: id, module: module, title: id, date: date, units: [{ key: 'all', label: '整张' }], items: [] }, at), extra || {})
+    st.set(SC.keyOf(id), r)
+    return r
+  }
+  var empty = T.markNotes(memStore(), '2026-11-23')
+  check(empty.pending === 0 && !empty.kousuanUp && !empty.aoshuRetry && empty.games.length === 0, '没有纸记录时没有提示')
+  check(T.markNotes(null, '2026-11-23').pending === 0, 'store 不可用不报错')
+
+  var st = memStore()
+  put(st, 'p00001', 'kousuan', '2026-11-23', T0)
+  put(st, 'p00002', 'huochai', '2026-11-22', T0 - 86400000)
+  put(st, 'p00003', 'mima', '2026-11-20', T0 - 3 * 86400000)
+  var n1 = T.markNotes(st, '2026-11-23')
+  check(n1.pending === 2 && n1.pendingId === 'p00001', '待登记：今天和昨天的、最新的在前 ' + JSON.stringify(n1))
+
+  /* 口算连续两张会了 → 提示升档；已经换过去就不提示 */
+  put(st, 'k00001', 'kousuan', '2026-11-22', T0 - 5000, { ref: { preset: '10以内加减' }, rating: { all: { level: 'good', at: T0 - 4000 } } })
+  put(st, 'k00002', 'kousuan', '2026-11-23', T0 - 3000, { ref: { preset: '10以内加减' }, rating: { all: { level: 'good', at: T0 - 2000 } } })
+  st.set('sumsum:settings:v1', Object.assign({}, globalThis.SumSum.settings.DEFAULTS, globalThis.SumSum.settings.PRESETS[0].patch))
+  check(T.markNotes(st, '2026-11-23').kousuanUp === '20以内进退位', '口算升档提示')
+  st.set('sumsum:settings:v1', Object.assign({}, globalThis.SumSum.settings.DEFAULTS, globalThis.SumSum.settings.PRESETS[1].patch))
+  check(T.markNotes(st, '2026-11-23').kousuanUp === null, '已经在下一档就不提示')
+
+  /* 奥数：上次不会 → 再练；之后标了已学就不提 */
+  put(st, 'a00001', 'aoshu', '2026-11-23', T0, { units: [{ key: 'coushi', label: '02 凑十' }], rating: { coushi: { level: 'bad', at: T0 } }, ref: { review: false } })
+  var n2 = T.markNotes(st, '2026-11-23')
+  check(n2.aoshuRetry && n2.aoshuRetry.id === 'coushi', '奥数不会 → 再练一张 ' + JSON.stringify(n2.aoshuRetry))
+  st.set(SC.AOSHU_LEARNED, ['coushi'])
+  check(T.markNotes(st, '2026-11-23').aoshuRetry === null, '之后学会了就不提')
+  st.set(SC.AOSHU_DUE, ['coushi', 'daxiao', 3])
+  check(T.markNotes(st, '2026-11-23').aoshuDue.join() === 'coushi,daxiao', '待复习列表（脏数据跳过）')
+
+  /* 游戏：上次自动升关 → 提示 + 可撤销；家长手动改过就不提 */
+  st.set('sumsum:huochai:v1', { level: 'L1' })
+  var hc = put(st, 'h00001', 'huochai', '2026-11-23', T0)
+  SC.saveRating(st, hc, { all: { level: 'good' } }, [], T0 + 1)
+  var g = T.markNotes(st, '2026-11-23').games
+  check(g.length === 1 && g[0].module === 'huochai' && g[0].text === '火柴按上次反馈加难到第 2 关', '游戏升关提示 ' + JSON.stringify(g))
+  SC.undoGame(st, st.get(SC.keyOf('h00001')))
+  check(T.markNotes(st, '2026-11-23').games.length === 0 && st.get('sumsum:huochai:v1').level === 'L1', '撤销后不再提示')
+
+  /* 奥数换一批：保留 sig、换种子 */
+  st.set('sumsum:aoshu:batches:v1', { coushi: { seed: 5, sig: 'x' } })
+  check(T.rollAoshu(st, 'coushi') === true && st.get('sumsum:aoshu:batches:v1').coushi.sig === 'x' && st.get('sumsum:aoshu:batches:v1').coushi.seed !== 5, '奥数再练换种子')
+  check(T.rollAoshu(st, 'nope') === false, '没出过的课不用换')
+})()
+
 if (problems.length) {
   console.log('✗ ' + problems.length + ' 处问题：')
   problems.forEach(function (p) { console.log('  - ' + p) })

@@ -233,6 +233,60 @@
     shelf('练习', [aoshuCard(data.aoshu), shiziCard(data.shizi), kousuanCard(data.kousuan), pinyinCard(data.pinyin)]) +
     shelf('游戏', [shuduCard(data.shudu)].concat(data.games.map(gameCard)))
 
+  /* 扫码登记带来的提醒：没登记的纸、口算升档、奥数再练 / 复习卷、游戏自动升降关（可撤销） */
+  var marksBox = doc.getElementById('today-marks')
+  function z2(n) { return (n < 10 ? '0' : '') + n }
+  function todayKey() {
+    var d = new Date()
+    return d.getFullYear() + '-' + z2(d.getMonth() + 1) + '-' + z2(d.getDate())
+  }
+  function paintMarks() {
+    if (!marksBox || !S.today.markNotes || !S.store) return
+    var n = S.today.markNotes(S.store, todayKey())
+    var rows = []
+    if (n.pending) {
+      rows.push('<p><span>还有 <b>' + n.pending + '</b> 张纸没登记。孩子做完后，手机扫纸角的二维码就能登记。' +
+        '</span><a class="btn btn-sm" href="mark?id=' + esc(n.pendingId) + '">去登记</a></p>')
+    }
+    if (n.kousuanUp) {
+      rows.push('<p><span>口算连续两张都「会了」，可以升到「' + esc(n.kousuanUp) + '」。' +
+        '</span><button type="button" class="btn btn-sm" data-ks-up="' + esc(n.kousuanUp) + '">换到这一档</button></p>')
+    }
+    if (n.aoshuRetry) {
+      rows.push('<p><span>奥数「' + esc(n.aoshuRetry.label) + '」上次打了「不会」，可以换一批题再练一张。' +
+        '</span><button type="button" class="btn btn-sm" data-ao-retry="' + esc(n.aoshuRetry.id) + '">再练一张</button></p>')
+    }
+    if (n.aoshuDue.length >= 3) {
+      rows.push('<p><span>奥数有 <b>' + n.aoshuDue.length + '</b> 课待复习（打了「一般」或点过错题）。' +
+        '</span><a class="btn btn-sm" href="aoshu.html?review=true&reviewTopics=' + encodeURIComponent(n.aoshuDue.join(',')) + '#print">打印复习卷</a></p>')
+    }
+    n.games.forEach(function (g) {
+      rows.push('<p><span>' + esc(g.text) + '。</span><button type="button" class="btn btn-sm" data-game-undo="' + esc(g.recId) + '">撤销</button></p>')
+    })
+    marksBox.innerHTML = rows.join('')
+    marksBox.hidden = !rows.length
+  }
+  if (marksBox) {
+    marksBox.addEventListener('click', function (e) {
+      var b = e.target.closest('button')
+      if (!b) return
+      if (b.dataset.ksUp) {
+        var K = S.settings
+        var p = K.PRESETS.filter(function (x) { return x.label === b.dataset.ksUp })[0]
+        if (p) S.store.set('sumsum:settings:v1', Object.assign({}, K.sanitize(S.store.get('sumsum:settings:v1') || {}), p.patch, { title: '' }))
+        root.location.reload()
+      } else if (b.dataset.aoRetry) {
+        S.today.rollAoshu(S.store, b.dataset.aoRetry)
+        root.location.href = 'aoshu.html?topic=' + encodeURIComponent(b.dataset.aoRetry) + '&review=false#print'
+      } else if (b.dataset.gameUndo) {
+        var rec = S.sheetsCore.parse(S.store.getString(S.sheetsCore.keyOf(b.dataset.gameUndo)))
+        if (rec) S.sheetsCore.undoGame(S.store, rec)
+        root.location.reload()
+      }
+    })
+    paintMarks()
+  }
+
   /* 最近更新：只摆最近两次，全部的在使用说明页 */
   var news = doc.getElementById('today-news')
   var log = (S.changelog && S.changelog.list) || []

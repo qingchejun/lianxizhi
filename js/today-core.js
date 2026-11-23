@@ -280,6 +280,79 @@
     }
   }
 
+  /* ---------- 扫码登记带来的提示（纸记录见 js/sheets-core.js） ----------
+     store 要有 keys / getString / get（js/store.js；测试里用内存桩）。today 为 YYYY-MM-DD。
+     返回：还有几张没登记（及最近一张的纸号）、口算该不该升档、奥数哪课该再练 / 待复习几课、
+     游戏上次自动升降关（可撤销）。 */
+  function markNotes(store, today) {
+    var SC = root.SumSum.sheetsCore
+    var out = { pending: 0, pendingId: null, kousuanUp: null, aoshuRetry: null, aoshuDue: [], games: [] }
+    if (!SC || !store || !store.keys) return out
+    var recs
+    try { recs = SC.records(store) } catch (e) { return out }
+    var pend = SC.pending(recs.map(function (r) {
+      /* 识字每日卷在识字页登记过也算：sheets.markDone 会写 done */
+      return r
+    }), today)
+    out.pending = pend.length
+    out.pendingId = pend.length ? pend[0].id : null
+
+    var K = root.SumSum.settings
+    if (K) {
+      var label = SC.kousuanUpgrade(recs.filter(function (r) { return r.module === 'kousuan' }), K.PRESETS)
+      var cur = K.sanitize(store.get('sumsum:settings:v1') || {})
+      /* 已经换到那一档了就不再提示 */
+      if (label && K.presetOf(cur) !== label) out.kousuanUp = label
+    }
+
+    var learned = store.get(SC.AOSHU_LEARNED)
+    learned = Array.isArray(learned) ? learned : []
+    var lastAo = null
+    recs.forEach(function (r) {
+      if (r.module === 'aoshu' && SC.rated(r) && !(r.ref && r.ref.review) && (!lastAo || SC.ratedAt(r) > SC.ratedAt(lastAo))) lastAo = r
+    })
+    if (lastAo) {
+      var u = (lastAo.units || [])[0]
+      if (u && SC.levelOf(lastAo, u.key) === 'bad' && learned.indexOf(u.key) < 0) {
+        out.aoshuRetry = { id: u.key, label: u.label }
+      }
+    }
+    var due = store.get(SC.AOSHU_DUE)
+    out.aoshuDue = Array.isArray(due) ? due.filter(function (x) { return typeof x === 'string' }) : []
+
+    ;['shudu', 'huochai', 'mima', 'migong', 'zhizhi'].forEach(function (m) {
+      var last = null
+      recs.forEach(function (r) {
+        if (r.module === m && SC.rated(r) && (!last || SC.ratedAt(r) > SC.ratedAt(last))) last = r
+      })
+      var a = last && last.applied
+      if (!a || !a.changed || a.undone) return
+      var f = m === 'shudu' ? 'clues' : 'level'
+      var now = store.get(SC.gameKey(m)) || {}
+      if (now[f] !== a.next) return /* 之后家长自己改过，就不提了 */
+      var shown = {}
+      shown[f] = a.next
+      out.games.push({
+        module: m,
+        recId: last.id,
+        up: SC.levelOf(last) === 'good',
+        text: SC.MODULE_LABEL[m] + '按上次反馈' + (SC.levelOf(last) === 'good' ? '加难' : '降难') + '到' + SC.gameLevelText(m, shown)
+      })
+    })
+    return out
+  }
+
+  /* 奥数「这一课再练一张」：给这一课的种子账本换个新种子（保留 sig），进奥数页就是新一批题 */
+  function rollAoshu(store, topicId) {
+    var KEY = 'sumsum:aoshu:batches:v1'
+    var b = store.get(KEY)
+    if (!isObj(b) || !isObj(b[topicId])) return false
+    var next = Object.assign({}, b)
+    next[topicId] = Object.assign({}, b[topicId], { seed: Math.floor(Math.random() * 999999999) + 1 })
+    store.set(KEY, next)
+    return true
+  }
+
   root.SumSum = root.SumSum || {}
-  root.SumSum.today = { build: build, pinyinCard: pinyinCard, GAME_LEVELS: GAME_LEVELS, minutes: minutes }
+  root.SumSum.today = { build: build, markNotes: markNotes, rollAoshu: rollAoshu, pinyinCard: pinyinCard, GAME_LEVELS: GAME_LEVELS, minutes: minutes }
 })(typeof window !== 'undefined' ? window : globalThis)
