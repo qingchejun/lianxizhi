@@ -43,11 +43,12 @@
     fanzhuan: '3:39', // B08 叠加覆盖：翻转问题（L1 补充）
     woniu: '3:57', // B09 蜗牛爬井（L1 补充）
     jiangebc: '3:31', // B10 间隔问题（补充）（L1 补充）
-    renxian: '4:55' // B11 线角初步：认识线（L1 补充）
+    renxian: '4:55', // B11 线角初步：认识线（L1 补充）
+    renjiao: '4:27' // B12 线角初步：认识角（L1 补充）
   })
 
   /* 有封面图的课（aoshu/<id>.jpg） */
-  var POSTER = Object.freeze({ dengliang: true, chongdie: true, meiju: true, fendui: true, kongping: true, huochai: true, jiange: true, paidui: true, xianjing: true, fenzu: true, hebubian: true, bichang: true, bizhong: true, zhongbiao: true, zhongbiao2: true, duichen: true, jingzi: true, diefang: true, fanzhuan: true, woniu: true, jiangebc: true, renxian: true })
+  var POSTER = Object.freeze({ dengliang: true, chongdie: true, meiju: true, fendui: true, kongping: true, huochai: true, jiange: true, paidui: true, xianjing: true, fenzu: true, hebubian: true, bichang: true, bizhong: true, zhongbiao: true, zhongbiao2: true, duichen: true, jingzi: true, diefang: true, fanzhuan: true, woniu: true, jiangebc: true, renxian: true, renjiao: true })
 
   function has(obj, id) {
     return Object.prototype.hasOwnProperty.call(obj, id)
