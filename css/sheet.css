@@ -276,8 +276,8 @@ body.landscape .sheet {
 
 .sheet-qr svg {
   display: block;
-  width: 11mm;
-  height: 11mm;
+  width: 13mm; /* 11mm 时 150dpi 栅格偶尔解不出；13mm 每格约 0.45mm，手机近拍稳 */
+  height: 13mm;
 }
 
 .sheet-qr small {
