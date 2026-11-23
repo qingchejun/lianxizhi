@@ -1147,19 +1147,25 @@ select.input {
 
 
 
-.help-steps,
-.help-list {
+.help-steps {
   margin: 0;
   padding-left: 1.4em;
   line-height: 1.7;
 }
 
+/* 说明条目一段一段排，不用圆点（站长 2026-11-23：无序列表一看就是 AI 做的） */
 .help-list {
+  margin: 0;
   font-size: 13px;
+  line-height: 1.7;
+}
+
+.help-list p {
+  margin: 0;
 }
 
 .help-steps li + li,
-.help-list li + li {
+.help-list p + p {
   margin-top: 6px;
 }
 
@@ -1204,9 +1210,8 @@ select.input {
   border-radius: var(--radius);
 }
 
-.help-backup-msg ul {
+.help-backup-msg p {
   margin: 4px 0 6px;
-  padding-left: 1.3em;
 }
 
 .help-backup-msg.is-ok {

@@ -294,8 +294,8 @@
       confirm: function (o) {
         return new Promise(function (resolve) {
           var lines = function (keys) {
-            return '<ul>' + keys.slice(0, 8).map(function (k) { return '<li>' + esc(k) + '</li>' }).join('') +
-              (keys.length > 8 ? '<li>…共 ' + keys.length + ' 项</li>' : '') + '</ul>'
+            return '<p>' + keys.slice(0, 8).map(esc).join('、') +
+              (keys.length > 8 ? '，等共 ' + keys.length + ' 项' : '') + '</p>'
           }
           dlg.querySelector('[data-body]').innerHTML =
             '<p class="account-sub">这台电脑上和云端<b>都有</b>练习进度，先上传哪边？</p>' +

@@ -224,7 +224,7 @@
     news.innerHTML = '<h2 id="tn-title">最近更新</h2><div class="tn-list">' +
       log.slice(0, 2).map(function (e) {
         return '<div class="tn-day"><time datetime="' + esc(e.date) + '">' + +e.date.slice(5, 7) + ' 月 ' + (+e.date.slice(8)) + ' 日</time>' +
-          '<ul>' + e.items.map(function (t) { return '<li>' + esc(t) + '</li>' }).join('') + '</ul></div>'
+          '<div class="tn-items">' + e.items.map(function (t) { return '<p>' + esc(t) + '</p>' }).join('') + '</div></div>'
       }).join('') +
       '</div><p class="tn-more"><a href="help.html#changelog">全部更新记录</a></p>'
     news.hidden = false

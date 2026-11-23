@@ -22,20 +22,20 @@
     '</ol>'
 
   var PRINT =
-    '<ul class="help-list">' +
-      '<li>纸张选 <b>A4</b>，缩放选「默认」或 100%。</li>' +
-      '<li>在打印对话框的「更多设置」里<b>关掉「页眉和页脚」</b>，纸面上就不会印出网址和日期。</li>' +
-      '<li>Windows 的 Edge / Chrome 与 Mac 的 Chrome 都能直接打印；Safari 请在「显示详细信息」里同样关掉页眉页脚。</li>' +
-      '<li>口算、数独、识字、密码、数织、迷宫的设置会写进网址：复制网址发给别人，打开就是同一张卷子。想换一批题，点「重新生成」。</li>' +
-    '</ul>'
+    '<div class="help-list">' +
+      '<p>纸张选 <b>A4</b>，缩放选「默认」或 100%。</p>' +
+      '<p>在打印对话框的「更多设置」里<b>关掉「页眉和页脚」</b>，纸面上就不会印出网址和日期。</p>' +
+      '<p>Windows 的 Edge / Chrome 与 Mac 的 Chrome 都能直接打印；Safari 请在「显示详细信息」里同样关掉页眉页脚。</p>' +
+      '<p>口算、数独、识字、密码、数织、迷宫的设置会写进网址：复制网址发给别人，打开就是同一张卷子。想换一批题，点「重新生成」。</p>' +
+    '</div>'
 
   var ACCOUNT =
-    '<ul class="help-list">' +
-      '<li>登录后，奥数的「已学」标记、识字的错字集与进度、拼音的练习卷与登记都会<b>自动同步</b>到你的账号。换一台电脑，登录同一个账号就能接着用。</li>' +
-      '<li>改密码：点左下角自己的邮箱，选「账号与密码」。改完后其他设备需要重新登录。</li>' +
-      '<li>忘了密码：在登录页点「忘记密码？」，邮箱会收到 6 位验证码。没收到请看一下垃圾邮件箱。</li>' +
-      '<li>几个家长共用一台电脑时，换人前请先退出登录。另一个账号登录时，这台电脑上上一位的数据会先清掉，不会混进去。</li>' +
-    '</ul>'
+    '<div class="help-list">' +
+      '<p>登录后，奥数的「已学」标记、识字的错字集与进度、拼音的练习卷与登记都会<b>自动同步</b>到你的账号。换一台电脑，登录同一个账号就能接着用。</p>' +
+      '<p>改密码：点左下角自己的邮箱，选「账号与密码」。改完后其他设备需要重新登录。</p>' +
+      '<p>忘了密码：在登录页点「忘记密码？」，邮箱会收到 6 位验证码。没收到请看一下垃圾邮件箱。</p>' +
+      '<p>几个家长共用一台电脑时，换人前请先退出登录。另一个账号登录时，这台电脑上上一位的数据会先清掉，不会混进去。</p>' +
+    '</div>'
 
   var BACKUP =
     '<div class="help-backup">' +
@@ -225,7 +225,7 @@
     return '<div class="help-log">' + log.map(function (e) {
       var d = e.date.split('-')
       return '<div class="help-log-day"><time datetime="' + esc(e.date) + '">' + d[0] + ' 年 ' + (+d[1]) + ' 月 ' + (+d[2]) + ' 日</time>' +
-        '<ul class="help-list">' + e.items.map(function (t) { return '<li>' + esc(t) + '</li>' }).join('') + '</ul></div>'
+        '<div class="help-list">' + e.items.map(function (t) { return '<p>' + esc(t) + '</p>' }).join('') + '</div></div>'
     }).join('') + '</div>'
   }
 
@@ -240,7 +240,7 @@
       var m = moduleOf(k)
       return '<section id="' + SLUG[k] + '"><h2>' + k + '</h2>' +
         '<p class="help-lead">' + m.lead + '</p>' +
-        '<ul class="help-list">' + m.items.map(function (t) { return '<li>' + t + '</li>' }).join('') + '</ul>' +
+        '<div class="help-list">' + m.items.map(function (t) { return '<p>' + t + '</p>' }).join('') + '</div>' +
         (m.extra || '') +
         '<p class="help-go"><a href="' + SLUG[k] + '.html">打开' + k + '</a></p></section>'
     })).concat([
@@ -325,7 +325,7 @@
     }
 
     function list(lines) {
-      return '<ul>' + lines.map(function (t) { return '<li>' + t + '</li>' }).join('') + '</ul>'
+      return lines.map(function (t) { return '<p>' + t + '</p>' }).join('')
     }
 
     function doExport() {

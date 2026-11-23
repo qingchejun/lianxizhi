@@ -536,16 +536,18 @@
   font-variant-numeric: tabular-nums;
 }
 
-.tn-day ul {
-  margin: 0;
-  padding-left: 18px;
+.tn-items {
   font-size: 14px;
   line-height: 1.75;
   color: var(--ink-2);
 }
 
-.tn-day li + li {
-  margin-top: 4px;
+.tn-items p {
+  margin: 0;
+}
+
+.tn-items p + p {
+  margin-top: 6px;
 }
 
 .tn-more {

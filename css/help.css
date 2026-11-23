@@ -89,6 +89,10 @@
   margin: 0 0 12px;
 }
 
+.help-article .help-list p {
+  margin: 0;
+}
+
 .help-article b {
   color: var(--ink);
 }
@@ -98,7 +102,7 @@
   color: var(--ink);
 }
 
-.help-article .help-list li + li,
+.help-article .help-list p + p,
 .help-article .help-steps li + li {
   margin-top: 10px;
 }
