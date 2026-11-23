@@ -318,7 +318,7 @@ body.welcome .wl-main {
 .wl-why .wl-why-point b {
   display: block;
   margin-bottom: 2px;
-  font: 19px/1.5 var(--kai);
+  font: 700 19px/1.5 var(--kai);
   color: var(--ink);
 }
 
