@@ -62,7 +62,7 @@
         '<button type="submit" class="admin-btn admin-btn-primary">生成</button>' +
       '</form>' +
       '<table class="admin-table"><thead><tr>' +
-        '<th>邀请码</th><th>备注</th><th>状态</th><th>生成时间</th><th>占用（邮箱/时间）</th><th>激活时间</th><th title="近 7 天扫码或在板块页登记了几张纸">近 7 天登记</th><th></th>' +
+        '<th>邀请码</th><th>备注</th><th>状态</th><th>生成时间</th><th>占用（邮箱/时间）</th><th>激活时间</th><th title="近 7 天扫码或在板块页打分了几张纸">近 7 天打分</th><th></th>' +
       '</tr></thead><tbody>' +
       (invites.length ? invites.map(rowHTML).join('') : '<tr><td colspan="8" class="admin-note">还没有邀请码，先生成几张。</td></tr>') +
       '</tbody></table>'

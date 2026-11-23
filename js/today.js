@@ -245,8 +245,8 @@
     var n = S.today.markNotes(S.store, todayKey())
     var rows = []
     if (n.pending) {
-      rows.push('<p><span>还有 <b>' + n.pending + '</b> 张纸没登记。孩子做完后，手机扫纸角的二维码就能登记。' +
-        '</span><a class="btn btn-sm" href="mark?id=' + esc(n.pendingId) + '">去登记</a></p>')
+      rows.push('<p><span>还有 <b>' + n.pending + '</b> 张纸还没打分。孩子做完后，手机扫纸角的二维码就能打分。' +
+        '</span><a class="btn btn-sm" href="mark?id=' + esc(n.pendingId) + '">去打分</a></p>')
     }
     if (n.kousuanUp) {
       rows.push('<p><span>口算连续两张都「会了」，可以升到「' + esc(n.kousuanUp) + '」。' +

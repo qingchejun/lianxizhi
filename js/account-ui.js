@@ -291,6 +291,8 @@
     if (!sync || syncStarted) return /* 只启动一次：重复 init 会堆 onChange 监听、重复推 */
     syncStarted = true
     return sync.init({
+      /* 登记页等同步完才画，拉到新数据不必整页刷新（手机上整页重载一次要多等十几秒） */
+      noReload: !!doc.body && doc.body.hasAttribute('data-sync-no-reload'),
       confirm: function (o) {
         /* 板块页、登记页上弹窗是用到时才建的：没建就直接用会抛错，整次同步被静默跳过（2026-11-23 手机扫码登记一直「0 张」的根因） */
         if (!dlg) build()

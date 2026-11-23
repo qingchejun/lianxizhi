@@ -81,8 +81,9 @@
         cloudItems.forEach(function (it) { cloudKeys[it.key] = true })
         var keep = oldKeys.filter(function (k) { return !cloudKeys[k] })
         if (keep.length) store.stampNow(keep)
-        reload(opts)
-        return
+        /* 真刷新了就到此为止；不刷新（登记页、已自动刷过一次）→ 往下挂改动监听，否则这页之后的改动推不上云 */
+        if (reload(opts)) return
+        cloudItems = []
       } else {
         return /* 用户没选（关了弹窗）：这次不同步，下次打开再问 */
       }
@@ -114,9 +115,9 @@
 
     /* 页面是用上一个账号的数据画的，清完必须刷新（归属已改，刷新后不会再清，不会循环） */
     if (wiped) {
-      if (opts.onWipe) opts.onWipe()
-      else if (!opts.noReload) root.location.reload()
-      return
+      if (opts.onWipe) return opts.onWipe()
+      if (!opts.noReload) return root.location.reload()
+      /* 不刷新的页（登记页）同步完才画，画的就是新账号的数据：照常挂监听 */
     }
 
     /* 之后本地一有改动，防抖推。store 的 fire 只传 key：删键也会走到这，
@@ -195,13 +196,15 @@
     items.forEach(function (it) { store.applyRemote(it.key, it.value, it.updated_at) })
   }
 
+  /* 返回是否真的刷新了 */
   function reload(opts) {
-    if (opts.noReload) return
+    if (opts.noReload) return false
     try {
-      if (root.sessionStorage.getItem(RELOAD_KEY)) return /* 只自动刷一次，免得循环 */
+      if (root.sessionStorage.getItem(RELOAD_KEY)) return false /* 只自动刷一次，免得循环 */
       root.sessionStorage.setItem(RELOAD_KEY, '1')
     } catch (e) { /* 隐私模式存不了就照刷 */ }
     root.location.reload()
+    return true
   }
 
   /* 立刻把指定的键推上云（不等防抖、不依赖 init 是否已挂好监听）：打印时记下的纸要马上能被手机扫到。

@@ -212,7 +212,7 @@
     return '<section class="mcard" data-card="' + rec.id + '">' +
       '<header class="mcard-head"><span class="tag">' + esc(SC.MODULE_LABEL[rec.module] || '') + '</span>' +
       '<b class="mcard-title">' + esc(rec.title) + '</b>' +
-      '<span class="mcard-date">' + md(rec.date) + (done ? ' · <span class="ok">已登记</span>' : '') + '</span></header>' +
+      '<span class="mcard-date">' + md(rec.date) + (done ? ' · <span class="ok">已打分</span>' : '') + '</span></header>' +
       body + effectHTML(rec) + '</section>'
   }
 
@@ -242,11 +242,11 @@
     var left = rest.filter(function (r) { return !isDone(r) }).length
     var total = left + (main && !isDone(main) ? 1 : 0)
     if (rest.length) {
-      html += '<h2 class="mark-sub">今天打印的其他纸' + (left ? ' · ' + left + ' 张没登记' : '') + '</h2>' + rest.map(cardHTML).join('')
+      html += '<h2 class="mark-sub">今天打印的其他纸' + (left ? ' · ' + left + ' 张没打分' : '') + '</h2>' + rest.map(cardHTML).join('')
     }
-    if (main && !total) html += '<p class="mark-all">今天的纸都登记好了。</p>'
+    if (main && !total) html += '<p class="mark-all">今天的纸都打好分了。</p>'
     page.innerHTML = html
-    doc.getElementById('work-sum').textContent = total ? '还有 ' + total + ' 张没登记' : '孩子做完后，点一下哪里卡住了'
+    doc.getElementById('work-sum').textContent = total ? '还有 ' + total + ' 张没打分' : '孩子做完后，点一下哪里卡住了'
   }
 
   function notice(title, text, retry) {
@@ -305,6 +305,16 @@
   /* ---------- 启动：等登录与同步，但最多等 8 秒；出错把原因写在页面底部，方便家长截图给站长 ---------- */
   var problems = []
   var syncState = '同步中'
+  /* 用时诊断：页面脚本跑到这用了多久、同步完成又用了多久（手机上读取慢时看卡在哪段） */
+  var tPage = now()
+  var tSync = null
+  function now() {
+    try { return Math.round(root.performance.now() / 100) / 10 } catch (e) { return null }
+  }
+  function timing() {
+    if (tPage == null) return ''
+    return ' · 页面 ' + tPage + ' 秒' + (tSync != null ? ' · 同步完 ' + tSync + ' 秒' : '')
+  }
   function note(msg) {
     problems.push(String(msg).slice(0, 200))
     paintDiag()
@@ -319,7 +329,7 @@
     }
     var n = 0
     try { n = SC.records(S.store).length } catch (e) { /* 忽略 */ }
-    el.textContent = '本机纸记录 ' + n + ' 张 · ' + syncState + (problems.length ? ' · ' + problems.join(' / ') : '')
+    el.textContent = '本机纸记录 ' + n + ' 张 · ' + syncState + timing() + (problems.length ? ' · ' + problems.join(' / ') : '')
   }
   root.addEventListener('error', function (e) { note('脚本错误：' + (e.message || e.type)) })
   root.addEventListener('unhandledrejection', function (e) {
@@ -341,9 +351,11 @@
   var ready = S.accountUI && S.accountUI.initialSync ? S.accountUI.initialSync : Promise.resolve()
   ready.then(function () {
     syncState = '已同步'
+    tSync = now()
     safeRender()
   }, function (err) {
     syncState = '同步失败'
+    tSync = now()
     note(err && err.message)
     safeRender()
   })

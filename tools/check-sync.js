@@ -138,10 +138,12 @@ console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ sync-core 合并规则
     meta['sumsum:cloud:v1'] = 50
     pulled = { items: [ { key: 'sumsum:both:v1', value: '{"side":"cloud"}', updated_at: 900 }, { key: 'sumsum:cloud:v1', value: '{"side":"newcloud"}', updated_at: 900 } ] }
     var chose = []
+    var listenersBefore = changes.length
     await sync.init({ api: api, noReload: true, confirm: async function (o) { chose.push(o); return 'cloud' } })
     await new Promise(function (r) { setTimeout(r, 30) })
     check('老数据撞云端 → 弹了一次确认', chose.length === 1, chose.length)
     check('选云端 → 云端值应用', mem['sumsum:both:v1'] === '{"side":"cloud"}', mem['sumsum:both:v1'])
+    check('选云端但不刷新（登记页）→ 照样挂改动监听，之后的打分推得上云', changes.length === listenersBefore + 1, [listenersBefore, changes.length])
     check('确认框里给的是键清单', chose[0] && chose[0].local.indexOf('sumsum:both:v1') >= 0 && chose[0].cloud.length === 2)
 
     /* 弹窗被关掉（没选方向）→ 本地云端都不动，下次再问（Review Focus 6） */

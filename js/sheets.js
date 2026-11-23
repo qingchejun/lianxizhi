@@ -75,12 +75,12 @@
     var box = doc.createElement('div')
     if (foot) {
       box.className = 'sheet-qr sheet-qr-foot'
-      box.innerHTML = qrSvg(markUrl(id)) + '<small>扫码<br>登记</small>'
+      box.innerHTML = qrSvg(markUrl(id)) + '<small>扫码<br>打分</small>'
       foot.classList.add('has-qr')
       foot.insertBefore(box, foot.firstChild)
     } else if (head) {
       box.className = 'sheet-qr'
-      box.innerHTML = '<small>扫码<br>登记</small>' + qrSvg(markUrl(id))
+      box.innerHTML = '<small>扫码<br>打分</small>' + qrSvg(markUrl(id))
       head.appendChild(box)
       fitHead(head)
     }
@@ -161,8 +161,8 @@
     b.type = 'button'
     b.id = 'btn-mark'
     b.className = 'btn'
-    b.title = '孩子做完后登记：会了 / 一般 / 不会，或点做错的题'
-    b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3 8-8M20 12v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h11"/></svg>登记'
+    b.title = '孩子做完后打分：会了 / 一般 / 不会，或点做错的题'
+    b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3 8-8M20 12v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h11"/></svg>打分'
     b.addEventListener('click', function () {
       var id = ensureSaved()
       if (id) root.location.href = '/mark?id=' + id
