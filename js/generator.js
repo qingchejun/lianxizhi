@@ -336,16 +336,67 @@
     return Object.assign({}, q, { blank: pick(['ans', 0, 2]) })
   }
 
-  /* 主入口：按设置生成一批题目 */
+  /* 每种题型允许出现的单运算符 */
+  var MODE_OPS = {
+    add: ['+'],
+    sub: ['−'],
+    addsub: ['+', '−'],
+    mul: ['×'],
+    div: ['÷'],
+    muldiv: ['×', '÷'],
+    addsubmul: ['+', '−', '×']
+  }
+
+  /*
+   * 「必含题」（上一张点过的错题，见 js/sheets-core.js kousuanNext）：题面 key 解析回算式，
+   * 只收单运算符、且符合当前题型和范围的；四则模式不收。不合格的静默丢掉。
+   */
+  function mustQuestion(key, s) {
+    var t = String(key).split(' ')
+    if (t.length !== 3) return null
+    var a = Number(t[0])
+    var op = t[1]
+    var b = Number(t[2])
+    if (!isFinite(a) || !isFinite(b) || a !== Math.floor(a) || b !== Math.floor(b)) return null
+    if ((MODE_OPS[s.mode] || []).indexOf(op) < 0) return null
+    if (op === '+' || op === '−') {
+      var r = op === '+' ? a + b : a - b
+      if (a < s.min || a > s.max || b < s.min || b > s.max || r > s.max) return null
+      if (r < 0 && !s.allowNegative) return null
+      return makeQuestion([a, op, b], r)
+    }
+    if (op === '×') {
+      if (a < s.mulMin || a > s.mulMax || b < s.mulMin || b > s.mulMax) return null
+      return makeQuestion([a, op, b], a * b)
+    }
+    if (b < s.mulMin || b > s.mulMax || b === 0) return null
+    var qt = Math.floor(a / b)
+    if (s.exactDivision && a % b !== 0) return null
+    if (qt < s.mulMin || qt > s.mulMax) return null
+    return makeQuestion([a, op, b], qt, a % b)
+  }
+
+  /* 主入口：按设置生成一批题目。
+     可选 s.mustInclude（题面 key 数组）与 s.carryOverride（本次临时进退位模式）；
+     两者都不给时，出题与原来逐字相同（tools/check-sheets.js 校验） */
   function generate(s) {
+    if (s.carryOverride) s = Object.assign({}, s, { carryMode: s.carryOverride })
     rnd = s.seed ? makeRandom(s.seed) : Math.random
     var gens = GENERATORS[s.mode] || GENERATORS.addsub
     var seen = new Set()
     var questions = []
     var maxAttempts = s.count * 300
     var mulAt = s.mode === 'addsubmul' ? mulSlots(s.count) : null
+    var musts = []
+    ;(s.mustInclude || []).forEach(function (k) {
+      var q = mustQuestion(k, s)
+      if (!q || seen.has(q.key + '#ans')) return
+      seen.add(q.key + '#ans')
+      musts.push(q)
+    })
+    var want = s.count - musts.length
 
-    for (var i = 0; i < maxAttempts && questions.length < s.count; i++) {
+    for (var i = 0; i < maxAttempts && questions.length < want; i++) {
       var raw = mulAt && mulAt.has(questions.length) ? genMulSoft(s) : pick(gens)(s)
       if (!raw) continue
       if (s.skipTrivial && isTrivial(raw.tokens)) continue
@@ -355,6 +406,10 @@
       seen.add(key)
       questions.push(q)
     }
+    /* 错题散插进卷面（不扎堆在开头），位置随种子固定 */
+    musts.forEach(function (q) {
+      questions.splice(randInt(0, questions.length), 0, q)
+    })
     return { questions: questions, shortfall: s.count - questions.length }
   }
 

@@ -163,8 +163,193 @@
     })
   }
 
+  /* 一张纸最后一次打分的时间（没打过分为 0） */
+  function ratedAt(rec) {
+    var t = 0
+    if (rec && rec.rating) {
+      Object.keys(rec.rating).forEach(function (k) {
+        var r = rec.rating[k]
+        if (r && Number(r.at) > t) t = Number(r.at)
+      })
+    }
+    return t
+  }
+
+  function levelOf(rec, unit) {
+    var r = rec && rec.rating && rec.rating[unit || 'all']
+    return r ? r.level : null
+  }
+
+  /* ---------- 口算 ---------- */
+
+  function hasCarry(a, b) {
+    while (a > 0 || b > 0) {
+      if ((a % 10) + (b % 10) >= 10) return true
+      a = Math.floor(a / 10)
+      b = Math.floor(b / 10)
+    }
+    return false
+  }
+
+  function hasBorrow(a, b) {
+    while (b > 0) {
+      if (a % 10 < b % 10) return true
+      a = Math.floor(a / 10)
+      b = Math.floor(b / 10)
+    }
+    return false
+  }
+
+  /* 题目分类：进位加 / 退位减 / 不进退位 / 乘 / 除 / 混合（多于一个运算符） */
+  function kousuanCat(q) {
+    var t = q.tokens || []
+    var ops = t.filter(function (x) { return typeof x === 'string' && x !== '(' && x !== ')' })
+    if (ops.length !== 1) return 'mixed'
+    var op = ops[0]
+    var a = t[0]
+    var b = t[2]
+    if (op === '×') return 'mul'
+    if (op === '÷') return 'div'
+    if (op === '+') return hasCarry(a, b) ? 'carry' : 'plain'
+    if (op === '−' || op === '-') return a >= b && hasBorrow(a, b) ? 'borrow' : 'plain'
+    return 'mixed'
+  }
+
+  function kousuanItems(questions) {
+    return questions.map(function (q) {
+      return { key: q.key, label: q.tokens.join(' ') + ' =', cat: kousuanCat(q) }
+    })
+  }
+
+  var MUST_MAX = 5
+
+  /* 下一张口算怎么调（只作用于下一张，不改设置）：
+     点过的错题最多 5 道原样再出；错题里进退位占一半以上、或整张「不会」→ 临时以进退位为主 */
+  function kousuanNext(last, settings) {
+    var out = { mustInclude: [], carryOverride: null }
+    if (!last || !rated(last)) return out
+    var wrong = Array.isArray(last.wrong) ? last.wrong : []
+    out.mustInclude = wrong.slice(0, MUST_MAX)
+    var cats = {}
+    ;(last.items || []).forEach(function (it) { cats[it.key] = it.cat })
+    var hard = wrong.filter(function (k) { return cats[k] === 'carry' || cats[k] === 'borrow' }).length
+    var want = levelOf(last) === 'bad' || (wrong.length > 0 && hard * 2 >= wrong.length)
+    var mode = settings && settings.carryMode
+    if (want && (mode === 'random' || mode === 'nocarry')) out.carryOverride = 'carrymore'
+    return out
+  }
+
+  /* 同一预设最近两张都「会了」→ 提示升到下一个预设（返回它的 label），否则 null */
+  function kousuanUpgrade(recs, presets) {
+    var list = recs.filter(function (r) { return r && rated(r) }).sort(function (x, z) {
+      return ratedAt(z) - ratedAt(x)
+    })
+    if (list.length < 2) return null
+    var a = list[0]
+    var b = list[1]
+    var pa = a.ref && a.ref.preset
+    if (!pa || pa !== (b.ref && b.ref.preset)) return null
+    if (levelOf(a) !== 'good' || levelOf(b) !== 'good') return null
+    for (var i = 0; i < presets.length - 1; i++) {
+      if (presets[i].label === pa) return presets[i + 1].label
+    }
+    return null
+  }
+
+  /* ---------- 奥数 ---------- */
+
+  function addTo(arr, v) {
+    if (arr.indexOf(v) < 0) arr.push(v)
+  }
+  function drop(arr, v) {
+    var i = arr.indexOf(v)
+    if (i >= 0) arr.splice(i, 1)
+  }
+
+  /* 三档作用到「已学」与「待复习」：会了 → 标已学、移出待复习；一般 → 标已学 + 进待复习；
+     不会 → 不动已学（不删以前标的）、建议再练（今天页）；点过错题的课一律进待复习。不改入参 */
+  function aoshuApply(state, unitRatings, wrongTopics) {
+    var learned = (state.learned || []).slice()
+    var due = (state.due || []).slice()
+    Object.keys(unitRatings || {}).forEach(function (id) {
+      var lv = unitRatings[id]
+      if (lv === 'good') {
+        addTo(learned, id)
+        drop(due, id)
+      } else if (lv === 'ok') {
+        addTo(learned, id)
+        addTo(due, id)
+      }
+    })
+    ;(wrongTopics || []).forEach(function (id) { addTo(due, id) })
+    return { learned: learned, due: due }
+  }
+
+  function aoshuDiff(before, after) {
+    function minus(x, y) { return x.filter(function (v) { return y.indexOf(v) < 0 }) }
+    return {
+      learnedAdded: minus(after.learned, before.learned),
+      dueAdded: minus(after.due, before.due),
+      dueRemoved: minus(before.due, after.due)
+    }
+  }
+
+  /* 撤回上一次作用（改档时先撤回再重新作用，不叠加） */
+  function aoshuRevert(state, applied) {
+    var learned = (state.learned || []).slice()
+    var due = (state.due || []).slice()
+    if (applied) {
+      ;(applied.learnedAdded || []).forEach(function (id) { drop(learned, id) })
+      ;(applied.dueAdded || []).forEach(function (id) { drop(due, id) })
+      ;(applied.dueRemoved || []).forEach(function (id) { addTo(due, id) })
+    }
+    return { learned: learned, due: due }
+  }
+
+  /* ---------- 游戏 ---------- */
+
+  var GAME_LEVELS = ['L1', 'L2', 'L3', 'L4']
+
+  /* 太简单（good）→ 升一档；太难（bad）→ 降一档；刚好不变；到顶到底不动。
+     数独的难度是提示数：少给提示更难，每步 = 范围的约 1/6 */
+  function gameStep(module, settings, level, clueRange) {
+    var prev = Object.assign({}, settings)
+    var next = Object.assign({}, settings)
+    var dir = level === 'good' ? 1 : level === 'bad' ? -1 : 0
+    if (module === 'shudu') {
+      var r = clueRange || { min: 5, max: 12 }
+      var step = Math.max(1, Math.ceil((r.max - r.min) / 6))
+      var c = Number(settings.clues)
+      var nc = Math.min(r.max, Math.max(r.min, c - dir * step))
+      next.clues = nc
+      return { prev: prev, next: next, changed: nc !== c }
+    }
+    var i = GAME_LEVELS.indexOf(settings.level)
+    if (i < 0) i = 0
+    var ni = Math.min(GAME_LEVELS.length - 1, Math.max(0, i + dir))
+    next.level = GAME_LEVELS[ni]
+    return { prev: prev, next: next, changed: ni !== i }
+  }
+
+  function gameLevelText(module, settings) {
+    if (module === 'shudu') return settings.clues + ' 个提示数'
+    return '第 ' + String(settings.level || 'L1').replace('L', '') + ' 关'
+  }
+
   root.SumSum = root.SumSum || {}
   root.SumSum.sheetsCore = {
+    aoshuApply: aoshuApply,
+    aoshuDiff: aoshuDiff,
+    aoshuRevert: aoshuRevert,
+    GAME_LEVELS: GAME_LEVELS,
+    gameStep: gameStep,
+    gameLevelText: gameLevelText,
+    ratedAt: ratedAt,
+    levelOf: levelOf,
+    kousuanCat: kousuanCat,
+    kousuanItems: kousuanItems,
+    kousuanNext: kousuanNext,
+    kousuanUpgrade: kousuanUpgrade,
     PREFIX: PREFIX,
     KEEP_DAYS: KEEP_DAYS,
     MODULE_KIND: MODULE_KIND,
