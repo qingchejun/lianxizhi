@@ -684,6 +684,13 @@
     }
 
     container.innerHTML = lesson.concat(practice, answer).join('')
+    /* 标出页面种类：纸角二维码（js/sheets.js）只印在练习页第一页，讲解页、解析页不印 */
+    var kinds = []
+    lesson.forEach(function () { kinds.push('lesson') })
+    practice.forEach(function () { kinds.push('practice') })
+    answer.forEach(function () { kinds.push('sol') })
+    var secs = container.children
+    for (var k = 0; k < secs.length && k < kinds.length; k++) secs[k].setAttribute('data-kind', kinds[k])
     fitHeads(container)
     fitBlocks(container)
     return { lesson: lesson.length, practice: practice.length, answer: answer.length }

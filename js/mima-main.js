@@ -70,6 +70,17 @@
 
     var result = S.mima.generate(settings)
     S.mimaRender.render($('preview'), settings, result.puzzles)
+    /* 扫码登记：纸角二维码 + 打印时记下这张（太简单 / 刚好 / 太难 → 下一张升降关，见 mark 页） */
+    if (S.sheets) {
+      S.sheets.use({
+        module: 'mima',
+        title: S.sheetsCore.MODULE_LABEL.mima + ' · ' + S.sheetsCore.gameLevelText('mima', settings),
+        idParts: JSON.stringify(settings),
+        units: [{ key: 'all', label: '整张' }],
+        items: [],
+        ref: { settings: settings }
+      })
+    }
     S.shell.fit()
 
     $('level-hint').textContent = LEVEL_HINTS[settings.level] || ''

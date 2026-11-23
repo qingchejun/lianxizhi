@@ -271,7 +271,7 @@ body.landscape .sheet {
   align-items: flex-end;
   gap: 1.5mm;
   flex: none;
-  margin-left: -4mm; /* 页眉 gap 8mm，二维码贴近右侧的姓名栏 */
+  margin-left: -2mm; /* 贴近右侧的得分栏 */
 }
 
 .sheet-qr svg {
@@ -286,4 +286,15 @@ body.landscape .sheet {
   color: #000;
   text-align: right;
   white-space: nowrap;
+}
+
+/* 有二维码的页眉省一点横向空间，长标题（如「火柴棒算式 · 第 1 关 拿走一根」）不至于折行 */
+.sheet-head:has(.sheet-qr) {
+  gap: 5mm;
+}
+.sheet-head:has(.sheet-qr) .sheet-meta .gap {
+  width: 3mm;
+}
+.sheet-head:has(.sheet-qr) .sheet-meta .w-l {
+  width: 16mm;
 }

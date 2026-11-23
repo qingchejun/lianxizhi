@@ -427,7 +427,7 @@
           var k = id + '#' + q.key
           if (got.length < n && !seen[k]) {
             seen[k] = 1
-            got.push(Object.assign({}, q, { topicLabel: labelOf(id) }))
+            got.push(Object.assign({}, q, { topicLabel: labelOf(id), topicId: id }))
           }
         })
       }
@@ -455,6 +455,33 @@
   }
 
   var firstPaint = true
+
+  /* 扫码登记：练习页第一页印二维码，打印时记下这张。单课 → 这一课一个打分单位；
+     复习卷 → 每课一个；题目按所属课登记，点错的题让那一课进「待复习」 */
+  function topicLabel(id) {
+    var entry = S.aoshu.OUTLINE.filter(function (o) { return o.id === id })[0]
+    return entry ? entry.no + ' ' + entry.name : id
+  }
+
+  function registerSheet(s, topic, result, seed) {
+    if (!S.sheets || !s.practicePage || !result.questions.length) return
+    var units = []
+    var items = result.questions.map(function (q, i) {
+      var tid = s.review ? q.topicId : topic.id
+      if (tid && !units.some(function (u) { return u.key === tid })) {
+        units.push({ key: tid, label: topicLabel(tid) })
+      }
+      return { key: String(i + 1), label: '第 ' + (i + 1) + ' 题', unit: tid }
+    })
+    S.sheets.use({
+      module: 'aoshu',
+      title: s.title || (s.review ? '综合复习' : topicLabel(topic.id)),
+      idParts: JSON.stringify([s, seed, result.questions.length, items.map(function (it) { return it.unit })]),
+      units: units,
+      items: items,
+      ref: { review: !!s.review }
+    })
+  }
 
   /* 主流程：保存设置 → 同步表单 → 生成题目 → 渲染练习纸 */
   function refresh() {
@@ -484,6 +511,7 @@
       topicCount: result.topicCount
     })
     fitPreview()
+    registerSheet(settings, topic, result, seed)
     renderVideo(settings)
     renderScope(settings)
     paintHead(settings, pages)

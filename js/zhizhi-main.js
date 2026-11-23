@@ -70,6 +70,17 @@
 
     var result = S.zhizhi.generate(settings)
     S.zhizhiRender.render($('preview'), settings, result.puzzles)
+    /* 扫码登记：纸角二维码 + 打印时记下这张（太简单 / 刚好 / 太难 → 下一张升降关，见 mark 页） */
+    if (S.sheets) {
+      S.sheets.use({
+        module: 'zhizhi',
+        title: S.sheetsCore.MODULE_LABEL.zhizhi + ' · ' + S.sheetsCore.gameLevelText('zhizhi', settings),
+        idParts: JSON.stringify(settings),
+        units: [{ key: 'all', label: '整张' }],
+        items: [],
+        ref: { settings: settings }
+      })
+    }
     S.zhizhiPlay.attach($('preview'), result.puzzles)
     S.shell.fit()
 

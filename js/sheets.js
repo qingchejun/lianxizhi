@@ -73,6 +73,20 @@
     box.className = 'sheet-qr'
     box.innerHTML = '<small>扫码<br>登记</small>' + qrSvg(markUrl(id))
     head.appendChild(box)
+    fitHead(head)
+  }
+
+  /* 加了二维码页眉变挤：标题逐级缩字号（最小 14px），还放不下就允许折行（同奥数 fitHeads 的做法） */
+  function fitHead(head) {
+    var title = head.querySelector('.sheet-title')
+    if (!title || head.scrollWidth <= head.clientWidth + 1) return
+    var size = parseFloat(root.getComputedStyle(title).fontSize)
+    while (head.scrollWidth > head.clientWidth + 1 && size > 14) {
+      size -= 1
+      title.style.fontSize = size + 'px'
+      if (size < 19) title.style.letterSpacing = '1px'
+    }
+    if (head.scrollWidth > head.clientWidth + 1) title.style.whiteSpace = 'normal'
   }
 
   /* 板块渲染完调用。info: { module, title, idParts, units, items, ref } */
