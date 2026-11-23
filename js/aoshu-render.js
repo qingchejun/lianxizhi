@@ -46,6 +46,24 @@
    * 这道缝隙会被撑到三四厘米，答题线离题干老远；多出来的高度交给块尾的
    * .aq-tail，落在答题线下方当作题与题之间的呼吸空间。
    */
+  /*
+   * 一道题要填好几样（B11 认线：直线、射线、线段各填几号）时用 q.ansFields：
+   * 答题行换成「直线：____　射线：____　线段：____」，不再有「列式」和单个挖空。
+   */
+  function ansRowHTML(q) {
+    var p = P()
+    if (q.ansFields) {
+      return '<div class="aq-ans">' + q.ansFields.map(function (f) {
+        return p.esc(f) + '：<span class="blank blank-mid"></span>'
+      }).join('　') + '</div>'
+    }
+    return (
+      '<div class="aq-ans">' + (q.workLabel || '列式') + '：<span class="blank blank-expr"></span>　' +
+      p.esc(q.ansLabel) + ' <span class="blank"></span> ' + p.esc(q.ansSuffix) +
+      '</div>'
+    )
+  }
+
   function questionBlockHTML(q, idx, mm, workMM) {
     var p = P()
     return (
@@ -53,9 +71,7 @@
       '<div class="aq-stem"><span class="aq-num">' + p.numLabel(idx) + '</span>' +
       stemHTML(q) + '</div>' +
       '<div class="aq-work"' + heightStyle(workMM) + '></div>' +
-      '<div class="aq-ans">' + (q.workLabel || '列式') + '：<span class="blank blank-expr"></span>　' +
-      p.esc(q.ansLabel) + ' <span class="blank"></span> ' + p.esc(q.ansSuffix) +
-      '</div>' +
+      ansRowHTML(q) +
       '<div class="aq-tail"></div>' +
       '</div>'
     )

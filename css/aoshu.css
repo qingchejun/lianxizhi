@@ -78,6 +78,10 @@
   max-height: 30mm;
 }
 
+.lesson-stem svg.fig-mid {
+  max-height: 26mm; /* 讲解页例题：解析里还有一张带编号的图，题干图不必那么大（B11 数平行线、能不能相交） */
+}
+
 .lesson-stem svg.fig-route {
   max-height: 44mm;
 }
@@ -102,6 +106,10 @@
   height: 1em;
   border-bottom: 2px solid #000;
   vertical-align: -3px;
+}
+
+.aq-ans .blank-mid {
+  width: 7em; /* ansFields：好几样各填一个空（B11 直线、射线、线段） */
 }
 
 .aq-ans .blank-expr {

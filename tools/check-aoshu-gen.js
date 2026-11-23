@@ -874,6 +874,145 @@ function checkJiangebc() {
   })
 }
 
+/*
+ * B11 认识线：不看 key，直接量题干 SVG 重算答案。
+ * 每个编号一个 <g class="it">；直的线 <line class="ln">，折线 <polyline>，曲线 <path>，端点 <circle class="dot">，小板凳 <polyline class="mk">。
+ */
+function checkRenxian() {
+  if (!A.topics.renxian) return
+  var CIRC = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧']
+  function groups(html) {
+    return html.split('<g class="it"').slice(1).map(function (g) { return g.split('</g>')[0] })
+  }
+  function lines(g) {
+    var out = []
+    g.replace(/<line class="ln" x1="([-\d.]+)" y1="([-\d.]+)" x2="([-\d.]+)" y2="([-\d.]+)"/g, function (m, a, b, c, d) {
+      out.push([[+a, +b], [+c, +d]])
+    })
+    return out
+  }
+  function dots(g) {
+    var out = []
+    g.replace(/<circle class="dot" cx="([-\d.]+)" cy="([-\d.]+)"/g, function (m, a, b) { out.push([+a, +b]) })
+    return out
+  }
+  function ang(l) { var a = Math.atan2(l[1][1] - l[0][1], l[1][0] - l[0][0]) * 180 / Math.PI; return ((a % 180) + 180) % 180 }
+  function adiff(a, b) { var d = Math.abs(a - b) % 180; return Math.min(d, 180 - d) }
+  function len(l) { return Math.hypot(l[1][0] - l[0][0], l[1][1] - l[0][1]) }
+  function cr(a, b) { return a[0] * b[1] - a[1] * b[0] }
+  function sub(a, b) { return [a[0] - b[0], a[1] - b[1]] }
+  /* 两条直线 a、b 的交点参数（a 上 t，b 上 s；0～1 是画出来的部分） */
+  function inter(a, b) {
+    var da = sub(a[1], a[0]), db = sub(b[1], b[0]), den = cr(da, db)
+    if (Math.abs(den) < 1e-6) return null
+    var w = sub(b[0], a[0])
+    return { t: cr(w, db) / den, s: cr(w, da) / den }
+  }
+  function nums(arr) { return arr.map(function (i) { return CIRC[i] }).join('') || '没有' }
+  function near(p, q) { return Math.hypot(p[0] - q[0], p[1] - q[1]) < 0.05 }
+
+  each('renxian', 'kind', function (q, d) {
+    var by = { line: [], ray: [], seg: [] }
+    var other = 0, shortLine = false, longSeg = false, dotted = false
+    groups(q.stemHTML).forEach(function (g, i) {
+      var ls = lines(g), ds = dots(g)
+      if (ls.length === 1 && !/<polyline|<path/.test(g)) {
+        var k = ['line', 'ray', 'seg'][ds.length]
+        ds.forEach(function (p) { if (!near(p, ls[0][0]) && !near(p, ls[0][1])) bad('B11 认线：端点不在线头上 ' + q.key) })
+        by[k].push(i)
+        if (k === 'line' && len(ls[0]) < 35) shortLine = true
+        if (k === 'seg' && len(ls[0]) > 58) longSeg = true
+      } else {
+        other++
+        if (ds.length) dotted = true
+      }
+    })
+    var want = '直线 ' + nums(by.line) + '；射线 ' + nums(by.ray) + '；线段 ' + nums(by.seg)
+    if (q.answer !== want) bad('B11 认线答案错：给的 ' + q.answer + ' 应为 ' + want)
+    if (!by.line.length || !by.ray.length || !by.seg.length) bad('B11 认线缺了一类：' + q.answer)
+    if (d === 'L1' && other) bad('B11 认线入门出了折线曲线')
+    if (d !== 'L1' && !other) bad('B11 认线 ' + d + ' 没有折线曲线干扰')
+    if (d === 'L3' && !(shortLine && longSeg && dotted)) bad('B11 认线挑战缺陷阱（短直线 / 长线段 / 带点折线）：' + q.key)
+  })
+
+  each('renxian', 'rel', function (q, d) {
+    var by = { par: [], perp: [], cross: [], conv: [] }
+    groups(q.stemHTML).forEach(function (g, i) {
+      var ls = lines(g)
+      if (ls.length !== 2) { bad('B11 平行垂直：一格里不是两条线 ' + q.key); return }
+      var df = adiff(ang(ls[0]), ang(ls[1]))
+      var x = inter(ls[0], ls[1])
+      var touch = x && x.t >= 0 && x.t <= 1 && x.s >= 0 && x.s <= 1
+      var mk = /class="mk"/.test(g)
+      if (df < 0.3) {
+        by.par.push(i)
+        var gap = Math.abs(cr(sub(ls[1][0], ls[0][0]), sub(ls[0][1], ls[0][0]))) / len(ls[0])
+        if (gap < 12) bad('B11 平行线挨得太近：' + gap.toFixed(1))
+      } else if (Math.abs(df - 90) < 0.3) {
+        if (!mk || !touch) bad('B11 垂直没画小板凳或没交上：' + q.key)
+        by.perp.push(i)
+      } else if (touch) {
+        if (mk) bad('B11 不垂直却画了小板凳')
+        if (Math.abs(df - 90) < 39.5) bad('B11 斜着交叉的太像直角：' + df.toFixed(1) + '°')
+        by.cross.push(i)
+      } else {
+        if (df < 18) bad('B11 没碰到的两条线太像平行：' + df.toFixed(1) + '°')
+        by.conv.push(i)
+      }
+    })
+    var want = '平行 ' + nums(by.par) + '；垂直 ' + nums(by.perp)
+    if (d === 'L3') want += '；相交 ' + nums(by.perp.concat(by.cross).sort(function (a, b) { return a - b }))
+    if (q.answer !== want) bad('B11 平行垂直答案错：给的 ' + q.answer + ' 应为 ' + want)
+    if (!by.par.length || !by.perp.length) bad('B11 平行垂直缺了一类：' + q.answer)
+    if (d === 'L3' && by.conv.length) bad('B11 挑战问相交时出了没碰到的（有歧义）')
+    if (d === 'L2' && !by.conv.length) bad('B11 提高档没有「没碰到但不平行」')
+  })
+
+  each('renxian', 'meet', function (q, d) {
+    var yes = []
+    var types = {}
+    groups(q.stemHTML).forEach(function (g, i) {
+      var ds = dots(g)
+      var ps = lines(g).map(function (l) {
+        var dp = ds.some(function (p) { return near(p, l[0]) }), dq = ds.some(function (p) { return near(p, l[1]) })
+        /* 有点的那头当起点：射线从起点往另一头延长 */
+        var l2 = dq && !dp ? [l[1], l[0]] : l
+        var type = dp && dq ? 'seg' : dp || dq ? 'ray' : 'line'
+        return { l: l2, type: type, lo: type === 'line' ? -Infinity : 0, hi: type === 'seg' ? 1 : Infinity }
+      })
+      types[ps.map(function (p) { return p.type }).sort().join('-')] = 1
+      /* 坐标取了两位小数，平行的两条量出来会差一丝丝，0.5° 以内都当平行 */
+      if (adiff(ang(ps[0].l), ang(ps[1].l)) < 0.5) return // 平行：永远碰不到
+      var x = inter(ps[0].l, ps[1].l)
+      var m0 = Math.min((x.t - ps[0].lo) * len(ps[0].l), (ps[0].hi - x.t) * len(ps[0].l))
+      var m1 = Math.min((x.s - ps[1].lo) * len(ps[1].l), (ps[1].hi - x.s) * len(ps[1].l))
+      if (x.t >= 0 && x.t <= 1 && x.s >= 0 && x.s <= 1) bad('B11 能相交：画出来就已经交叉了 ' + q.key)
+      if (m0 >= 0 && m1 >= 0) {
+        yes.push('ABCD'[i])
+        if (Math.min(m0, m1) < 5) bad('B11 能相交：交点太贴近端点 ' + q.key)
+      } else if (Math.min(m0, m1) > -13) bad('B11 能相交：差一点点就碰到，看不准 ' + q.key)
+    })
+    var want = yes.length === 1 ? yes[0] : yes.slice(0, -1).join('、') + ' 和 ' + yes[yes.length - 1]
+    if (!yes.length || yes.length === 4) bad('B11 能相交：全对或全错 ' + q.key)
+    else if (q.answer !== want) bad('B11 能相交答案错：给的 ' + q.answer + ' 应为 ' + want)
+    if (d === 'L1' && types['ray-ray'] + types['line-ray'] + types['ray-seg']) bad('B11 能相交入门出了射线')
+  })
+
+  each('renxian', 'par', function (q, d) {
+    var fam = {}
+    lines(q.stemHTML).forEach(function (l) {
+      var a = Math.round(ang(l) * 2) / 2 % 180
+      fam[a] = (fam[a] || 0) + 1
+    })
+    var total = 0
+    Object.keys(fam).forEach(function (a) { var n = fam[a]; total += n * (n - 1) / 2 })
+    if (q.answer !== total) bad('B11 数平行线答案错：给的 ' + q.answer + ' 应为 ' + total + ' ' + q.key)
+    if (total < (d === 'L1' ? 3 : d === 'L2' ? 3 : 4)) bad('B11 数平行线太少：' + total)
+    var dirs = Object.keys(fam).map(Number)
+    dirs.forEach(function (a, i) { dirs.slice(i + 1).forEach(function (b) { if (adiff(a, b) < 15) bad('B11 不平行的线方向太接近：' + a + '° / ' + b + '°') }) })
+  })
+}
+
 function checkFloors() {
   each('daxiao', 'num', function (q) {
     var n = nums(q.stem)
@@ -1061,6 +1200,7 @@ checkDiefang()
 checkFanzhuan()
 checkWoniu()
 checkJiangebc()
+checkRenxian()
 checkSupply()
 
 if (problems.length) {
