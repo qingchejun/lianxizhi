@@ -116,6 +116,13 @@ var r4 = rec('k00008', 'kousuan', '2026-11-22', NOW - 1000, { ref: { preset: '�
 check(C.kousuanUpgrade([r3, r4], KS.PRESETS) === null, '最后一档不再提示')
 check(C.kousuanUpgrade([r2, r4], KS.PRESETS) === null, '两张预设不同不提示')
 
+/* 下一张用哪次打分：打过分后又打印了新纸就不再用 */
+var ra = rec('u00001', 'kousuan', '2026-11-23', NOW - 5000, { rating: { all: { level: 'bad', at: NOW - 4000 } } })
+var rb = rec('u00002', 'kousuan', '2026-11-23', NOW - 3000)
+check(C.lastRatedUnused([ra], 'kousuan') === ra, '打分后没打印新纸 → 用它')
+check(C.lastRatedUnused([ra, rb], 'kousuan') === null, '之后打印过新纸 → 不再用')
+check(C.lastRatedUnused([ra], 'aoshu') === null, '只看本板块')
+
 /* ---------- 奥数 ---------- */
 var s0 = { learned: ['a'], due: ['b'] }
 var s1 = C.aoshuApply(s0, { a: 'good', b: 'good', c: 'ok', d: 'bad' }, ['e'])

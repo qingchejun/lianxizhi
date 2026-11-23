@@ -336,8 +336,31 @@
     return '第 ' + String(settings.level || 'L1').replace('L', '') + ' 关'
   }
 
+  /* 本机全部纸记录（坏的跳过） */
+  function records(store) {
+    return store.keys().filter(isSheetKey).map(function (k) {
+      return parse(store.getString(k))
+    }).filter(Boolean)
+  }
+
+  /* 某板块「最近一次打完分、而且之后还没打印过新纸」的记录：下一张按它调；
+     打印了新纸就算用过了，不会一直重复同一批错题 */
+  function lastRatedUnused(recs, module) {
+    var mine = recs.filter(function (r) { return r.module === module })
+    var best = null
+    mine.forEach(function (r) {
+      if (rated(r) && (!best || ratedAt(r) > ratedAt(best))) best = r
+    })
+    if (!best) return null
+    var t = ratedAt(best)
+    var printedAfter = mine.some(function (r) { return r.id !== best.id && (r.printedAt || 0) > t })
+    return printedAfter ? null : best
+  }
+
   root.SumSum = root.SumSum || {}
   root.SumSum.sheetsCore = {
+    records: records,
+    lastRatedUnused: lastRatedUnused,
     aoshuApply: aoshuApply,
     aoshuDiff: aoshuDiff,
     aoshuRevert: aoshuRevert,

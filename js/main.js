@@ -180,8 +180,22 @@
     updateVisibility(settings.mode)
     updatePageStyle(settings.paper)
 
-    var result = S.generator.generate(settings)
+    /* 扫码登记：上一张点过的错题、整张「不会」→ 只作用于这一张（不改设置），见 sheets-core kousuanNext */
+    var SC = S.sheetsCore
+    var adjust = SC && S.store ? SC.kousuanNext(SC.lastRatedUnused(SC.records(S.store), 'kousuan'), settings) : null
+    var used = adjust ? Object.assign({}, settings, adjust) : settings
+    var result = S.generator.generate(used)
     S.render.render($('preview'), settings, result.questions)
+    if (S.sheets) {
+      S.sheets.use({
+        module: 'kousuan',
+        title: settings.title || S.generator.titleFor(settings),
+        idParts: JSON.stringify(used),
+        units: [{ key: 'all', label: '整张' }],
+        items: SC.kousuanItems(result.questions),
+        ref: { preset: S.settings.presetOf(settings) || '' }
+      })
+    }
     fitPreview()
     paintShell(settings)
 
