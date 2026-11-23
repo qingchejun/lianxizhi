@@ -79,6 +79,11 @@ body.welcome .wl-main {
   color: var(--ink-soft);
 }
 
+/* 两句口号并排：为什么（少报班，少看屏）+ 怎么做（一页纸，五分钟） */
+.wl-slogan span {
+  margin-left: 1.5em;
+}
+
 .wl-intro h1 {
   margin: 0 0 16px;
   font: 46px/1.25 var(--kai);
@@ -610,7 +615,7 @@ body.welcome .wl-main {
 /* ---------- 家长最省心的三点 ---------- */
 .wl-easy {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 32px;
 }
 
@@ -631,6 +636,7 @@ body.welcome .wl-main {
 @media (max-width: 1100px) {
   .wl-stars { grid-template-columns: 1fr; }
   .wl-mods-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .wl-easy { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 640px) {

@@ -36,6 +36,25 @@
     return (now.getMonth() + 1) + ' 月 ' + now.getDate() + ' 日 星期' + WEEKDAYS[now.getDay()]
   }
 
+  /* ---------- 预计用时（口号「一页纸，五分钟」落到每张卡上） ----------
+     一年级孩子的大致速度，宁可估多不估少；按 5 分钟取整、最少 5 分钟。
+     改了题量（如口算 100 题）卡片上的分钟数会跟着变，说到做到。 */
+  var PACE = {
+    kousuan: 4,   /* 题 / 分钟 */
+    shizi: 4,     /* 字 / 分钟（认读） */
+    aoshu: 1      /* 题 / 分钟（不含讲解视频，视频时长卡片上另写） */
+  }
+  var SHUDU_MIN = { s4: 3, s6: 6, s9: 15 }  /* 每盘分钟 */
+  var GAME_MIN = {                           /* 每题分钟，按关卡 L1–L4 */
+    huochai: [1, 1, 1.5, 1.5],
+    mima: [1, 1.25, 1.5, 2],
+    migong: [1.25, 1.25, 1.5, 2],
+    zhizhi: [1.25, 2.5, 4, 6]
+  }
+  function minutes(raw) {
+    return Math.max(5, Math.round(raw / 5) * 5)
+  }
+
   /* ---------- 奥数 ---------- */
 
   function aoshuCard(storage) {
@@ -72,6 +91,7 @@
       next: next,
       video: next ? V.of(next.id) : null,
       parts: parts.join(' + '),
+      minutes: minutes(clamp(s.count, 2, 30, 5) / PACE.aoshu),
       href: href,
       printHref: href + '#print'
     }
@@ -135,6 +155,7 @@
       repeats: repeats,
       due: due,
       withWrong: s.withWrong,
+      minutes: minutes(20 / PACE.shizi),
       href: 'shizi.html',
       printHref: 'shizi.html#print'
     }
@@ -154,6 +175,7 @@
     return {
       title: preset || mode,
       meta: meta.join(' · '),
+      minutes: minutes(s.count / PACE.kousuan),
       href: 'kousuan.html',
       printHref: 'kousuan.html#print'
     }
@@ -173,6 +195,7 @@
     return {
       title: D.shapeOf(s.shape).name + ' · ' + s.clues + ' 个提示',
       meta: meta.join(' · '),
+      minutes: minutes(s.count * (SHUDU_MIN[s.shape] || SHUDU_MIN.s4)),
       href: 'shudu.html',
       printHref: 'shudu.html#print'
     }
@@ -185,7 +208,7 @@
     var data = DB.read(storage)
     var saved = DB.current(data, date)
     var sheet = saved || P.makeSheet(date, P.derive(data.sheets, data.marks, date))
-    if (!sheet) return { title: '今天可以休息', href: 'pinyin.html?view=topics' }
+    if (!sheet) return { title: '今天可以休息', href: 'pinyin.html?view=topics' } /* 休息日不标分钟 */
     var count = sheet.groups.reduce(function (total, group) {
       return total + group.items.filter(function (item) {
         var mark = data.marks[sheet.id]?.[item.id]
@@ -197,6 +220,7 @@
       items: sheet.groups[0].items.slice(0, 4).map(function (item) { return item.text }),
       groups: sheet.groups.filter(function (group) { return group.phase !== 'check' }).length,
       count: count,
+      minutes: 5, /* 拼音每日一页按「约五分钟」设计（见使用说明） */
       href: 'pinyin.html',
       printHref: 'pinyin.html#print'
     }
@@ -238,6 +262,7 @@
       level: no,
       title: '第 ' + no + ' 关 · ' + lv.name,
       meta: meta.join(' · '),
+      minutes: minutes(count * GAME_MIN[key][no - 1]),
       href: key + '.html',
       printHref: key + '.html#print'
     }
@@ -256,5 +281,5 @@
   }
 
   root.SumSum = root.SumSum || {}
-  root.SumSum.today = { build: build, pinyinCard: pinyinCard, GAME_LEVELS: GAME_LEVELS }
+  root.SumSum.today = { build: build, pinyinCard: pinyinCard, GAME_LEVELS: GAME_LEVELS, minutes: minutes }
 })(typeof window !== 'undefined' ? window : globalThis)

@@ -282,6 +282,24 @@ Object.keys(V.list).forEach(function (id) {
   })
 })()
 
+// 预计用时（「一页纸，五分钟」）：默认设置每张都是 5 分钟；改了题量分钟数跟着变；按 5 取整、最少 5
+;(function () {
+  var d = T.build(fakeStorage({}), NOW)
+  var all = [d.aoshu, d.shizi, d.kousuan, d.shudu, d.pinyin].concat(d.games)
+  check(all.every(function (c) { return c.minutes === 5 }), '默认设置每张纸都该约 5 分钟：' + all.map(function (c) { return c.minutes }).join(','))
+  var big = T.build(fakeStorage({
+    'sumsum:settings:v1': JSON.stringify({ count: 100 }),
+    'sumsum:shudu:v1': JSON.stringify({ shape: 's9', count: 2 }),
+    'sumsum:zhizhi:v1': JSON.stringify({ level: 'L4', count: 8 }),
+    'sumsum:aoshu:v1': JSON.stringify({ count: 12 })
+  }), NOW)
+  check(big.kousuan.minutes === 25, '口算 100 题约 25 分钟：' + big.kousuan.minutes)
+  check(big.shudu.minutes === 30, '九宫数独 2 盘约 30 分钟：' + big.shudu.minutes)
+  check(big.games[3].minutes === 50, '数织第 4 关 8 幅约 50 分钟：' + big.games[3].minutes)
+  check(big.aoshu.minutes === 10, '奥数 12 题约 10 分钟：' + big.aoshu.minutes)
+  check(T.minutes(0) === 5 && T.minutes(7.4) === 5 && T.minutes(7.6) === 10, '按 5 分钟取整、最少 5')
+})()
+
 if (problems.length) {
   console.log('✗ ' + problems.length + ' 处问题：')
   problems.forEach(function (p) { console.log('  - ' + p) })

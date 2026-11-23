@@ -44,7 +44,8 @@
         '</div>' +
       '</a>' +
       '<div class="dk-cap">' +
-        '<p class="dk-kind">' + o.name + '<span>' + o.kind + '</span></p>' +
+        '<p class="dk-kind">' + o.name + '<span>' + o.kind + '</span>' +
+          (o.mins ? '<em class="dk-min">约 ' + o.mins + ' 分钟</em>' : '') + '</p>' +
         '<h3><a href="' + o.href + '">' + esc(o.title) + '</a></h3>' +
         (o.lines || '') +
         '<div class="dk-act">' +
@@ -71,7 +72,7 @@
       '<div class="pp-figs"><span></span><span></span><span></span></div>' +
       '<div class="pp-sec">练习</div>' + rows(2, 'pp-ln') + '<div class="pp-figs pp-figs-sm"><span></span><span></span></div>' + rows(2, 'pp-ln')
     return paper({
-      name: '奥数', kind: a.next ? '接着学' : '全部学完',
+      name: '奥数', mins: a.minutes, kind: a.next ? '接着学' : '全部学完',
       href: a.href, printHref: a.printHref, cls: 'pp-aoshu',
       sheetTitle: a.next ? '第 ' + a.next.no + ' 课 · ' + a.next.name : '综合复习',
       face: face,
@@ -93,7 +94,7 @@
     var meta = ['错字集 ' + z.wrong + ' 个']
     if (z.repeats) meta.push('其中 ' + z.repeats + ' 个反复错')
     return paper({
-      name: '识字', kind: isWeek ? '本周复习' : isDaily ? '每日一卷' : '错字集',
+      name: '识字', mins: z.minutes, kind: isWeek ? '本周复习' : isDaily ? '每日一卷' : '错字集',
       href: z.href, printHref: z.printHref, cls: 'pp-shizi',
       sheetTitle: isWeek ? (rj ? '识字检查 · ' + z.unitName : '识字 · 第 ' + z.week + ' 周') : isDaily ? '识字 · 每日一卷' : '识字 · 错字卷',
       face: face,
@@ -115,7 +116,7 @@
   function kousuanCard(k) {
     var face = '<ol class="pp-calc">' + KS.map(function (q) { return '<li>' + q + ' =<i></i></li>' }).join('') + '</ol>'
     return paper({
-      name: '口算', kind: '上次的设置',
+      name: '口算', mins: k.minutes, kind: '上次的设置',
       href: k.href, printHref: k.printHref, cls: 'pp-kousuan',
       sheetTitle: k.title, sheetMeta: '得分＿＿',
       face: face,
@@ -135,7 +136,7 @@
   function shuduCard(d) {
     var g = { 0: 1, 3: 4, 5: 3, 10: 2, 12: 4, 15: 1, 6: 2 }
     return paper({
-      name: '数独', kind: '上次的设置',
+      name: '数独', mins: d.minutes, kind: '上次的设置',
       href: d.href, printHref: d.printHref, cls: 'pp-games',
       sheetTitle: '数独', face: board(4, g) + board(4, { 1: 2, 4: 3, 9: 1, 14: 4, 7: 1, 11: 3 }),
       title: d.title,
@@ -153,13 +154,13 @@
       '<div class="pp-sec">换题再试</div><ol class="pp-py pp-py-sm"><li><span>pá</span><i></i></li><li><span>qí</span><i></i></li></ol>' +
       '<div class="pp-parent">' + rows(3, 'pp-ln') + '</div>'
     return paper({
-      name: '拼音', kind: '每日练习',
+      name: '拼音', mins: p.minutes, kind: '每日练习',
       href: p.href, printHref: p.printHref || p.href, cls: 'pp-pinyin',
       sheetTitle: '拼音练习', face: face,
       title: p.title,
       lines: '<p class="dk-meta">' + (p.printHref
         ? p.groups + ' 组，' + (p.count ? '已登记 ' + p.count + ' 题' : '还没练') : '也可以按需要手选专题') + '</p>' +
-        '<p class="dk-note">每天约五分钟</p>',
+        '',
       printText: p.printHref ? '打印今日卷' : '选专题',
       more: '去登记'
     })
@@ -212,7 +213,7 @@
   function gameCard(g) {
     var t = GAME_TEXT[g.key]
     return paper({
-      name: t.name, kind: '上次的设置',
+      name: t.name, mins: g.minutes, kind: '上次的设置',
       href: g.href, printHref: g.printHref, cls: 'pp-games pp-' + g.key,
       sheetTitle: t.name + ' · 第 ' + g.level + ' 关', face: GAME_FACE[g.key](),
       title: g.title,
@@ -227,7 +228,7 @@
   }
 
   var data = S.today.build(storage(), new Date())
-  doc.getElementById('today-date').textContent = data.date
+  doc.getElementById('today-date').textContent = data.date + ' · 一页纸，五分钟，挑两三张就够'
   doc.getElementById('today-cards').innerHTML =
     shelf('练习', [aoshuCard(data.aoshu), shiziCard(data.shizi), kousuanCard(data.kousuan), pinyinCard(data.pinyin)]) +
     shelf('游戏', [shuduCard(data.shudu)].concat(data.games.map(gameCard)))

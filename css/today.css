@@ -361,6 +361,17 @@
   color: var(--ink-faint);
 }
 
+/* 预计用时：靠右，和「一页纸，五分钟」对上 */
+.dk-kind .dk-min {
+  margin-left: auto;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
 .dk-cap h3 {
   margin: 0 0 6px;
   font-size: 17px;

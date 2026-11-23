@@ -160,10 +160,22 @@ body.landscape .sheet {
 /* ---------- 页脚页码 ---------- */
 
 .sheet-foot {
+  position: relative;
   margin-top: auto;
   padding-top: 3mm;
   text-align: center;
   font-size: 11px;
+}
+
+/* 纸上的落款：纸会被带到学校、被别的家长看到。页码居中不动，落款靠右、浅灰小字 */
+.sheet-foot::after {
+  content: "练习纸 · 一页纸，五分钟";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  color: #9a9a9a;
 }
 
 /* ============ 打印样式 ============ */
