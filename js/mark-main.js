@@ -311,10 +311,40 @@
   function now() {
     try { return Math.round(root.performance.now() / 100) / 10 } catch (e) { return null }
   }
+  function sec(ms) { return Math.round(ms / 100) / 10 }
+  /* 分段：网页本身几秒到、静态文件最慢一个几秒、登录检查 / 拉取 / 推送各几秒（看卡在哪个请求） */
+  function phases() {
+    var out = []
+    try {
+      var nav = root.performance.getEntriesByType('navigation')[0]
+      if (nav) out.push('网页 ' + sec(nav.responseEnd))
+      var slow = 0
+      var api = { me: null, pull: null, push: null }
+      root.performance.getEntriesByType('resource').forEach(function (r) {
+        var u = r.name
+        if (/\/api\/auth\/me/.test(u)) api.me = r
+        else if (/\/api\/data\/push/.test(u)) api.push = r
+        else if (/\/api\/data(\?|$)/.test(u)) api.pull = r
+        else if (/\/(js|css)\//.test(u)) slow = Math.max(slow, r.duration)
+      })
+      if (slow) out.push('最慢文件 ' + sec(slow))
+      if (api.me) out.push('登录 ' + sec(api.me.duration))
+      if (api.pull) out.push('拉取 ' + sec(api.pull.duration))
+      if (api.push) out.push('推送 ' + sec(api.push.duration))
+    } catch (e) { /* 老浏览器没有这些接口就不写 */ }
+    return out.length ? ' · ' + out.join(' / ') : ''
+  }
   function timing() {
     if (tPage == null) return ''
-    return ' · 页面 ' + tPage + ' 秒' + (tSync != null ? ' · 同步完 ' + tSync + ' 秒' : '')
+    return ' · 页面 ' + tPage + ' 秒' + (tSync != null ? ' · 同步完 ' + tSync + ' 秒' : '') + phases()
   }
+  /* 同步迟迟不完：每 2 秒刷新一次诊断行，最多 60 秒，好看出最后卡多久 */
+  var diagTicks = 0
+  var diagTimer = setInterval(function () {
+    diagTicks++
+    if (tSync != null || diagTicks > 30) clearInterval(diagTimer)
+    if (doc.getElementById('mark-diag')) paintDiag()
+  }, 2000)
   function note(msg) {
     problems.push(String(msg).slice(0, 200))
     paintDiag()
