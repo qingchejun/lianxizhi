@@ -71,6 +71,14 @@ body.welcome .wl-main {
   padding: 28px 0 64px;
 }
 
+/* 口号：大标题正上方一行，楷体、比正文淡 */
+.wl-slogan {
+  margin: 0 0 14px;
+  font: 20px/1.4 var(--kai);
+  letter-spacing: 4px;
+  color: var(--ink-soft);
+}
+
 .wl-intro h1 {
   margin: 0 0 16px;
   font: 46px/1.25 var(--kai);

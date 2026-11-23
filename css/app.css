@@ -157,6 +157,19 @@ a {
   white-space: nowrap;
 }
 
+.rail-brand > span {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* 口号：名字下面一行小字（侧栏收起或窄屏时随名字一起隐藏） */
+.rail-brand small {
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+}
+
 .rail-brand img {
   display: block;
   flex: none;

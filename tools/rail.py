@@ -66,7 +66,7 @@ FOLD = ('<button type="button" class="rail-fold" data-rail-fold aria-label="收�
         + SVG_OPEN + '<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15M15.5 10l-2 2 2 2"/></svg></button>')
 
 BRAND = ('  <div class="rail-top"><a class="rail-brand" href="index.html" aria-label="练习纸 · 今天">'
-         '<img src="icons/mark.svg" width="28" height="28" alt=""><span>练习纸</span></a>' + FOLD + '</div>\n')
+         '<img src="icons/mark.svg" width="28" height="28" alt=""><span>练习纸<small>少报班，少看屏</small></span></a>' + FOLD + '</div>\n')
 
 # 每页 <head> 里统一的标签页 / 桌面图标（替换旧的 emoji 图标）
 HEAD_ICONS = ('<link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />\n'
