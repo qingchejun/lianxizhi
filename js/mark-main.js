@@ -302,7 +302,55 @@
     render()
   })
 
+  /* ---------- 启动：等登录与同步，但最多等 8 秒；出错把原因写在页面底部，方便家长截图给站长 ---------- */
+  var problems = []
+  var syncState = '同步中'
+  function note(msg) {
+    problems.push(String(msg).slice(0, 200))
+    paintDiag()
+  }
+  function paintDiag() {
+    var el = doc.getElementById('mark-diag')
+    if (!el) {
+      el = doc.createElement('p')
+      el.id = 'mark-diag'
+      el.className = 'mark-diag'
+      page.parentNode.appendChild(el)
+    }
+    var n = 0
+    try { n = SC.records(S.store).length } catch (e) { /* 忽略 */ }
+    el.textContent = '本机纸记录 ' + n + ' 张 · ' + syncState + (problems.length ? ' · ' + problems.join(' / ') : '')
+  }
+  root.addEventListener('error', function (e) { note('脚本错误：' + (e.message || e.type)) })
+  root.addEventListener('unhandledrejection', function (e) {
+    note('脚本错误：' + (e.reason && (e.reason.message || e.reason)))
+  })
+
+  var drawn = false
+  function safeRender() {
+    try {
+      render()
+      drawn = true
+    } catch (err) {
+      note('画页面出错：' + (err && err.message))
+      page.innerHTML = notice('页面出了点问题', '请把这一页截图发给站长。', true)
+    }
+    paintDiag()
+  }
+
   var ready = S.accountUI && S.accountUI.initialSync ? S.accountUI.initialSync : Promise.resolve()
-  ready.then(render, render)
+  ready.then(function () {
+    syncState = '已同步'
+    safeRender()
+  }, function (err) {
+    syncState = '同步失败'
+    note(err && err.message)
+    safeRender()
+  })
+  setTimeout(function () {
+    if (drawn) return
+    syncState = '同步超过 8 秒还没完成'
+    safeRender()
+  }, 8000)
   root.document.documentElement.setAttribute('data-sumsum-ready', '1')
 })(window)

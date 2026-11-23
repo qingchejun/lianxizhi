@@ -204,6 +204,23 @@
     root.location.reload()
   }
 
+  /* 立刻把指定的键推上云（不等防抖、不依赖 init 是否已挂好监听）：打印时记下的纸要马上能被手机扫到。
+     没登录、键不存在就什么也不做；失败静默（之后的普通同步还会再推） */
+  function pushNow(keys) {
+    var A = root.SumSum.account
+    if (!A || !A.state || !A.state.loggedIn) return Promise.resolve(false)
+    var store = S()
+    var meta = store.meta()
+    var items = keys.map(function (k) {
+      var v = store.getString(k)
+      return v === null ? null : { key: k, value: v, updated_at: meta[k] || Date.now() }
+    }).filter(Boolean)
+    if (!items.length) return Promise.resolve(false)
+    return defaultApi().push(items).then(function (r) {
+      return !!(r && r.status === 200)
+    }, function () { return false })
+  }
+
   root.SumSum = root.SumSum || {}
-  root.SumSum.sync = { init: init, flush: flush }
+  root.SumSum.sync = { init: init, flush: flush, pushNow: pushNow }
 })(typeof window !== 'undefined' ? window : globalThis)

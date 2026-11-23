@@ -118,7 +118,11 @@
     if (!current) return null
     var S = root.SumSum.store
     var key = C().keyOf(current.id)
-    if (S.get(key)) return current.id
+    if (S.get(key)) {
+      /* 已经记过（重复打印）：不覆盖打分，但再推一次，万一上次没推上去 */
+      if (root.SumSum.sync && root.SumSum.sync.pushNow) root.SumSum.sync.pushNow([key])
+      return current.id
+    }
     var i = current.info
     S.set(key, C().newRecord({
       id: current.id,
@@ -130,6 +134,8 @@
       ref: i.ref
     }, Date.now()))
     S.stampNow([key])
+    /* 马上推上云：家长打印完常常立刻拿手机扫，不能等普通同步（见 js/sync.js pushNow） */
+    if (root.SumSum.sync && root.SumSum.sync.pushNow) root.SumSum.sync.pushNow([key])
     return current.id
   }
 
