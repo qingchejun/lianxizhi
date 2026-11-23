@@ -288,6 +288,27 @@ body.landscape .sheet {
   white-space: nowrap;
 }
 
+/* 页脚左下角的二维码：页脚撑高到二维码的高度，页码与落款贴底，二维码贴左下 */
+.sheet-foot.has-qr {
+  min-height: 13mm;
+  padding-top: 2mm;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.sheet-qr-foot {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  margin: 0;
+  align-items: flex-end;
+}
+
+.sheet-qr-foot small {
+  text-align: left;
+}
+
 /* 有二维码的页眉省一点横向空间，长标题（如「火柴棒算式 · 第 1 关 拿走一根」）不至于折行 */
 .sheet-head:has(.sheet-qr) {
   gap: 5mm;

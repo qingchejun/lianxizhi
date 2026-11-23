@@ -67,13 +67,23 @@
     var old = doc.querySelectorAll('.sheet-qr')
     for (var i = 0; i < old.length; i++) old[i].parentNode.removeChild(old[i])
     var sheet = targetSheet(doc)
-    var head = sheet && sheet.querySelector('.sheet-head')
-    if (!head) return
+    if (!sheet) return
+    /* 2026-11-23 站长定：放左下角页脚（页眉本来就挤）。页脚是「页码居中 + 落款靠右」，左边正好空着。
+       没有页脚的纸（拼音）退回页眉右侧 */
+    var foot = sheet.querySelector('.sheet-foot')
+    var head = sheet.querySelector('.sheet-head')
     var box = doc.createElement('div')
-    box.className = 'sheet-qr'
-    box.innerHTML = '<small>扫码<br>登记</small>' + qrSvg(markUrl(id))
-    head.appendChild(box)
-    fitHead(head)
+    if (foot) {
+      box.className = 'sheet-qr sheet-qr-foot'
+      box.innerHTML = qrSvg(markUrl(id)) + '<small>扫码<br>登记</small>'
+      foot.classList.add('has-qr')
+      foot.insertBefore(box, foot.firstChild)
+    } else if (head) {
+      box.className = 'sheet-qr'
+      box.innerHTML = '<small>扫码<br>登记</small>' + qrSvg(markUrl(id))
+      head.appendChild(box)
+      fitHead(head)
+    }
   }
 
   /* 加了二维码页眉变挤：标题逐级缩字号（最小 14px），还放不下就允许折行（同奥数 fitHeads 的做法） */
