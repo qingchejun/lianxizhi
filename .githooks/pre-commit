@@ -1,0 +1,4 @@
+#!/bin/sh
+# 提交前检查：页面引用的 js/css/字体/图标 的内容指纹是不是最新的（见 tools/stamp-assets.js）。
+# 带指纹的文件浏览器会缓存一年，漏盖会让家长一直用旧文件。
+node tools/stamp-assets.js --check || exit 1

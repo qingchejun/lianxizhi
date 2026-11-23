@@ -137,3 +137,7 @@ for page, current in PAGES.items():
     text = head_icons(text, app=True)
     path.write_text(text, encoding='utf-8')
     print('✓', page)
+
+# 侧栏重写会带回没盖指纹的 js/sidebar.js 引用：顺手重盖一遍（见 tools/stamp-assets.js）
+import subprocess
+subprocess.run(['node', str(ROOT / 'tools' / 'stamp-assets.js')], check=True)

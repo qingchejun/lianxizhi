@@ -4,7 +4,7 @@
    单层 ɑ、ɡ 与课本一致，一年级孩子不会把印刷体 a、g 当成生字母。 */
 @font-face {
   font-family: "Pinyin Kids";
-  src: url("../fonts/pinyin-kids.woff2") format("woff2");
+  src: url("../fonts/pinyin-kids.woff2?v=755afe08ef") format("woff2");
   font-display: block;
 }
 

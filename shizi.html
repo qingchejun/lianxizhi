@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="icon" href="icons/favicon.svg?v=9d0a242c0b" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=c5db7fcb1f" />
   <meta name="theme-color" content="#f6f7f9" />
   <script>try{if(localStorage.getItem("lianxizhi:rail")==="fold")document.documentElement.classList.add("rail-folded")}catch(e){}</script>
   <title>识字 · 练习纸</title>
   <meta name="description" content="给孩子打印 A4 练习纸 · 识字：按学习顺序每周复习 100 个字，只印字不印拼音，孩子念家长听，错字集反复练。" />
-  <link rel="stylesheet" href="css/app.css" />
-  <link rel="stylesheet" href="css/sheet.css" />
-  <link rel="stylesheet" href="css/shizi.css" />
+  <link rel="stylesheet" href="css/app.css?v=13e0604edd" />
+  <link rel="stylesheet" href="css/sheet.css?v=fe268d8b6e" />
+  <link rel="stylesheet" href="css/shizi.css?v=ac49f2de33" />
   <!-- 识字页固定 A4 纵向（字格是方的，横竖都能排，纵向一页装得下 100 字就够了） -->
   <style>@page { size: A4 portrait; margin: 15mm; }</style>
 </head>
@@ -20,7 +20,7 @@
 <div class="app">
 <!-- rail:识字 -->
 <nav class="rail" aria-label="板块">
-  <div class="rail-top"><a class="rail-brand" href="index.html" aria-label="练习纸 · 今天"><img src="icons/mark.svg" width="28" height="28" alt=""><span>练习纸<small>少报班，少看屏</small></span></a><button type="button" class="rail-fold" data-rail-fold aria-label="收起侧栏" title="收起侧栏"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15M15.5 10l-2 2 2 2"/></svg></button></div>
+  <div class="rail-top"><a class="rail-brand" href="index.html" aria-label="练习纸 · 今天"><img src="icons/mark.svg?v=e200a2b101" width="28" height="28" alt=""><span>练习纸<small>少报班，少看屏</small></span></a><button type="button" class="rail-fold" data-rail-fold aria-label="收起侧栏" title="收起侧栏"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15M15.5 10l-2 2 2 2"/></svg></button></div>
   <span class="rail-label">练习</span>
   <a class="rail-link" href="index.html" data-module="今天" title="今天"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><rect class="f" x="7" y="12.5" width="4" height="4" rx="1"/></svg><span>今天</span></a>
   <a class="rail-link" href="kousuan.html" data-module="口算" title="口算"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7.5h5.5M7.25 4.75v5.5M14 7.5h5.5M5 14.25l4.5 4.5M9.5 14.25L5 18.75M14 15h5.5M14 18.25h5.5"/></svg><span>口算</span></a>
@@ -44,7 +44,7 @@
     </div>
   </div>
 </nav>
-<script src="js/sidebar.js" defer></script>
+<script src="js/sidebar.js?v=6b43ca3afd" defer></script>
 <!-- /rail -->
 
 <div class="work">
@@ -252,25 +252,25 @@
 </div>
 
 <!-- render.js 只为取 parts 零件与 refreshDates，不会渲染口算内容 -->
-<script src="js/store.js"></script>
-<script src="js/shell.js"></script>
-<script src="js/render.js"></script>
-<script src="js/shizi-data.js"></script>
-<script src="js/shizi-rj-data.js"></script>
-<script src="js/shizi-core.js"></script>
-<script src="js/shizi-settings.js"></script>
-<script src="js/shizi-render.js"></script>
-<script src="js/shizi-xie-data.js"></script>
-<script src="js/vendor/hanzi-writer.min.js"></script>
-<script src="js/shizi-xie.js"></script>
-<script src="js/shizi-mark.js"></script>
-<script src="js/shizi-main.js"></script>
-<script src="js/backup.js"></script>
-<script src="js/help.js"></script>
-<script src="js/account.js"></script>
-<script src="js/account-ui.js"></script>
-<script src="js/sync-core.js"></script>
-<script src="js/sync.js"></script>
+<script src="js/store.js?v=c6aac93871"></script>
+<script src="js/shell.js?v=27b531f441"></script>
+<script src="js/render.js?v=4756ada9e0"></script>
+<script src="js/shizi-data.js?v=16234e3bcd"></script>
+<script src="js/shizi-rj-data.js?v=597075cde5"></script>
+<script src="js/shizi-core.js?v=e63a4fc72f"></script>
+<script src="js/shizi-settings.js?v=a914a70d6d"></script>
+<script src="js/shizi-render.js?v=32ff04b5f3"></script>
+<script src="js/shizi-xie-data.js?v=090d7d3f5a"></script>
+<script src="js/vendor/hanzi-writer.min.js?v=17b11a1e02"></script>
+<script src="js/shizi-xie.js?v=8e8b3dc002"></script>
+<script src="js/shizi-mark.js?v=3def82b2db"></script>
+<script src="js/shizi-main.js?v=62d58d2942"></script>
+<script src="js/backup.js?v=96a085ef66"></script>
+<script src="js/help.js?v=b03f8daf47"></script>
+<script src="js/account.js?v=af66c16ce2"></script>
+<script src="js/account-ui.js?v=5a1cb74a3f"></script>
+<script src="js/sync-core.js?v=5f4122b899"></script>
+<script src="js/sync.js?v=e6e08f4785"></script>
 <script>
 /* 防护：主脚本没跑完（加载失败或新旧文件混跑）时自动刷新一次，仍不行就在顶部提示，避免页面静默空白 */
 (function () {

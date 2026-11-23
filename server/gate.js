@@ -22,6 +22,15 @@ function suspicious(path) {
   return plain.includes('..') || plain.includes('\\') || plain.includes('//')
 }
 
+/* 静态文件的缓存：带内容指纹（?v=，tools/stamp-assets.js 盖的）的缓存一年且不再回源确认——
+   文件一改指纹就变，页面会引用新地址。没带指纹的返回 null，保持 _headers 里的"每次确认"，
+   免得哪个漏盖章的文件被浏览器死死记住一年（2026-11-10 识字页新旧混跑的教训）。 */
+export const IMMUTABLE = 'public, max-age=31536000, immutable'
+export function assetCacheControl(search, status) {
+  if (status !== 200 && status !== 304) return null /* 304 也给：ETag 已证明内容相同，顺便把浏览器旧记录升级成长期缓存 */
+  return /(?:^\?|&)v=[0-9a-f]{6,}(?:&|$)/.test(search || '') ? IMMUTABLE : null
+}
+
 export function decide(path, search, loggedIn) {
   if (suspicious(path)) return { action: 'deny' }
   if (DENY_PREFIXES.some(p => path.startsWith(p)) || DENY_FILES.includes(path) ||

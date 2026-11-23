@@ -213,22 +213,10 @@ check(V.of('fenzu').src === 'https://video.qingchejun.com/aoshu/fenzu.mp4' && V.
   V.of('fenzu').poster === 'https://video.qingchejun.com/aoshu/fenzu.jpg', '合理分组问题视频：' + JSON.stringify(V.of('fenzu')))
 check(V.of('hebubian').src === 'https://video.qingchejun.com/aoshu/hebubian.mp4' && V.of('hebubian').dur === '3:00' &&
   V.of('hebubian').poster === 'https://video.qingchejun.com/aoshu/hebubian.jpg', '和不变与差不变视频：' + JSON.stringify(V.of('hebubian')))
-// 大纲脚本也带版本号（?v=大纲里的课数）：加一课课数就变，忘了改这里自检就报；不改的话自定义域名上的浏览器要等 4 小时才看到新课
+// 大纲、视频登记表改了要马上生效：现在由 tools/stamp-assets.js 按内容盖指纹（不再手写 ?v=课数/最后一课）
 ;(function () {
-  var fs = require('fs'), path = require('path'), root = path.join(__dirname, '..')
-  var want = 'js/aoshu-topics.js?v=' + globalThis.SumSum.aoshu.OUTLINE.length
-  ;['index.html', 'aoshu.html'].forEach(function (f) {
-    check(fs.readFileSync(path.join(root, f), 'utf8').indexOf('<script src="' + want + '"></script>') >= 0, f + ' 要引用 ' + want + '（大纲加了课要同步改版本号）')
-  })
-})()
-// 登记表脚本带版本号（?v=最后登记的那一课）：自定义域名会让浏览器缓存 js 4 小时，换版本号才能让新视频马上出现
-;(function () {
-  var fs = require('fs'), path = require('path'), root = path.join(__dirname, '..')
-  var ids = (fs.readFileSync(path.join(root, 'js/aoshu-videos.js'), 'utf8').match(/^\s+(\w+): '\d+:\d\d'/mg) || []).map(function (l) { return l.trim().split(':')[0] })
-  var want = 'js/aoshu-videos.js?v=' + ids[ids.length - 1]
-  ;['index.html', 'aoshu.html'].forEach(function (f) {
-    check(fs.readFileSync(path.join(root, f), 'utf8').indexOf('<script src="' + want + '"></script>') >= 0, f + ' 要引用 ' + want + '（登记新视频时同步改版本号）')
-  })
+  var r = require('child_process').spawnSync(process.execPath, [require('path').join(__dirname, 'stamp-assets.js'), '--check'], { encoding: 'utf8' })
+  check(r.status === 0, '页面里 js/css 的内容指纹要是最新的（改完运行 node tools/stamp-assets.js）：' + r.stdout)
 })()
 check(V.of('bichang').src === 'https://video.qingchejun.com/aoshu/bichang.mp4' && V.of('bichang').dur === '4:41' &&
   V.of('bichang').poster === 'https://video.qingchejun.com/aoshu/bichang.jpg', '推理比较比长短视频：' + JSON.stringify(V.of('bichang')))

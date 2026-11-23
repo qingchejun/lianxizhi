@@ -1,4 +1,4 @@
-import { decide } from '../server/gate.js'
+import { decide, assetCacheControl } from '../server/gate.js'
 import { requireSession } from '../server/session.js'
 
 /* 全站登录门槛。规则见 server/gate.js；验登录沿用接口的 requireSession（验签 + 改密/停用即失效）。 */
@@ -6,7 +6,14 @@ export async function onRequest(context) {
   const url = new URL(context.request.url)
   const pre = decide(url.pathname, url.search, false)
   if (pre.action === 'deny') return new Response('Not found', { status: 404, headers: { 'Cache-Control': 'no-store' } })
-  if (pre.action === 'pass') return context.next() /* 静态资源、接口：不查库 */
+  if (pre.action === 'pass') { /* 静态资源、接口：不查库 */
+    const res = await context.next()
+    const cc = pre.asset && !url.pathname.startsWith('/api/') ? assetCacheControl(url.search, res.status) : null
+    if (!cc) return res
+    const out = new Response(res.body, res)
+    out.headers.set('Cache-Control', cc)
+    return out
+  }
 
   let session = null
   try {

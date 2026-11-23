@@ -7,7 +7,7 @@
 
 @font-face {
   font-family: "Pinyin Kids";
-  src: url("../fonts/pinyin-kids.woff2") format("woff2");
+  src: url("../fonts/pinyin-kids.woff2?v=755afe08ef") format("woff2");
   font-display: swap;
 }
 

@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="icon" href="icons/favicon.svg?v=9d0a242c0b" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=c5db7fcb1f" />
   <meta name="theme-color" content="#f6f7f9" />
   <script>try{if(localStorage.getItem("lianxizhi:rail")==="fold")document.documentElement.classList.add("rail-folded")}catch(e){}</script>
   <title>奥数 · 练习纸</title>
   <meta name="description" content="给孩子打印 A4 练习纸 · 奥数：40 个思维知识点，每个有讲解页、练习题和分步解析。" />
-  <link rel="stylesheet" href="css/app.css" />
-  <link rel="stylesheet" href="css/sheet.css" />
-  <link rel="stylesheet" href="css/aoshu.css" />
+  <link rel="stylesheet" href="css/app.css?v=13e0604edd" />
+  <link rel="stylesheet" href="css/sheet.css?v=fe268d8b6e" />
+  <link rel="stylesheet" href="css/aoshu.css?v=36a7093383" />
   <!-- 奥数页固定 A4 纵向（文字题横向排版无意义），不像口算页那样动态切换 -->
   <style>@page { size: A4 portrait; margin: 15mm; }</style>
 </head>
@@ -20,7 +20,7 @@
 <div class="app">
 <!-- rail:奥数 -->
 <nav class="rail" aria-label="板块">
-  <div class="rail-top"><a class="rail-brand" href="index.html" aria-label="练习纸 · 今天"><img src="icons/mark.svg" width="28" height="28" alt=""><span>练习纸<small>少报班，少看屏</small></span></a><button type="button" class="rail-fold" data-rail-fold aria-label="收起侧栏" title="收起侧栏"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15M15.5 10l-2 2 2 2"/></svg></button></div>
+  <div class="rail-top"><a class="rail-brand" href="index.html" aria-label="练习纸 · 今天"><img src="icons/mark.svg?v=e200a2b101" width="28" height="28" alt=""><span>练习纸<small>少报班，少看屏</small></span></a><button type="button" class="rail-fold" data-rail-fold aria-label="收起侧栏" title="收起侧栏"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15M15.5 10l-2 2 2 2"/></svg></button></div>
   <span class="rail-label">练习</span>
   <a class="rail-link" href="index.html" data-module="今天" title="今天"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><rect class="f" x="7" y="12.5" width="4" height="4" rx="1"/></svg><span>今天</span></a>
   <a class="rail-link" href="kousuan.html" data-module="口算" title="口算"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7.5h5.5M7.25 4.75v5.5M14 7.5h5.5M5 14.25l4.5 4.5M9.5 14.25L5 18.75M14 15h5.5M14 18.25h5.5"/></svg><span>口算</span></a>
@@ -44,7 +44,7 @@
     </div>
   </div>
 </nav>
-<script src="js/sidebar.js" defer></script>
+<script src="js/sidebar.js?v=6b43ca3afd" defer></script>
 <!-- /rail -->
 
 <!-- ======== 知识点目录 ======== -->
@@ -152,74 +152,74 @@
 </div>
 
 <!-- render.js 只为取 parts 零件与 refreshDates，不会渲染口算内容 -->
-<script src="js/store.js"></script>
-<script src="js/shell.js"></script>
-<script src="js/render.js"></script>
-<script src="js/aoshu-topics.js?v=54"></script>
-<script src="js/aoshu-videos.js?v=sanjiao"></script>
-<script src="js/aoshu-topic-daxiao.js"></script>
-<script src="js/aoshu-topic-coushi.js"></script>
-<script src="js/aoshu-topic-yiduobushao2.js"></script>
-<script src="js/aoshu-topic-tianfu.js"></script>
-<script src="js/aoshu-topic-shuzimi.js"></script>
-<script src="js/aoshu-topic-shuzimi2.js"></script>
-<script src="js/aoshu-topic-xulie.js"></script>
-<script src="js/aoshu-topic-tuxing.js"></script>
-<script src="js/aoshu-topic-dengliang.js"></script>
-<script src="js/aoshu-topic-chongdie.js"></script>
-<script src="js/aoshu-topic-meiju.js"></script>
-<script src="js/aoshu-topic-fendui.js"></script>
-<script src="js/aoshu-topic-kongping.js"></script>
-<script src="js/aoshu-topic-huochai.js"></script>
-<script src="js/aoshu-topic-xianjing.js"></script>
-<script src="js/aoshu-topic-fenzu.js"></script>
-<script src="js/aoshu-topic-jiange.js"></script>
-<script src="js/aoshu-topic-paidui.js"></script>
-<script src="js/aoshu-topic-hebubian.js"></script>
-<script src="js/aoshu-topic-bichang.js"></script>
-<script src="js/aoshu-topic-bizhong.js"></script>
-<script src="js/aoshu-topic-zhongbiao.js"></script>
-<script src="js/aoshu-topic-zhongbiao2.js"></script>
-<script src="js/aoshu-topic-duichen.js"></script>
-<script src="js/aoshu-topic-jingzi.js"></script>
-<script src="js/aoshu-topic-diefang.js"></script>
-<script src="js/aoshu-topic-fanzhuan.js"></script>
-<script src="js/aoshu-topic-woniu.js"></script>
-<script src="js/aoshu-topic-jiangebc.js"></script>
-<script src="js/aoshu-topic-renxian.js"></script>
-<script src="js/aoshu-topic-renjiao.js"></script>
-<script src="js/aoshu-topic-sanjiao.js"></script>
-<script src="js/aoshu-topic-sibian.js"></script>
-<script src="js/aoshu-topic-wenzimi.js"></script>
-<script src="js/aoshu-topic-kuohao1.js"></script>
-<script src="js/aoshu-topic-kuohao2.js"></script>
-<script src="js/aoshu-topic-chengfa.js"></script>
-<script src="js/aoshu-topic-chufa.js"></script>
-<script src="js/aoshu-topic-size.js"></script>
-<script src="js/aoshu-topic-yushu1.js"></script>
-<script src="js/aoshu-topic-yushu2.js"></script>
-<script src="js/aoshu-topic-huajia.js"></script>
-<script src="js/aoshu-topic-jiou.js"></script>
-<script src="js/aoshu-topic-yibihua.js"></script>
-<script src="js/aoshu-topic-huanyuan.js"></script>
-<script src="js/aoshu-topic-shuzhen.js"></script>
-<script src="js/aoshu-topic-cuozhong.js"></script>
-<script src="js/aoshu-topic-tongchou.js"></script>
-<script src="js/aoshu-topic-jishu.js"></script>
-<script src="js/aoshu-topic-xianduan1.js"></script>
-<script src="js/aoshu-topic-xianduan2.js"></script>
-<script src="js/aoshu-topic-paixu.js"></script>
-<script src="js/aoshu-topic-liebiao.js"></script>
-<script src="js/aoshu-settings.js"></script>
-<script src="js/aoshu-batch.js"></script>
-<script src="js/aoshu-render.js"></script>
-<script src="js/aoshu-main.js"></script>
-<script src="js/backup.js"></script>
-<script src="js/help.js"></script>
-<script src="js/account.js"></script>
-<script src="js/account-ui.js"></script>
-<script src="js/sync-core.js"></script>
-<script src="js/sync.js"></script>
+<script src="js/store.js?v=c6aac93871"></script>
+<script src="js/shell.js?v=27b531f441"></script>
+<script src="js/render.js?v=4756ada9e0"></script>
+<script src="js/aoshu-topics.js?v=d76f77f289"></script>
+<script src="js/aoshu-videos.js?v=00335f6f2a"></script>
+<script src="js/aoshu-topic-daxiao.js?v=71b1833378"></script>
+<script src="js/aoshu-topic-coushi.js?v=1881bc1b0b"></script>
+<script src="js/aoshu-topic-yiduobushao2.js?v=895de2f685"></script>
+<script src="js/aoshu-topic-tianfu.js?v=80817fdea4"></script>
+<script src="js/aoshu-topic-shuzimi.js?v=8489647ca3"></script>
+<script src="js/aoshu-topic-shuzimi2.js?v=4d02b26ae1"></script>
+<script src="js/aoshu-topic-xulie.js?v=37e13c1242"></script>
+<script src="js/aoshu-topic-tuxing.js?v=f9ce973d52"></script>
+<script src="js/aoshu-topic-dengliang.js?v=ad17f52bd9"></script>
+<script src="js/aoshu-topic-chongdie.js?v=8a12c0e64d"></script>
+<script src="js/aoshu-topic-meiju.js?v=4fa07ae247"></script>
+<script src="js/aoshu-topic-fendui.js?v=5903c9bad9"></script>
+<script src="js/aoshu-topic-kongping.js?v=02dca33330"></script>
+<script src="js/aoshu-topic-huochai.js?v=f41356b99a"></script>
+<script src="js/aoshu-topic-xianjing.js?v=76fcbbbfc6"></script>
+<script src="js/aoshu-topic-fenzu.js?v=a63e0b2015"></script>
+<script src="js/aoshu-topic-jiange.js?v=bf381e41b6"></script>
+<script src="js/aoshu-topic-paidui.js?v=f3dcf1b36c"></script>
+<script src="js/aoshu-topic-hebubian.js?v=9194f4b17c"></script>
+<script src="js/aoshu-topic-bichang.js?v=770f692bc8"></script>
+<script src="js/aoshu-topic-bizhong.js?v=56601b6f18"></script>
+<script src="js/aoshu-topic-zhongbiao.js?v=7e76077c0c"></script>
+<script src="js/aoshu-topic-zhongbiao2.js?v=e2fe33e30f"></script>
+<script src="js/aoshu-topic-duichen.js?v=898f54820c"></script>
+<script src="js/aoshu-topic-jingzi.js?v=52a1fde706"></script>
+<script src="js/aoshu-topic-diefang.js?v=700cf92b6b"></script>
+<script src="js/aoshu-topic-fanzhuan.js?v=eb51fcf5de"></script>
+<script src="js/aoshu-topic-woniu.js?v=be48f4c759"></script>
+<script src="js/aoshu-topic-jiangebc.js?v=2b35a4c784"></script>
+<script src="js/aoshu-topic-renxian.js?v=874dbab54a"></script>
+<script src="js/aoshu-topic-renjiao.js?v=8d7fdf0d83"></script>
+<script src="js/aoshu-topic-sanjiao.js?v=280a89282c"></script>
+<script src="js/aoshu-topic-sibian.js?v=4ef2e6968d"></script>
+<script src="js/aoshu-topic-wenzimi.js?v=ca892df521"></script>
+<script src="js/aoshu-topic-kuohao1.js?v=6a83ca36eb"></script>
+<script src="js/aoshu-topic-kuohao2.js?v=29f9bc21ad"></script>
+<script src="js/aoshu-topic-chengfa.js?v=d840765f4b"></script>
+<script src="js/aoshu-topic-chufa.js?v=9282466d71"></script>
+<script src="js/aoshu-topic-size.js?v=4a2c735c5c"></script>
+<script src="js/aoshu-topic-yushu1.js?v=82228b473b"></script>
+<script src="js/aoshu-topic-yushu2.js?v=6d75b3e293"></script>
+<script src="js/aoshu-topic-huajia.js?v=2555e88408"></script>
+<script src="js/aoshu-topic-jiou.js?v=f125062906"></script>
+<script src="js/aoshu-topic-yibihua.js?v=6a8661228b"></script>
+<script src="js/aoshu-topic-huanyuan.js?v=fd1484bacc"></script>
+<script src="js/aoshu-topic-shuzhen.js?v=d8410941e5"></script>
+<script src="js/aoshu-topic-cuozhong.js?v=a6237988b1"></script>
+<script src="js/aoshu-topic-tongchou.js?v=12e0389367"></script>
+<script src="js/aoshu-topic-jishu.js?v=53ee926292"></script>
+<script src="js/aoshu-topic-xianduan1.js?v=66ed907775"></script>
+<script src="js/aoshu-topic-xianduan2.js?v=f598fb1370"></script>
+<script src="js/aoshu-topic-paixu.js?v=74ae487839"></script>
+<script src="js/aoshu-topic-liebiao.js?v=668392cda7"></script>
+<script src="js/aoshu-settings.js?v=fe5773cd60"></script>
+<script src="js/aoshu-batch.js?v=dca20ba065"></script>
+<script src="js/aoshu-render.js?v=72bc1cc512"></script>
+<script src="js/aoshu-main.js?v=fc60fa24cb"></script>
+<script src="js/backup.js?v=96a085ef66"></script>
+<script src="js/help.js?v=b03f8daf47"></script>
+<script src="js/account.js?v=af66c16ce2"></script>
+<script src="js/account-ui.js?v=5a1cb74a3f"></script>
+<script src="js/sync-core.js?v=5f4122b899"></script>
+<script src="js/sync.js?v=e6e08f4785"></script>
 <script>
 /* 防护：主脚本没跑完（加载失败或新旧文件混跑）时自动刷新一次，仍不行就在顶部提示，避免页面静默空白 */
 (function () {
