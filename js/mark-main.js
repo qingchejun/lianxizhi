@@ -224,6 +224,9 @@
     var html = ''
     if (!SC.validId(mainId)) {
       html += notice('这个二维码看不懂', '请对着纸角的二维码重新扫一次。')
+    } else if (!main && tSync == null) {
+      /* 同步还没回来（国内连海外服务器常要十几秒）：别说「电脑没同步好」吓人，读到了会自动重画 */
+      html += notice('网络有点慢，还在读取', '读到了会自动显示，不用刷新。')
     } else if (!main) {
       var tries = 0
       try { tries = Number(root.sessionStorage.getItem('sumsum:mark:retry:' + mainId)) || 0 } catch (e) { /* 忽略 */ }
