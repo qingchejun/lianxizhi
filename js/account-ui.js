@@ -292,15 +292,17 @@
     syncStarted = true
     return sync.init({
       confirm: function (o) {
+        /* 板块页、登记页上弹窗是用到时才建的：没建就直接用会抛错，整次同步被静默跳过（2026-11-23 手机扫码登记一直「0 张」的根因） */
+        if (!dlg) build()
         return new Promise(function (resolve) {
           var lines = function (keys) {
             return '<p>' + keys.slice(0, 8).map(esc).join('、') +
               (keys.length > 8 ? '，等共 ' + keys.length + ' 项' : '') + '</p>'
           }
           dlg.querySelector('[data-body]').innerHTML =
-            '<p class="account-sub">这台电脑上和云端<b>都有</b>练习进度，先上传哪边？</p>' +
+            '<p class="account-sub">这台设备上和云端<b>都有</b>练习进度，保留哪边？一般选「用云端的」。</p>' +
             '<div class="account-choice">' +
-              '<button type="button" class="btn" data-pick="local">用这台电脑的<br><small>' + o.local.length + ' 项</small>' + lines(o.local) + '</button>' +
+              '<button type="button" class="btn" data-pick="local">用这台设备的<br><small>' + o.local.length + ' 项</small>' + lines(o.local) + '</button>' +
               '<button type="button" class="btn" data-pick="cloud">用云端的<br><small>' + o.cloud.length + ' 项</small>' + lines(o.cloud) + '</button>' +
             '</div>'
           if (dlg.querySelector('[data-title]')) dlg.querySelector('[data-title]').textContent = '选择要保留的进度'
