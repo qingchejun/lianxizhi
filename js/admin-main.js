@@ -42,6 +42,7 @@
       '<td>' + fmtTime(v.created_at) + '</td>' +
       '<td>' + (v.claimed_email ? esc(v.claimed_email) + (v.claimed_banned ? ' <span class="badge badge-revoked">已停用</span>' : '') + '<br><small>' + fmtTime(v.claimed_at) + '</small>' : '—') + '</td>' +
       '<td>' + (v.activated_at ? fmtTime(v.activated_at) : '—') + '</td>' +
+      '<td>' + (v.claimed_email ? (v.marked7d || 0) + ' 张' : '—') + '</td>' +
       '<td class="admin-ops">' +
         ((v.state === 'claimed' || v.state === 'activated') ? (v.claimed_banned
           ? '<button type="button" class="admin-btn" data-unban="' + esc(v.id) + '">解除停用</button> '
@@ -61,9 +62,9 @@
         '<button type="submit" class="admin-btn admin-btn-primary">生成</button>' +
       '</form>' +
       '<table class="admin-table"><thead><tr>' +
-        '<th>邀请码</th><th>备注</th><th>状态</th><th>生成时间</th><th>占用（邮箱/时间）</th><th>激活时间</th><th></th>' +
+        '<th>邀请码</th><th>备注</th><th>状态</th><th>生成时间</th><th>占用（邮箱/时间）</th><th>激活时间</th><th title="近 7 天扫码或在板块页登记了几张纸">近 7 天登记</th><th></th>' +
       '</tr></thead><tbody>' +
-      (invites.length ? invites.map(rowHTML).join('') : '<tr><td colspan="7" class="admin-note">还没有邀请码，先生成几张。</td></tr>') +
+      (invites.length ? invites.map(rowHTML).join('') : '<tr><td colspan="8" class="admin-note">还没有邀请码，先生成几张。</td></tr>') +
       '</tbody></table>'
     doc.getElementById('admin-create').addEventListener('submit', onCreate)
   }

@@ -49,6 +49,10 @@ function memRepo() {
       var u = users.find(function (x) { return x.id === id })
       if (u) u.banned = flag
     },
+    _sheetRows: [],
+    async sheetRowsSince(since) {
+      return this._sheetRows.filter(function (r) { return r.updated_at >= since })
+    },
     async invitesList() {
       return invites.map(function (v) {
         var u = users.find(function (x) { return x.id === v.claimed_by })
@@ -139,6 +143,21 @@ Promise.all([import('../server/auth-core.js'), import('../server/admin-core.js')
   var ls2 = await AD.listInvites(dbA, { uid: 'boss' })
   var used = ls2.body.invites.find(function (v) { return v.claimed_email === 'z@san.co' })
   check('激活后状态+邮箱带出', used && used.state === 'activated', ls2.body.invites)
+
+  /* 近 7 天登记了几张纸：数纸记录里打分 / 登记时间在 7 天内的（扫码登记，见 js/sheets-core.js） */
+  var zUid = used.claimed_by || dbA.users.find(function (u) { return u.email === 'z@san.co' }).id
+  var D7 = 7 * 86400000
+  dbA._sheetRows.push(
+    { user_id: zUid, updated_at: now, value: JSON.stringify({ id: 'a', rating: { all: { level: 'good', at: now - 1000 } } }) },
+    { user_id: zUid, updated_at: now, value: JSON.stringify({ id: 'b', done: true, doneAt: now - 2000 }) },
+    { user_id: zUid, updated_at: now, value: JSON.stringify({ id: 'c', rating: null }) },
+    { user_id: zUid, updated_at: now, value: JSON.stringify({ id: 'd', rating: { all: { level: 'ok', at: now - D7 - 1 } } }) },
+    { user_id: zUid, updated_at: now, value: '坏了' }
+  )
+  var ls3 = await AD.listInvites(dbA, { uid: 'boss' }, now)
+  var z3 = ls3.body.invites.find(function (v) { return v.claimed_email === 'z@san.co' })
+  check('近 7 天登记张数', z3 && z3.marked7d === 2, z3)
+  check('没用的码登记数为 0', ls3.body.invites.filter(function (v) { return v.claimed_email !== 'z@san.co' }).every(function (v) { return v.marked7d === 0 }))
 
   /* 桩行是原始字段（无 state——state 由 admin-core 的 fmt 算），挑没用过的码用原始字段判 */
   var otherId = dbA._invites.find(function (v) { return !v.revoked_at && !v.activated_at && !v.claimed_by }).id

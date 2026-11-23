@@ -30,10 +30,37 @@ function fmt(v) {
   }
 }
 
-export async function listInvites(repo, session) {
+/* 每个账号近 7 天登记了几张纸（扫码登记的纸记录 sumsum:sheet:v1:*，打分或登记时间在 7 天内）。
+   路线图里的「熟人家庭坚持度」就看这一列 */
+const WEEK_MS = 7 * 86400 * 1000
+async function markedByUser(repo, now) {
+  const out = {}
+  if (!repo.sheetRowsSince) return out
+  const since = now - WEEK_MS
+  for (const row of await repo.sheetRowsSince(since)) {
+    let rec
+    try { rec = JSON.parse(row.value) } catch (e) { continue }
+    if (!rec || typeof rec !== 'object') continue
+    let t = Number(rec.doneAt) || 0
+    if (rec.rating && typeof rec.rating === 'object') {
+      for (const k of Object.keys(rec.rating)) {
+        const at = Number(rec.rating[k] && rec.rating[k].at) || 0
+        if (at > t) t = at
+      }
+    }
+    if (t >= since) out[row.user_id] = (out[row.user_id] || 0) + 1
+  }
+  return out
+}
+
+export async function listInvites(repo, session, now) {
   const gate = await requireAdmin(repo, session)
   if (gate) return gate
-  return { status: 200, body: { ok: true, invites: (await repo.invitesList()).map(fmt) } }
+  const marked = await markedByUser(repo, now || Date.now())
+  const invites = (await repo.invitesList()).map(function (v) {
+    return Object.assign(fmt(v), { marked7d: (v.claimed_by && marked[v.claimed_by]) || 0 })
+  })
+  return { status: 200, body: { ok: true, invites: invites } }
 }
 
 export async function createInvites(repo, session, now, body) {

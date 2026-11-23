@@ -80,6 +80,12 @@ export function repo(db) {
     async inviteSetNote(id, note) {
       await db.prepare('UPDATE invites SET note=? WHERE id=?').bind(note, id).run()
     },
+    async sheetRowsSince(since) {
+      /* 纸记录（扫码登记）最近有改动的行；admin-core 再按打分时间细数 */
+      const r = await db.prepare("SELECT user_id, value FROM data WHERE key LIKE 'sumsum:sheet:v1:%' AND updated_at>=?")
+        .bind(since).all()
+      return r.results || []
+    },
     async invitesList() {
       const r = await db.prepare(
         'SELECT i.*, u.email AS claimed_email, u.banned AS claimed_banned FROM invites i LEFT JOIN users u ON u.id=i.claimed_by ORDER BY i.created_at DESC'

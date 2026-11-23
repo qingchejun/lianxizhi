@@ -4,7 +4,7 @@ import { listInvites, createInvites } from '../../../../server/admin-core.js'
 import { requireSession } from '../../../../server/session.js'
 
 export async function onRequestGet(context) {
-  return respond(context, await listInvites(repo(context.env.DB), await requireSession(context)))
+  return respond(context, await listInvites(repo(context.env.DB), await requireSession(context), Date.now()))
 }
 
 export async function onRequestPost(context) {
