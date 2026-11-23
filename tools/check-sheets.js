@@ -203,6 +203,31 @@ check(C.undoGame(st3, st3.get(C.keyOf(hc2.id))) === true && st3.get(GK).level ==
 check(st3.get(C.keyOf(hc2.id)).applied.undone === true, '撤销后记下')
 check(C.undoGame(st3, st3.get(C.keyOf(hc2.id))) === false, '不能撤销两次')
 
+/* 终审 I1：同一天几张同关卡的纸都点「太简单」只升一档；回头再点早一张不再叠加 */
+var st6 = memStore({})
+st6.set(GK, { level: 'L1' })
+var g1 = rec('g00001', 'huochai', '2026-11-23', NOW, { ref: { settings: { level: 'L1' } } })
+var g2 = rec('g00002', 'huochai', '2026-11-23', NOW, { ref: { settings: { level: 'L1' } } })
+var g3 = rec('g00003', 'huochai', '2026-11-23', NOW, { ref: { settings: { level: 'L1' } } })
+C.saveRating(st6, g1, { all: { level: 'good' } }, [], NOW)
+C.saveRating(st6, g2, { all: { level: 'good' } }, [], NOW + 1)
+C.saveRating(st6, g3, { all: { level: 'good' } }, [], NOW + 2)
+check(st6.get(GK).level === 'L2', '三张第 1 关都太简单 → 只升到第 2 关 ' + st6.get(GK).level)
+var g4 = rec('g00004', 'huochai', '2026-11-23', NOW + 3, { ref: { settings: { level: 'L2' } } })
+C.saveRating(st6, g4, { all: { level: 'good' } }, [], NOW + 4)
+check(st6.get(GK).level === 'L3', '第 2 关的纸太简单 → 第 3 关')
+C.saveRating(st6, st6.get(C.keyOf('g00001')), { all: { level: 'good' } }, [], NOW + 5)
+check(st6.get(GK).level === 'L3', '回头再点早一张不叠加 ' + st6.get(GK).level)
+
+/* 终审 I2：展开点错题只重算这道题所在的那一课，别的课手动选的档不动 */
+var multi = { units: [{ key: 't1' }, { key: 't2' }], items: [{ key: '1', unit: 't1' }, { key: '2', unit: 't1' }, { key: '3', unit: 't2' }] }
+var lv0 = { t2: { level: 'bad', auto: false } }
+var lv1 = C.autoLevel(multi, lv0, new Set(['1']), '1')
+check(lv1.t2.level === 'bad' && lv1.t2.auto === false, '别的课手动档不被覆盖 ' + JSON.stringify(lv1))
+check(lv1.t1.level === 'ok' && lv1.t1.auto === true, '点错题的那课自动定档 ' + JSON.stringify(lv1.t1))
+var single = { units: [{ key: 'all' }], items: [{ key: 'a' }, { key: 'b' }, { key: 'c' }] }
+check(C.autoLevel(single, {}, new Set(['a']), 'a').all.level === 'good', '单课：错 1/3 → 会了')
+
 var SK = 'sumsum:shudu:v1'
 var st4 = memStore({})
 var sdr = rec('d00001', 'shudu', '2026-11-23', NOW, { ref: { settings: { shape: 's9', clues: 35 } } })

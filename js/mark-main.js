@@ -263,16 +263,6 @@
     return saved
   }
 
-  /* 展开点了错题：按每个打分单位里错了几题自动选档 */
-  function autoLevels(rec, st) {
-    var units = rec.units && rec.units.length ? rec.units : [{ key: 'all' }]
-    units.forEach(function (u) {
-      var mine = rec.items.filter(function (it) { return units.length === 1 || it.unit === u.key })
-      var wrong = mine.filter(function (it) { return st.wrong.has(it.key) }).length
-      st.levels[u.key] = { level: SC.levelFromWrong(mine.length, wrong), auto: true }
-    })
-  }
-
   page.addEventListener('click', function (e) {
     if (e.target.closest('[data-retry]')) {
       try {
@@ -297,7 +287,7 @@
       var key = b.dataset.item
       if (st.wrong.has(key)) st.wrong.delete(key)
       else st.wrong.add(key)
-      autoLevels(rec, st)
+      st.levels = SC.autoLevel(rec, st.levels, st.wrong, key) /* 只重算这道题所在的那一课 */
       save(rec, st)
     } else if (b.hasAttribute('data-ch')) {
       S.shiziMark.togglePick(b.dataset.ch)

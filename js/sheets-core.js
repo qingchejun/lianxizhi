@@ -406,13 +406,32 @@
       var cur = store.get(key) || Object.assign({}, rec.ref && rec.ref.settings)
       var level = rating.all ? rating.all.level : 'ok'
       var range = rec.module === 'shudu' && opts.clueRange ? opts.clueRange(cur.shape) : undefined
-      var step = gameStep(rec.module, cur, level, range)
+      /* 只在当前难度还是这张纸打印时的难度才升降（终审 I1）：同一天几张同关卡的纸都点「太简单」只升一档；
+         别的纸已经改过、或家长手动改过，这张就不再动 */
+      var printed = rec.ref && rec.ref.settings && rec.ref.settings[f]
+      var step = printed == null || cur[f] === printed
+        ? gameStep(rec.module, cur, level, range)
+        : { changed: false, prev: cur, next: cur }
       if (step.changed) store.set(key, Object.assign({}, cur, step.next))
       rec.applied = { changed: step.changed, prev: step.prev[f], next: step.next[f], undone: false }
     }
 
     store.set(keyOf(rec.id), rec)
     return rec
+  }
+
+  /* 登记页展开点错题：只按「这道题所在的那一课」重算档位（自动），别的课家长手动选的档不动。
+     levels 为 { 单位: { level, auto } }，返回新对象 */
+  function autoLevel(rec, levels, wrongSet, itemKey) {
+    var units = rec.units && rec.units.length ? rec.units : [{ key: 'all' }]
+    var item = (rec.items || []).filter(function (it) { return it.key === itemKey })[0]
+    var unit = units.length === 1 ? units[0].key : item && item.unit
+    var out = Object.assign({}, levels)
+    if (!unit) return out
+    var mine = (rec.items || []).filter(function (it) { return units.length === 1 || it.unit === unit })
+    var wrong = mine.filter(function (it) { return wrongSet.has(it.key) }).length
+    out[unit] = { level: levelFromWrong(mine.length, wrong), auto: true }
+    return out
   }
 
   /* 今天页「撤销」自动升降关 */
@@ -451,6 +470,7 @@
     AOSHU_DUE: AOSHU_DUE,
     gameKey: gameKey,
     saveRating: saveRating,
+    autoLevel: autoLevel,
     undoGame: undoGame,
     lastRatedUnused: lastRatedUnused,
     aoshuApply: aoshuApply,

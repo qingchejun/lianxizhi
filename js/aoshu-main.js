@@ -472,7 +472,7 @@
         units.push({ key: tid, label: topicLabel(tid) })
       }
       return { key: String(i + 1), label: '第 ' + (i + 1) + ' 题', unit: tid }
-    })
+    }).filter(function (it) { return !!it.unit }) /* 不知道属于哪课的题点了也没地方记，不列出来 */
     S.sheets.use({
       module: 'aoshu',
       title: s.title || (s.review ? '综合复习' : topicLabel(topic.id)),
