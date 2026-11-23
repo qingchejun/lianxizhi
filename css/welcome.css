@@ -296,24 +296,37 @@ body.welcome .wl-main {
   letter-spacing: 1px;
 }
 
-/* 为什么做练习纸：站长的话，一段一段读下来，两条主张加粗领起 */
+/* 为什么做练习纸：站长的话。正文铺满版心宽度压低篇幅，两条主张并排两栏，楷体领起 */
 .wl-why p {
-  max-width: 40em;
-  margin: 0 0 14px;
+  margin: 0 0 10px;
   font-size: 16px;
-  line-height: 1.85;
-  color: var(--ink-2, #3a3f47);
+  line-height: 1.8;
+  color: var(--ink-2);
+}
+
+.wl-why-points {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 48px;
+  margin-top: 16px;
+}
+
+.wl-why .wl-why-point {
+  margin: 0;
 }
 
 .wl-why .wl-why-point b {
   display: block;
   margin-bottom: 2px;
   font: 19px/1.5 var(--kai);
-  color: var(--ink, #1a1d23);
+  color: var(--ink);
 }
 
-.wl-why p:last-child {
-  margin-bottom: 0;
+@media (max-width: 760px) {
+  .wl-why-points {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
 }
 
 .wl-mods {
