@@ -151,6 +151,69 @@ check(C.gameStep('shudu', { shape: 's4', clues: 12 }, 'bad', { min: 5, max: 12 }
 check(C.gameStep('shudu', { shape: 's4', clues: 6 }, 'good', { min: 5, max: 12 }).next.clues === 5, '数独不低于下限')
 check(C.gameLevelText('huochai', { level: 'L3' }) === '第 3 关' && C.gameLevelText('shudu', { clues: 31 }) === '31 个提示数', 'gameLevelText')
 
+/* ---------- 保存打分（登记页用）：写记录 + 作用到板块存储，改档不叠加 ---------- */
+function memStore(init) {
+  var m = {}
+  Object.keys(init || {}).forEach(function (k) { m[k] = JSON.stringify(init[k]) })
+  return {
+    get: function (k) { return k in m ? JSON.parse(m[k]) : null },
+    getString: function (k) { return k in m ? m[k] : null },
+    set: function (k, v) { m[k] = JSON.stringify(v) },
+    keys: function () { return Object.keys(m) }
+  }
+}
+var LK = 'sumsum:aoshu:learned:v1'
+var DK = 'sumsum:aoshu:review-due:v1'
+var st1 = memStore({})
+st1.set(LK, ['old'])
+var ao = rec('a00001', 'aoshu', '2026-11-23', NOW, {
+  units: [{ key: 't1', label: '一' }, { key: 't2', label: '二' }],
+  items: [{ key: '1', label: '第 1 题', unit: 't1' }, { key: '2', label: '第 2 题', unit: 't2' }]
+})
+st1.set(C.keyOf(ao.id), ao)
+var saved = C.saveRating(st1, ao, { t1: { level: 'good', auto: false }, t2: { level: 'ok', auto: true } }, ['2'], NOW)
+check(st1.get(LK).slice().sort().join() === 'old,t1,t2', '奥数保存后已学 ' + st1.get(LK))
+check(st1.get(DK).join() === 't2', '奥数保存后待复习 ' + st1.get(DK))
+check(st1.get(C.keyOf(ao.id)).rating.t1.level === 'good' && st1.get(C.keyOf(ao.id)).wrong.join() === '2', '记录里有打分与错题')
+C.saveRating(st1, st1.get(C.keyOf(ao.id)), { t1: { level: 'bad' }, t2: { level: 'bad' } }, [], NOW + 1000)
+check(st1.get(LK).join() === 'old', '改成不会后撤回已学 ' + st1.get(LK))
+check(st1.get(DK).length === 0, '改成不会后撤回待复习 ' + st1.get(DK))
+
+var GK = 'sumsum:huochai:v1'
+var st2 = memStore({})
+st2.set(GK, { level: 'L2', seed: 7 })
+var hc = rec('h00001', 'huochai', '2026-11-23', NOW, { ref: { settings: { level: 'L2', seed: 7 } } })
+st2.set(C.keyOf(hc.id), hc)
+C.saveRating(st2, hc, { all: { level: 'good' } }, [], NOW)
+check(st2.get(GK).level === 'L3' && st2.get(GK).seed === 7, '太简单 → 升到 L3 ' + JSON.stringify(st2.get(GK)))
+C.saveRating(st2, st2.get(C.keyOf(hc.id)), { all: { level: 'bad' } }, [], NOW + 1)
+check(st2.get(GK).level === 'L1', '改成太难：先回 L2 再降到 L1，不是从 L3 降 ' + st2.get(GK).level)
+C.saveRating(st2, st2.get(C.keyOf(hc.id)), { all: { level: 'ok' } }, [], NOW + 2)
+check(st2.get(GK).level === 'L2', '改成刚好：回到打分前的 L2')
+C.saveRating(st2, st2.get(C.keyOf(hc.id)), { all: { level: 'good' } }, [], NOW + 3)
+st2.set(GK, { level: 'L1', seed: 7 }) /* 家长之后自己手动改了关卡 */
+C.saveRating(st2, st2.get(C.keyOf(hc.id)), { all: { level: 'ok' } }, [], NOW + 4)
+check(st2.get(GK).level === 'L1', '家长手动改过关卡就不再撤回 ' + st2.get(GK).level)
+
+var st3 = memStore({})
+st3.set(GK, { level: 'L2' })
+var hc2 = rec('h00002', 'huochai', '2026-11-23', NOW, { ref: { settings: { level: 'L2' } } })
+C.saveRating(st3, hc2, { all: { level: 'good' } }, [], NOW)
+check(C.undoGame(st3, st3.get(C.keyOf(hc2.id))) === true && st3.get(GK).level === 'L2', '今天页撤销升关')
+check(st3.get(C.keyOf(hc2.id)).applied.undone === true, '撤销后记下')
+check(C.undoGame(st3, st3.get(C.keyOf(hc2.id))) === false, '不能撤销两次')
+
+var SK = 'sumsum:shudu:v1'
+var st4 = memStore({})
+var sdr = rec('d00001', 'shudu', '2026-11-23', NOW, { ref: { settings: { shape: 's9', clues: 35 } } })
+C.saveRating(st4, sdr, { all: { level: 'good' } }, [], NOW, { clueRange: function () { return { min: 27, max: 50 } } })
+check(st4.get(SK).clues === 31, '数独没存过设置时以纸上的设置为底 ' + JSON.stringify(st4.get(SK)))
+
+var st5 = memStore({})
+var kr = rec('k00009', 'kousuan', '2026-11-23', NOW, { items: [{ key: '8 + 5', cat: 'carry' }] })
+C.saveRating(st5, kr, { all: { level: 'ok', auto: true } }, ['8 + 5'], NOW)
+check(st5.get(C.keyOf(kr.id)).rating.all.at === NOW && st5.keys().length === 1, '口算只写记录')
+
 /* ---------- 二维码 ---------- */
 globalThis.qrcode = require('../js/vendor/qrcode.js')
 require('../js/sheets.js')

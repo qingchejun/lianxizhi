@@ -1,0 +1,221 @@
+/* ============ 登记页（扫纸角二维码打开，手机优先） ============ */
+
+.mark-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--canvas);
+}
+
+.mark-page {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 20px 16px 96px;
+}
+
+.mark-loading,
+.mark-all {
+  color: var(--ink-soft);
+  text-align: center;
+  font-size: 15px;
+  margin: 24px 0;
+}
+
+.mark-sub {
+  margin: 28px 4px 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.mcard {
+  background: var(--card);
+  border: 1px solid var(--card-edge);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.mcard-empty b {
+  display: block;
+  font-size: 17px;
+  margin-bottom: 6px;
+}
+
+.mcard-empty p {
+  margin: 0 0 14px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.mcard-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin-bottom: 12px;
+}
+
+.mcard-head .tag {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--blue-deep);
+  background: var(--blue-tint);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+
+.mcard-title {
+  font-size: 16px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.mcard-date {
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+
+.mcard-date .ok {
+  color: var(--green);
+  font-weight: 600;
+}
+
+/* 三档：一排三个大按钮 */
+.seg3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.seg3-btn {
+  height: 52px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.seg3-btn.on {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+
+.unit-row {
+  margin-bottom: 12px;
+}
+
+.unit-name {
+  display: block;
+  font-size: 14px;
+  color: var(--ink-2);
+  margin-bottom: 6px;
+}
+
+.unit-row .seg3-btn {
+  height: 44px;
+  font-size: 16px;
+}
+
+.rule {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.effect {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--green-tint);
+  color: var(--green);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.link-btn {
+  margin-top: 10px;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  color: var(--blue);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.items-unit {
+  margin: 12px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.items {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.items-kousuan {
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+}
+
+.items-no {
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+}
+
+.item,
+.ch {
+  border: 1px solid var(--card-edge);
+  border-radius: 10px;
+  background: var(--field);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.item {
+  height: 42px;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.item.on,
+.ch.on {
+  background: var(--red-tint);
+  border-color: var(--mark);
+  color: var(--red-deep);
+  text-decoration: line-through;
+}
+
+.ch.on {
+  text-decoration: none;
+}
+
+.chars {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin: 12px 0 14px;
+}
+
+.ch {
+  height: 54px;
+  font-family: var(--kai);
+  font-size: 28px;
+}
+
+.btn-block {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  height: 48px;
+  font-size: 16px;
+}

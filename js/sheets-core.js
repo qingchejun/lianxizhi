@@ -336,6 +336,93 @@
     return '第 ' + String(settings.level || 'L1').replace('L', '') + ' 关'
   }
 
+  /* ---------- 保存打分（登记页、今天页用） ---------- */
+
+  var AOSHU_LEARNED = 'sumsum:aoshu:learned:v1'
+  var AOSHU_DUE = 'sumsum:aoshu:review-due:v1'
+
+  function gameKey(module) {
+    return 'sumsum:' + module + ':v1'
+  }
+
+  function gameField(module) {
+    return module === 'shudu' ? 'clues' : 'level'
+  }
+
+  function arr(v) {
+    return Array.isArray(v) ? v.slice() : []
+  }
+
+  /* 撤回上一次游戏升降关：只有当前设置还停在那次改出来的值上才撤（家长之后手动改过就不动） */
+  function revertGame(store, rec) {
+    var a = rec.applied
+    if (!a || !a.changed || a.undone) return false
+    var key = gameKey(rec.module)
+    var f = gameField(rec.module)
+    var cur = store.get(key)
+    if (!cur || cur[f] !== a.next) return false
+    var back = Object.assign({}, cur)
+    back[f] = a.prev
+    store.set(key, back)
+    return true
+  }
+
+  /*
+   * 保存一张纸的打分并作用到板块进度。levels: { 单位 key: { level, auto } }，wrong: 点过的错题 key。
+   * 改档时先撤回上一次的作用再重新作用，不叠加。opts.clueRange(shape) 给数独用（shudu-core.clueRange）。
+   * 口算不在这里作用：出下一张时读最近一次打分（kousuanNext）。返回写好的记录。
+   */
+  function saveRating(store, rec, levels, wrong, now, opts) {
+    opts = opts || {}
+    rec = Object.assign({}, rec)
+    var rating = {}
+    Object.keys(levels).forEach(function (u) {
+      var l = levels[u]
+      if (l && (l.level === 'good' || l.level === 'ok' || l.level === 'bad')) {
+        rating[u] = { level: l.level, auto: !!l.auto, at: now }
+      }
+    })
+    rec.rating = rating
+    rec.wrong = Array.isArray(wrong) ? wrong.slice() : []
+    var kind = MODULE_KIND[rec.module]
+
+    if (rec.module === 'aoshu') {
+      var state = { learned: arr(store.get(AOSHU_LEARNED)), due: arr(store.get(AOSHU_DUE)) }
+      var base = aoshuRevert(state, rec.applied)
+      var unitOf = {}
+      ;(rec.items || []).forEach(function (it) { unitOf[it.key] = it.unit })
+      var wrongTopics = []
+      rec.wrong.forEach(function (k) { if (unitOf[k]) addTo(wrongTopics, unitOf[k]) })
+      var lv = {}
+      Object.keys(rating).forEach(function (u) { lv[u] = rating[u].level })
+      var next = aoshuApply(base, lv, wrongTopics)
+      store.set(AOSHU_LEARNED, next.learned)
+      store.set(AOSHU_DUE, next.due)
+      rec.applied = aoshuDiff(base, next)
+    } else if (kind === 'game') {
+      revertGame(store, rec)
+      var key = gameKey(rec.module)
+      var f = gameField(rec.module)
+      var cur = store.get(key) || Object.assign({}, rec.ref && rec.ref.settings)
+      var level = rating.all ? rating.all.level : 'ok'
+      var range = rec.module === 'shudu' && opts.clueRange ? opts.clueRange(cur.shape) : undefined
+      var step = gameStep(rec.module, cur, level, range)
+      if (step.changed) store.set(key, Object.assign({}, cur, step.next))
+      rec.applied = { changed: step.changed, prev: step.prev[f], next: step.next[f], undone: false }
+    }
+
+    store.set(keyOf(rec.id), rec)
+    return rec
+  }
+
+  /* 今天页「撤销」自动升降关 */
+  function undoGame(store, rec) {
+    if (!revertGame(store, rec)) return false
+    rec = Object.assign({}, rec, { applied: Object.assign({}, rec.applied, { undone: true }) })
+    store.set(keyOf(rec.id), rec)
+    return true
+  }
+
   /* 本机全部纸记录（坏的跳过） */
   function records(store) {
     return store.keys().filter(isSheetKey).map(function (k) {
@@ -360,6 +447,11 @@
   root.SumSum = root.SumSum || {}
   root.SumSum.sheetsCore = {
     records: records,
+    AOSHU_LEARNED: AOSHU_LEARNED,
+    AOSHU_DUE: AOSHU_DUE,
+    gameKey: gameKey,
+    saveRating: saveRating,
+    undoGame: undoGame,
     lastRatedUnused: lastRatedUnused,
     aoshuApply: aoshuApply,
     aoshuDiff: aoshuDiff,
