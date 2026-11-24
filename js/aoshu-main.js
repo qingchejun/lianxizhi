@@ -22,7 +22,18 @@
     title: $('f-title')
   }
 
+  /* 单课内页（2026-11-24 起：/kousuan/coushifa 凑十法，免登录、免费版都能用）：
+     html 上 data-aoshu-fixed="知识点 id"，只出这一课；目录、综合复习收起；设置单独存，不动奥数页的。
+     data-aoshu-preset：第一次打开时的题型勾选（JSON），之后按家长自己改的记着 */
+  var FIXED = doc.documentElement.getAttribute('data-aoshu-fixed') || ''
+  if (FIXED) S.aoshu.settings.useKey('sumsum:aoshu:fixed:' + FIXED + ':v1')
+  var firstFixed = FIXED && !S.aoshu.settings.hasStored()
   var settings = S.aoshu.settings.load()
+  if (FIXED) {
+    var preset = {}
+    try { preset = firstFixed ? JSON.parse(doc.documentElement.getAttribute('data-aoshu-preset') || '{}') : {} } catch (e) { preset = {} }
+    settings = S.aoshu.settings.sanitize(Object.assign({}, settings, preset, { topic: FIXED, review: false }))
+  }
 
   /*
    * 「已学」标记：与设置分开存（不进 URL），value 是知识点 id 数组。
@@ -79,6 +90,7 @@
 
   /* 点课名 = 去上这一课：复习卷开着也直接退出（勾的混哪几课保留），哪怕点的就是原来那一课 */
   function selectTopic(id) {
+    if (FIXED && id !== FIXED) return
     if (id === settings.topic && !settings.review) return
     settings = S.aoshu.settings.sanitize(
       Object.assign({}, settings, { topic: id, title: '', review: false })
@@ -350,9 +362,11 @@
     var v = S.aoshuVideos.of(s.topic)
     var o = outlineOf(s.topic)
     if (!v) {
+      group.hidden = !!FIXED /* 单课内页没有视频就整块不显示 */
       group.innerHTML = '<p class="video-none">' + CAM_SVG + '这一课还没有讲解视频</p>'
       return
     }
+    group.hidden = false
     /* 文字来自大纲常量和视频登记表，没有用户输入 */
     group.innerHTML =
       '<div class="row-between"><h2 class="group-title">讲解视频</h2>' +
@@ -382,7 +396,7 @@
   /* 顶栏：第几课叫什么、这一沓纸由哪几部分组成 */
   function paintHead(s, pages) {
     var o = outlineOf(s.topic)
-    $('lesson-title').textContent = s.review ? '综合复习卷' : '第 ' + o.no + ' 课 · ' + o.name
+    if (!FIXED) $('lesson-title').textContent = s.review ? '综合复习卷' : '第 ' + o.no + ' 课 · ' + o.name /* 单课内页的 H1 写死在网页里（给搜索引擎） */
     var parts = []
     if (pages.lesson) parts.push('讲解 ' + pages.lesson + ' 页')
     if (pages.practice) parts.push('练习 ' + pages.practice + ' 页')

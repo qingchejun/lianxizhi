@@ -39,6 +39,12 @@ export async function onRequest(context) {
   if (move && move.action === 'soft') me = Object.assign({}, me, { moveTo: move.to })
   const r = decide(url.pathname, url.search, { ok: session, plan: session ? me.plan : null })
 
+  if (r.action === 'moved') return movedTo(r.location)
+  if (r.file) {
+    /* 内页（/kousuan/coushifa）：文件在根目录，按表去取；登录态照常写进网页 */
+    const page = await context.env.ASSETS.fetch(new URL(r.file, url))
+    return withCache(withMe(page, me, context.env), 'private, no-cache')
+  }
   if (r.action === 'redirect') {
     return new Response(null, { status: 302, headers: { Location: r.location, 'Cache-Control': 'private, no-store' } })
   }

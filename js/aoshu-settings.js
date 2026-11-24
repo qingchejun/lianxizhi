@@ -6,6 +6,11 @@
   'use strict'
 
   var KEY = 'sumsum:aoshu:v1'
+  /* 单课内页（如 /kousuan/coushifa，html 上 data-aoshu-fixed）用自己的存储，不改动奥数页记着的那一课和设置 */
+  function useKey(k) { KEY = k }
+  function hasStored() {
+    try { return !!root.localStorage.getItem(KEY) } catch (e) { return false }
+  }
 
   /* 基础字段；各知识点的变式勾选项（v.setting）由注册表动态并入 */
   var BASE_DEFAULTS = Object.freeze({
@@ -132,7 +137,7 @@
         if (k !== 'review' && s[k] !== DEFAULTS[k]) params.set(k, String(s[k])) // review 不进地址：刷新后回到那一课
       })
       var qs = params.toString()
-      root.history.replaceState(null, '', qs ? '?' + qs : root.location.pathname)
+      root.history.replaceState(null, '', root.location.pathname + (qs ? '?' + qs : '')) /* 写全路径：内页有 <base href="/">，只写 ?… 会跳到首页 */
     } catch (e) {
       /* file:// 协议下 replaceState 可能受限，忽略 */
     }
@@ -144,6 +149,8 @@
     DEFAULTS: DEFAULTS,
     sanitize: sanitize,
     load: load,
-    save: save
+    save: save,
+    useKey: useKey,
+    hasStored: hasStored
   }
 })(typeof window !== 'undefined' ? window : globalThis)

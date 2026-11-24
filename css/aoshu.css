@@ -869,3 +869,9 @@
   gap: 0.5mm 4mm;
   margin-top: 1mm;
 }
+
+/* ---------- 单课内页（html[data-aoshu-fixed]，如 /kousuan/coushifa）：不显示知识点目录和综合复习 ---------- */
+[data-aoshu-fixed] .topic-nav,
+[data-aoshu-fixed] [data-review-group] {
+  display: none;
+}

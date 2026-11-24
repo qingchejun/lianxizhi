@@ -80,7 +80,7 @@ PAGES = {
     'index.html': '今天', 'kousuan.html': '口算', 'aoshu.html': '奥数',
     'shizi.html': '识字', 'shudu.html': '数独', 'mima.html': '密码', 'zhizhi.html': '数织',
     'migong.html': '迷宫', 'huochai.html': '火柴', 'pinyin.html': '拼音', 'help.html': '使用说明', 'admin.html': '邀请码管理', 'mark.html': '打分',
-    'locked.html': '上锁',
+    'locked.html': '上锁', 'coushifa.html': '口算',
 }
 
 

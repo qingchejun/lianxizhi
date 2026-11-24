@@ -9,10 +9,13 @@ const HOME = ['/', '/index', '/index.html']
 const WELCOME = ['/welcome', '/welcome.html']
 /* 没登录也能出题、打印的板块页（2026-11-24 第二期，先开口算和数独）：纸上不印二维码、不记录，
    扫码打分、错哪练哪、保存进度仍要登录（js/sheets.js）。要开放新板块就往这里加 */
-const GUEST_PAGES = ['/kousuan', '/shudu', '/privacy']
+const GUEST_PAGES = ['/kousuan', '/shudu', '/privacy', '/kousuan/coushifa']
+/* 内页：网址挂在板块下面，文件放在根目录（相对路径、盖指纹、侧栏脚本都只认根目录的 html）。
+   中间层按这张表去取文件；文件自己的网址（/coushifa）301 到正式网址，同一内容只留一个网址 */
+export const INNER_PAGES = { '/kousuan/coushifa': '/coushifa' }
 /* 免费版账号能打开的网页（白名单，2026-11-24 放开注册）：其余网页一律显示上锁说明页。
    用白名单而不是「锁哪几个」：以后新加的板块默认就是完整版专属，不会忘了锁 */
-const FREE_PAGES = ['/', '/index', '/kousuan', '/shudu', '/mark', '/help', '/privacy', '/404']
+const FREE_PAGES = ['/', '/index', '/kousuan', '/shudu', '/mark', '/help', '/privacy', '/404', '/kousuan/coushifa']
 /* 上锁说明页只由中间层在原网址上显示，不单独开网址 */
 const LOCKED = ['/locked', '/locked.html']
 
@@ -60,11 +63,14 @@ export function decide(path, search, me) {
   /* 介绍页只经由首页出现，不单独开一个网址（避免同一内容两个网址被收录） */
   if (WELCOME.includes(path) || LOCKED.includes(path)) return { action: 'redirect', location: '/' }
   const page = pagePath(path)
+  const canonical = Object.keys(INNER_PAGES).find(k => INNER_PAGES[k] === page)
+  if (canonical) return { action: 'moved', location: canonical + (search || '') }
+  const file = INNER_PAGES[page] /* 内页：放行时带上要取的文件 */
   if (loggedIn) {
     if (plan === 'free' && !FREE_PAGES.includes(page)) return { action: 'locked' }
-    return { action: 'pass' }
+    return file ? { action: 'pass', file: file } : { action: 'pass' }
   }
-  if (GUEST_PAGES.includes(page)) return { action: 'pass' }
+  if (GUEST_PAGES.includes(page)) return file ? { action: 'pass', file: file } : { action: 'pass' }
   if (path === '/') return { action: 'welcome' }
   /* /index、/index.html 与 / 同内容：没登录时并到 /，只留一个网址给谷歌 */
   if (HOME.includes(path)) return { action: 'redirect', location: '/' + (search || '') }
