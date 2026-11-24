@@ -1,6 +1,6 @@
 # 奥数讲解视频 · 渲染引擎
 
-练习纸奥数课的讲解视频都用这套工具做：网页动画逐帧截图成画面，edge-tts 配音，ffmpeg 合成。
+纸和笔（zhihebi.com）奥数课的讲解视频都用这套工具做：网页动画逐帧截图成画面，edge-tts 配音，ffmpeg 合成。
 标杆是 08 数列找规律；第 10 课等量代换 v4 是第一期完整用上这套流水线的。
 
 ## 文件
@@ -51,6 +51,10 @@ git push origin publish/<id>
 ```
 
 需要仓库里设好 `CLOUDFLARE_API_TOKEN`（只给 R2 编辑权限）和 `CLOUDFLARE_ACCOUNT_ID` 两个 Actions secret。
+品牌角标：`render.html` 在封面和最后一个场景的右上角自动写「纸和笔 · zhihebi.com」（2026-11-24 起）；分镜里 `SCENES.brand = false` 可关。
+
+重做已上线的视频：**别用原文件名覆盖**。`/v/` 在 Cloudflare 节点按路径缓存 30 天，封面也公开缓存 30 天，覆盖后很多人还会看到旧版。新版换文件名 `<id>-2`（再改就 `-3`…）：推 `publish/<id>-2` 分支，`_publish/<id>-2.mp4` 和同名 `.jpg`；登记提交里在 `js/aoshu-videos.js` 的 `FILE` 加 `<id>: '<id>-2'`、按新成片改 `LIST` 时长，`tools/check-today.js` 里这一课那条自检改成新文件名。旧文件留在桶里不用删。
+
 手动备用：`npx wrangler r2 object put lianxizhi-video/aoshu/<id>.mp4 --file=… --content-type=video/mp4 --remote`；封面 `npx wrangler r2 object put lianxizhi-poster/aoshu/<id>.jpg --file=… --content-type=image/jpeg --remote`（封面别传进 lianxizhi-video，那个桶已不公开）。再登记推 main。
 
 ## 读音核对（19 课起）

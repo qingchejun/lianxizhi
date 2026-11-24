@@ -25,6 +25,9 @@ html, body { margin: 0; padding: 0; }
   border: 4px solid #2b2420; border-radius: 40px; background: #f7f2e7;
   font-family: KL; font-size: 36px; line-height: 70px; color: #2b2420; }
 .tag b { font-weight: normal; color: #d9443a; }
+/* 品牌角标（2026-11-24 起）：封面和最后一个场景的右上角，SCENES.brand === false 可关 */
+.brand { position: absolute; right: 70px; top: 64px; font-family: KL; font-size: 36px; line-height: 58px; color: #8a7f72; }
+.brand b { font-weight: normal; color: #2b2420; }
 .shp svg { width: 100%; height: 100%; display: block; }
 .slot { display: flex; align-items: center; justify-content: center; }
 .slot .box { position: absolute; inset: 0; border: 5px dashed #d9443a; border-radius: 22px; background: rgba(255,255,255,0.45); }
@@ -323,6 +326,11 @@ function build(sceneIdx, timing) {
     t.innerHTML = parts.length > 1 ? parts[0] + ' <span style="color:#b9ad9c">|</span> <b>' + parts[1] + '</b>' : parts[0]
     stage.appendChild(t)
   }
+  if (SCENES.brand !== false && (sceneIdx === 'cover' || sceneIdx === SCENES.length - 1)) {
+    var br = document.createElement('div'); br.className = 'brand'
+    br.innerHTML = '<b>纸和笔</b> · zhihebi.com'
+    stage.appendChild(br)
+  }
   var byId = {}
   SCENE.els.forEach(function (e) {
     if (e.t === 'fill') { (FILLS[e.id] = FILLS[e.id] || []).push(e); return }
@@ -595,6 +603,7 @@ function balanceAngle(r, t) {
 function render(t) {
   SCENE_FADE = Math.min(clamp(t / 0.3), clamp((TIMING.dur - t) / 0.3))
   var tg = document.querySelector('.tag'); if (tg) tg.style.opacity = SCENE_FADE
+  var bd = document.querySelector('.brand'); if (bd) bd.style.opacity = SCENE_FADE
   ELS.forEach(function (r) {
     var n = r.n, op = 1, sc = 1, extra = '', halo = 0
     if (r.t0 === null || t < r.t0) { n.style.opacity = 0; return }

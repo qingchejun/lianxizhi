@@ -9,6 +9,9 @@
  *
  * 时长手写而不是读视频元数据：首页卡片和目录要在视频加载之前就显示「有讲解视频 3:13」。
  * 封面（可选）：传到 lianxizhi-poster 桶的 aoshu/<id>.jpg 后在 POSTER 里登记，播放前显示封面而不是黑屏/第一帧。
+ *
+ * 重做已上线的视频（2026-11-24 起）：不要用原文件名覆盖——/v/ 在 Cloudflare 节点按路径缓存 30 天、封面也公开缓存
+ * 30 天，覆盖后很多人还会看到旧版。新版换个文件名（<id>-2、<id>-3…，封面同名一起传），在 FILE 里登记即可。
  */
 ;(function (root) {
   'use strict'
@@ -51,7 +54,10 @@
     sibian: '4:33' // B14 平面图形：认识四边形（L1 补充）
   })
 
-  /* 有封面图的课（aoshu/<id>.jpg） */
+  /* 重做过的视频：知识点 id → 文件名（不带 .mp4 / .jpg），没登记的就是 id 本身 */
+  var FILE = Object.freeze({})
+
+  /* 有封面图的课（aoshu/<文件名>.jpg） */
   var POSTER = Object.freeze({ dengliang: true, chongdie: true, meiju: true, fendui: true, kongping: true, huochai: true, jiange: true, paidui: true, xianjing: true, fenzu: true, hebubian: true, bichang: true, bizhong: true, zhongbiao: true, zhongbiao2: true, duichen: true, jingzi: true, diefang: true, fanzhuan: true, woniu: true, jiangebc: true, renxian: true, renjiao: true, sanjiao: true, sibian: true })
 
   function has(obj, id) {
@@ -62,9 +68,10 @@
      hasOwnProperty：别让 'toString' 这类名字查到原型链上 */
   function of(id) {
     if (!has(LIST, id)) return null
-    return { src: MP4 + id + '.mp4', dur: LIST[id], poster: has(POSTER, id) ? BASE + id + '.jpg' : '' }
+    var f = has(FILE, id) ? FILE[id] : id
+    return { src: MP4 + f + '.mp4', dur: LIST[id], poster: has(POSTER, id) ? BASE + f + '.jpg' : '' }
   }
 
   root.SumSum = root.SumSum || {}
-  root.SumSum.aoshuVideos = { list: LIST, posters: POSTER, of: of }
+  root.SumSum.aoshuVideos = { list: LIST, posters: POSTER, files: FILE, of: of }
 })(typeof window !== 'undefined' ? window : globalThis)

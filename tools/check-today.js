@@ -190,8 +190,8 @@ check(V.of('tuxing').src === '/v/aoshu/tuxing.mp4' && V.of('tuxing').dur === '3:
   '图形找规律视频：' + JSON.stringify(V.of('tuxing')))
 check(V.of('dengliang').src === '/v/aoshu/dengliang.mp4' && V.of('dengliang').dur === '3:18' &&
   V.of('dengliang').poster === 'https://video.zhihebi.com/aoshu/dengliang.jpg', '等量代换视频：' + JSON.stringify(V.of('dengliang')))
-check(Object.keys(V.list).every(function (id) { var p = V.of(id).poster; return p === '' || p === 'https://video.zhihebi.com/aoshu/' + id + '.jpg' }),
-  '封面地址要么为空，要么是 aoshu/<id>.jpg')
+check(Object.keys(V.list).every(function (id) { var p = V.of(id).poster, f = V.files[id] || id; return p === '' || p === 'https://video.zhihebi.com/aoshu/' + f + '.jpg' }),
+  '封面地址要么为空，要么是 aoshu/<文件名>.jpg（文件名默认是 id，重做过的见 FILE）')
 Object.keys(V.posters).forEach(function (id) { check(Object.prototype.hasOwnProperty.call(V.list, id), '登记了封面却没有视频：' + id) })
 check(V.of('chongdie').src === '/v/aoshu/chongdie.mp4' && V.of('chongdie').dur === '4:01' &&
   V.of('chongdie').poster === 'https://video.zhihebi.com/aoshu/chongdie.jpg', '重叠问题视频：' + JSON.stringify(V.of('chongdie')))
@@ -246,6 +246,12 @@ check(V.of('sanjiao').src === '/v/aoshu/sanjiao.mp4' && V.of('sanjiao').dur === 
   V.of('sanjiao').poster === 'https://video.zhihebi.com/aoshu/sanjiao.jpg', '认识三角形视频：' + JSON.stringify(V.of('sanjiao')))
 check(V.of('sibian').src === '/v/aoshu/sibian.mp4' && V.of('sibian').dur === '4:33' &&
   V.of('sibian').poster === 'https://video.zhihebi.com/aoshu/sibian.jpg', '认识四边形视频：' + JSON.stringify(V.of('sibian')))
+/* 重做过的视频换文件名（FILE）：只能登记有视频的课，新名字是 <id>-<数字>，地址和封面都跟着换 */
+Object.keys(V.files).forEach(function (id) {
+  var f = V.files[id]
+  check(Object.prototype.hasOwnProperty.call(V.list, id) && new RegExp('^' + id + '-\\d+$').test(f), '重做视频文件名不对：' + id + ' → ' + f)
+  check(V.of(id).src === '/v/aoshu/' + f + '.mp4' && (!V.of(id).poster || V.of(id).poster === 'https://video.zhihebi.com/aoshu/' + f + '.jpg'), '重做视频地址没跟着换：' + id)
+})
 check(V.of('daxiao') === null, '没视频的课应返回 null')
 check(V.of('__proto__') === null && V.of('toString') === null, '原型链上的名字不能当成有视频')
 Object.keys(V.list).forEach(function (id) {
