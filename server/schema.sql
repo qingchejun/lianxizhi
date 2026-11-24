@@ -46,3 +46,4 @@ CREATE TABLE IF NOT EXISTS invites(
   activated_at INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_invites_claimed ON invites(claimed_by);
+CREATE INDEX IF NOT EXISTS idx_users_unverified ON users(verified, created_at); -- 清理 48 小时没验证的账号用

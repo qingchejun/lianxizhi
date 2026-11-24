@@ -16,10 +16,11 @@ export const PLAN_FREE = 'free'
 export const PLAN_FULL = 'full'
 const DAY = 86400 * 1000
 const HOUR = 3600 * 1000
-/* 全站每天发信上限（按世界标准时间算天）：没验证过的新账号最多用 NEW 封，
-   其余（带邀请码注册、已注册账号找回密码等）一起不超过 ALL —— 刷注册刷不光老用户的额度 */
+/* 全站每天发信上限（按世界标准时间算天），分两个互不相干的额度：
+   NEW 给没验证过的新账号（免费注册）；OLD 给带邀请码的注册、已注册账号的找回密码和提醒信。
+   刷注册刷不光老用户的额度，刷找回密码也挡不住新用户注册（2026-11-24 安全审查） */
 export const MAIL_DAY_NEW = 150
-export const MAIL_DAY_ALL = 200
+export const MAIL_DAY_OLD = 50
 const IP_HOUR_MAX = 10
 const IP_DAY_MAX = 20
 const INVITE_IP_HOUR_FAILS = 20 /* 换邮箱猜码：按地址再计一次 */
@@ -33,8 +34,12 @@ export function ipScope(ip) {
   ip = String(ip || '').trim().toLowerCase()
   if (!ip) return ''
   if (ip.indexOf(':') >= 0) {
-    const parts = ip.split('::')[0].split(':')
-    return 'ip6:' + parts.slice(0, 4).join(':')
+    /* 把 :: 展开成完整 8 段再取前 4 段（::1、::ffff:… 这类不会全挤进同一个空前缀） */
+    const halves = ip.split('::')
+    const head = halves[0] ? halves[0].split(':') : []
+    const tail = halves.length > 1 && halves[1] ? halves[1].split(':') : []
+    const full = head.concat(new Array(Math.max(0, 8 - head.length - tail.length)).fill('0'), tail)
+    return 'ip6:' + full.slice(0, 4).map(x => x || '0').join(':')
   }
   return 'ip:' + ip
 }
@@ -47,9 +52,8 @@ async function sendGate(repo, now, opts) {
     if (!(await repo.counterBump(scope, 'mailday', dayStart(now), IP_DAY_MAX))) return 'ip'
   }
   const bucket = (opts && opts.bucket) || 'new'
-  if (bucket === 'new' && !(await repo.counterBump('all', 'mailnew', dayStart(now), MAIL_DAY_NEW))) return 'day'
-  if (!(await repo.counterBump('all', 'mailall', dayStart(now), MAIL_DAY_ALL))) return 'day'
-  return null
+  if (bucket === 'new') return (await repo.counterBump('all', 'mailnew', dayStart(now), MAIL_DAY_NEW)) ? null : 'day'
+  return (await repo.counterBump('all', 'mailold', dayStart(now), MAIL_DAY_OLD)) ? null : 'day'
 }
 const GATE_MSG = {
   ip: '这个网络今天发的验证码太多了，换个网络或明天再试。',
@@ -156,23 +160,27 @@ export async function register(repo, now, body, ctx) {
   if (!validClientHash(pw)) return { status: 422, body: { ok: false, error: '密码至少 8 位。' } }
   await purgeStale(repo, now)
   const code = normInvite(body && body.invite)
-  let user = await repo.userByEmail(email)
-  if (user && user.verified) {
-    /* 不在页面上说「已经注册过」（放开注册后这句话谁都能拿来查邮箱）：页面照常进验证码页，
-       邮箱主人收到的是一封「已经注册过，直接登录」的提醒 */
-    const ok = { status: 200, body: { ok: true } }
-    if (user.banned || await mailGate(repo, email, now)) return ok
-    if (await sendGate(repo, now, { ip: ctx.ip, bucket: 'old' })) return ok
-    await mailMark(repo, email, now)
-    ok.mail = { to: email, subject: '纸和笔 · 这个邮箱已经注册过', text: '有人（可能就是你）刚用这个邮箱在纸和笔注册。这个邮箱已经有账号了，直接登录就行；忘了密码，在登录框点「忘记密码」。\n如果不是你在操作，忽略这封邮件就行。' }
-    return ok
-  }
-  if (user && user.banned) return { status: 403, body: { ok: false, error: '账号已被停用。' } }
+  /* 邀请码先验：不管邮箱注没注册过，错码都是同一个 422（不然能拿错码试出邮箱有没有注册） */
   let inv = null
   if (code) {
     const c = await checkInvite(repo, now, email, code, ctx.ip)
     if (c.res) return c.res
     inv = c.inv
+  }
+  let user = await repo.userByEmail(email)
+  if (user && (user.verified || user.banned)) {
+    /* 不在页面上说「已经注册过」（放开注册后这句话谁都能拿来查邮箱）：页面照常进验证码页，
+       邮箱主人收到的是一封「已经注册过，直接登录」的提醒。限流的提示也和新注册一模一样 */
+    const ok = { status: 200, body: { ok: true } }
+    const gate = await mailGate(repo, email, now)
+    if (gate === 'interval') return { status: 429, body: { ok: false, error: '发送太频繁了，一分钟后再试。' } }
+    if (gate === 'hour') return { status: 429, body: { ok: false, error: '这一小时发的邮件够多了，过一小时再试。' } }
+    const sg = await sendGate(repo, now, { ip: ctx.ip, bucket: 'new' })
+    if (sg) return { status: 429, body: { ok: false, error: GATE_MSG[sg] } }
+    await mailMark(repo, email, now)
+    if (user.banned) return ok
+    ok.mail = { to: email, subject: '纸和笔 · 这个邮箱已经注册过', text: '有人（可能就是你）刚用这个邮箱在纸和笔注册。这个邮箱已经有账号了，直接登录就行；忘了密码，在登录框点「忘记密码」。\n如果不是你在操作，忽略这封邮件就行。' }
+    return ok
   }
   if (user) {
     /* 未验证过的邮箱重复注册 = 换密码重来（裁定 5）。别人抢先用这个邮箱注册过也没关系：

@@ -49,33 +49,42 @@ export async function onRequestGet(context) {
     return out
   }
 
-  /* 没缓存：整段请求就一份流分两路（给用户、进缓存）；Range 请求先按范围给，后台再取整段进缓存 */
-  const putWhole = (obj, body) => cache.put(new Request(keyUrl), new Response(body, { headers: (() => {
-    const h = headersOf(obj, EDGE_TTL)
-    h.set('Content-Length', String(obj.size))
-    return h
-  })() }))
+  /* 没缓存：先按请求给这一个人；只在「从头开始播」（没有 Range 或从第 0 字节起）时，后台取一次整段进缓存。
+     拖进度条产生的分段请求不再各自触发整段复制（2026-11-24 安全审查：省 R2 读取，也防被人刷） */
+  const startsAtZero = !range || /^bytes=0-/.test(range)
+  const fill = () => context.waitUntil((async () => {
+    const whole = await bucket.get(m[1])
+    if (!whole) return
+    const h = headersOf(whole, EDGE_TTL)
+    h.set('Content-Length', String(whole.size))
+    await cache.put(new Request(keyUrl), new Response(whole.body, { headers: h }))
+  })().catch(() => {}))
 
   if (!range) {
     const obj = await bucket.get(m[1])
     if (!obj) return deny(404, 'Not found')
-    const [a, b] = obj.body.tee()
-    context.waitUntil(putWhole(obj, b).catch(() => {}))
+    fill()
     const h = headersOf(obj, BROWSER_TTL)
     h.set('Content-Length', String(obj.size))
-    return new Response(a, { status: 200, headers: h })
+    return new Response(obj.body, { status: 200, headers: h })
   }
 
-  const part = await bucket.get(m[1], { range: context.request.headers })
+  let part
+  try {
+    part = await bucket.get(m[1], { range: context.request.headers })
+  } catch (e) {
+    /* 范围不合法（超出文件长度等）：416，并告诉浏览器文件多大 */
+    const head = await bucket.head(m[1])
+    if (!head) return deny(404, 'Not found')
+    return new Response(null, { status: 416, headers: { 'Content-Range': 'bytes */' + head.size, 'Cache-Control': 'no-store' } })
+  }
   if (!part) return deny(404, 'Not found')
-  context.waitUntil((async () => {
-    const whole = await bucket.get(m[1])
-    if (whole) await putWhole(whole, whole.body)
-  })().catch(() => {}))
+  if (startsAtZero) fill()
   const h = headersOf(part, BROWSER_TTL)
   const r = part.range || {}
-  const start = r.suffix !== undefined ? part.size - r.suffix : (r.offset || 0)
-  const len = r.suffix !== undefined ? r.suffix : (r.length !== undefined ? r.length : part.size - start)
+  let start = r.suffix !== undefined ? Math.max(0, part.size - r.suffix) : (r.offset || 0)
+  let len = r.suffix !== undefined ? Math.min(r.suffix, part.size) : (r.length !== undefined ? r.length : part.size - start)
+  len = Math.max(0, Math.min(len, part.size - start)) /* R2 万一原样回传超长的 length，这里夹到文件末尾 */
   h.set('Content-Range', 'bytes ' + start + '-' + (start + len - 1) + '/' + part.size)
   h.set('Content-Length', String(len))
   return new Response(part.body, { status: 206, headers: h })

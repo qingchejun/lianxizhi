@@ -16,7 +16,8 @@ export async function onRequest(context) {
   if (pre.action === 'deny') return new Response('Not found', { status: 404, headers: { 'Cache-Control': 'no-store' } })
   if (pre.action === 'pass' && pre.asset) { /* 静态资源、接口：不查库（没登录也放行的板块页不走这里：要验登录、写登录态） */
     const res = await context.next()
-    const cc = pre.asset && !url.pathname.startsWith('/api/') ? assetCacheControl(url.search, res.status) : null
+    /* /api/ 和 /v/（要登录的视频）不改缓存头：带 ?v= 的视频请求不许被改成公开长期缓存 */
+    const cc = pre.asset && !url.pathname.startsWith('/api/') && !url.pathname.startsWith('/v/') ? assetCacheControl(url.search, res.status) : null
     if (!cc) return res
     const out = new Response(res.body, res)
     out.headers.set('Cache-Control', cc)

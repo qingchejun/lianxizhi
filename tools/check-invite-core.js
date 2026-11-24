@@ -36,7 +36,8 @@ function memRepo() {
     },
     async redeemInvite(inviteId, uid, now) {
       var v = invites.find(function (x) { return x.id === inviteId })
-      if (!v || v.claimed_by || v.revoked_at) return false
+      var me = users.find(function (x) { return x.id === uid })
+      if (!v || v.claimed_by || v.revoked_at || !me || me.plan !== 'free') return false
       v.claimed_by = uid; v.claimed_at = now; v.activated_at = now
       var u = users.find(function (x) { return x.id === uid })
       u.plan = 'full'; u.invite_id = inviteId
@@ -209,6 +210,16 @@ Promise.all([import('../server/auth-core.js'), import('../server/admin-core.js')
   }
   check('同一地址一小时第 11 次注册 → 429', codes.slice(0, 10).every(function (c) { return c === 200 }) && codes[10] === 429, codes)
   check('换个地址照常', (await A.register(R, t0 + 20, { email: 'other@m.co', password: pw('other@m.co') }, { ip: '5.6.7.9' })).status === 200)
+  check('IPv6 以 :: 开头的地址不全挤进同一组', A.ipScope('::1') !== A.ipScope('::2:0:0:0:1') && A.ipScope('::ffff:1.2.3.4') === 'ip6:0:0:0:0')
+  var E = memRepo()
+  var ev = await A.register(E, t0, { email: 'enum@m.co', password: pw('enum@m.co') })
+  await A.verify(E, t0 + 1, { email: 'enum@m.co', code: ev.dev.code })
+  var bad1 = await A.register(E, t0 + 120000, { email: 'enum@m.co', password: pw('enum@m.co'), invite: 'ZZZZZZZZ' })
+  var bad2 = await A.register(E, t0 + 120000, { email: 'nobody@m.co', password: pw('nobody@m.co'), invite: 'ZZZZZZZZ' })
+  check('错邀请码：注册过和没注册过的邮箱回一样的结果', bad1.status === bad2.status && bad1.body.error === bad2.body.error && bad1.status === 422, [bad1, bad2])
+  var g1 = await A.register(E, t0 + 120001, { email: 'enum@m.co', password: pw('enum@m.co') })
+  var g2 = await A.register(E, t0 + 120002, { email: 'enum@m.co', password: pw('enum@m.co') })
+  check('已注册邮箱连着注册：同样回「发送太频繁」（跟新邮箱一样）', g1.status === 200 && g2.status === 429, [g1.status, g2.status])
   check('IPv6 同一 /64 算一个地址', A.ipScope('2408:8a00:1:2:aaaa::1') === A.ipScope('2408:8a00:1:2:bbbb::9') && A.ipScope('2408:8a00:1:3::1') !== A.ipScope('2408:8a00:1:2::1'))
 
   /* 全站每天的新注册额度用完：没码的挡住，带码的、找回密码的照常 */
@@ -219,6 +230,11 @@ Promise.all([import('../server/auth-core.js'), import('../server/admin-core.js')
   await S.counterBump('all', 'mailnew', day0, 1e9)
   for (var m = 1; m < A.MAIL_DAY_NEW; m++) await S.counterBump('all', 'mailnew', day0, 1e9)
   var capped = await A.register(S, t0, { email: 'cap@m.co', password: pw('cap@m.co') })
+  var F = memRepo()
+  var fu = await A.register(F, t0, { email: 'old@m.co', password: pw('old@m.co') })
+  await A.verify(F, t0 + 1, { email: 'old@m.co', code: fu.dev.code })
+  for (var q = 0; q < A.MAIL_DAY_OLD; q++) await F.counterBump('all', 'mailold', day0, 1e9)
+  check('找回密码的额度用完，不影响新用户注册', (await A.register(F, t0 + 5, { email: 'brand@m.co', password: pw('brand@m.co') })).status === 200)
   check('新注册额度用完 → 429「今天注册的人太多了」', capped.status === 429 && /太多/.test(capped.body.error), capped)
   check('带邀请码的注册不占新注册额度', (await A.register(S, t0, { email: 'cap2@m.co', password: pw('cap2@m.co'), invite: 'CAPCODE1' })).status === 200)
   var next = await A.register(S, t0 + 86400000, { email: 'cap3@m.co', password: pw('cap3@m.co') })
@@ -303,7 +319,8 @@ Promise.all([import('../server/auth-core.js'), import('../server/admin-core.js')
 
   check('停用已占用码的账号', (await AD.setBan(dbB, { uid: 'boss' }, now + 1, { id: banId, banned: true })).status === 200)
   check('停用后登录 403', (await A.login(dbB, now + 2, { email: 'ban@me.co', password: clientHash('ban@me.co', 'password123') })).status === 403)
-  check('停用后注册重发 403', (await A.register(dbB, now + 3, { email: 'ban@me.co', password: clientHash('ban@me.co', 'password123') })).status === 403)
+  var banReg = await A.register(dbB, now + 3, { email: 'ban@me.co', password: clientHash('ban@me.co', 'password123') })
+  check('停用后再注册：不发验证码、不发信（回的结果跟别的邮箱一样，不暴露停用）', !banReg.dev && !banReg.mail && banReg.status !== 403, banReg)
   check('停用后验证码 403', (await A.verify(dbB, now + 4, { email: 'ban@me.co', code: regB.dev.code })).status === 403)
   var fB = await A.forgot(dbB, now + 5, { email: 'ban@me.co' })
   check('停用后 forgot 静默 200 不发信', fB.status === 200 && !fB.mail, fB)

@@ -8,6 +8,12 @@
 import json, random, string, subprocess, sys, time
 from playwright.sync_api import sync_playwright
 
+
+# 本机预览所有请求都来自 127.0.0.1：先清掉本机限流计数，免得撞上「同一地址一小时 10 封」（2026-11-24 起有地址限流）
+import subprocess as _sp
+_sp.run(['npx', 'wrangler', 'd1', 'execute', 'lianxizhi', '--local', '--command',
+         "DELETE FROM limits WHERE scope LIKE 'ip%' OR scope = 'all'"], capture_output=True)
+
 BASE = 'http://127.0.0.1:8999'
 EMAIL = f'acct-{int(time.time())}@test.local'
 results = []

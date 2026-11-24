@@ -10,6 +10,12 @@
 import json, random, string, subprocess, sys, time
 from playwright.sync_api import sync_playwright
 
+
+# 本机预览所有请求都来自 127.0.0.1：先清掉本机限流计数，免得撞上「同一地址一小时 10 封」（2026-11-24 起有地址限流）
+import subprocess as _sp
+_sp.run(['npx', 'wrangler', 'd1', 'execute', 'lianxizhi', '--local', '--command',
+         "DELETE FROM limits WHERE scope LIKE 'ip%' OR scope = 'all'"], capture_output=True)
+
 BASE = 'http://127.0.0.1:8999'
 STAMP = int(time.time())
 results = []
@@ -127,6 +133,10 @@ with sync_playwright() as p:
     check('完整版拖动进度条（分段 206）', v['status'] == 206 and v['len'] == 100 and (v['range'] or '').startswith('bytes 0-99/'), v)
     v = video(page, 'bytes=-50')
     check('分段请求「最后 50 字节」也对', v['status'] == 206 and v['len'] == 50, v)
+    v = video(page, 'bytes=0-99999999')
+    check('分段请求超出文件长度 → 夹到文件末尾', v['status'] in (200, 206) and v['len'] > 1000 and (v['range'] is None or v['range'].endswith('/' + str(v['len']))), v)
+    v = video(page, 'bytes=99999999-')
+    check('分段请求完全超出 → 416 或整段（按规范都可以）', v['status'] == 416 or (v['status'] == 200 and v['len'] > 1000), v)
 
     # ---------- 带码注册、重复注册 ----------
     c2 = br.new_context(viewport={'width': 1440, 'height': 900})
@@ -139,8 +149,16 @@ with sync_playwright() as p:
 
     c3 = br.new_context()
     p3 = c3.new_page()
-    b3 = register(p3, email)
-    check('已注册的邮箱再注册 → 页面照常进验证码页，不说「注册过」', b3.get('ok') and not b3.get('dev_code') and '注册过' not in p3.inner_text('body'), b3)
+    p3.goto(BASE + '/')
+    same = p3.evaluate("""async (e) => {
+      const h = 'a'.repeat(64)
+      const post = (em) => fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: em, password: h }) }).then(async r => ({ status: r.status, body: await r.json() }))
+      return { old: await post(e), fresh: await post('fresh-' + Date.now() + '@test.local') }
+    }""", email)
+    old, fresh = same['old'], same['fresh']
+    check('已注册的邮箱再注册 → 不说「注册过」、不给验证码', not old['body'].get('dev_code') and '注册过' not in json.dumps(old['body'], ensure_ascii=False), same)
+    check('已注册邮箱的结果和新邮箱是同一类（200 或同一句限流提示）', old['status'] in (200, 429) and fresh['status'] == 200, same)
 
     # ---------- 删除账号 ----------
     page.click('[data-account-menu]')

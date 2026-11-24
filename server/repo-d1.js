@@ -19,10 +19,11 @@ export function repo(db) {
     /* 补填邀请码：占码 + 升级 + 记开通时间放进同一批（D1 batch 是一个事务）。
        第二句带「这张码确实归我」的条件：码被别人抢先占了，账号就不升级 */
     async redeemInvite(inviteId, uid, now) {
+      /* 同一个人同时交两个码：第一句也要求账号还是免费版，不白占第二张码 */
       const r = await db.batch([
-        db.prepare('UPDATE invites SET claimed_by=?, claimed_at=?, activated_at=? WHERE id=? AND claimed_by IS NULL AND revoked_at IS NULL')
-          .bind(uid, now, now, inviteId),
-        db.prepare("UPDATE users SET plan='full', invite_id=? WHERE id=? AND EXISTS(SELECT 1 FROM invites WHERE id=? AND claimed_by=?)")
+        db.prepare("UPDATE invites SET claimed_by=?, claimed_at=?, activated_at=? WHERE id=? AND claimed_by IS NULL AND revoked_at IS NULL AND EXISTS(SELECT 1 FROM users WHERE id=? AND plan='free')")
+          .bind(uid, now, now, inviteId, uid),
+        db.prepare("UPDATE users SET plan='full', invite_id=? WHERE id=? AND plan='free' AND EXISTS(SELECT 1 FROM invites WHERE id=? AND claimed_by=?)")
           .bind(inviteId, uid, inviteId, uid)
       ])
       return !!(r[1] && r[1].meta && r[1].meta.changes > 0)
@@ -44,10 +45,12 @@ export function repo(db) {
       const r = await db.prepare('SELECT id FROM users WHERE verified=0 AND admin=0 AND created_at < ? LIMIT 20').bind(before).all()
       const ids = (r.results || []).map(x => x.id)
       const stmts = []
+      /* 每句都再确认一次「还没验证」：查出来到删之间刚好有人验证了，就一样都不动 */
+      const STILL = ' AND EXISTS(SELECT 1 FROM users WHERE id=? AND verified=0)'
       for (const id of ids) {
-        stmts.push(db.prepare('UPDATE invites SET claimed_by=NULL, claimed_at=NULL WHERE claimed_by=? AND activated_at IS NULL').bind(id))
-        stmts.push(db.prepare('DELETE FROM tokens WHERE user_id=?').bind(id))
-        stmts.push(db.prepare('DELETE FROM data WHERE user_id=?').bind(id))
+        stmts.push(db.prepare('UPDATE invites SET claimed_by=NULL, claimed_at=NULL WHERE claimed_by=? AND activated_at IS NULL' + STILL).bind(id, id))
+        stmts.push(db.prepare('DELETE FROM tokens WHERE user_id=?' + STILL).bind(id, id))
+        stmts.push(db.prepare('DELETE FROM data WHERE user_id=?' + STILL).bind(id, id))
         stmts.push(db.prepare('DELETE FROM users WHERE id=? AND verified=0').bind(id))
       }
       stmts.push(db.prepare('DELETE FROM limits WHERE until < ? AND ts < ?').bind(now, now - 2 * 86400 * 1000))
