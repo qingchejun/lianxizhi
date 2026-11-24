@@ -106,6 +106,11 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   res = await M.onRequest(c)
   check('静态资源不查库直接放行', res.status === 200 && c.calls.next === 1)
 
+  /* ---- 给搜索引擎的文件 ---- */
+  check('robots.txt 公开（不被 .txt 规则拦）', G.decide('/robots.txt', '', false).action === 'pass')
+  check('sitemap.xml 公开', G.decide('/sitemap.xml', '', false).action === 'pass')
+  check('其他 .txt 照样拦', G.decide('/js/vendor/LICENSE-qrcode-generator.txt', '', false).action === 'deny' && G.decide('/notes.txt', '', true).action === 'deny')
+
   /* ---- 换域名（server/move.js） ---- */
   c = ctx('/kousuan?x=1', null, 'www.zhihebi.com')
   res = await M.onRequest(c)

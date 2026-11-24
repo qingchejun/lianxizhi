@@ -4,7 +4,7 @@
  * 登录后回原页。静态资源与接口放行——接口各自验登录（requireSession），页面里的数据也只在登录后拉取。
  */
 const PUBLIC_PREFIXES = ['/api/', '/css/', '/js/', '/fonts/', '/icons/']
-const PUBLIC_FILES = ['/robots.txt', '/favicon.ico']
+const PUBLIC_FILES = ['/robots.txt', '/sitemap.xml', '/favicon.ico'] /* 给搜索引擎的两份文件优先于下面按扩展名的拒绝 */
 const HOME = ['/', '/index', '/index.html']
 const WELCOME = ['/welcome', '/welcome.html']
 
@@ -33,6 +33,7 @@ export function assetCacheControl(search, status) {
 
 export function decide(path, search, loggedIn) {
   if (suspicious(path)) return { action: 'deny' }
+  if (PUBLIC_FILES.includes(path)) return { action: 'pass', asset: true }
   if (DENY_PREFIXES.some(p => path.startsWith(p)) || DENY_FILES.includes(path) ||
       (DENY_EXT.test(path) && !path.startsWith('/fonts/'))) return { action: 'deny' }
   if (PUBLIC_PREFIXES.some(p => path.startsWith(p)) || PUBLIC_FILES.includes(path)) return { action: 'pass', asset: true }

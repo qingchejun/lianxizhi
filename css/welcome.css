@@ -831,3 +831,28 @@ body.welcome .wl-main {
     font-size: 21px;
   }
 }
+
+/* 错哪练哪 / 年级 / 常见问题（2026-11-24 首页 TDH 改版） */
+.wl-block > p,
+.wl-faq p {
+  margin: 0 0 10px;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--ink-2);
+}
+.wl-block > p + .wl-easy {
+  margin-top: 20px;
+}
+.wl-faq {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 48px;
+}
+.wl-faq h3 {
+  margin: 12px 0 4px;
+  font-size: 16px;
+  color: var(--ink);
+}
+@media (max-width: 760px) {
+  .wl-faq { display: block; }
+}

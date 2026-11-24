@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /api/
+Disallow: /mark
+Disallow: /admin
+
+Sitemap: https://zhihebi.com/sitemap.xml
