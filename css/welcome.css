@@ -147,23 +147,23 @@ body.welcome .wl-main {
   transform-origin: 50% 100%;
 }
 
-/* 三张样张整组在样张区里上下居中（样张区跟左栏一样高，高度不固定） */
+/* 样张固定在顶部：样张区跟左栏一样高，左栏切到「注册」变高时只是灰底往下延长，样张不跳 */
 .wl-s1 {
   left: 6%;
-  top: calc(50% - 194px);
+  top: 76px;
   transform: rotate(-6deg);
 }
 
 .wl-s2 {
   left: 50%;
-  top: calc(50% - 230px);
+  top: 40px;
   margin-left: -140px;
   z-index: 2;
 }
 
 .wl-s3 {
   right: 6%;
-  top: calc(50% - 178px);
+  top: 92px;
   z-index: 1;
   transform: rotate(5deg);
 }
