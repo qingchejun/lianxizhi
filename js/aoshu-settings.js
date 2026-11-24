@@ -104,6 +104,10 @@
     } catch (e) {
       stored = {} // 隐私模式或数据损坏时回退默认值
     }
+    /* 复习卷开关不跨次记住（2026-11-24）：重新打开奥数页总是落在上次那一课，免得新用户
+       进来只看到复习卷、找不到讲解视频。只有当场勾开关或链接带 review=true（「今天」页的
+       「打印复习卷」）才进复习卷；混哪几课（reviewTopics）照常记着。 */
+    delete stored.review
     var fromUrl = {}
     try {
       new URLSearchParams(root.location.search).forEach(function (v, k) {
@@ -118,14 +122,14 @@
   /* 保存：写 localStorage，并把「非默认值」的项同步进 URL（保持链接干净可收藏） */
   function save(s) {
     try {
-      root.SumSum.store.set(KEY, s)
+      root.SumSum.store.set(KEY, Object.assign({}, s, { review: false }))
     } catch (e) {
       /* 隐私模式下写入失败可忽略 */
     }
     try {
       var params = new URLSearchParams()
       Object.keys(DEFAULTS).forEach(function (k) {
-        if (s[k] !== DEFAULTS[k]) params.set(k, String(s[k]))
+        if (k !== 'review' && s[k] !== DEFAULTS[k]) params.set(k, String(s[k])) // review 不进地址：刷新后回到那一课
       })
       var qs = params.toString()
       root.history.replaceState(null, '', qs ? '?' + qs : root.location.pathname)

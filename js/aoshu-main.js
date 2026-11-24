@@ -77,10 +77,11 @@
    */
   var viewStage = (S.aoshu.topics[settings.topic] || { stage: 'L1' }).stage
 
+  /* 点课名 = 去上这一课：复习卷开着也直接退出（勾的混哪几课保留），哪怕点的就是原来那一课 */
   function selectTopic(id) {
-    if (id === settings.topic) return
+    if (id === settings.topic && !settings.review) return
     settings = S.aoshu.settings.sanitize(
-      Object.assign({}, settings, { topic: id, title: '' })
+      Object.assign({}, settings, { topic: id, title: '', review: false })
     )
     refresh()
   }
@@ -334,11 +335,15 @@
     var group = $('video-group')
     var vid = group.querySelector('video')
     if (s.review) {
+      /* 复习卷混了好几课，没有讲解视频：留一行说明和回到原来那一课的按钮，别让视频凭空消失 */
       if (vid) vid.pause()
-      group.hidden = true
+      videoFor = null
+      var back = outlineOf(s.topic)
+      group.innerHTML = '<p class="video-none">' + CAM_SVG + '复习卷混了好几课，没有讲解视频。</p>' +
+        (back ? '<button type="button" class="btn btn-sm video-back" data-act="back">回到第 ' + back.no + ' 课' +
+          (S.aoshuVideos.of(s.topic) ? '（有视频）' : '') + '</button>' : '')
       return
     }
-    group.hidden = false
     if (videoFor === s.topic) return
     videoFor = s.topic
     if (vid) vid.pause()
@@ -366,6 +371,7 @@
   $('video-group').addEventListener('click', function (ev) {
     var b = ev.target.closest('[data-act]')
     if (!b) return
+    if (b.getAttribute('data-act') === 'back') return selectTopic(settings.topic)
     setBig(b.getAttribute('data-act') === 'big')
   })
 

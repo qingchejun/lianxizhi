@@ -740,6 +740,10 @@
   stroke: var(--ink-faint);
 }
 
+#video-group .video-back {
+  margin-top: 8px;
+}
+
 .video-box video {
   display: block;
   width: 100%;
