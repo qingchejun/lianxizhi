@@ -154,7 +154,7 @@ import('../server/auth-core.js').then(async function (A) {
   check('一小时内第 4 封 → 429', fourth.status === 429, fourth)
 
   /* --- 邮件是中文纯文本且不含营销话术（spec） --- */
-  check('邮件文案到位', /验证码/.test(reg.mail.text) && reg.mail.subject.indexOf('练习纸') === 0)
+  check('邮件文案到位', /验证码/.test(reg.mail.text) && reg.mail.subject.indexOf('纸和笔') === 0)
 
   /* ===== Task 6：登录 / 锁定 / 找回 / 重设 / data ===== */
   var MIN = 60 * 1000

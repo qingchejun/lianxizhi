@@ -43,7 +43,7 @@
 
   /* 返回 { ok: true, data } 或 { ok: false, error: 给家长看的一句话 }。一条不对就整份拒绝 */
   function parse(text) {
-    var NOT_OURS = '这不是「练习纸」导出的备份文件。'
+    var NOT_OURS = '这不是「纸和笔」导出的备份文件。'
     if (typeof text !== 'string' || !text.trim()) return { ok: false, error: '文件是空的。' }
     if (text.length > MAX_CHARS) return { ok: false, error: '文件太大了，' + NOT_OURS }
     var pack

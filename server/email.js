@@ -2,7 +2,7 @@
  * 发信：Resend HTTP API。没配 RESEND_API_KEY（本地开发）时打日志当发出去了，
  * 让 e2e 能靠 DEV_SHOW_CODE 走完整流程。发件人 spec 定死，不许改。
  */
-const FROM = '练习纸 <no-reply@mail.qingchejun.com>'
+const FROM = '纸和笔 <no-reply@mail.qingchejun.com>'
 
 export async function sendMail(env, mail) {
   if (!env.RESEND_API_KEY) {

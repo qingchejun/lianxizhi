@@ -2,12 +2,16 @@ import { decide, assetCacheControl } from '../server/gate.js'
 import { readCookie, verify, COOKIE } from '../server/session.js'
 import { meBySession } from '../server/auth-core.js'
 import { repo } from '../server/repo-d1.js'
+import { moveDecision } from '../server/move.js'
 
 /* 全站登录门槛。规则见 server/gate.js；验登录沿用 /api/auth/me 的 meBySession（验签 + 改密/停用即失效）。
    验完顺手把登录态写进网页（window.__SUMSUM_ME），页面不用再单独请求一次 /api/auth/me——
    国内连海外服务器，多一个请求就可能多等十几秒（2026-11-24 手机实测「登录 11.2 秒」）。 */
 export async function onRequest(context) {
   const url = new URL(context.request.url)
+  /* www → 不带 www（任何请求） */
+  const www = moveDecision(url.hostname, url.pathname, url.search, true, true)
+  if (www && url.hostname.startsWith('www.')) return movedTo(www.location)
   const pre = decide(url.pathname, url.search, false)
   if (pre.action === 'deny') return new Response('Not found', { status: 404, headers: { 'Cache-Control': 'no-store' } })
   if (pre.action === 'pass') { /* 静态资源、接口：不查库 */
@@ -28,6 +32,10 @@ export async function onRequest(context) {
     me = { ok: false } /* 数据库出错：宁可拦下，也不放没验过的人进来 */
   }
   const session = !!(me && me.ok)
+  /* 旧地址打开网页：没登录直接搬，登录了先在旧页面把数据传完再跳（见 server/move.js） */
+  const move = moveDecision(url.hostname, url.pathname, url.search, context.request.method === 'GET', session)
+  if (move && move.action === 'redirect') return movedTo(move.location)
+  if (move && move.action === 'soft') me = Object.assign({}, me, { moveTo: move.to })
   const r = decide(url.pathname, url.search, session)
 
   if (r.action === 'redirect') {
@@ -42,10 +50,15 @@ export async function onRequest(context) {
 }
 
 /* 只给网页注入；字段与 /api/auth/me 的返回一致（js/account.js init 直接用） */
+function movedTo(location) {
+  return new Response(null, { status: 301, headers: { Location: location, 'Cache-Control': 'no-store' } })
+}
+
 function meScript(me) {
   const safe = me && me.ok
     ? { ok: true, email: String(me.email || ''), verified: !!me.verified, admin: !!me.admin }
     : { ok: false }
+  if (me && me.ok && me.moveTo) safe.moveTo = String(me.moveTo)
   return '<script>window.__SUMSUM_ME=' + JSON.stringify(safe).replace(/</g, '\\u003c') + '</script>'
 }
 

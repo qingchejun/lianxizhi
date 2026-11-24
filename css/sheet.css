@@ -169,7 +169,7 @@ body.landscape .sheet {
 
 /* 纸上的落款：纸会被带到学校、被别的家长看到。页码居中不动，落款靠右、浅灰小字 */
 .sheet-foot::after {
-  content: "练习纸 · 一页纸，五分钟";
+  content: "纸和笔 · 一页纸，五分钟";
   position: absolute;
   right: 0;
   bottom: 0;

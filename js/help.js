@@ -14,7 +14,7 @@
   var doc = root.document
 
   var START =
-    '<p>练习纸的初衷就六个字：<b>少报班，少看屏</b>。它给一年级孩子出 A4 练习纸。每天打开网站，先到<b>今天</b>：每个板块今天要做的纸都摆在那里。</p>' +
+    '<p>纸和笔的初衷就六个字：<b>少报班，少看屏</b>。它给一年级孩子出 A4 练习纸。每天打开网站，先到<b>今天</b>：每个板块今天要做的纸都摆在那里。</p>' +
     '<ol class="help-steps">' +
       '<li><b>选一张纸</b>：在「今天」点纸上的「打印」，或点进板块调整题型、范围和题量。</li>' +
       '<li><b>看一眼</b>：板块页中间的纸，就是打印出来的样子；右边是设置。</li>' +
@@ -361,7 +361,7 @@
       if (!Object.keys(pack.data).length) {
         return say('这个浏览器上还没有可以备份的进度。', 'bad')
       }
-      var name = '练习纸备份-' + stamp() + '.json'
+      var name = '纸和笔备份-' + stamp() + '.json'
       var url = URL.createObjectURL(new Blob([JSON.stringify(pack)], { type: 'application/json' }))
       var a = doc.createElement('a')
       a.href = url

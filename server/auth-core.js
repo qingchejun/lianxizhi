@@ -61,8 +61,8 @@ async function issueCode(repo, user, now, kind) {
   await mailMark(repo, user.email, now)
   await repo.limitSet(user.email, 'codefail', { n: 0, ts: now, until: 0 }) /* 新码配新的 5 次机会 */
   const mail = kind === 'reset'
-    ? { to: user.email, subject: '练习纸 · 重设密码验证码', text: '重设密码的验证码：' + code + '\n10 分钟内有效，用一次就作废。如果不是你在操作，忽略这封邮件就行，密码不会变。' }
-    : { to: user.email, subject: '练习纸 · 验证码', text: '验证码：' + code + '\n10 分钟内有效。如果不是你在操作，忽略这封邮件就行。' }
+    ? { to: user.email, subject: '纸和笔 · 重设密码验证码', text: '重设密码的验证码：' + code + '\n10 分钟内有效，用一次就作废。如果不是你在操作，忽略这封邮件就行，密码不会变。' }
+    : { to: user.email, subject: '纸和笔 · 验证码', text: '验证码：' + code + '\n10 分钟内有效。如果不是你在操作，忽略这封邮件就行。' }
   return {
     status: 200, body: { ok: true },
     mail: mail,

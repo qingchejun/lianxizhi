@@ -70,6 +70,7 @@
     if (pre && typeof pre === 'object') {
       root.__SUMSUM_ME = null
       if (pre.ok) setLogin(pre.email, pre.admin)
+      if (pre.ok && typeof pre.moveTo === 'string') state.moveTo = pre.moveTo /* 旧网址：同步完要跳到新网址（account-ui） */
       return state
     }
     var r = await request('/api/auth/me', undefined, fetchFn)

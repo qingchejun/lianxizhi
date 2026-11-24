@@ -50,11 +50,11 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   var SECRET = 'gate-secret'
   var users = { u1: { id: 'u1', pwver: 2, banned: 0 }, u2: { id: 'u2', pwver: 1, banned: 1 } }
   var dbDown = false
-  function ctx(path, cookie) {
+  function ctx(path, cookie, host) {
     var calls = { next: 0, assets: [] }
     return {
       calls: calls,
-      request: new Request('https://lianxizhi.qingchejun.com' + path, { headers: cookie ? { Cookie: cookie } : {} }),
+      request: new Request('https://' + (host || 'zhihebi.com') + path, { headers: cookie ? { Cookie: cookie } : {} }),
       env: {
         SESSION_SECRET: SECRET,
         DB: { prepare: function () { return { bind: function (id) { return { first: async function () {
@@ -105,6 +105,33 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   c = ctx('/js/store.js')
   res = await M.onRequest(c)
   check('静态资源不查库直接放行', res.status === 200 && c.calls.next === 1)
+
+  /* ---- 换域名（server/move.js） ---- */
+  c = ctx('/kousuan?x=1', null, 'www.zhihebi.com')
+  res = await M.onRequest(c)
+  check('www → 301 不带 www 的同一页', res.status === 301 && res.headers.get('Location') === 'https://zhihebi.com/kousuan?x=1', res.headers.get('Location'))
+  c = ctx('/mark?id=abc234', null, 'lianxizhi.pages.dev')
+  res = await M.onRequest(c)
+  check('旧地址没登录扫旧二维码 → 301 新地址同一页', res.status === 301 && res.headers.get('Location') === 'https://zhihebi.com/mark?id=abc234' && c.calls.next === 0, res.headers.get('Location'))
+  c = ctx('/', null, 'lianxizhi.qingchejun.com')
+  res = await M.onRequest(c)
+  check('旧地址首页（谷歌）→ 301 新首页', res.status === 301 && res.headers.get('Location') === 'https://zhihebi.com/')
+  c = ctx('/kousuan', good, 'lianxizhi.qingchejun.com')
+  res = await M.onRequest(c)
+  check('旧地址已登录（过渡期）→ 页面照常打开，等同步完再跳', res.status === 200 && c.calls.next === 1)
+  c = ctx('/api/data', good, 'lianxizhi.pages.dev')
+  res = await M.onRequest(c)
+  check('旧地址的接口照常处理（不跳）', res.status === 200 && c.calls.next === 1)
+  c = ctx('/js/store.js', null, 'lianxizhi.pages.dev')
+  res = await M.onRequest(c)
+  check('旧地址的静态文件照常给', res.status === 200 && c.calls.next === 1)
+  c = ctx('/kousuan', null, 'abc123.lianxizhi.pages.dev')
+  res = await M.onRequest(c)
+  check('预览部署地址不跳', res.status === 302 && res.headers.get('Location').indexOf('/?next=') === 0)
+  var MV = await import('../server/move.js')
+  check('过渡期结束（hard）：已登录也直接跳', MV.moveDecision('lianxizhi.pages.dev', '/kousuan', '', true, true, 'hard').action === 'redirect')
+  check('退回旧地址（off）：都不跳', MV.moveDecision('lianxizhi.pages.dev', '/kousuan', '', true, false, 'off') === null)
+  check('已登录过渡期：注入的跳转地址带原路径', MV.moveDecision('lianxizhi.pages.dev', '/mark', '?id=abc', true, true, 'soft').to === 'https://zhihebi.com/mark?id=abc')
 
   console.log(bad ? '---- 登录门槛有 ' + bad + ' 条没过' : '✓ 登录门槛全部通过')
   process.exit(bad ? 1 : 0)

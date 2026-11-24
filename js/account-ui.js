@@ -285,6 +285,16 @@
     else say('登录成功，正在打开…', 'ok')
   }
 
+  function moveBar() {
+    if (doc.getElementById('move-bar')) return
+    var bar = doc.createElement('div')
+    bar.id = 'move-bar'
+    bar.className = 'move-bar'
+    bar.setAttribute('role', 'status')
+    bar.textContent = '网址换成 zhihebi.com 了。正在把这台设备上的练习进度存好，马上自动跳过去；到了新网址要重新登录一次。'
+    doc.body.appendChild(bar)
+  }
+
   var syncStarted = false
   function startSync() {
     var sync = root.SumSum.sync
@@ -469,8 +479,18 @@
       if (dlg && dlg.open) render() /* 登录态变了，弹窗内容跟着换 */
     })
     var initialSync = A.init().then(function () {
+      if (A.state.moveTo) moveBar()
       if (A.state.loggedIn) return startSync()
     }).catch(function () { /* 探不到登录态就当未登录，别抛未处理的 Promise 异常 */ })
+    /* 换域名过渡期（server/move.js）：旧网址上先把这台设备的数据同步上云，再跳到新网址同一页 */
+    initialSync.then(function () {
+      var to = A.state.moveTo
+      if (!to) return
+      var sync = root.SumSum.sync
+      return Promise.resolve(sync && sync.flush ? sync.flush() : null).then(function () {
+        root.location.replace(to)
+      })
+    })
     /* ?reset=<token>：改版前发出的重设链接。token 不留在历史记录里 */
     var m = root.location.search.match(/[?&]reset=([0-9a-f]{64})/)
     if (m) {

@@ -28,7 +28,7 @@ function fire(scope, type) {
 }
 
 var doc = {
-  title: '口算 · 练习纸',
+  title: '口算 · 纸和笔',
   addEventListener: function (t, fn) { on('doc', t, fn) },
   querySelectorAll: function () { return [] },
   getElementById: function () { return null },
@@ -45,7 +45,7 @@ var win = {
 new Function('window', fs.readFileSync(path.join(__dirname, '../js/shell.js'), 'utf8'))(win)
 
 /* ---- beforeprint：拼上时间戳 ---- */
-var re = /^口算 · 练习纸 · \d{4}\d{2}\d{2}-\d{2}\d{2}\d{2}$/
+var re = /^口算 · 纸和笔 · \d{4}\d{2}\d{2}-\d{2}\d{2}\d{2}$/
 fire('win', 'beforeprint')
 ok('打印中标题带 年月日-时分秒', re.test(doc.title), '实际是 ' + doc.title)
 
@@ -55,11 +55,11 @@ ok('打印中重复触发不叠加', doc.title.match(/·/g).length === 2, '实�
 
 /* ---- afterprint：还原 ---- */
 fire('win', 'afterprint')
-ok('打印后标题还原', doc.title === '口算 · 练习纸', '实际是 ' + doc.title)
+ok('打印后标题还原', doc.title === '口算 · 纸和笔', '实际是 ' + doc.title)
 
 /* 没在打印时 afterprint（不该把标题改没） */
 fire('win', 'afterprint')
-ok('未打印时还原是空操作', doc.title === '口算 · 练习纸', '实际是 ' + doc.title)
+ok('未打印时还原是空操作', doc.title === '口算 · 纸和笔', '实际是 ' + doc.title)
 
 /* ---- 再来一轮，时间戳应当是新的 ---- */
 fire('win', 'beforeprint')

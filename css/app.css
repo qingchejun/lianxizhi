@@ -1891,3 +1891,21 @@ select.input {
 @media print {
   .cloud-toast { display: none !important; }
 }
+
+/* 换域名过渡期提示（js/account-ui.js moveBar） */
+.move-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 60;
+  padding: 10px 16px;
+  background: var(--blue-deep);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+}
+@media print {
+  .move-bar { display: none !important; }
+}
