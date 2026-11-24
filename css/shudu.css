@@ -302,9 +302,17 @@
   gap: 20px;
 }
 
-.play-row > #preview {
+.play-row > .play-col {
   flex: 0 1 auto;
   min-width: 0;
+}
+
+/* 纸下面的介绍和纸同一列（右边有作答面板，按整个区域居中会和纸错开）；宽度跟着纸走，不把这一列撑宽 */
+.play-col > .board-intro,
+.play-col > .guest-note {
+  width: 0;
+  min-width: 100%;
+  box-sizing: border-box;
 }
 
 .num-bar {
