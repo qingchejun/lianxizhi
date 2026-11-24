@@ -30,3 +30,7 @@
 .admin-note-txt { cursor: pointer; }
 .admin-note-txt:hover { text-decoration: underline dotted; color: #111; }
 .admin-note-input { width: 100%; min-width: 140px; padding: 4px 6px; border: 1px solid #2b6cb0; border-radius: 4px; font-size: 13px; font-family: inherit; }
+
+/* 账号统计与列表（2026-11-24 放开注册） */
+.admin-h2 { margin: 36px 0 8px; font-size: 18px; }
+.admin-stats { margin: 0 0 12px; font-size: 14px; color: #444; line-height: 1.8; }

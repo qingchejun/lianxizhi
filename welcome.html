@@ -15,8 +15,8 @@
   <meta property="og:title" content="纸和笔 · 小学生每日打印练习纸：错哪练哪，一页五分钟" />
   <meta property="og:description" content="每天一页 A4 练习：口算、识字、拼音、奥数和思维游戏。做完扫码打个分，第二天按错题自动安排。少报班，少看屏。" />
   <meta property="og:image" content="https://zhihebi.com/icons/apple-touch-icon.png" />
-  <link rel="stylesheet" href="css/app.css?v=6e99537020" />
-  <link rel="stylesheet" href="css/welcome.css?v=8ab0256e9d" />
+  <link rel="stylesheet" href="css/app.css?v=df6f155eac" />
+  <link rel="stylesheet" href="css/welcome.css?v=e8c09949a3" />
 </head>
 <body class="welcome">
 <!-- 没登录时首页的内容（functions/_middleware.js 在网址 / 上直接返回本页，本页没有单独网址）。
@@ -24,7 +24,7 @@
 
 <header class="wl-top">
   <a class="wl-brand" href="/" aria-label="纸和笔"><img src="icons/mark.svg?v=e200a2b101" width="30" height="30" alt=""><span>纸和笔</span></a>
-  <span class="wl-invite">邀请制 · 小圈子使用</span>
+  <span class="wl-invite">免费注册，口算、数独直接用</span>
 </header>
 
 <main class="wl-main">
@@ -37,6 +37,7 @@
       <div class="wl-auth" id="login" data-account-inline="login" aria-live="polite">
         <noscript><p class="tip warn">请打开浏览器的 JavaScript 后再登录。</p></noscript>
       </div>
+      <p class="wl-signup">没有账号？<button type="button" class="link-btn" data-wl-signup>免费注册</button>，不用邀请码，口算、数独直接用。</p>
       <p class="wl-mobile-tip">登录、查看进度用手机就行；<b>打印请在电脑上打开</b>这个网址。</p>
     </div>
 
@@ -180,7 +181,7 @@
   <section class="wl-block" aria-labelledby="wl-faq">
     <h2 id="wl-faq">常见问题</h2>
     <div class="wl-faq">
-      <div><h3>要钱吗？</h3><p>目前是邀请制，在小圈子里免费使用。</p></div>
+      <div><h3>要钱吗？</h3><p>口算、数独免费，不注册也能出题打印，注册后还能扫码打分、按错题出下一张。奥数、识字、拼音等其余七个板块属于完整版，现在凭邀请码开通。</p></div>
       <div><h3>家里需要打印机吗？</h3><p>需要能打 A4 的打印机，家用黑白的就够。没有打印机，也可以把纸存成 PDF 拿去打印店。</p></div>
       <div><h3>手机能用吗？</h3><p>打分、看进度用手机就行；挑题、打印建议在电脑上打开，屏幕上的纸就是打出来的样子。</p></div>
       <div><h3>跟学校的课本对得上吗？</h3><p>识字可以选人教版课本字表，只考学校已经教过的字；口算、拼音、奥数按一年级的通用内容出题，可以自己调题型和题量。</p></div>
@@ -197,10 +198,10 @@
   </div>
 </footer>
 
-<script src="js/aoshu-videos.js?v=5f00a1006d"></script>
+<script src="js/aoshu-videos.js?v=aa667718bc"></script>
 <script>(function(){try{var n=Object.keys(window.SumSum.aoshuVideos.list).length;document.querySelectorAll("[data-video-count]").forEach(function(e){e.textContent=n})}catch(e){}})()</script>
-<script src="js/account.js?v=8c5bb3b2db"></script>
-<script src="js/account-ui.js?v=2f4ad07441"></script>
+<script src="js/account.js?v=b77842714f"></script>
+<script src="js/account-ui.js?v=4ed8d7ae77"></script>
 <script>
   /* 登录成功 → 回到被拦下时想去的页面（只认站内路径，防跳到外站），否则刷新首页进「今天」 */
   ;(function () {
@@ -230,6 +231,14 @@
     /* 打开时确实没登录 → 计数清零（只有「登录了却被送回这页」才累计） */
     SumSum.accountUI.initialSync.then(function () {
       if (!SumSum.account.state.loggedIn) try { sessionStorage.removeItem('sumsum:welcome:tries') } catch (e) {}
+    })
+    /* 登录框下面的「免费注册」：切到注册页签 */
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest || !e.target.closest('[data-wl-signup]')) return
+      var t = document.querySelector('.wl-auth [data-goto="register"]')
+      if (t) t.click()
+      var em = document.querySelector('.wl-auth [name="email"]')
+      if (em) em.focus()
     })
     /* 邀请链接 /?invite=K7M2-QF9W：直接切到注册，邀请码替家长填好 */
     var invite = (params.get('invite') || '').toUpperCase().replace(/[^0-9A-Z]/g, '')

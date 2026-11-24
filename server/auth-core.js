@@ -11,6 +11,51 @@ const CODE_MAX_FAILS = 5
 const MAIL_INTERVAL = 60 * 1000
 const MAIL_HOUR_MAX = 3
 
+/* ---- 2026-11-24 放开注册：免费版 / 完整版，发信总量与按地址限流（方案 open-register-full-plan.md） ---- */
+export const PLAN_FREE = 'free'
+export const PLAN_FULL = 'full'
+const DAY = 86400 * 1000
+const HOUR = 3600 * 1000
+/* 全站每天发信上限（按世界标准时间算天）：没验证过的新账号最多用 NEW 封，
+   其余（带邀请码注册、已注册账号找回密码等）一起不超过 ALL —— 刷注册刷不光老用户的额度 */
+export const MAIL_DAY_NEW = 150
+export const MAIL_DAY_ALL = 200
+const IP_HOUR_MAX = 10
+const IP_DAY_MAX = 20
+const INVITE_IP_HOUR_FAILS = 20 /* 换邮箱猜码：按地址再计一次 */
+const UNVERIFIED_TTL = 48 * HOUR
+
+function dayStart(now) { return now - (now % DAY) }
+function hourStart(now) { return now - (now % HOUR) }
+
+/* IPv6 按 /64 一段算（一台机器通常拿到一整段，按单个地址限等于没限） */
+export function ipScope(ip) {
+  ip = String(ip || '').trim().toLowerCase()
+  if (!ip) return ''
+  if (ip.indexOf(':') >= 0) {
+    const parts = ip.split('::')[0].split(':')
+    return 'ip6:' + parts.slice(0, 4).join(':')
+  }
+  return 'ip:' + ip
+}
+
+/* 发信闸：按地址每小时 / 每天，再按全站每天。用原子计数，不会多发 */
+async function sendGate(repo, now, opts) {
+  const scope = ipScope(opts && opts.ip)
+  if (scope) {
+    if (!(await repo.counterBump(scope, 'mailhour', hourStart(now), IP_HOUR_MAX))) return 'ip'
+    if (!(await repo.counterBump(scope, 'mailday', dayStart(now), IP_DAY_MAX))) return 'ip'
+  }
+  const bucket = (opts && opts.bucket) || 'new'
+  if (bucket === 'new' && !(await repo.counterBump('all', 'mailnew', dayStart(now), MAIL_DAY_NEW))) return 'day'
+  if (!(await repo.counterBump('all', 'mailall', dayStart(now), MAIL_DAY_ALL))) return 'day'
+  return null
+}
+const GATE_MSG = {
+  ip: '这个网络今天发的验证码太多了，换个网络或明天再试。',
+  day: '今天注册的人太多了，验证码发不过来，请明天再来。'
+}
+
 async function sha256hex(s) {
   const d = await crypto.subtle.digest('SHA-256', enc.encode(s))
   return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('')
@@ -47,11 +92,13 @@ async function mailMark(repo, email, now) {
 }
 
 /* ---- 发验证码（6 位、hash 入库、10 分钟） ---- */
-async function issueCode(repo, user, now, kind) {
+async function issueCode(repo, user, now, kind, opts) {
   kind = kind || 'verify'
   const gate = await mailGate(repo, user.email, now)
   if (gate === 'interval') return { status: 429, body: { ok: false, error: '发送太频繁了，一分钟后再试。' } }
   if (gate === 'hour') return { status: 429, body: { ok: false, error: '这一小时发的邮件够多了，过一小时再试。' } }
+  const sg = await sendGate(repo, now, Object.assign({ bucket: user.verified ? 'old' : (user.invite_id ? 'invite' : 'new') }, opts))
+  if (sg) return { status: 429, body: { ok: false, error: GATE_MSG[sg] }, capped: sg }
   const code = String(100000 + (parseInt(randomHex(8), 16) % 900000))
   const salt = randomHex(16)
   await repo.tokenInsert({
@@ -70,45 +117,128 @@ async function issueCode(repo, user, now, kind) {
   }
 }
 
-/* ---- 注册（邀请码门槛：先验码再发邮件，不浪费 Resend 额度） ---- */
+/* ---- 注册（2026-11-24 放开：邀请码选填。填对 = 完整版；不填 = 免费版；填错 = 不注册，免得家长以为开了完整版） ---- */
 const INVITE_MAX_FAILS = 5
 const INVITE_LOCK_MS = 15 * 60 * 1000
+const BAD_INVITE = '邀请码不对，检查一下；没有邀请码可以清空这一栏，先免费注册。'
 
-export async function register(repo, now, body) {
+/* 校验邀请码（不占用）：试错按邮箱 / 账号计数，再按地址计数（换邮箱猜码也挡得住）。返回 { inv } 或 { res } */
+async function checkInvite(repo, now, who, code, ip) {
+  const fails = await repo.limitGet(who, 'invitefail')
+  if (fails && fails.until > now) return { res: { status: 429, body: { ok: false, error: '邀请码错得太多，等 15 分钟再试。' } } }
+  const scope = ipScope(ip)
+  if (scope) {
+    const row = await repo.limitGet(scope, 'invitefail')
+    if (row && row.ts >= hourStart(now) && row.n >= INVITE_IP_HOUR_FAILS) {
+      return { res: { status: 429, body: { ok: false, error: '邀请码错得太多，过一小时再试。' } } }
+    }
+  }
+  const inv = await repo.inviteGetByCode(code)
+  if (!inv || inv.revoked_at || inv.claimed_by) {
+    const n = (fails ? fails.n : 0) + 1
+    await repo.limitSet(who, 'invitefail', { n: n, ts: now, until: n >= INVITE_MAX_FAILS ? now + INVITE_LOCK_MS : 0 })
+    if (scope) await repo.counterBump(scope, 'invitefail', hourStart(now), 1e9)
+    return { res: { status: 422, body: { ok: false, error: BAD_INVITE } } }
+  }
+  return { inv: inv }
+}
+
+/* 没验证的账号放 48 小时就清掉（邮箱、它占着的邀请码都放回去）。Pages 没有定时任务，借注册的请求顺手清 */
+async function purgeStale(repo, now) {
+  if (repo.purgeUnverified) await repo.purgeUnverified(now - UNVERIFIED_TTL, now)
+}
+
+export async function register(repo, now, body, ctx) {
+  ctx = ctx || {}
   const email = normEmail(body && body.email)
   const pw = (body && body.password) || ''
   if (!validEmail(email)) return { status: 422, body: { ok: false, error: '邮箱地址看起来不对。' } }
   if (!validClientHash(pw)) return { status: 422, body: { ok: false, error: '密码至少 8 位。' } }
+  await purgeStale(repo, now)
+  const code = normInvite(body && body.invite)
   let user = await repo.userByEmail(email)
-  if (user && user.verified) return { status: 409, body: { ok: false, error: '这个邮箱已经注册过了，直接登录就行。' } }
+  if (user && user.verified) {
+    /* 不在页面上说「已经注册过」（放开注册后这句话谁都能拿来查邮箱）：页面照常进验证码页，
+       邮箱主人收到的是一封「已经注册过，直接登录」的提醒 */
+    const ok = { status: 200, body: { ok: true } }
+    if (user.banned || await mailGate(repo, email, now)) return ok
+    if (await sendGate(repo, now, { ip: ctx.ip, bucket: 'old' })) return ok
+    await mailMark(repo, email, now)
+    ok.mail = { to: email, subject: '纸和笔 · 这个邮箱已经注册过', text: '有人（可能就是你）刚用这个邮箱在纸和笔注册。这个邮箱已经有账号了，直接登录就行；忘了密码，在登录框点「忘记密码」。\n如果不是你在操作，忽略这封邮件就行。' }
+    return ok
+  }
+  if (user && user.banned) return { status: 403, body: { ok: false, error: '账号已被停用。' } }
+  let inv = null
+  if (code) {
+    const c = await checkInvite(repo, now, email, code, ctx.ip)
+    if (c.res) return c.res
+    inv = c.inv
+  }
   if (user) {
-    if (user.banned) return { status: 403, body: { ok: false, error: '账号已被停用。' } }
-    /* 未验证过的邮箱重复注册 = 换密码重来（裁定 5）；码已绑在这个邮箱上，不再要 */
+    /* 未验证过的邮箱重复注册 = 换密码重来（裁定 5）。别人抢先用这个邮箱注册过也没关系：
+       真主人这次带的邀请码照样认，开成完整版（不会被悄悄降成免费版） */
     await repo.updateUser(user.id, { pw_hash: await sha256hex(user.pw_salt + pw) })
-  } else {
-    const code = normInvite(body && body.invite)
-    if (!code) return { status: 422, body: { ok: false, error: '现在需要邀请码才能注册。' } }
-    const fails = await repo.limitGet(email, 'invitefail')
-    if (fails && fails.until > now) return { status: 429, body: { ok: false, error: '邀请码错得太多，等 15 分钟再试。' } }
-    const inv = await repo.inviteGetByCode(code)
-    if (!inv || inv.revoked_at || inv.claimed_by) {
-      const n = (fails ? fails.n : 0) + 1
-      await repo.limitSet(email, 'invitefail', { n: n, ts: now, until: n >= INVITE_MAX_FAILS ? now + INVITE_LOCK_MS : 0 })
-      return { status: 422, body: { ok: false, error: '邀请码不对，找邀请你的人核对一下。' } }
+    if (inv && !user.invite_id) {
+      if (!(await repo.inviteClaim(inv.id, user.id, now))) return { status: 422, body: { ok: false, error: BAD_INVITE } }
+      await repo.setPlan(user.id, PLAN_FULL, inv.id)
     }
+  } else {
     const id = crypto.randomUUID()
     /* 占码在插用户之前：宁可"码占住没用户"（站长作废即可），不可"两个用户抢一张码" */
-    if (!(await repo.inviteClaim(inv.id, id, now))) {
-      return { status: 422, body: { ok: false, error: '邀请码不对，找邀请你的人核对一下。' } }
-    }
+    if (inv && !(await repo.inviteClaim(inv.id, id, now))) return { status: 422, body: { ok: false, error: BAD_INVITE } }
     const pw_salt = randomHex(16)
     await repo.insertUser({
       id: id, email: email,
       pw_hash: await sha256hex(pw_salt + pw), pw_salt: pw_salt,
-      pwver: 1, verified: 0, created_at: now, invite_id: inv.id
+      pwver: 1, verified: 0, created_at: now, invite_id: inv ? inv.id : null,
+      plan: inv ? PLAN_FULL : PLAN_FREE
     })
   }
-  return issueCode(repo, await repo.userByEmail(email), now)
+  user = await repo.userByEmail(email)
+  return issueCode(repo, user, now, 'verify', { ip: ctx.ip, bucket: (inv || user.invite_id) ? 'invite' : 'new' })
+}
+
+/* ---- 注册后补填邀请码：免费版 → 完整版。要登录、要验证过邮箱；占码和升级一起写，不会码用掉了账号没升级 ---- */
+export async function redeemInvite(repo, session, now, body, ctx) {
+  ctx = ctx || {}
+  if (!session) return { status: 401, body: { ok: false, error: '先登录。' } }
+  const user = await repo.userById(session.uid)
+  if (!user || user.pwver !== session.pwver || user.banned) return { status: 401, body: { ok: false, error: '先登录。' } }
+  if (!user.verified) return { status: 403, body: { ok: false, error: '先验证邮箱。' } }
+  if (planOf(user) === PLAN_FULL) return { status: 200, body: { ok: true, plan: PLAN_FULL } }
+  const code = normInvite(body && body.invite)
+  if (!code) return { status: 422, body: { ok: false, error: '请填邀请码。' } }
+  const c = await checkInvite(repo, now, 'uid:' + user.id, code, ctx.ip)
+  if (c.res) {
+    if (c.res.status === 422) c.res.body.error = '邀请码不对，找邀请你的人核对一下。'
+    return c.res
+  }
+  if (!(await repo.redeemInvite(c.inv.id, user.id, now))) {
+    return { status: 422, body: { ok: false, error: '邀请码不对，找邀请你的人核对一下。' } }
+  }
+  return { status: 200, body: { ok: true, plan: PLAN_FULL } }
+}
+
+/* 账号版本：只认数据库里明写的 free；老账号（加列前就有的）一律算完整版 */
+export function planOf(user) {
+  return user && user.plan === PLAN_FREE ? PLAN_FREE : PLAN_FULL
+}
+
+/* ---- 删除账号：要当前密码。练习数据、验证码一起删；用过的邀请码不放回 ---- */
+export async function deleteAccount(repo, session, now, body) {
+  if (!session) return { status: 401, body: { ok: false, error: '先登录。' } }
+  const user = await repo.userById(session.uid)
+  if (!user || user.pwver !== session.pwver) return { status: 401, body: { ok: false, error: '先登录。' } }
+  const pw = (body && body.password) || ''
+  const row = await repo.limitGet(user.email, 'loginfail')
+  if (row && row.until > now) return { status: 429, body: { ok: false, error: '试错次数太多，等 15 分钟再来。' } }
+  if (!validClientHash(pw) || user.pw_hash !== await sha256hex(user.pw_salt + pw)) {
+    await bumpLoginFails(repo, user.email, now)
+    return { status: 422, body: { ok: false, error: '当前密码不对。' } }
+  }
+  if (user.admin) return { status: 403, body: { ok: false, error: '管理员账号不能在这里删除。' } }
+  await repo.deleteUser(user.id)
+  return { status: 200, body: { ok: true }, clearSession: true }
 }
 
 /* ---- 验证码校验 ---- */
@@ -137,7 +267,7 @@ export async function verify(repo, now, body) {
       await repo.tokenUse(row.token_hash)
       await repo.setVerified(user.id)
       if (user.invite_id) await repo.inviteActivate(user.invite_id, now) /* 老账号 invite_id 为 null，不动 */
-      return { status: 200, body: { ok: true, admin: !!user.admin }, session: { uid: user.id, pwver: user.pwver } }
+      return { status: 200, body: { ok: true, admin: !!user.admin, plan: planOf(user) }, session: { uid: user.id, pwver: user.pwver } }
     }
   }
   await repo.limitSet(email, 'codefail', { n: (fails ? fails.n : 0) + 1, ts: now, until: 0 })
@@ -154,7 +284,8 @@ async function bumpLoginFails(repo, email, now) {
   await repo.limitSet(email, 'loginfail', { n: n, ts: now, until: n >= LOGIN_MAX_FAILS ? now + LOCK_MS : 0 })
 }
 
-export async function login(repo, now, body) {
+export async function login(repo, now, body, ctx) {
+  ctx = ctx || {}
   const email = normEmail(body && body.email)
   const pw = (body && body.password) || ''
   const generic = { status: 401, body: { ok: false, error: '邮箱或密码不对。' } }
@@ -173,25 +304,26 @@ export async function login(repo, now, body) {
   if (user.banned) return { status: 403, body: { ok: false, error: '账号已被停用。' } }
   await repo.limitSet(email, 'loginfail', { n: 0, ts: now, until: 0 })
   if (!user.verified) {
-    const r = await issueCode(repo, user, now)
+    const r = await issueCode(repo, user, now, 'verify', { ip: ctx.ip })
     /* 不管发没发出去（节流 429 也罢），登录的结果都是「请去验证」——刚注册的人
        手里的码还没过期，没理由用「发送太频繁」把他挡在验证页外面 */
     r.status = 200
     r.body = { ok: false, need_verify: true }
     return r
   }
-  return { status: 200, body: { ok: true, admin: !!user.admin }, session: { uid: user.id, pwver: user.pwver } }
+  return { status: 200, body: { ok: true, admin: !!user.admin, plan: planOf(user) }, session: { uid: user.id, pwver: user.pwver } }
 }
 
 /* ---- 找回密码：发 6 位验证码到邮箱（2026-11 改版：不再发链接，手机微信里不用跳浏览器）。
    无论邮箱是否存在都 200（spec：不泄露注册情况） ---- */
-export async function forgot(repo, now, body) {
+export async function forgot(repo, now, body, ctx) {
+  ctx = ctx || {}
   const email = normEmail(body && body.email)
   if (!validEmail(email)) return { status: 422, body: { ok: false, error: '邮箱地址看起来不对。' } }
   const user = await repo.userByEmail(email)
   if (!user || user.banned) return { status: 200, body: { ok: true } } /* 不存在/已停用都装作成功，不泄露注册情况 */
   if (await mailGate(repo, email, now)) return { status: 200, body: { ok: true } } /* 节流也装作成功 */
-  return issueCode(repo, user, now, 'reset')
+  return issueCode(repo, user, now, 'reset', { ip: ctx.ip, bucket: 'old' })
 }
 
 /* ---- 重设密码：token 一次性；pwver+1 旧登录态全失效 ---- */
@@ -254,7 +386,7 @@ export async function reset(repo, now, body) {
     pw_hash: await sha256hex(pw_salt + pw), pw_salt: pw_salt,
     pwver: nextPwver, verified: 1 /* 重设顺带验证（能收到邮件就证明邮箱是本人的） */
   })
-  return { status: 200, body: { ok: true, admin: !!user.admin }, session: { uid: user.id, pwver: nextPwver } }
+  return { status: 200, body: { ok: true, admin: !!user.admin, plan: planOf(user) }, session: { uid: user.id, pwver: nextPwver } }
 }
 
 /* ---- 改密码：要登录态 + 当前密码；副作用与重设一致（pwver+1，别处登录态全失效）。
@@ -284,7 +416,7 @@ export async function changePassword(repo, session, now, body) {
   await repo.tokensClear(user.id, 'reset')
   await repo.tokensClear(user.id, 'verify')
   await repo.limitSet(user.email, 'loginfail', { n: 0, ts: now, until: 0 })
-  return { status: 200, body: { ok: true, admin: !!user.admin }, session: { uid: user.id, pwver: nextPwver } }
+  return { status: 200, body: { ok: true, admin: !!user.admin, plan: planOf(user) }, session: { uid: user.id, pwver: nextPwver } }
 }
 
 /* ---- /api/auth/me：会话有效性 + pwver 比对 ---- */
@@ -292,7 +424,7 @@ export async function meBySession(repo, session) {
   if (!session) return { status: 401, body: { ok: false } }
   const user = await repo.userById(session.uid)
   if (!user || user.pwver !== session.pwver || user.banned) return { status: 401, body: { ok: false } }
-  return { status: 200, body: { ok: true, email: user.email, verified: !!user.verified, admin: !!user.admin } }
+  return { status: 200, body: { ok: true, email: user.email, verified: !!user.verified, admin: !!user.admin, plan: planOf(user) } }
 }
 
 /* ---- data 拉取 / 推送 ---- */

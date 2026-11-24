@@ -40,6 +40,28 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   check('介绍页本身不单独开放（避免重复收录）', d('/welcome', '', false).action === 'redirect' &&
     d('/welcome.html', '', true).location === '/')
 
+  /* --- 免费版（2026-11-24 放开注册）：白名单，每个网页 × 各种写法都试 --- */
+  var fs = require('fs')
+  var FREE_OK = ['index', 'kousuan', 'shudu', 'mark', 'help', 'privacy', '404']
+  var htmls = fs.readdirSync(require('path').join(__dirname, '..')).filter(function (f) { return /\.html$/.test(f) })
+  var free = { ok: true, plan: 'free' }, full = { ok: true, plan: 'full' }
+  var leaks = []
+  htmls.forEach(function (f) {
+    var base = f.replace(/\.html$/, '')
+    if (base === 'welcome' || base === 'locked') return
+    ;['/' + base, '/' + base + '/', '/' + base + '.html', '/' + base + '.html/', '/' + base + '//'].forEach(function (p) {
+      var a = d(p, '', free).action
+      var want = FREE_OK.indexOf(base) >= 0 ? 'pass' : 'locked'
+      if (a !== want && !(a === 'deny' && /\/\/$/.test(p))) leaks.push(p + ' → ' + a) /* 双斜杠被更早的可疑路径规则直接拒，更严 */
+    })
+  })
+  check('免费版：只有白名单里的网页能开，其余一律上锁（每个网页 5 种写法）', !leaks.length && htmls.length > 10, leaks)
+  check('免费版：首页、今天放行', d('/', '', free).action === 'pass' && d('/index.html', '', free).action === 'pass')
+  check('完整版：一切放行', ['/aoshu', '/shizi/', '/admin.html', '/pinyin'].every(function (p) { return d(p, '', full).action === 'pass' }))
+  check('上锁页不单独开网址', d('/locked', '', full).action === 'redirect' && d('/locked.html', '', free).action === 'redirect')
+  check('隐私说明没登录也能看', d('/privacy', '', false).action === 'pass')
+  check('老调用传 true 仍当完整版', d('/aoshu', '', true).action === 'pass')
+
   /* 源码、脚本、文档、配置：登没登录都不给看（站点根目录就是仓库根目录） */
   check('内部文件一律 404', ['/server/session.js', '/tools/migrate-20261120-invites.sql', '/docs/superpowers/specs/x.md',
     '/functions/_middleware.js', '/wrangler.toml', '/口算题生成器-提示词.md', '/.gitignore', '/_headers']
@@ -55,7 +77,7 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
 
   /* --- 中间件整链 --- */
   var SECRET = 'gate-secret'
-  var users = { u1: { id: 'u1', pwver: 2, banned: 0 }, u2: { id: 'u2', pwver: 1, banned: 1 } }
+  var users = { u1: { id: 'u1', pwver: 2, banned: 0 }, u2: { id: 'u2', pwver: 1, banned: 1 }, u3: { id: 'u3', pwver: 1, banned: 0, plan: 'free', email: 'f@x.co', verified: 1 } }
   var dbDown = false
   function ctx(path, cookie, host) {
     var calls = { next: 0, assets: [] }

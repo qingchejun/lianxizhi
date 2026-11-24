@@ -885,3 +885,39 @@ body.welcome .wl-main {
   border-bottom: 1px solid var(--line-strong);
 }
 .wl-mods b a:hover { color: var(--blue); border-bottom-color: var(--blue); }
+
+/* 隐私说明等文字页（privacy.html） */
+.legal {
+  max-width: 760px;
+  padding-bottom: 64px;
+}
+.legal h1 {
+  margin: 24px 0 4px;
+  font: 32px/1.3 var(--kai);
+  letter-spacing: 2px;
+}
+.legal-date {
+  margin: 0 0 28px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.legal h2 {
+  margin: 28px 0 10px;
+  font: 21px/1.4 var(--kai);
+  letter-spacing: 1px;
+}
+.legal p {
+  margin: 0 0 10px;
+  font-size: 15px;
+  line-height: 1.85;
+  color: var(--ink-2);
+}
+.legal-back { margin-top: 32px; }
+
+/* 登录框下面一行：没有账号 → 免费注册（2026-11-24 放开注册） */
+.wl-signup {
+  margin: 14px 2px 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.wl-signup .link-btn { font-size: 14px; font-weight: 600; }

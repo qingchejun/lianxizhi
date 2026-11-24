@@ -178,73 +178,73 @@ try {
 /* ---------- 视频登记表 ---------- */
 
 var V = globalThis.SumSum.aoshuVideos
-check(V.of('xulie').src === 'https://video.zhihebi.com/aoshu/xulie.mp4', '视频地址：' + JSON.stringify(V.of('xulie')))
+check(V.of('xulie').src === '/v/aoshu/xulie.mp4', '视频地址：' + JSON.stringify(V.of('xulie')))
 check(V.of('shuzimi').dur === '3:09', '数字谜基础篇视频时长：' + JSON.stringify(V.of('shuzimi')))
-check(V.of('yiduobushao').src === 'https://video.zhihebi.com/aoshu/yiduobushao.mp4' && V.of('yiduobushao').dur === '3:42',
+check(V.of('yiduobushao').src === '/v/aoshu/yiduobushao.mp4' && V.of('yiduobushao').dur === '3:42',
   '移多补少基础篇视频：' + JSON.stringify(V.of('yiduobushao')))
-check(V.of('yiduobushao2').src === 'https://video.zhihebi.com/aoshu/yiduobushao2.mp4' && V.of('yiduobushao2').dur === '4:06',
+check(V.of('yiduobushao2').src === '/v/aoshu/yiduobushao2.mp4' && V.of('yiduobushao2').dur === '4:06',
   '移多补少提高篇视频：' + JSON.stringify(V.of('yiduobushao2')))
-check(V.of('shuzimi2').src === 'https://video.zhihebi.com/aoshu/shuzimi2.mp4' && V.of('shuzimi2').dur === '4:49',
+check(V.of('shuzimi2').src === '/v/aoshu/shuzimi2.mp4' && V.of('shuzimi2').dur === '4:49',
   '数字谜提高篇视频：' + JSON.stringify(V.of('shuzimi2')))
-check(V.of('tuxing').src === 'https://video.zhihebi.com/aoshu/tuxing.mp4' && V.of('tuxing').dur === '3:56',
+check(V.of('tuxing').src === '/v/aoshu/tuxing.mp4' && V.of('tuxing').dur === '3:56',
   '图形找规律视频：' + JSON.stringify(V.of('tuxing')))
-check(V.of('dengliang').src === 'https://video.zhihebi.com/aoshu/dengliang.mp4' && V.of('dengliang').dur === '3:18' &&
+check(V.of('dengliang').src === '/v/aoshu/dengliang.mp4' && V.of('dengliang').dur === '3:18' &&
   V.of('dengliang').poster === 'https://video.zhihebi.com/aoshu/dengliang.jpg', '等量代换视频：' + JSON.stringify(V.of('dengliang')))
 check(Object.keys(V.list).every(function (id) { var p = V.of(id).poster; return p === '' || p === 'https://video.zhihebi.com/aoshu/' + id + '.jpg' }),
   '封面地址要么为空，要么是 aoshu/<id>.jpg')
 Object.keys(V.posters).forEach(function (id) { check(Object.prototype.hasOwnProperty.call(V.list, id), '登记了封面却没有视频：' + id) })
-check(V.of('chongdie').src === 'https://video.zhihebi.com/aoshu/chongdie.mp4' && V.of('chongdie').dur === '4:01' &&
+check(V.of('chongdie').src === '/v/aoshu/chongdie.mp4' && V.of('chongdie').dur === '4:01' &&
   V.of('chongdie').poster === 'https://video.zhihebi.com/aoshu/chongdie.jpg', '重叠问题视频：' + JSON.stringify(V.of('chongdie')))
-check(V.of('meiju').src === 'https://video.zhihebi.com/aoshu/meiju.mp4' && V.of('meiju').dur === '3:29' &&
+check(V.of('meiju').src === '/v/aoshu/meiju.mp4' && V.of('meiju').dur === '3:29' &&
   V.of('meiju').poster === 'https://video.zhihebi.com/aoshu/meiju.jpg', '枚举法初步视频：' + JSON.stringify(V.of('meiju')))
-check(V.of('fendui').src === 'https://video.zhihebi.com/aoshu/fendui.mp4' && V.of('fendui').dur === '3:29' &&
+check(V.of('fendui').src === '/v/aoshu/fendui.mp4' && V.of('fendui').dur === '3:29' &&
   V.of('fendui').poster === 'https://video.zhihebi.com/aoshu/fendui.jpg', '分堆与枚举视频：' + JSON.stringify(V.of('fendui')))
-check(V.of('kongping').src === 'https://video.zhihebi.com/aoshu/kongping.mp4' && V.of('kongping').dur === '3:29' &&
+check(V.of('kongping').src === '/v/aoshu/kongping.mp4' && V.of('kongping').dur === '3:29' &&
   V.of('kongping').poster === 'https://video.zhihebi.com/aoshu/kongping.jpg', '空瓶换水视频：' + JSON.stringify(V.of('kongping')))
-check(V.of('huochai').src === 'https://video.zhihebi.com/aoshu/huochai.mp4' && V.of('huochai').dur === '3:01' &&
+check(V.of('huochai').src === '/v/aoshu/huochai.mp4' && V.of('huochai').dur === '3:01' &&
   V.of('huochai').poster === 'https://video.zhihebi.com/aoshu/huochai.jpg', '火柴棒游戏视频：' + JSON.stringify(V.of('huochai')))
-check(V.of('jiange').src === 'https://video.zhihebi.com/aoshu/jiange.mp4' && V.of('jiange').dur === '2:47' &&
+check(V.of('jiange').src === '/v/aoshu/jiange.mp4' && V.of('jiange').dur === '2:47' &&
   V.of('jiange').poster === 'https://video.zhihebi.com/aoshu/jiange.jpg', '间隔问题视频：' + JSON.stringify(V.of('jiange')))
-check(V.of('paidui').src === 'https://video.zhihebi.com/aoshu/paidui.mp4' && V.of('paidui').dur === '3:02' &&
+check(V.of('paidui').src === '/v/aoshu/paidui.mp4' && V.of('paidui').dur === '3:02' &&
   V.of('paidui').poster === 'https://video.zhihebi.com/aoshu/paidui.jpg', '排队问题视频：' + JSON.stringify(V.of('paidui')))
-check(V.of('xianjing').src === 'https://video.zhihebi.com/aoshu/xianjing.mp4' && V.of('xianjing').dur === '3:02' &&
+check(V.of('xianjing').src === '/v/aoshu/xianjing.mp4' && V.of('xianjing').dur === '3:02' &&
   V.of('xianjing').poster === 'https://video.zhihebi.com/aoshu/xianjing.jpg', '趣味陷阱题视频：' + JSON.stringify(V.of('xianjing')))
-check(V.of('fenzu').src === 'https://video.zhihebi.com/aoshu/fenzu.mp4' && V.of('fenzu').dur === '2:53' &&
+check(V.of('fenzu').src === '/v/aoshu/fenzu.mp4' && V.of('fenzu').dur === '2:53' &&
   V.of('fenzu').poster === 'https://video.zhihebi.com/aoshu/fenzu.jpg', '合理分组问题视频：' + JSON.stringify(V.of('fenzu')))
-check(V.of('hebubian').src === 'https://video.zhihebi.com/aoshu/hebubian.mp4' && V.of('hebubian').dur === '3:00' &&
+check(V.of('hebubian').src === '/v/aoshu/hebubian.mp4' && V.of('hebubian').dur === '3:00' &&
   V.of('hebubian').poster === 'https://video.zhihebi.com/aoshu/hebubian.jpg', '和不变与差不变视频：' + JSON.stringify(V.of('hebubian')))
 // 大纲、视频登记表改了要马上生效：现在由 tools/stamp-assets.js 按内容盖指纹（不再手写 ?v=课数/最后一课）
 ;(function () {
   var r = require('child_process').spawnSync(process.execPath, [require('path').join(__dirname, 'stamp-assets.js'), '--check'], { encoding: 'utf8' })
   check(r.status === 0, '页面里 js/css 的内容指纹要是最新的（改完运行 node tools/stamp-assets.js）：' + r.stdout)
 })()
-check(V.of('bichang').src === 'https://video.zhihebi.com/aoshu/bichang.mp4' && V.of('bichang').dur === '4:41' &&
+check(V.of('bichang').src === '/v/aoshu/bichang.mp4' && V.of('bichang').dur === '4:41' &&
   V.of('bichang').poster === 'https://video.zhihebi.com/aoshu/bichang.jpg', '推理比较比长短视频：' + JSON.stringify(V.of('bichang')))
-check(V.of('bizhong').src === 'https://video.zhihebi.com/aoshu/bizhong.mp4' && V.of('bizhong').dur === '4:54' &&
+check(V.of('bizhong').src === '/v/aoshu/bizhong.mp4' && V.of('bizhong').dur === '4:54' &&
   V.of('bizhong').poster === 'https://video.zhihebi.com/aoshu/bizhong.jpg', '推理比较比轻重视频：' + JSON.stringify(V.of('bizhong')))
-check(V.of('zhongbiao').src === 'https://video.zhihebi.com/aoshu/zhongbiao.mp4' && V.of('zhongbiao').dur === '4:48' &&
+check(V.of('zhongbiao').src === '/v/aoshu/zhongbiao.mp4' && V.of('zhongbiao').dur === '4:48' &&
   V.of('zhongbiao').poster === 'https://video.zhihebi.com/aoshu/zhongbiao.jpg', '认识钟表整时和半时视频：' + JSON.stringify(V.of('zhongbiao')))
-check(V.of('zhongbiao2').src === 'https://video.zhihebi.com/aoshu/zhongbiao2.mp4' && V.of('zhongbiao2').dur === '4:53' &&
+check(V.of('zhongbiao2').src === '/v/aoshu/zhongbiao2.mp4' && V.of('zhongbiao2').dur === '4:53' &&
   V.of('zhongbiao2').poster === 'https://video.zhihebi.com/aoshu/zhongbiao2.jpg', '认识钟表几时几分视频：' + JSON.stringify(V.of('zhongbiao2')))
-check(V.of('duichen').src === 'https://video.zhihebi.com/aoshu/duichen.mp4' && V.of('duichen').dur === '4:35' &&
+check(V.of('duichen').src === '/v/aoshu/duichen.mp4' && V.of('duichen').dur === '4:35' &&
   V.of('duichen').poster === 'https://video.zhihebi.com/aoshu/duichen.jpg', '轴对称图形视频：' + JSON.stringify(V.of('duichen')))
-check(V.of('jingzi').src === 'https://video.zhihebi.com/aoshu/jingzi.mp4' && V.of('jingzi').dur === '3:47' &&
+check(V.of('jingzi').src === '/v/aoshu/jingzi.mp4' && V.of('jingzi').dur === '3:47' &&
   V.of('jingzi').poster === 'https://video.zhihebi.com/aoshu/jingzi.jpg', '镜子里的对称视频：' + JSON.stringify(V.of('jingzi')))
-check(V.of('diefang').src === 'https://video.zhihebi.com/aoshu/diefang.mp4' && V.of('diefang').dur === '4:50' &&
+check(V.of('diefang').src === '/v/aoshu/diefang.mp4' && V.of('diefang').dur === '4:50' &&
   V.of('diefang').poster === 'https://video.zhihebi.com/aoshu/diefang.jpg', '叠放顺序视频：' + JSON.stringify(V.of('diefang')))
-check(V.of('fanzhuan').src === 'https://video.zhihebi.com/aoshu/fanzhuan.mp4' && V.of('fanzhuan').dur === '3:39' &&
+check(V.of('fanzhuan').src === '/v/aoshu/fanzhuan.mp4' && V.of('fanzhuan').dur === '3:39' &&
   V.of('fanzhuan').poster === 'https://video.zhihebi.com/aoshu/fanzhuan.jpg', '翻转问题视频：' + JSON.stringify(V.of('fanzhuan')))
-check(V.of('woniu').src === 'https://video.zhihebi.com/aoshu/woniu.mp4' && V.of('woniu').dur === '3:57' &&
+check(V.of('woniu').src === '/v/aoshu/woniu.mp4' && V.of('woniu').dur === '3:57' &&
   V.of('woniu').poster === 'https://video.zhihebi.com/aoshu/woniu.jpg', '蜗牛爬井视频：' + JSON.stringify(V.of('woniu')))
-check(V.of('jiangebc').src === 'https://video.zhihebi.com/aoshu/jiangebc.mp4' && V.of('jiangebc').dur === '3:31' &&
+check(V.of('jiangebc').src === '/v/aoshu/jiangebc.mp4' && V.of('jiangebc').dur === '3:31' &&
   V.of('jiangebc').poster === 'https://video.zhihebi.com/aoshu/jiangebc.jpg', '间隔问题（补充）视频：' + JSON.stringify(V.of('jiangebc')))
-check(V.of('renxian').src === 'https://video.zhihebi.com/aoshu/renxian.mp4' && V.of('renxian').dur === '4:55' &&
+check(V.of('renxian').src === '/v/aoshu/renxian.mp4' && V.of('renxian').dur === '4:55' &&
   V.of('renxian').poster === 'https://video.zhihebi.com/aoshu/renxian.jpg', '认识线视频：' + JSON.stringify(V.of('renxian')))
-check(V.of('renjiao').src === 'https://video.zhihebi.com/aoshu/renjiao.mp4' && V.of('renjiao').dur === '4:27' &&
+check(V.of('renjiao').src === '/v/aoshu/renjiao.mp4' && V.of('renjiao').dur === '4:27' &&
   V.of('renjiao').poster === 'https://video.zhihebi.com/aoshu/renjiao.jpg', '认识角视频：' + JSON.stringify(V.of('renjiao')))
-check(V.of('sanjiao').src === 'https://video.zhihebi.com/aoshu/sanjiao.mp4' && V.of('sanjiao').dur === '4:54' &&
+check(V.of('sanjiao').src === '/v/aoshu/sanjiao.mp4' && V.of('sanjiao').dur === '4:54' &&
   V.of('sanjiao').poster === 'https://video.zhihebi.com/aoshu/sanjiao.jpg', '认识三角形视频：' + JSON.stringify(V.of('sanjiao')))
-check(V.of('sibian').src === 'https://video.zhihebi.com/aoshu/sibian.mp4' && V.of('sibian').dur === '4:33' &&
+check(V.of('sibian').src === '/v/aoshu/sibian.mp4' && V.of('sibian').dur === '4:33' &&
   V.of('sibian').poster === 'https://video.zhihebi.com/aoshu/sibian.jpg', '认识四边形视频：' + JSON.stringify(V.of('sibian')))
 check(V.of('daxiao') === null, '没视频的课应返回 null')
 check(V.of('__proto__') === null && V.of('toString') === null, '原型链上的名字不能当成有视频')

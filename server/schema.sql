@@ -1,4 +1,4 @@
--- 已存在库的增量迁移见 tools/migrate-20261120-invites.sql（只跑一次）
+-- 已存在库的增量迁移见 tools/migrate-*.sql（各只跑一次）
 CREATE TABLE IF NOT EXISTS users(
   id TEXT PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS users(
   admin INTEGER NOT NULL DEFAULT 0,
   banned INTEGER NOT NULL DEFAULT 0,
   invite_id TEXT,
-  created_at INTEGER NOT NULL
+  created_at INTEGER NOT NULL,
+  plan TEXT NOT NULL DEFAULT 'free' /* free = 免费版（口算、数独）；full = 完整版。见 tools/migrate-20261124-plan.sql */
 );
 CREATE TABLE IF NOT EXISTS data(
   user_id TEXT NOT NULL,

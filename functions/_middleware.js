@@ -36,17 +36,24 @@ export async function onRequest(context) {
   const move = moveDecision(url.hostname, url.pathname, url.search, context.request.method === 'GET', session)
   if (move && move.action === 'redirect') return movedTo(move.location)
   if (move && move.action === 'soft') me = Object.assign({}, me, { moveTo: move.to })
-  const r = decide(url.pathname, url.search, session)
+  const r = decide(url.pathname, url.search, { ok: session, plan: session ? me.plan : null })
 
   if (r.action === 'redirect') {
     return new Response(null, { status: 302, headers: { Location: r.location, 'Cache-Control': 'private, no-store' } })
   }
+  if (r.action === 'locked') {
+    /* 免费版打开完整版的板块：原网址上显示上锁说明页（能补填邀请码），不跳转、不收录 */
+    const page = await context.env.ASSETS.fetch(new URL('/locked', url))
+    const out = withCache(withMe(page, me, context.env), 'private, no-cache')
+    out.headers.set('X-Robots-Tag', 'noindex')
+    return out
+  }
   if (r.action === 'welcome') {
     const page = await context.env.ASSETS.fetch(new URL('/welcome', url))
-    return withCache(withMe(page, { ok: false }), 'no-cache')
+    return withCache(withMe(page, { ok: false }, context.env), 'no-cache')
   }
   /* 登录后的页面：同一网址登录前后内容不同，不许进共享缓存，浏览器每次回源确认 */
-  return withCache(withMe(await context.next(), me), 'private, no-cache')
+  return withCache(withMe(await context.next(), me, context.env), 'private, no-cache')
 }
 
 /* 只给网页注入；字段与 /api/auth/me 的返回一致（js/account.js init 直接用） */
@@ -54,18 +61,23 @@ function movedTo(location) {
   return new Response(null, { status: 301, headers: { Location: location, 'Cache-Control': 'no-store' } })
 }
 
-function meScript(me) {
+function meScript(me, env) {
   const safe = me && me.ok
-    ? { ok: true, email: String(me.email || ''), verified: !!me.verified, admin: !!me.admin }
+    ? { ok: true, email: String(me.email || ''), verified: !!me.verified, admin: !!me.admin, plan: me.plan === 'free' ? 'free' : 'full' }
     : { ok: false }
   if (me && me.ok && me.moveTo) safe.moveTo = String(me.moveTo)
-  return '<script>window.__SUMSUM_ME=' + JSON.stringify(safe).replace(/</g, '\\u003c') + '</script>'
+  /* __SUMSUM_PLAN：账号版本，页面上一直留着（__SUMSUM_ME 被 account.js 用完就清）；
+     __SUMSUM_TS：人机验证（Turnstile）的公开站点编号，没配就不出人机验证框 */
+  const ts = env && env.TURNSTILE_SITEKEY ? String(env.TURNSTILE_SITEKEY) : ''
+  return '<script>window.__SUMSUM_ME=' + JSON.stringify(safe).replace(/</g, '\\u003c') +
+    ';window.__SUMSUM_PLAN=' + JSON.stringify(safe.ok ? safe.plan : '') +
+    ';window.__SUMSUM_TS=' + JSON.stringify(ts).replace(/</g, '\\u003c') + '</script>'
 }
 
-function withMe(res, me) {
+function withMe(res, me, env) {
   const type = res.headers.get('Content-Type') || ''
   if (!type.includes('text/html') || typeof HTMLRewriter === 'undefined') return res
-  const tag = meScript(me)
+  const tag = meScript(me, env)
   return new HTMLRewriter().on('head', {
     element(el) { el.prepend(tag, { html: true }) }
   }).transform(res)

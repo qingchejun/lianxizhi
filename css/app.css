@@ -1981,3 +1981,119 @@ select.input {
 @media print {
   .guest-note, .board-intro { display: none !important; }
 }
+
+/* ---------- 免费版 / 完整版（2026-11-24 放开注册） ---------- */
+/* 侧栏：免费版里完整版板块挂一把小锁 */
+.rail-link.is-locked > span { opacity: 0.62; }
+.rail-lock {
+  margin-left: auto;
+  display: inline-flex;
+  opacity: 0.7;
+}
+.rail-lock svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.rail-folded .rail-lock {
+  position: absolute;
+  right: 8px;
+  top: 6px;
+  margin: 0;
+}
+.rail-folded .rail-lock svg { width: 11px; height: 11px; }
+
+/* 账号弹窗：版本 + 补填邀请码 */
+.account-plan {
+  margin: 4px 0 16px;
+  padding: 12px 14px;
+  background: var(--field);
+  border: 1px solid var(--card-edge);
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.account-plan p { margin: 0; }
+.account-plan b { color: var(--ink); }
+.account-plan .redeem-form { margin-top: 10px; }
+.account-foot {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.account-foot a { color: var(--ink-soft); }
+
+.redeem-form {
+  display: flex !important;
+  flex-direction: row !important; /* 登录框里的表单默认是竖排，这里要一行 */
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.redeem-form .input { flex: 1 1 160px; min-width: 0; height: 40px; }
+.redeem-form .btn { flex: none; }
+.redeem-msg {
+  flex-basis: 100%;
+  margin: 2px 0 0;
+  font-size: 13px;
+}
+.redeem-msg[hidden] { display: none; }
+.redeem-msg.is-bad { color: var(--red); }
+.redeem-msg.is-ok { color: var(--green); }
+
+/* 注册表单里的人机验证框 */
+.ts-box { min-height: 65px; margin: 4px 0 8px; }
+.ts-box:empty { min-height: 0; }
+
+/* 上锁说明页（locked.html） */
+.lk-scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 40px 24px;
+  background-color: var(--canvas);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.lk-card {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 36px 40px 28px;
+  background: var(--card);
+  border: 1px solid var(--card-edge);
+  border-radius: 14px;
+  color: var(--ink-2);
+}
+.lk-kicker {
+  margin: 0 0 6px;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+}
+.lk-card h2 {
+  margin: 0 0 12px;
+  font: 30px/1.3 var(--kai);
+  letter-spacing: 2px;
+  color: var(--ink);
+}
+.lk-card p { font-size: 15px; line-height: 1.8; margin: 0 0 12px; }
+.lk-now b { color: var(--ink); }
+.lk-redeem {
+  margin: 22px 0 18px;
+  padding: 18px 18px 8px;
+  background: var(--field);
+  border: 1px solid var(--card-edge);
+  border-radius: 10px;
+}
+.lk-redeem h3 { margin: 0 0 10px; font-size: 15px; color: var(--ink); }
+.lk-help { font-size: 13px !important; color: var(--ink-soft); margin-top: 10px !important; }
+.lk-back { font-size: 14px !important; }
+.lk-back a { color: var(--blue); }
+@media (max-width: 760px) {
+  .lk-scroll { padding: 16px 12px 40px; overflow: visible; }
+  .lk-card { padding: 24px 18px 16px; }
+}

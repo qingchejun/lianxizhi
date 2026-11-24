@@ -229,9 +229,26 @@
 
   var data = S.today.build(storage(), new Date())
   doc.getElementById('today-date').textContent = data.date + ' · 一页纸，五分钟，挑两三张就够'
-  doc.getElementById('today-cards').innerHTML =
-    shelf('练习', [aoshuCard(data.aoshu), shiziCard(data.shizi), kousuanCard(data.kousuan), pinyinCard(data.pinyin)]) +
-    shelf('游戏', [shuduCard(data.shudu)].concat(data.games.map(gameCard)))
+  /* 免费版（2026-11-24 放开注册）：只摆口算、数独两张；另外七个板块列在下面，点进去是上锁页（能补填邀请码） */
+  var LOCKED_LIST = [
+    ['aoshu.html', '奥数', '一天一课，先看讲解视频再做题'],
+    ['shizi.html', '识字', '每日一卷，没认出的字自动复习'],
+    ['pinyin.html', '拼音', '易混字母、声调、拼读'],
+    ['huochai.html', '火柴', '动一根火柴让算式变对'],
+    ['mima.html', '密码', '看线索推出密码'],
+    ['migong.html', '迷宫', '算对了才走得通'],
+    ['zhizhi.html', '数织', '涂完是一幅小图']
+  ]
+  function lockedShelf() {
+    return '<section class="dk-shelf dk-locked" aria-label="完整版"><h2>完整版 · 填邀请码开通</h2><div class="dk-lock-list">' +
+      LOCKED_LIST.map(function (x) {
+        return '<a href="' + x[0] + '"><b>' + x[1] + '</b><span>' + x[2] + '</span></a>'
+      }).join('') + '</div></section>'
+  }
+  doc.getElementById('today-cards').innerHTML = root.__SUMSUM_PLAN === 'free'
+    ? shelf('免费版可用', [kousuanCard(data.kousuan), shuduCard(data.shudu)]) + lockedShelf()
+    : shelf('练习', [aoshuCard(data.aoshu), shiziCard(data.shizi), kousuanCard(data.kousuan), pinyinCard(data.pinyin)]) +
+      shelf('游戏', [shuduCard(data.shudu)].concat(data.games.map(gameCard)))
 
   /* 扫码登记带来的提醒：没登记的纸、口算升档、奥数再练 / 复习卷、游戏自动升降关（可撤销） */
   var marksBox = doc.getElementById('today-marks')

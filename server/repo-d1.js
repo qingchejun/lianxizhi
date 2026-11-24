@@ -8,8 +8,58 @@ export function repo(db) {
       return (await db.prepare('SELECT * FROM users WHERE id=?').bind(id).first()) || null
     },
     async insertUser(u) {
-      await db.prepare('INSERT INTO users(id,email,pw_hash,pw_salt,pwver,verified,admin,invite_id,created_at) VALUES(?,?,?,?,?,?,?,?,?)')
-        .bind(u.id, u.email, u.pw_hash, u.pw_salt, u.pwver, u.verified || 0, u.admin || 0, u.invite_id || null, u.created_at).run()
+      await db.prepare('INSERT INTO users(id,email,pw_hash,pw_salt,pwver,verified,admin,invite_id,created_at,plan) VALUES(?,?,?,?,?,?,?,?,?,?)')
+        .bind(u.id, u.email, u.pw_hash, u.pw_salt, u.pwver, u.verified || 0, u.admin || 0, u.invite_id || null, u.created_at, u.plan || 'free').run()
+    },
+    /* 改账号版本（注册时带的邀请码补认、管理员手动开通）；inviteId 不给就不动 invite_id */
+    async setPlan(id, plan, inviteId) {
+      if (inviteId) await db.prepare('UPDATE users SET plan=?, invite_id=? WHERE id=?').bind(plan, inviteId, id).run()
+      else await db.prepare('UPDATE users SET plan=? WHERE id=?').bind(plan, id).run()
+    },
+    /* 补填邀请码：占码 + 升级 + 记开通时间放进同一批（D1 batch 是一个事务）。
+       第二句带「这张码确实归我」的条件：码被别人抢先占了，账号就不升级 */
+    async redeemInvite(inviteId, uid, now) {
+      const r = await db.batch([
+        db.prepare('UPDATE invites SET claimed_by=?, claimed_at=?, activated_at=? WHERE id=? AND claimed_by IS NULL AND revoked_at IS NULL')
+          .bind(uid, now, now, inviteId),
+        db.prepare("UPDATE users SET plan='full', invite_id=? WHERE id=? AND EXISTS(SELECT 1 FROM invites WHERE id=? AND claimed_by=?)")
+          .bind(inviteId, uid, inviteId, uid)
+      ])
+      return !!(r[1] && r[1].meta && r[1].meta.changes > 0)
+    },
+    /* 原子计数：窗口（windowStart 之后）内没到 max 就加一并返回 true；到了返回 false。
+       一条语句完成，两个请求同时来也不会多放一个 */
+    async counterBump(scope, kind, windowStart, max) {
+      const row = await db.prepare(
+        'INSERT INTO limits(scope,kind,n,ts,until) VALUES(?,?,1,?,0) ' +
+        'ON CONFLICT(scope,kind) DO UPDATE SET ' +
+        'n = CASE WHEN limits.ts < ?3 THEN 1 ELSE limits.n + 1 END, ' +
+        'ts = CASE WHEN limits.ts < ?3 THEN ?3 ELSE limits.ts END ' +
+        'WHERE limits.ts < ?3 OR limits.n < ?4 RETURNING n'
+      ).bind(scope, kind, windowStart, max).first()
+      return !!row
+    },
+    /* 清理：48 小时没验证的账号（连同验证码、数据、占着的码），以及过期的限流记录。每次最多清 20 个 */
+    async purgeUnverified(before, now) {
+      const r = await db.prepare('SELECT id FROM users WHERE verified=0 AND admin=0 AND created_at < ? LIMIT 20').bind(before).all()
+      const ids = (r.results || []).map(x => x.id)
+      const stmts = []
+      for (const id of ids) {
+        stmts.push(db.prepare('UPDATE invites SET claimed_by=NULL, claimed_at=NULL WHERE claimed_by=? AND activated_at IS NULL').bind(id))
+        stmts.push(db.prepare('DELETE FROM tokens WHERE user_id=?').bind(id))
+        stmts.push(db.prepare('DELETE FROM data WHERE user_id=?').bind(id))
+        stmts.push(db.prepare('DELETE FROM users WHERE id=? AND verified=0').bind(id))
+      }
+      stmts.push(db.prepare('DELETE FROM limits WHERE until < ? AND ts < ?').bind(now, now - 2 * 86400 * 1000))
+      await db.batch(stmts)
+      return ids.length
+    },
+    async deleteUser(id) {
+      await db.batch([
+        db.prepare('DELETE FROM data WHERE user_id=?').bind(id),
+        db.prepare('DELETE FROM tokens WHERE user_id=?').bind(id),
+        db.prepare('DELETE FROM users WHERE id=?').bind(id)
+      ])
     },
     async updateUser(id, f) {
       const cur = await this.userById(id)
@@ -84,6 +134,10 @@ export function repo(db) {
       /* 纸记录（扫码登记）最近有改动的行；admin-core 再按打分时间细数 */
       const r = await db.prepare("SELECT user_id, value FROM data WHERE key LIKE 'sumsum:sheet:v1:%' AND updated_at>=?")
         .bind(since).all()
+      return r.results || []
+    },
+    async usersList() {
+      const r = await db.prepare('SELECT id, email, plan, verified, banned, admin, invite_id, created_at FROM users ORDER BY created_at DESC').all()
       return r.results || []
     },
     async invitesList() {

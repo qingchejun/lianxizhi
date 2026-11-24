@@ -16,7 +16,7 @@ export async function readBody(request) {
   }
 }
 
-import { sign, cookieHeader, sessionPayload } from './session.js'
+import { sign, cookieHeader, sessionPayload, clearCookieHeader } from './session.js'
 import { sendMail } from './email.js'
 
 /** 把 auth-core 的返回翻成 Response：发信、签 cookie、DEV 回显。 */
@@ -26,6 +26,7 @@ export async function respond(context, r) {
     return json({ ok: false, error: '邮件暂时发不出去，请稍后再试。' }, 502)
   }
   const headers = {}
+  if (r.clearSession) headers['Set-Cookie'] = clearCookieHeader()
   if (r.session) {
     const token = await sign(sessionPayload(r.session.uid, r.session.pwver, Date.now()), env.SESSION_SECRET)
     headers['Set-Cookie'] = cookieHeader(token, 90 * 86400)
@@ -40,3 +41,30 @@ export async function respond(context, r) {
   }
   return json(body, r.status, headers)
 }
+
+/* 访客地址（Cloudflare 填的 CF-Connecting-IP）：限流用。取不到返回空串，由调用方退回按邮箱限流 */
+export function clientIp(request) {
+  return (request.headers.get('CF-Connecting-IP') || '').trim()
+}
+
+/* 人机验证（Cloudflare Turnstile）：没配 TURNSTILE_SECRET 时不验（本地开发、还没在后台建好时）。
+   只放在注册和找回密码上：这两处会发邮件，是刷的人唯一能消耗额度的地方 */
+export async function humanCheck(context, body) {
+  const secret = context.env.TURNSTILE_SECRET
+  if (!secret) return true
+  const token = body && typeof body.turnstile === 'string' ? body.turnstile : ''
+  if (!token) return false
+  try {
+    const form = new FormData()
+    form.append('secret', secret)
+    form.append('response', token)
+    const ip = clientIp(context.request)
+    if (ip) form.append('remoteip', ip)
+    const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body: form })
+    const d = await r.json()
+    return !!(d && d.success)
+  } catch (e) {
+    return false
+  }
+}
+export const HUMAN_FAIL = { ok: false, error: '没通过「确认是真人」那一步，刷新页面再试一次。', human: false }

@@ -117,3 +117,41 @@ export async function setBan(repo, session, now, body) {
   await repo.setBanned(inv.claimed_by, body && body.banned ? 1 : 0)
   return { status: 200, body: { ok: true } }
 }
+
+/* ---- 账号（2026-11-24 放开注册）：统计 + 列表 + 手动设免费版 / 完整版 ---- */
+const DAY_MS = 86400 * 1000
+export async function listUsers(repo, session, now) {
+  const gate = await requireAdmin(repo, session)
+  if (gate) return gate
+  now = now || Date.now()
+  const rows = await repo.usersList()
+  const users = rows.map(function (u) {
+    return {
+      id: u.id, email: u.email, plan: u.plan === 'free' ? 'free' : 'full',
+      verified: !!u.verified, banned: !!u.banned, admin: !!u.admin,
+      invited: !!u.invite_id, created_at: u.created_at
+    }
+  })
+  const ok = users.filter(function (u) { return u.verified })
+  const stats = {
+    total: ok.length,
+    free: ok.filter(function (u) { return u.plan === 'free' }).length,
+    full: ok.filter(function (u) { return u.plan === 'full' }).length,
+    new1d: ok.filter(function (u) { return u.created_at >= now - DAY_MS }).length,
+    new7d: ok.filter(function (u) { return u.created_at >= now - 7 * DAY_MS }).length,
+    unverified: users.length - ok.length
+  }
+  return { status: 200, body: { ok: true, stats: stats, users: users } }
+}
+
+export async function setUserPlan(repo, session, now, body) {
+  const gate = await requireAdmin(repo, session)
+  if (gate) return gate
+  const id = (body && body.id) || ''
+  const plan = body && body.plan === 'free' ? 'free' : body && body.plan === 'full' ? 'full' : ''
+  if (!id || !plan) return { status: 422, body: { ok: false, error: '缺少账号或版本。' } }
+  const user = await repo.userById(id)
+  if (!user) return { status: 404, body: { ok: false, error: '没有这个账号。' } }
+  await repo.setPlan(id, plan)
+  return { status: 200, body: { ok: true } }
+}

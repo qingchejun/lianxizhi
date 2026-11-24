@@ -53,6 +53,7 @@
     }
   }
 
+  var FREE_MODULES = ['今天', '口算', '数独']
   /* 没登录（口算、数独免登录出题打印）：点这里直接打开登录框，不弹菜单 */
   function guest() {
     var A0 = root.SumSum && root.SumSum.account
@@ -114,6 +115,23 @@
     if (sub) sub.textContent = out ? '登录后进度自动同步' : '练习进度自动同步'
     if (initial) initial.textContent = email ? email.charAt(0).toUpperCase() : ''
     user.title = email ? email + '（点开账号菜单）' : (out ? '登录或注册' : '账号')
+    /* 免费版：口算、数独以外的板块挂一把锁（只是提示；真正拦的是服务器，见 server/gate.js FREE_PAGES） */
+    var plan = (state && state.plan) || root.__SUMSUM_PLAN || ''
+    var free = !!email && plan === 'free' || !email && !out && root.__SUMSUM_PLAN === 'free'
+    if (sub && !out) sub.textContent = free ? '免费版' : '练习进度自动同步'
+    Array.prototype.forEach.call(doc.querySelectorAll('.rail-link[data-module]'), function (a) {
+      var m = a.getAttribute('data-module')
+      var lock = free && FREE_MODULES.indexOf(m) < 0
+      a.classList.toggle('is-locked', lock)
+      var icon = a.querySelector('.rail-lock')
+      if (lock && !icon) {
+        icon = doc.createElement('i')
+        icon.className = 'rail-lock'
+        icon.setAttribute('aria-label', '完整版')
+        icon.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5.5" y="10.5" width="13" height="9" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>'
+        a.appendChild(icon)
+      } else if (!lock && icon) icon.remove()
+    })
     /* 纸上方「不用登录就能出题、打印」的提示条：只给没登录的人看 */
     Array.prototype.forEach.call(doc.querySelectorAll('[data-guest-note]'), function (n) { n.hidden = !out })
     /* 管理员多一项：邀请码管理 */

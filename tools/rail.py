@@ -80,6 +80,7 @@ PAGES = {
     'index.html': '今天', 'kousuan.html': '口算', 'aoshu.html': '奥数',
     'shizi.html': '识字', 'shudu.html': '数独', 'mima.html': '密码', 'zhizhi.html': '数织',
     'migong.html': '迷宫', 'huochai.html': '火柴', 'pinyin.html': '拼音', 'help.html': '使用说明', 'admin.html': '邀请码管理', 'mark.html': '打分',
+    'locked.html': '上锁',
 }
 
 
@@ -123,7 +124,7 @@ for name, _, slug, icon in TOOLS + MENU:
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
         'stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">' + icon + '</svg>\n', encoding='utf-8')
 
-for page in ['welcome.html', '404.html']:
+for page in ['welcome.html', '404.html', 'privacy.html']:
     path = ROOT / page
     path.write_text(head_icons(path.read_text(encoding='utf-8')), encoding='utf-8')
 

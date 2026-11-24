@@ -644,3 +644,22 @@
 .today-marks .btn {
   margin-left: auto;
 }
+
+/* 免费版：完整版的七个板块列成一排，点进去是上锁页（能补填邀请码） */
+.dk-lock-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+.dk-lock-list a {
+  display: block;
+  padding: 12px 14px;
+  background: var(--card);
+  border: 1px solid var(--card-edge);
+  border-radius: 10px;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.dk-lock-list a:hover { border-color: var(--line-strong); }
+.dk-lock-list b { display: block; margin-bottom: 2px; font-size: 15px; color: var(--ink); }
+.dk-lock-list span { font-size: 13px; color: var(--ink-soft); }

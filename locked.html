@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="icons/favicon.svg?v=9d0a242c0b" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=c5db7fcb1f" />
+  <meta name="theme-color" content="#f6f7f9" />
+  <script>try{if(localStorage.getItem("lianxizhi:rail")==="fold")document.documentElement.classList.add("rail-folded")}catch(e){}</script>
+  <title>完整版 · 纸和笔</title>
+  <meta name="robots" content="noindex" />
+  <link rel="stylesheet" href="css/app.css?v=df6f155eac" />
+</head>
+<body>
+<!-- 免费版打开完整版的板块时，中间层在原网址上显示这一页（functions/_middleware.js，server/gate.js FREE_PAGES）。
+     本页没有单独网址；板块名按当前网址填。 -->
+<div class="app">
+<!-- rail:上锁 -->
+<nav class="rail" aria-label="板块">
+  <div class="rail-top"><a class="rail-brand" href="index.html" aria-label="纸和笔 · 今天"><img src="icons/mark.svg?v=e200a2b101" width="28" height="28" alt=""><span>纸和笔<small>少报班，少看屏</small></span></a><button type="button" class="rail-fold" data-rail-fold aria-label="收起侧栏" title="收起侧栏"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15M15.5 10l-2 2 2 2"/></svg></button></div>
+  <span class="rail-label">练习</span>
+  <a class="rail-link" href="index.html" data-module="今天" title="今天"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><rect class="f" x="7" y="12.5" width="4" height="4" rx="1"/></svg><span>今天</span></a>
+  <a class="rail-link" href="kousuan.html" data-module="口算" title="口算"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7.5h5.5M7.25 4.75v5.5M14 7.5h5.5M5 14.25l4.5 4.5M9.5 14.25L5 18.75M14 15h5.5M14 18.25h5.5"/></svg><span>口算</span></a>
+  <a class="rail-link" href="aoshu.html" data-module="奥数" title="奥数"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.75l8.5 15.5h-17z"/><circle cx="12" cy="14" r="2.75"/></svg><span>奥数</span></a>
+  <a class="rail-link" href="shizi.html" data-module="识字" title="识字"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 4 5v13.5c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5zM12 6.5V20"/></svg><span>识字</span></a>
+  <a class="rail-link" href="pinyin.html" data-module="拼音" title="拼音"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="14.25" r="4.25"/><path d="M14.75 10v8.5M7 5.25h8M4 20.25h16"/></svg><span>拼音</span></a>
+  <span class="rail-label">游戏</span>
+  <a class="rail-link" href="shudu.html" data-module="数独" title="数独"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M9.33 4v16M14.67 4v16M4 9.33h16M4 14.67h16"/></svg><span>数独</span></a>
+  <a class="rail-link" href="huochai.html" data-module="火柴" title="火柴"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18L15.5 8.5M17.5 6.5h.01M9 19.5h10"/><circle class="f" cx="17" cy="7" r="1.75"/></svg><span>火柴</span></a>
+  <a class="rail-link" href="mima.html" data-module="密码" title="密码"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M7.75 10.5V7.75a4.25 4.25 0 0 1 8.5 0v2.75M8.5 15.5h.01M12 15.5h.01M15.5 15.5h.01"/></svg><span>密码</span></a>
+  <a class="rail-link" href="migong.html" data-module="迷宫" title="迷宫"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 4H6.5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20h9M12.5 4h5A2.5 2.5 0 0 1 20 6.5V20M8.5 4v4.5h4M16 8.5V16M8 12.5V16h4"/></svg><span>迷宫</span></a>
+  <a class="rail-link" href="zhizhi.html" data-module="数织" title="数织"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 4v16M4 12h16"/><rect class="f" x="6.25" y="6.25" width="3.5" height="3.5" rx=".75"/><rect class="f" x="14.25" y="14.25" width="3.5" height="3.5" rx=".75"/></svg><span>数织</span></a>
+  <span class="rail-gap"></span>
+  <a class="rail-link rail-tool" href="help.html" data-help title="使用说明"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .9-1 1.6v.3M12 16.75h.01"/></svg><span>使用说明</span></a>
+  <div class="rail-me">
+    <button type="button" class="rail-user" data-account-menu aria-haspopup="menu" aria-expanded="false" title="账号"><span class="rail-avatar" data-account-initial aria-hidden="true"></span><span class="rail-who"><b data-account-email>账号</b><small>练习进度自动同步</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 10l4-4 4 4M8 14l4 4 4-4"/></svg></button>
+    <div class="rail-menu" role="menu" hidden>
+      <button type="button" role="menuitem" data-account=""><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.25" r="3.75"/><path d="M4.75 19.75c1.4-3.3 4.1-4.75 7.25-4.75s5.85 1.45 7.25 4.75"/></svg><span>账号与密码</span></button>
+      <button type="button" role="menuitem" data-backup><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10M8 10.25L12 14l4-3.75M4.5 15v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3"/></svg><span>备份与恢复</span></button>
+      <button type="button" role="menuitem" data-logout><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4.5h3.5a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H14M10 16l-4-4 4-4M6 12h9.5"/></svg><span>退出登录</span></button>
+    </div>
+  </div>
+</nav>
+<script src="js/sidebar.js?v=fb14dd3b96" defer></script>
+<!-- /rail -->
+
+<div class="work">
+  <header class="work-head">
+    <h1 class="work-title" id="lk-title">完整版</h1>
+  </header>
+  <main class="lk-scroll">
+    <section class="lk-card">
+      <p class="lk-kicker">这个板块属于完整版</p>
+      <h2 id="lk-name">完整版板块</h2>
+      <p class="lk-desc" id="lk-desc">填邀请码开通完整版后就能用。</p>
+      <p class="lk-now">你现在是<b>免费版</b>：口算、数独都能用，扫码打分、按错题出下一张、换设备同步也都有。完整版另外还有奥数（带讲解视频）、识字、拼音、火柴、密码、迷宫、数织七个板块。</p>
+      <div class="lk-redeem">
+        <h3>有邀请码？现在就开通</h3>
+        <form class="redeem-form" data-redeem novalidate>
+          <input class="input input-code" type="text" name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="如 K7M2-QF9W" aria-label="邀请码">
+          <button type="submit" class="btn btn-primary">开通完整版</button>
+          <p class="redeem-msg" data-redeem-msg role="alert" hidden></p>
+        </form>
+        <p class="lk-help">邀请码找邀请你的家长要，一个码只能开通一个账号。</p>
+      </div>
+      <p class="lk-back">先去用：<a href="kousuan.html">口算</a> · <a href="shudu.html">数独</a> · <a href="index.html">今天</a></p>
+    </section>
+  </main>
+</div>
+</div>
+
+<script>
+/* 按网址填板块名、介绍，并让侧栏里对应的板块亮起来 */
+(function () {
+  var BOARDS = {
+    aoshu: ['奥数', '一年级思维课，一天一课：先看 5 分钟以内的讲解视频，再做练习，最后家长对着分步解析讲题。'],
+    shizi: ['识字', '每日一卷 20 个字，没认出的字自动安排复习；还能出田字格练字纸，带笔顺和描红。'],
+    pinyin: ['拼音', '易混字母、声调、拼读，按孩子读错的音节安排下一组；卡住时有家长教学卡。'],
+    huochai: ['火柴', '拿走、添上或移动一根火柴，让算式变对。四关由易到难，每道题只有一个答案。'],
+    mima: ['密码', '看几条线索，一步步排除，推出密码。练的是推理。'],
+    migong: ['迷宫', '算式迷宫：只有算对的格子才能踩，走到出口就是全对。'],
+    zhizhi: ['数织', '按数字线索涂格子，涂完揭晓一幅小图。']
+  }
+  var key = location.pathname.replace(/\/+$/, '').replace(/\.html$/, '').replace(/^\//, '')
+  var b = BOARDS[key]
+  if (b) {
+    document.title = b[0] + ' · 完整版 · 纸和笔'
+    document.getElementById('lk-title').textContent = b[0]
+    document.getElementById('lk-name').textContent = b[0]
+    document.getElementById('lk-desc').textContent = b[1]
+    var link = document.querySelector('.rail-link[data-module="' + b[0] + '"]')
+    if (link) { link.classList.add('active'); link.setAttribute('aria-current', 'page') }
+  }
+})()
+</script>
+<script src="js/store.js?v=c6aac93871"></script>
+<script src="js/sheets-core.js?v=4a37e8f3d0"></script>
+<script src="js/backup.js?v=f21895fa7e"></script>
+<script src="js/changelog.js?v=7cbe1448d9"></script>
+<script src="js/help.js?v=e32d32e746"></script>
+<script src="js/account.js?v=b77842714f"></script>
+<script src="js/account-ui.js?v=4ed8d7ae77"></script>
+<script src="js/sync-core.js?v=5f4122b899"></script>
+<script src="js/sync.js?v=13dd97b911"></script>
+</body>
+</html>

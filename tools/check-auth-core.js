@@ -50,6 +50,38 @@ function memRepo() {
     async tokenGet(h) { return tokens.find(function (t) { return t.token_hash === h }) || null },
     async tokenUse(h) { tokens.find(function (t) { return t.token_hash === h }).used_at = 1 },
     async tokensClear(uid, kind) { tokens.forEach(function (t) { if (t.user_id === uid && t.kind === kind) t.used_at = 1 }) },
+    async counterBump(scope, kind, windowStart, max) {
+      var k = scope + '/' + kind, row = limits[k]
+      if (!row || row.ts < windowStart) { limits[k] = { n: 1, ts: windowStart, until: 0 }; return true }
+      if (row.n >= max) return false
+      row.n++
+      return true
+    },
+    async setPlan(id, plan, inviteId) {
+      var u = users.find(function (x) { return x.id === id })
+      u.plan = plan
+      if (inviteId) u.invite_id = inviteId
+    },
+    async redeemInvite(inviteId, uid, now) {
+      var v = invites.find(function (x) { return x.id === inviteId })
+      if (!v || v.claimed_by || v.revoked_at) return false
+      v.claimed_by = uid; v.claimed_at = now; v.activated_at = now
+      var u = users.find(function (x) { return x.id === uid })
+      u.plan = 'full'; u.invite_id = inviteId
+      return true
+    },
+    async purgeUnverified(before, now) {
+      var gone = users.filter(function (u) { return !u.verified && !u.admin && u.created_at < before })
+      gone.forEach(function (u) {
+        invites.forEach(function (v) { if (v.claimed_by === u.id && !v.activated_at) { v.claimed_by = null; v.claimed_at = null } })
+        users.splice(users.indexOf(u), 1)
+      })
+      return gone.length
+    },
+    async deleteUser(id) {
+      var i = users.findIndex(function (u) { return u.id === id })
+      if (i >= 0) users.splice(i, 1)
+    },
     async limitGet(s, k) { return limits[s + '/' + k] || null },
     async limitSet(s, k, row) { limits[s + '/' + k] = row },
     _invites: invites,
@@ -126,9 +158,11 @@ import('../server/auth-core.js').then(async function (A) {
   var v2 = await A.verify(db, now + 63 * 1000, { email: 'a@b.co', code: r.dev.code })
   check('用过的码再交 → 失败', v2.status === 422)
 
-  /* 已验证的邮箱再注册 → 409 */
-  var r3 = await A.register(db, now + 130 * 1000, { email: 'a@b.co', password: clientHash('a@b.co', 'x') })
-  check('已验证重复注册 → 409', r3.status === 409)
+  /* 已验证的邮箱再注册：页面上不说「注册过了」（防拿来查邮箱），邮箱主人收到一封「已经注册过」的提醒 */
+  var nUsers = db.users.length
+  var r3 = await A.register(db, now + 130 * 1000, { email: 'a@b.co', password: clientHash('a@b.co', 'password123') })
+  check('已验证重复注册 → 同样回 200，不暴露已注册', r3.status === 200 && r3.body.ok && !r3.dev, r3)
+  check('已验证重复注册 → 发的是提醒信，不建新账号、不改密码', r3.mail && /已经注册过/.test(r3.mail.subject) && db.users.length === nUsers)
 
   /* --- 错 5 次作废 --- */
   var db2 = memRepo()

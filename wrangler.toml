@@ -6,3 +6,8 @@ pages_build_output_dir = "."
 binding = "DB"
 database_name = "lianxizhi"
 database_id = "dcd2bd47-222c-47d8-97e7-8aab88af8eea"
+
+# 奥数讲解视频（functions/v：只给完整版，2026-11-24）
+[[r2_buckets]]
+binding = "VIDEO"
+bucket_name = "lianxizhi-video"

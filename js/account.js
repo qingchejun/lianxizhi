@@ -53,12 +53,15 @@
     return { status: r.status, body: data }
   }
 
-  var state = { loggedIn: false, email: '', admin: false }
+  var state = { loggedIn: false, email: '', admin: false, plan: '' }
   var listeners = []
-  function setLogin(email, admin) {
+  /* plan：free = 免费版（口算、数独），full = 完整版；没给就沿用服务器写进网页的 __SUMSUM_PLAN */
+  function setLogin(email, admin, plan) {
     state.loggedIn = !!email
     state.email = email || ''
     state.admin = !!email && !!admin
+    state.plan = !email ? '' : (plan === 'free' || plan === 'full' ? plan : (root.__SUMSUM_PLAN || 'full'))
+    if (email) root.__SUMSUM_PLAN = state.plan
     listeners.forEach(function (fn) { fn(state) })
   }
 
@@ -69,12 +72,12 @@
     var pre = !fetchFn && root.__SUMSUM_ME
     if (pre && typeof pre === 'object') {
       root.__SUMSUM_ME = null
-      if (pre.ok) setLogin(pre.email, pre.admin)
+      if (pre.ok) setLogin(pre.email, pre.admin, pre.plan)
       if (pre.ok && typeof pre.moveTo === 'string') state.moveTo = pre.moveTo /* 旧网址：同步完要跳到新网址（account-ui） */
       return state
     }
     var r = await request('/api/auth/me', undefined, fetchFn)
-    if (r.status === 200 && r.body.ok) setLogin(r.body.email, r.body.admin)
+    if (r.status === 200 && r.body.ok) setLogin(r.body.email, r.body.admin, r.body.plan)
     return state
   }
 

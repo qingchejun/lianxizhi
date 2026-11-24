@@ -120,8 +120,10 @@
         title: '注册',
         html: tabs('register') + '<form data-view="register" novalidate>' + EMAIL +
           field('密码', '<input class="input" type="password" name="password" required minlength="8" autocomplete="new-password">', '至少 8 位') +
-          field('邀请码', '<input class="input input-code" type="text" name="invite" required autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="K7M2-QF9W">', '找邀请你的家长要，一个邀请码只能注册一个账号') +
-          MSG + '<button type="submit" class="btn btn-primary btn-lg auth-submit" data-act="submit">注册，发验证码到邮箱</button></form>'
+          field('邀请码（选填）', '<input class="input input-code" type="text" name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="K7M2-QF9W">', '有邀请码就填上，开通完整版；没有就空着，先免费用口算和数独') +
+          (tsKey() ? '<div class="ts-box" data-ts></div>' : '') +
+          MSG + '<button type="submit" class="btn btn-primary btn-lg auth-submit" data-act="submit">注册，发验证码到邮箱</button>' +
+          '<p class="auth-help">注册即表示同意<a href="/privacy" target="_blank" rel="noopener">隐私说明</a>。</p></form>'
       },
       code: {
         title: '验证邮箱',
@@ -160,32 +162,95 @@
           field('新密码', '<input class="input" type="password" name="password" required minlength="8" autocomplete="new-password">', '至少 8 位。改好后，其他设备要重新登录') +
           MSG + '<div class="account-row"><button type="submit" class="btn btn-primary" data-act="submit">保存新密码</button>' +
           '<button type="button" class="btn" data-goto="account">返回</button></div></form>'
+      },
+      delete: {
+        title: '删除账号',
+        html: head('删除账号', '账号和云端的练习记录会一起删掉，删了找不回来。这台设备上的本机记录不受影响。') +
+          '<form data-view="delete" novalidate>' +
+          field('当前密码', '<input class="input" type="password" name="password" required autocomplete="current-password" minlength="8">') +
+          MSG + '<div class="account-row"><button type="submit" class="btn btn-danger" data-act="submit">确认删除</button>' +
+          '<button type="button" class="btn" data-goto="account">返回</button></div></form>'
       }
     }
+  }
+
+  /* 人机验证（Cloudflare Turnstile）：服务器写进网页的公开编号，没有就不出这个框 */
+  function tsKey() {
+    return typeof root.__SUMSUM_TS === 'string' ? root.__SUMSUM_TS : ''
+  }
+  var tsToken = '', tsWidget = null, tsLoading = null
+  function mountTs() {
+    var box = dlg && dlg.querySelector('[data-ts]')
+    if (!box || !tsKey()) return
+    tsToken = ''
+    if (!tsLoading) {
+      tsLoading = new Promise(function (resolve, reject) {
+        var sc = doc.createElement('script')
+        sc.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
+        sc.async = true
+        sc.onload = resolve
+        sc.onerror = function () { tsLoading = null; reject(new Error('ts')) }
+        doc.head.appendChild(sc)
+      })
+    }
+    tsLoading.then(function () {
+      if (!root.turnstile || !box.isConnected) return
+      tsWidget = root.turnstile.render(box, {
+        sitekey: tsKey(),
+        language: 'zh-cn',
+        callback: function (t) { tsToken = t },
+        'expired-callback': function () { tsToken = '' },
+        'error-callback': function () { tsToken = '' }
+      })
+    }).catch(function () {
+      say('「确认是真人」的小框没加载出来，检查一下网络，刷新页面再试。', 'bad')
+    })
+  }
+  function resetTs() {
+    tsToken = ''
+    if (tsWidget !== null && root.turnstile) { try { root.turnstile.reset(tsWidget) } catch (e) { /* 框已经不在了 */ } }
+  }
+
+  /* 账号页里的版本：免费版能补填邀请码开通完整版 */
+  function planBlock() {
+    if (A.state.plan === 'free') {
+      return '<div class="account-plan"><p><b>免费版</b> · 可以用口算、数独，扫码打分、按错题出下一张都有。</p>' +
+        redeemForm() + '</div>'
+    }
+    return '<div class="account-plan"><p><b>完整版</b> · 九个板块都能用。</p></div>'
+  }
+  function redeemForm() {
+    return '<form class="redeem-form" data-redeem novalidate>' +
+      '<input class="input input-code" type="text" name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="如 K7M2-QF9W" aria-label="邀请码">' +
+      '<button type="submit" class="btn btn-primary">开通完整版</button>' +
+      '<p class="redeem-msg" data-redeem-msg role="alert" hidden></p></form>'
   }
 
   function render() {
     var body = dlg.querySelector('[data-body]')
     var title = dlg.querySelector('[data-title]')
     /* 登录态掉了还停在改密码表单上，回去登录页（提交也只会 401） */
-    if (!A.state.loggedIn && (view === 'account' || view === 'changepw')) view = 'login'
-    if (A.state.loggedIn && view !== 'changepw') {
+    if (!A.state.loggedIn && (view === 'account' || view === 'changepw' || view === 'delete')) view = 'login'
+    if (A.state.loggedIn && view !== 'changepw' && view !== 'delete') {
       if (title) title.textContent = '账号'
       body.innerHTML =
         '<div class="account-who"><span class="account-avatar" aria-hidden="true">' + esc(A.state.email.charAt(0).toUpperCase()) + '</span>' +
           '<div><b>' + esc(A.state.email) + '</b><small>已登录 · 练习进度自动同步</small></div></div>' +
         '<p class="account-sub">换一台电脑，登录同一个账号，进度就跟过去了。</p>' +
+        planBlock() +
         (A.state.admin ? '<div class="account-row"><a class="btn" href="admin.html">管理员面板</a></div>' : '') +
         '<div class="account-row">' +
           '<button type="button" class="btn" data-act="changepw">修改密码</button>' +
           '<button type="button" class="btn btn-danger" data-act="logout">退出登录</button>' +
-        '</div>' + MSG
+        '</div>' + MSG +
+        '<p class="account-foot"><a href="/privacy" target="_blank" rel="noopener">隐私说明</a> · <button type="button" class="link-btn quiet" data-act="delete">删除账号</button></p>'
       return
     }
     var f = forms()[view] || forms().login
     if (title) title.textContent = f.title
     body.innerHTML = f.html
     body.setAttribute('data-view', view)
+    if (view === 'register') mountTs()
     if (view === 'code' || view === 'resetcode') wireCode(view === 'code')
     else if (!inline || doc.activeElement && dlg.contains(doc.activeElement)) {
       var first = body.querySelector('input:not([type=hidden])')
@@ -277,8 +342,8 @@
     }
   }
 
-  function loggedIn(email, admin) {
-    A.setLogin(email, admin)
+  function loggedIn(email, admin, plan) {
+    A.setLogin(email, admin, plan)
     startSync()
     view = 'account'
     if (!inline) render()
@@ -344,25 +409,27 @@
       if (view === 'login' || view === 'register') {
         if (!A.validEmail(email)) return say('邮箱地址看起来不对。', 'bad')
         if (!A.validPassword(pw)) return say('密码至少 8 位。', 'bad')
-        if (view === 'register' && fd.get('invite').replace(/[^0-9a-z]/gi, '').length !== 8) {
-          return say('邀请码是 8 位字母和数字，像 K7M2-QF9W。', 'bad')
+        var invRaw = view === 'register' ? String(fd.get('invite') || '').replace(/[^0-9a-z]/gi, '') : ''
+        if (invRaw && invRaw.length !== 8) {
+          return say('邀请码是 8 位字母和数字，像 K7M2-QF9W；没有邀请码就把这一栏清空。', 'bad')
         }
+        if (view === 'register' && tsKey() && !tsToken) return say('请等「确认是真人」那一格打上勾再点注册。', 'bad')
         var hash = await A.hashPassword(email, pw)
         mem.email = email
         mem.hash = hash
         if (view === 'register') {
-          var r = await A.request('/api/auth/register', { email: email, password: hash, invite: fd.get('invite') || '' })
+          var r = await A.request('/api/auth/register', { email: email, password: hash, invite: invRaw ? fd.get('invite') : '', turnstile: tsToken })
           if (r.status === 200) { /* 未验证过的重复注册也走 200：换密码 + 重发码（auth-core 裁定） */
             view = 'code'
             render()
-          } else say(r.body.error || '注册没成功，稍后再试。', 'bad')
+          } else { resetTs(); say(r.body.error || '注册没成功，稍后再试。', 'bad') }
         } else {
           var rl = await A.request('/api/auth/login', { email: email, password: hash })
           if (rl.status === 200 && rl.body.need_verify) {
             view = 'code'
             render()
           } else if (rl.status === 200) {
-            loggedIn(email, rl.body.admin)
+            loggedIn(email, rl.body.admin, rl.body.plan)
           } else say(rl.body.error || '登录没成功。', 'bad')
         }
       } else if (view === 'code') {
@@ -381,14 +448,23 @@
         if (code.length !== 6) return say('验证码是 6 位数字。', 'bad')
         if (!A.validPassword(pw)) return say('新密码至少 8 位。', 'bad')
         var rc = await A.request('/api/auth/reset', { email: mem.email, code: code, password: await A.hashPassword(mem.email, pw) })
-        if (rc.status === 200) loggedIn(mem.email, rc.body.admin)
+        if (rc.status === 200) loggedIn(mem.email, rc.body.admin, rc.body.plan)
         else say(rc.body.error || '没改成，稍后再试。', 'bad')
       } else if (view === 'reset') {
         if (!A.validEmail(email)) return say('邮箱地址看起来不对。', 'bad')
         if (!A.validPassword(pw)) return say('密码至少 8 位。', 'bad')
         var rr = await A.request('/api/auth/reset', { token: resetToken, password: await A.hashPassword(email, pw) })
-        if (rr.status === 200) loggedIn(email, rr.body.admin)
+        if (rr.status === 200) loggedIn(email, rr.body.admin, rr.body.plan)
         else say(rr.body.error || '重设没成功。', 'bad')
+      } else if (view === 'delete') {
+        var dpw = fd.get('password') || ''
+        if (!A.validPassword(dpw)) return say('当前密码至少 8 位。', 'bad')
+        if (root.SumSum.sync && root.SumSum.sync.flush) await root.SumSum.sync.flush()
+        var dr = await A.request('/api/auth/delete', { password: await A.hashPassword(A.state.email, dpw) })
+        if (dr.status !== 200) return say(dr.body.error || '没删成，稍后再试。', 'bad')
+        /* 本机记录归属清掉：下一个在这台设备登录的人不会被当成同一个账号合并 */
+        try { root.localStorage.removeItem('sumsum:sync:owner') } catch (e) { /* 存不了就算了 */ }
+        root.location.href = '/'
       } else if (view === 'changepw') {
         /* 已登录才能到这个视图；PBKDF2 的盐要邮箱，直接用登录态里的 */
         var oldPw = fd.get('old') || ''
@@ -442,6 +518,9 @@
       }
       /* 全站要登录才能看：退出后回首页（介绍兼登录页） */
       root.location.href = '/'
+    } else if (b.dataset.act === 'delete') {
+      view = 'delete'
+      render()
     } else if (b.dataset.act === 'changepw') {
       view = 'changepw'
       render()
@@ -449,9 +528,10 @@
       /* 注册验证码：再调一次 register（带上缓存的哈希）→ 未验证账号换密码 + 重发码；
          找回验证码：再调一次 forgot。限流（60 秒 / 每小时 3 封）由 auth-core 的 mailGate 拦 */
       b.disabled = true
+      /* 注册验证码的重发走登录接口（没验证的账号登录 = 补发验证码）：注册接口要人机验证，票只能用一次 */
       var r = view === 'resetcode'
         ? await A.request('/api/auth/forgot', { email: mem.email })
-        : await A.request('/api/auth/register', { email: mem.email, password: mem.hash })
+        : await A.request('/api/auth/login', { email: mem.email, password: mem.hash })
       if (r.status === 200) { clearCode(); say('新的验证码已发送。', 'ok'); countdown() }
       else { say(r.body.error || '发送太频繁了，稍等再试。', 'bad'); b.disabled = false }
     }
@@ -466,8 +546,43 @@
     if (!inline) dlg.showModal()
   }
 
+  /* 补填邀请码：账号页、上锁页里的 [data-redeem] 表单都走这里。开通后刷新，上锁的板块直接能用 */
+  function onRedeem(e) {
+    var form = e.target && e.target.closest && e.target.closest('[data-redeem]')
+    if (!form) return
+    e.preventDefault()
+    e.stopPropagation()
+    var input = form.querySelector('[name="invite"]')
+    var msg = form.querySelector('[data-redeem-msg]')
+    var btn = form.querySelector('button[type="submit"]')
+    function show(text, bad) {
+      if (!msg) return
+      msg.textContent = text
+      msg.className = 'redeem-msg' + (bad ? ' is-bad' : ' is-ok')
+      msg.hidden = false
+    }
+    var raw = String(input && input.value || '').replace(/[^0-9a-z]/gi, '')
+    if (raw.length !== 8) return show('邀请码是 8 位字母和数字，像 K7M2-QF9W。', true)
+    if (btn) btn.disabled = true
+    A.request('/api/auth/redeem', { invite: input.value }).then(function (r) {
+      if (r.status === 200) {
+        show('已开通完整版，正在刷新…', false)
+        A.setLogin(A.state.email, A.state.admin, 'full')
+        setTimeout(function () { root.location.reload() }, 600)
+      } else {
+        show(r.body.error || '没开通成功，稍后再试。', true)
+        if (btn) btn.disabled = false
+      }
+    }).catch(function () {
+      show('网络出了问题，稍后再试。', true)
+      if (btn) btn.disabled = false
+    })
+  }
+
   function boot() {
     A = root.SumSum && root.SumSum.account
+    doc.addEventListener('submit', onRedeem, true)
+    doc.addEventListener('input', function (e) { if (e.target && e.target.closest && e.target.closest('[data-redeem]')) onInput(e) })
     var host = doc.querySelector('[data-account-inline]')
     var trigger = doc.querySelector('[data-account]')
     if (!A || (!host && !trigger)) return
