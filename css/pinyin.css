@@ -258,7 +258,8 @@
   color: var(--green);
 }
 
-.py-step-st.is-stuck {
+.py-step-st.is-stuck,
+.py-step.is-done .py-step-st.is-stuck { /* 登记完但有题卡住：红色，别被「做完」的绿色盖掉 */
   color: var(--red);
 }
 
@@ -413,6 +414,10 @@
 .py-keys p {
   margin: 6px 0 0;
   color: var(--ink);
+}
+
+.py-foot-hint {
+  margin: 4px 0 0;
 }
 
 .py-group-foot {

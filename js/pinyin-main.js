@@ -201,12 +201,24 @@
     const counted = rec => rec && (rec.result !== 'unpracticed' || rec.skipped)
     const marked = g.items.filter(it => counted(marks[it.id])).length
     const done = marked === g.items.length && g.items.every(it => marks[it.id])
-    const stuck = g.items.some(it => ['hint', 'miss'].includes(marks[it.id]?.result))
-    return { marked, done, stuck }
+    const stuckN = g.items.filter(it => ['hint', 'miss'].includes(marks[it.id]?.result)).length
+    /* 整组登记成「没做」（「这组没做」或「做到一半停了 → 这组还没练」）：算登记过了，不算对也不算错 */
+    const skippedAll = !marked && g.items.every(it => marks[it.id]?.result === 'unpracticed')
+    return { marked, done, stuck: stuckN > 0, stuckN, skippedAll }
   }
 
   function firstOpen() {
-    return sheet.groups.find(g => g.phase !== 'check' && !groupState(sheet, g).done)
+    return sheet.groups.find(g => g.phase !== 'check' && !groupState(sheet, g).done && !groupState(sheet, g).skippedAll)
+  }
+
+  /* 「登记好了」之后去哪一组：卡住了且有换题再试就去那组；选做的「换题再试」之后收工；否则下一组。没有下一组 = 收工 */
+  function nextAfter(current) {
+    const failed = groupState(sheet, current).stuck
+    const followUp = failed && sheet.cards.find(entry => entry.startsAt === current.id)
+    if (followUp) return sheet.groups.find(entry => entry.id === followUp.group)
+    if (current.phase === 'check') return undefined
+    const normal = sheet.groups.filter(entry => entry.phase !== 'check')
+    return normal[normal.indexOf(current) + 1]
   }
 
   const KIND = { check: '换题再试', observe: '试一试' }
@@ -219,7 +231,9 @@
       const normal = !g.phase || g.phase === 'independent'
       if (normal) n++
       const label = g.label.replace(/^(复习|试一试) · /, '')
-      const status = st.done ? '做完' : st.marked ? '已记 ' + st.marked + '/' + g.items.length : '未练'
+      /* 状态直接说记成了什么：全对 / 几题卡住 / 没做，家长一眼看出登记得对不对 */
+      const status = st.done ? (st.stuckN ? st.stuckN + ' 题卡住' : '全对') : st.skippedAll ? '没做'
+        : st.marked ? '已记 ' + st.marked + '/' + g.items.length : '未练'
       return '<li><button type="button" class="py-step' + (group === g ? ' is-on' : '') + (st.done ? ' is-done' : '') +
         (normal ? '' : ' is-' + g.phase) + '" data-group="' + esc(g.id) + '"' + (group === g ? ' aria-current="step"' : '') + '>' +
         '<span class="py-dot">' + (st.done ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12.5l4 4 8-9"/></svg>' : normal ? n : '') + '</span>' +
@@ -281,6 +295,8 @@
     let body = ''
     if (group) {
       const normalIdx = sheet.groups.filter(g => g.phase !== 'check').indexOf(group)
+      const optional = group.phase === 'check' || group.phase === 'observe'
+      const doneLabel = nextAfter(group) ? '登记好了，下一组' : '登记好了，收工'
       const name = group.phase === 'check' ? '换题再试 · ' + group.label.replace(/^复习 · /, '')
         : group.phase === 'observe' ? group.label : '第 ' + (normalIdx + 1) + ' 组 · ' + group.label.replace(/^复习 · /, '')
       body = '<section class="group py-now" style="--pinyin-size:' + size + 'px">' +
@@ -289,10 +305,13 @@
         '<p class="hint">顺利的题什么都不点。孩子读不出来、要提示，才点对应的按钮。</p>' +
         '<ol class="py-rows">' + group.items.map(row).join('') + '</ol>' +
         (keys ? '<details class="py-keys"><summary>答案</summary><p>' + keys + '</p></details>' : '') +
+        '<p class="hint py-foot-hint">没点按钮的题，都记为读对了。</p>' +
         '<div class="py-group-foot">' +
           (branch && st.stuck ? '<button type="button" class="btn btn-primary" data-action="teach" data-target="' + esc(branch.group) + '">转教学，换题再试</button>' +
-            '<button type="button" class="btn" data-action="next">本组做完</button>'
-            : '<button type="button" class="btn btn-primary" data-action="next">' + (group.phase === 'check' ? '本组做完，收工' : '本组做完') + '</button>') +
+            '<button type="button" class="btn" data-action="next">' + doneLabel + '</button>'
+            : '<button type="button" class="btn btn-primary" data-action="next">' + doneLabel + '</button>') +
+          /* 选做的两组（试一试 / 换题再试）：没做就一键记「没做」，别被当成全对 */
+          (optional ? '<button type="button" class="btn" data-action="skip">这组没做</button>' : '') +
           '<button type="button" class="link-btn quiet" data-action="half">做到一半停了</button>' +
         '</div>' +
         (stopOpen ? '<div class="py-stop"><label class="field"><span>最后做到哪一题？</span><select class="input" id="pinyin-last">' +
@@ -437,16 +456,14 @@
     const action = button.dataset.action
     if (action === 'child-view') return showKid(true)
     if (action === 'half') stopOpen = !stopOpen
-    if (action === 'stop' || action === 'teach' || action === 'next') {
+    if (action === 'stop' || action === 'teach' || action === 'next' || action === 'skip') {
       const current = group
-      const last = action === 'stop' ? doc.getElementById('pinyin-last').value : current.items.at(-1).id
+      const last = action === 'stop' ? doc.getElementById('pinyin-last').value : action === 'skip' ? '' : current.items.at(-1).id
       confirm(last)
-      const failed = groupState(sheet, current).stuck
-      const followUp = failed && sheet.cards.find(entry => entry.startsAt === current.id)
       const normal = sheet.groups.filter(entry => entry.phase !== 'check')
       group = action === 'teach' ? sheet.groups.find(entry => entry.id === button.dataset.target) :
-        action === 'next' && followUp ? sheet.groups.find(entry => entry.id === followUp.group) :
-          action === 'next' && current.phase !== 'check' ? normal[normal.indexOf(current) + 1] : undefined
+        action === 'next' ? nextAfter(current) :
+          action === 'skip' && current.phase !== 'check' ? normal[normal.indexOf(current) + 1] : undefined
       stopOpen = false
       if (!group) {
         saved = action === 'stop'
@@ -456,7 +473,7 @@
     }
     render()
     if (marked) host.querySelector('[data-item="' + marked + '"] .py-mark[aria-pressed="true"], [data-item="' + marked + '"] .py-mark')?.focus()
-    if (action === 'teach' || action === 'next') host.querySelector('.py-now, .py-done')?.scrollIntoView({ block: 'nearest' })
+    if (action === 'teach' || action === 'next' || action === 'skip') host.querySelector('.py-now, .py-done')?.scrollIntoView({ block: 'nearest' })
   })
 
   host.addEventListener('change', event => {
