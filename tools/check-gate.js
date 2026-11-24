@@ -86,20 +86,32 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
       request: new Request('https://' + (host || 'zhihebi.com') + path, { headers: cookie ? { Cookie: cookie } : {} }),
       env: {
         SESSION_SECRET: SECRET,
-        DB: { prepare: function () { return { bind: function (id) { return { first: async function () {
-          if (dbDown) throw new Error('db down')
-          return users[id] || null
-        } } } } } },
+        DB: { prepare: function (sql) { return { bind: function (id) { return {
+          first: async function () {
+            if (dbDown) throw new Error('db down')
+            return /FROM sessions/.test(sql) ? sessions[id] || null : users[id] || null
+          },
+          run: async function () { return {} }
+        } } } } },
         ASSETS: { fetch: async function (u) { calls.assets.push(String(u)); return new Response('<h1>介绍</h1>', { status: 200, headers: { 'Content-Type': 'text/html' } }) } }
       },
       next: async function () { calls.next++; return new Response('page', { status: 200, headers: { 'Content-Type': 'text/html', 'Cache-Control': 'public, max-age=0' } }) }
     }
   }
   var now = Date.now()
-  var good = S.COOKIE + '=' + await S.sign({ uid: 'u1', pwver: 2, exp: now + 60000 }, SECRET)
-  var oldPw = S.COOKIE + '=' + await S.sign({ uid: 'u1', pwver: 1, exp: now + 60000 }, SECRET)
-  var banned = S.COOKIE + '=' + await S.sign({ uid: 'u2', pwver: 1, exp: now + 60000 }, SECRET)
-  var forged = S.COOKIE + '=' + (await S.sign({ uid: 'u1', pwver: 2, exp: now + 60000 }, 'wrong'))
+  /* 登录设备记录（2026-11-24 起 cookie 带 sid） */
+  var sessions = {
+    s1: { id: 's1', uid: 'u1', last_seen: now, ended_at: null },
+    s2: { id: 's2', uid: 'u2', last_seen: now, ended_at: null },
+    sk: { id: 'sk', uid: 'u1', last_seen: now, ended_at: now, ended_reason: 'kicked' }
+  }
+  var good = S.COOKIE + '=' + await S.sign({ uid: 'u1', pwver: 2, sid: 's1', exp: now + 60000 }, SECRET)
+  var oldPw = S.COOKIE + '=' + await S.sign({ uid: 'u1', pwver: 1, sid: 's1', exp: now + 60000 }, SECRET)
+  var banned = S.COOKIE + '=' + await S.sign({ uid: 'u2', pwver: 1, sid: 's2', exp: now + 60000 }, SECRET)
+  var forged = S.COOKIE + '=' + (await S.sign({ uid: 'u1', pwver: 2, sid: 's1', exp: now + 60000 }, 'wrong'))
+  var kicked = S.COOKIE + '=' + await S.sign({ uid: 'u1', pwver: 2, sid: 'sk', exp: now + 60000 }, SECRET)
+  var noSid = S.COOKIE + '=' + await S.sign({ uid: 'u1', pwver: 2, exp: now + 60000 }, SECRET)
+  var otherSid = S.COOKIE + '=' + await S.sign({ uid: 'u1', pwver: 2, sid: 's2', exp: now + 60000 }, SECRET)
 
   var c = ctx('/pinyin')
   var res = await M.onRequest(c)
@@ -128,6 +140,15 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   check('停用账号 → 拦', (await M.onRequest(c)).status === 302)
   c = ctx('/pinyin', forged)
   check('伪造签名 → 拦', (await M.onRequest(c)).status === 302)
+  c = ctx('/pinyin', kicked)
+  check('被第 4 台挤掉的设备 → 拦', (await M.onRequest(c)).status === 302)
+  c = ctx('/', kicked)
+  res = await M.onRequest(c)
+  check('被挤掉的设备回首页 → 登录页知道是被挤掉的', res.status === 200 && ((await res.text()).indexOf('"kicked":true') >= 0 || typeof HTMLRewriter === 'undefined'))
+  c = ctx('/pinyin', noSid)
+  check('没有设备记录的旧登录 → 拦（上线后都重新登录一次）', (await M.onRequest(c)).status === 302)
+  c = ctx('/pinyin', otherSid)
+  check('拿别的账号的设备记录 → 拦', (await M.onRequest(c)).status === 302)
   dbDown = true
   c = ctx('/pinyin', good)
   check('数据库出错 → 按没登录处理（宁可拦）', (await M.onRequest(c)).status === 302)

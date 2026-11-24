@@ -51,7 +51,9 @@ export async function onRequest(context) {
   }
   if (r.action === 'welcome') {
     const page = await context.env.ASSETS.fetch(new URL('/welcome', url))
-    return withCache(withMe(page, { ok: false }, context.env), 'no-cache')
+    /* 没登录的首页：顺带告诉页面为什么要重新登录（被别的设备挤掉 / 登录方式升级），只是一句提示 */
+    const why = me && !me.ok ? { ok: false, kicked: !!me.kicked, relogin: !!me.relogin } : { ok: false }
+    return withCache(withMe(page, why, context.env), 'private, no-cache')
   }
   /* 登录后的页面：同一网址登录前后内容不同，不许进共享缓存，浏览器每次回源确认 */
   return withCache(withMe(await context.next(), me, context.env), 'private, no-cache')
@@ -66,6 +68,8 @@ function meScript(me, env) {
   const safe = me && me.ok
     ? { ok: true, email: String(me.email || ''), verified: !!me.verified, admin: !!me.admin, plan: me.plan === 'free' ? 'free' : 'full' }
     : { ok: false }
+  if (me && !me.ok && me.kicked) safe.kicked = true
+  if (me && !me.ok && me.relogin) safe.relogin = true
   if (me && me.ok && me.moveTo) safe.moveTo = String(me.moveTo)
   /* __SUMSUM_PLAN：账号版本，页面上一直留着（__SUMSUM_ME 被 account.js 用完就清）；
      __SUMSUM_TS：人机验证（Turnstile）的公开站点编号，没配就不出人机验证框 */

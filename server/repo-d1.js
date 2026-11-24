@@ -57,10 +57,38 @@ export function repo(db) {
       await db.batch(stmts)
       return ids.length
     },
+    /* 登录设备（sessions 表，见 auth-core openSession） */
+    async sessionGet(id) {
+      return await db.prepare('SELECT * FROM sessions WHERE id=?').bind(id).first()
+    },
+    async sessionInsert(s) {
+      await db.prepare('INSERT INTO sessions(id,uid,created_at,last_seen) VALUES(?,?,?,?)').bind(s.id, s.uid, s.created_at, s.last_seen).run()
+    },
+    async sessionsAlive(uid, since) {
+      const r = await db.prepare('SELECT id, last_seen FROM sessions WHERE uid=? AND ended_at IS NULL AND created_at>?').bind(uid, since).all()
+      return r.results || []
+    },
+    async sessionEnd(id, now, reason) {
+      await db.prepare('UPDATE sessions SET ended_at=?, ended_reason=? WHERE id=? AND ended_at IS NULL').bind(now, reason, id).run()
+    },
+    async sessionsEndAll(uid, now, reason) {
+      await db.prepare('UPDATE sessions SET ended_at=?, ended_reason=? WHERE uid=? AND ended_at IS NULL').bind(now, reason, uid).run()
+    },
+    async sessionTouch(id, now) {
+      await db.prepare('UPDATE sessions SET last_seen=? WHERE id=?').bind(now, id).run()
+    },
+    async sessionsPrune(uid, endedBefore, createdBefore) {
+      await db.batch([
+        db.prepare('DELETE FROM sessions WHERE uid=? AND ((ended_at IS NOT NULL AND ended_at<?) OR created_at<?)').bind(uid, endedBefore, createdBefore),
+        /* 结束的记录每个账号最多留 20 条：有人反复登录也撑不大表 */
+        db.prepare('DELETE FROM sessions WHERE uid=? AND ended_at IS NOT NULL AND id NOT IN (SELECT id FROM sessions WHERE uid=? AND ended_at IS NOT NULL ORDER BY ended_at DESC LIMIT 20)').bind(uid, uid)
+      ])
+    },
     async deleteUser(id) {
       await db.batch([
         db.prepare('DELETE FROM data WHERE user_id=?').bind(id),
         db.prepare('DELETE FROM tokens WHERE user_id=?').bind(id),
+        db.prepare('DELETE FROM sessions WHERE uid=?').bind(id),
         db.prepare('DELETE FROM users WHERE id=?').bind(id)
       ])
     },

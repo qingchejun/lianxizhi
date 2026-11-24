@@ -74,6 +74,8 @@
       root.__SUMSUM_ME = null
       if (pre.ok) setLogin(pre.email, pre.admin, pre.plan)
       if (pre.ok && typeof pre.moveTo === 'string') state.moveTo = pre.moveTo /* 旧网址：同步完要跳到新网址（account-ui） */
+      /* 为什么又要登录：被第 4 台设备挤掉 / 设备上限上线前的旧登录（登录页说一句，account-ui） */
+      state.why = pre.ok ? '' : pre.kicked ? 'kicked' : pre.relogin ? 'relogin' : ''
       return state
     }
     var r = await request('/api/auth/me', undefined, fetchFn)

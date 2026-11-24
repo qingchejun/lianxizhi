@@ -12,6 +12,20 @@ function memRepo() {
   var users = [], invites = [], tokens = [], limits = {}
   return {
     users: users, _invites: invites, _tokens: tokens,
+    /* 登录设备（sessions） */
+    _sessions: [],
+    async sessionGet(id) { return this._sessions.find(function (s) { return s.id === id }) || null },
+    async sessionInsert(s) { this._sessions.push(Object.assign({ ended_at: null, ended_reason: null }, s)) },
+    async sessionsAlive(uid, since) { return this._sessions.filter(function (s) { return s.uid === uid && !s.ended_at && s.created_at > since }) },
+    async sessionEnd(id, now, reason) { var s = this._sessions.find(function (x) { return x.id === id && !x.ended_at }); if (s) { s.ended_at = now; s.ended_reason = reason } },
+    async sessionsEndAll(uid, now, reason) { this._sessions.forEach(function (s) { if (s.uid === uid && !s.ended_at) { s.ended_at = now; s.ended_reason = reason } }) },
+    async sessionTouch(id, now) { var s = this._sessions.find(function (x) { return x.id === id }); if (s) s.last_seen = now },
+    async sessionsPrune(uid, endedBefore, createdBefore) {
+      this._sessions = this._sessions.filter(function (s) { return !(s.uid === uid && ((s.ended_at && s.ended_at < endedBefore) || s.created_at < createdBefore)) })
+      var ended = this._sessions.filter(function (s) { return s.uid === uid && s.ended_at }).sort(function (a, b) { return b.ended_at - a.ended_at })
+      var drop = ended.slice(20)
+      this._sessions = this._sessions.filter(function (s) { return drop.indexOf(s) < 0 })
+    },
     async userByEmail(e) { return users.find(function (u) { return u.email === e }) || null },
     async userById(id) { return users.find(function (u) { return u.id === id }) || null },
     async insertUser(u) { users.push(u) },
@@ -174,6 +188,7 @@ Promise.all([import('../server/auth-core.js'), import('../server/admin-core.js')
   var sess = { uid: pu.id, pwver: pu.pwver }
   check('没验证邮箱不能补填邀请码', (await A.redeemInvite(P, sess, t0 + 1, { invite: 'PAYDAY01' })).status === 403)
   await A.verify(P, t0 + 2, { email: 'p@m.co', code: rf.dev.code })
+  sess.sid = await A.openSession(P, pu.id, t0 + 2) /* 2026-11-24 起登录态要带设备记录 */
   var me = await A.meBySession(P, sess)
   check('me 带出 plan=free', me.body.plan === 'free', me.body)
   check('补填：没登录 401', (await A.redeemInvite(P, null, t0 + 3, { invite: 'PAYDAY01' })).status === 401)
@@ -304,7 +319,7 @@ Promise.all([import('../server/auth-core.js'), import('../server/admin-core.js')
   check('作废不存在的码 404', (await AD.revokeInvite(dbA, { uid: 'boss' }, now + 4, { id: 'ghost' })).status === 404)
 
   /* --- admin 标记贯通：me / login 的 200 body 都要带 --- */
-  var meBoss = await A.meBySession(dbA, { uid: 'boss', pwver: 1 })
+  var meBoss = await A.meBySession(dbA, { uid: 'boss', pwver: 1, sid: await A.openSession(dbA, 'boss', now) })
   check('me 带 admin 标记（管理员）', meBoss.status === 200 && meBoss.body.admin === true, meBoss.body)
   var lgZ = await A.login(dbA, now + 5, { email: 'z@san.co', password: clientHash('z@san.co', 'password123') })
   check('login 带 admin 标记（普通用户为 false）', lgZ.status === 200 && lgZ.body.admin === false, lgZ.body)

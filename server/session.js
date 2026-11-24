@@ -1,6 +1,7 @@
 /**
- * 无状态登录态：HMAC-SHA256 签名的会话 cookie（spec 定的：不建 session 表）。
- * payload 只放 {uid, pwver, exp}（ASCII，btoa 安全）；邮箱每次由 /api/auth/me 查库带出。
+ * 登录态：HMAC-SHA256 签名的会话 cookie。payload 放 {uid, pwver, sid, exp}（ASCII，btoa 安全）；
+ * 邮箱每次由 /api/auth/me 查库带出。sid 对应 sessions 表的一行（2026-11-24 起：一个账号最多 3 台设备，
+ * 见 auth-core openSession）；没有 sid 的旧 cookie 一律当没登录。
  * 时间 unix 毫秒。requireSession 额外查 users 表比对 pwver：改密/重置后旧登录态立刻失效。
  */
 export const COOKIE = 'sumsum_sess'
@@ -53,8 +54,8 @@ export async function verify(token, secret, now) {
   return payload
 }
 
-export function sessionPayload(uid, pwver, now) {
-  return { uid: uid, pwver: pwver, exp: now + 90 * DAY }
+export function sessionPayload(uid, pwver, now, sid) {
+  return { uid: uid, pwver: pwver, sid: sid, exp: now + 90 * DAY }
 }
 
 export function cookieHeader(token, maxAgeSec) {
@@ -75,13 +76,16 @@ export function readCookie(header, name) {
   return null
 }
 
-/** data 等接口的门槛：验签 + pwver 比对。context 是 Pages Functions 的 EventContext。 */
+/** data 等接口的门槛：验签 + pwver 比对 + 这台设备没被挤掉。context 是 Pages Functions 的 EventContext。
+ *  返回 payload 外加 plan（视频等按版本放行用）。 */
 export async function requireSession(context) {
   const raw = readCookie(context.request.headers.get('Cookie'), COOKIE)
   if (!raw) return null
   const payload = await verify(raw, context.env.SESSION_SECRET, Date.now())
-  if (!payload) return null
-  const user = await context.env.DB.prepare('SELECT id, pwver, banned FROM users WHERE id=?').bind(payload.uid).first()
-  if (!user || user.pwver !== payload.pwver || user.banned) return null /* 停用账号的所有登录态立即失效 */
-  return payload
+  if (!payload || typeof payload.sid !== 'string') return null
+  const row = await context.env.DB.prepare(
+    'SELECT u.pwver, u.banned, u.plan, s.ended_at FROM users u JOIN sessions s ON s.id=? AND s.uid=u.id WHERE u.id=?'
+  ).bind(payload.sid, payload.uid).first()
+  if (!row || row.pwver !== payload.pwver || row.banned || row.ended_at) return null /* 停用账号、被挤掉的设备立即失效 */
+  return Object.assign({}, payload, { plan: row.plan })
 }

@@ -47,3 +47,12 @@ CREATE TABLE IF NOT EXISTS invites(
 );
 CREATE INDEX IF NOT EXISTS idx_invites_claimed ON invites(claimed_by);
 CREATE INDEX IF NOT EXISTS idx_users_unverified ON users(verified, created_at); -- 清理 48 小时没验证的账号用
+CREATE TABLE IF NOT EXISTS sessions( -- 登录设备：一个账号最多 3 台同时登录（见 auth-core openSession、tools/migrate-20261124-sessions.sql）
+  id TEXT PRIMARY KEY,
+  uid TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  last_seen INTEGER NOT NULL,
+  ended_at INTEGER,
+  ended_reason TEXT -- kicked = 被第 4 台挤掉；logout = 自己退出；pw = 改 / 重设密码
+);
+CREATE INDEX IF NOT EXISTS idx_sessions_uid ON sessions(uid, ended_at);

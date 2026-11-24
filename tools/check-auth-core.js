@@ -40,6 +40,20 @@ function memRepo() {
       dbData.forEach(function (v, k) { if (k.indexOf(uid + '/') === 0) n += v.value.length })
       return n
     },
+    /* 登录设备（sessions） */
+    _sessions: [],
+    async sessionGet(id) { return this._sessions.find(function (s) { return s.id === id }) || null },
+    async sessionInsert(s) { this._sessions.push(Object.assign({ ended_at: null, ended_reason: null }, s)) },
+    async sessionsAlive(uid, since) { return this._sessions.filter(function (s) { return s.uid === uid && !s.ended_at && s.created_at > since }) },
+    async sessionEnd(id, now, reason) { var s = this._sessions.find(function (x) { return x.id === id && !x.ended_at }); if (s) { s.ended_at = now; s.ended_reason = reason } },
+    async sessionsEndAll(uid, now, reason) { this._sessions.forEach(function (s) { if (s.uid === uid && !s.ended_at) { s.ended_at = now; s.ended_reason = reason } }) },
+    async sessionTouch(id, now) { var s = this._sessions.find(function (x) { return x.id === id }); if (s) s.last_seen = now },
+    async sessionsPrune(uid, endedBefore, createdBefore) {
+      this._sessions = this._sessions.filter(function (s) { return !(s.uid === uid && ((s.ended_at && s.ended_at < endedBefore) || s.created_at < createdBefore)) })
+      var ended = this._sessions.filter(function (s) { return s.uid === uid && s.ended_at }).sort(function (a, b) { return b.ended_at - a.ended_at })
+      var drop = ended.slice(20)
+      this._sessions = this._sessions.filter(function (s) { return drop.indexOf(s) < 0 })
+    },
     async userByEmail(e) { return users.find(function (u) { return u.email === e }) || null },
     async userById(id) { return users.find(function (u) { return u.id === id }) || null },
     async insertUser(u) { users.push(u) },
@@ -281,7 +295,7 @@ import('../server/auth-core.js').then(async function (A) {
   check('pwver 加过', dbF.users[0].pwver === 2)
   var oldSess = await A.meBySession(dbF, { uid: dbF.users[0].id, pwver: 1 })
   check('旧登录态失效', oldSess.status === 401)
-  var newSess = await A.meBySession(dbF, rs.session) /* 用返回值不硬编码：盯住 pwver 别算两遍 */
+  var newSess = await A.meBySession(dbF, Object.assign({ sid: await A.openSession(dbF, rs.session.uid, Date.now()) }, rs.session)) /* 用返回值不硬编码：盯住 pwver 别算两遍 */
   check('新登录态有效', newSess.status === 200 && newSess.body.email === 'f@m.co')
   var oldPwLogin = await A.login(dbF, now + 5000, { email: 'f@m.co', password: clientHash('f@m.co', 'password123') })
   check('旧密码登不上', oldPwLogin.status === 401)
@@ -311,7 +325,7 @@ import('../server/auth-core.js').then(async function (A) {
   check('改密码作废之前的验证码', (await A.verify(dbC, now + 3500, { email: 'c@m.co', code: '555555' })).status === 422)
   check('改密码 pwver 加过', dbC.users[0].pwver === 2)
   check('改密码后旧登录态失效', (await A.meBySession(dbC, sessC)).status === 401)
-  check('改密码后新登录态有效', (await A.meBySession(dbC, cp.session)).status === 200)
+  check('改密码后新登录态有效', (await A.meBySession(dbC, Object.assign({ sid: await A.openSession(dbC, cp.session.uid, Date.now()) }, cp.session))).status === 200)
   check('改后旧密码登不上', (await A.login(dbC, now + 4000, { email: 'c@m.co', password: clientHash('c@m.co', 'password123') })).status === 401)
   check('改后新密码能登', (await A.login(dbC, now + 4000, { email: 'c@m.co', password: clientHash('c@m.co', 'newpassword9') })).status === 200)
 
@@ -390,6 +404,46 @@ import('../server/auth-core.js').then(async function (A) {
     rr = await A.dataPush(dbR, 'u-r', [{ key: 'sumsum:r:v1', value: String(k2), updated_at: k2 }], now)
   }
   check('一分钟内第 61 次推送被限流', rr.status === 429, rr.body)
+
+
+  /* --- 登录设备上限 3 台（2026-11-24）--- */
+  var D = memRepo()
+  D.users.push({ id: 'u1', email: 'd@x.co', pwver: 1, verified: 1, plan: 'full' })
+  var H = 3600 * 1000, T = 1e12
+  var s1 = await A.openSession(D, 'u1', T)
+  var s2 = await A.openSession(D, 'u1', T + H)
+  var s3 = await A.openSession(D, 'u1', T + 2 * H)
+  var me = function (sid, t) { return A.meBySession(D, { uid: 'u1', pwver: 1, sid: sid }, t) }
+  check('三台都能用', (await me(s2, T + 1.5 * H)).status === 200 && (await me(s3, T + 2.5 * H)).status === 200 && (await me(s1, T + 3 * H)).status === 200)
+  /* s1 在 T+3H 刷新了最近使用时间（超过一小时才写）；s2、s3 不到一小时没写：最久没用的是 s2 */
+  var s4 = await A.openSession(D, 'u1', T + 4 * H)
+  var k2 = await me(s2, T + 5 * H)
+  check('第 4 台登录 → 挤掉最久没用的那台，并说明是被挤掉', k2.status === 401 && k2.body.kicked === true, k2.body)
+  check('其余三台照常', (await me(s1, T + 5 * H)).status === 200 && (await me(s3, T + 5 * H)).status === 200 && (await me(s4, T + 5 * H)).status === 200)
+  check('同时在用的不超过 3 台', (await D.sessionsAlive('u1', 0)).length === 3)
+  var old = await A.meBySession(D, { uid: 'u1', pwver: 1 }, T)
+  check('没有设备记录的旧登录 → 要重新登录（带 relogin 提示）', old.status === 401 && old.body.relogin === true, old.body)
+  check('伪造别人的设备记录不行', (await A.meBySession(D, { uid: 'u2', pwver: 1, sid: s1 }, T)).status === 401)
+  D.users.push({ id: 'u2', email: 'e@x.co', pwver: 1, verified: 1 })
+  check('拿别的账号的设备号也不行', (await A.meBySession(D, { uid: 'u2', pwver: 1, sid: s1 }, T)).status === 401)
+  await D.sessionEnd(s4, T + 6 * H, 'logout')
+  var lo = await me(s4, T + 6 * H)
+  check('退出的设备不显示「被挤掉」', lo.status === 401 && !lo.body.kicked, lo.body)
+  var s5 = await A.openSession(D, 'u1', T + 7 * H)
+  check('退出让出名额：再登一台不挤别人', (await me(s1, T + 7 * H)).status === 200 && (await me(s3, T + 7 * H)).status === 200 && (await me(s5, T + 7 * H)).status === 200)
+  await D.sessionsEndAll('u1', T + 8 * H, 'pw')
+  check('改 / 重设密码后名额清空', (await D.sessionsAlive('u1', 0)).length === 0)
+  var t9 = T + 200 * 86400 * 1000
+  await A.openSession(D, 'u1', t9)
+  check('过期很久的记录会被清掉', D._sessions.filter(function (s) { return s.uid === 'u1' }).length === 1, D._sessions.length)
+  var before = D._sessions[D._sessions.length - 1].last_seen
+  var s6 = D._sessions[D._sessions.length - 1].id
+  await me(s6, t9 + 60 * 1000)
+  check('一小时内不重复写最近使用时间', D._sessions.find(function (s) { return s.id === s6 }).last_seen === before)
+
+  var Z = memRepo()
+  for (var zi = 0; zi < 40; zi++) await A.openSession(Z, 'uz', T + zi * 1000)
+  check('反复登录：结束的记录最多留 20 条', Z._sessions.filter(function (s) { return s.ended_at }).length <= 20 && Z._sessions.filter(function (s) { return !s.ended_at }).length === 3, Z._sessions.length)
 
   console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ auth-core 注册/验证码全部通过')
   process.exit(bad ? 1 : 0)

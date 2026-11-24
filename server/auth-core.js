@@ -394,6 +394,7 @@ export async function reset(repo, now, body) {
     pw_hash: await sha256hex(pw_salt + pw), pw_salt: pw_salt,
     pwver: nextPwver, verified: 1 /* 重设顺带验证（能收到邮件就证明邮箱是本人的） */
   })
+  await repo.sessionsEndAll(user.id, now, 'pw') /* 密码写好之后再清设备名额：旧登录态本来就因 pwver 失效，别让它们还占着 3 台的位置 */
   return { status: 200, body: { ok: true, admin: !!user.admin, plan: planOf(user) }, session: { uid: user.id, pwver: nextPwver } }
 }
 
@@ -424,14 +425,43 @@ export async function changePassword(repo, session, now, body) {
   await repo.tokensClear(user.id, 'reset')
   await repo.tokensClear(user.id, 'verify')
   await repo.limitSet(user.email, 'loginfail', { n: 0, ts: now, until: 0 })
+  await repo.sessionsEndAll(user.id, now, 'pw')
   return { status: 200, body: { ok: true, admin: !!user.admin, plan: planOf(user) }, session: { uid: user.id, pwver: nextPwver } }
 }
 
-/* ---- /api/auth/me：会话有效性 + pwver 比对 ---- */
-export async function meBySession(repo, session) {
+/* ---- 登录设备上限（2026-11-24）：一个账号最多同时 3 台设备登录 ----
+   每次登录（登录、注册验证、重设密码、改密码）开一条 sessions 记录，cookie 里带它的 id（sid）。
+   超过 3 台时，挤掉最久没用的那台（last_seen 最早），那台下次打开网站会看到「在别的设备上登录了」。
+   不用「第 4 台登不进去」：家长换手机、清了浏览器，旧设备其实没人用了，拒绝登录会把人卡住。 */
+export const MAX_DEVICES = 3
+export const SESSION_DAYS = 90
+const TOUCH_EVERY = 3600 * 1000 /* last_seen 最多一小时写一次，别每打开一页都写库 */
+const KEEP_ENDED = 30 * 86400 * 1000 /* 被挤掉的记录留 30 天：那台设备回来时还能说清楚为什么退出了 */
+
+export async function openSession(repo, uid, now) {
+  const since = now - SESSION_DAYS * 86400 * 1000
+  const sid = randomHex(16)
+  await repo.sessionInsert({ id: sid, uid: uid, created_at: now, last_seen: now })
+  const alive = (await repo.sessionsAlive(uid, since)).filter(function (s) { return s.id !== sid })
+  alive.sort(function (a, b) { return a.last_seen - b.last_seen })
+  for (let i = 0; i < alive.length - (MAX_DEVICES - 1); i++) await repo.sessionEnd(alive[i].id, now, 'kicked')
+  await repo.sessionsPrune(uid, now - KEEP_ENDED, since)
+  return sid
+}
+
+/* ---- /api/auth/me：会话有效性 + pwver 比对 + 这台设备的登录记录还在 ----
+   没登录返回 {ok:false}；被别的设备挤掉 {ok:false, kicked:true}；上限上线前的旧登录 {ok:false, relogin:true}
+   （后两种只用来在登录页说一句为什么要重新登录） */
+export async function meBySession(repo, session, now) {
+  now = now || Date.now()
   if (!session) return { status: 401, body: { ok: false } }
   const user = await repo.userById(session.uid)
   if (!user || user.pwver !== session.pwver || user.banned) return { status: 401, body: { ok: false } }
+  if (typeof session.sid !== 'string') return { status: 401, body: { ok: false, relogin: true } }
+  const s = await repo.sessionGet(session.sid)
+  if (!s || s.uid !== user.id) return { status: 401, body: { ok: false } }
+  if (s.ended_at) return { status: 401, body: s.ended_reason === 'kicked' ? { ok: false, kicked: true } : { ok: false } }
+  if (now - s.last_seen > TOUCH_EVERY) await repo.sessionTouch(s.id, now)
   return { status: 200, body: { ok: true, email: user.email, verified: !!user.verified, admin: !!user.admin, plan: planOf(user) } }
 }
 

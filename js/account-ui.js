@@ -96,6 +96,11 @@
   }
   var RESEND = '<p class="auth-help">没收到验证码？请看垃圾邮件箱，或 <button type="button" class="link-btn" data-act="resend" disabled>60 秒后重发</button></p>'
   var MSG = '<div class="auth-msg" data-msg role="alert" hidden></div>'
+  /* 登录页开头说明为什么要重新登录（服务器写进网页的 __SUMSUM_ME.kicked / relogin） */
+  var WHY = {
+    kicked: '这个账号在别的设备上登录了，这台已经退出。一个账号最多同时登录 3 台设备，重新登录就能接着用。',
+    relogin: '网站的登录方式升级了，请重新登录一次。练习记录都在云端，登录后会自动回来。'
+  }
   function tabs(on) {
     return '<div class="stage-tabs auth-tabs" role="tablist">' +
       '<button type="button" role="tab" class="stage-tab' + (on === 'login' ? ' active' : '') + '" aria-selected="' + (on === 'login') + '" data-goto="login">登录</button>' +
@@ -596,6 +601,7 @@
       if (dlg && dlg.open) render() /* 登录态变了，弹窗内容跟着换 */
     })
     var initialSync = A.init().then(function () {
+      if (inline && !A.state.loggedIn && view === 'login' && WHY[A.state.why]) say(WHY[A.state.why])
       if (A.state.moveTo) moveBar()
       if (A.state.loggedIn) return startSync()
     }).catch(function () { /* 探不到登录态就当未登录，别抛未处理的 Promise 异常 */ })

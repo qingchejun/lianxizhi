@@ -1,4 +1,4 @@
-import { readCookie, verify, COOKIE } from '../../server/session.js'
+import { requireSession } from '../../server/session.js'
 
 /* 奥数讲解视频（2026-11-24 起只给完整版）：/v/aoshu/<id>.mp4
    先验登录 + 版本，再从 R2（lianxizhi-video 桶）取。支持拖动进度条（Range），
@@ -9,12 +9,8 @@ const EDGE_TTL = 'public, max-age=2592000'
 const BROWSER_TTL = 'private, max-age=86400'
 
 export async function fullUser(context) {
-  const raw = readCookie(context.request.headers.get('Cookie'), COOKIE)
-  if (!raw) return false
-  const payload = await verify(raw, context.env.SESSION_SECRET, Date.now())
-  if (!payload) return false
-  const u = await context.env.DB.prepare('SELECT pwver, banned, plan FROM users WHERE id=?').bind(payload.uid).first()
-  return !!(u && u.pwver === payload.pwver && !u.banned && u.plan !== 'free')
+  const s = await requireSession(context) /* 验签 + 改密 / 停用 / 被挤掉的设备都不算 */
+  return !!(s && s.plan !== 'free')
 }
 
 function deny(status, text) {

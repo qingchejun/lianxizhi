@@ -17,6 +17,8 @@ export async function readBody(request) {
 }
 
 import { sign, cookieHeader, sessionPayload, clearCookieHeader } from './session.js'
+import { openSession } from './auth-core.js'
+import { repo } from './repo-d1.js'
 import { sendMail } from './email.js'
 
 /** 把 auth-core 的返回翻成 Response：发信、签 cookie、DEV 回显。 */
@@ -28,7 +30,15 @@ export async function respond(context, r) {
   const headers = {}
   if (r.clearSession) headers['Set-Cookie'] = clearCookieHeader()
   if (r.session) {
-    const token = await sign(sessionPayload(r.session.uid, r.session.pwver, Date.now()), env.SESSION_SECRET)
+    const now = Date.now()
+    let sid
+    try {
+      sid = await openSession(repo(env.DB), r.session.uid, now) /* 占一个设备名额，超过 3 台挤掉最久没用的 */
+    } catch (e) {
+      /* 数据库一时出错：密码若已改好不会回滚，让人用（新）密码重新登录一次就行 */
+      return json({ ok: false, error: '登录没完成，请稍后用密码重新登录一次。' }, 503)
+    }
+    const token = await sign(sessionPayload(r.session.uid, r.session.pwver, now, sid), env.SESSION_SECRET)
     headers['Set-Cookie'] = cookieHeader(token, 90 * 86400)
   }
   const body = Object.assign({}, r.body)
