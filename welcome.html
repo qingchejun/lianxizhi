@@ -16,7 +16,7 @@
   <meta property="og:description" content="每天一页 A4 练习：口算、识字、拼音、奥数和思维游戏。做完扫码打个分，第二天按错题自动安排。少报班，少看屏。" />
   <meta property="og:image" content="https://zhihebi.com/icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="css/app.css?v=6e99537020" />
-  <link rel="stylesheet" href="css/welcome.css?v=0405bf9720" />
+  <link rel="stylesheet" href="css/welcome.css?v=bc04746d0c" />
 </head>
 <body class="welcome">
 <!-- 没登录时首页的内容（functions/_middleware.js 在网址 / 上直接返回本页，本页没有单独网址）。
@@ -24,17 +24,17 @@
 
 <header class="wl-top">
   <a class="wl-brand" href="/" aria-label="纸和笔"><img src="icons/mark.svg?v=e200a2b101" width="30" height="30" alt=""><span>纸和笔</span></a>
-  <span class="wl-invite">邀请制 · 小圈子使用</span>
+  <span class="wl-top-right"><span class="wl-invite">邀请制 · 小圈子使用</span><a class="btn wl-login" href="#login" data-goto-login>登录</a></span>
 </header>
 
 <main class="wl-main">
   <section class="wl-hero">
     <div class="wl-intro">
       <p class="wl-slogan">少报班，少看屏<span>一页纸，五分钟</span></p>
-      <h1>小学生每天<br>一页练习纸，<br>错哪练哪</h1>
+      <h1>每天一页练习纸，<br>错哪练哪</h1>
       <p class="wl-lead">给小学生出 A4 练习纸：口算、奥数、识字、拼音，外加数独、火柴、密码、迷宫、数织。每页大约五分钟，孩子做得完、天天坚持得下来。孩子做完，家长用手机扫一下纸角的二维码，点一下哪里卡住了，第二天的纸就按这个排。现在有一年级的内容，二年级 2027 年秋季上线。</p>
 
-      <div class="wl-auth" data-account-inline="login" aria-live="polite">
+      <div class="wl-auth" id="login" data-account-inline="login" aria-live="polite">
         <noscript><p class="tip warn">请打开浏览器的 JavaScript 后再登录。</p></noscript>
       </div>
       <p class="wl-mobile-tip">登录、查看进度用手机就行；<b>打印请在电脑上打开</b>这个网址。</p>
@@ -240,6 +240,21 @@
       if (box) box.value = invite.slice(0, 4) + '-' + invite.slice(4)
     }
   })()
+</script>
+<script>
+/* 右上角「登录」：滚到表单、切回登录页签、光标放进邮箱框 */
+document.addEventListener('click', function (e) {
+  var a = e.target.closest && e.target.closest('[data-goto-login]')
+  if (!a) return
+  e.preventDefault()
+  var box = document.getElementById('login')
+  if (!box) return
+  var tab = box.querySelector('[data-goto="login"]')
+  if (tab && !tab.classList.contains('active')) tab.click()
+  box.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  var email = box.querySelector('input[name="email"]')
+  if (email) email.focus({ preventScroll: true })
+})
 </script>
 </body>
 </html>

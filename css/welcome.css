@@ -55,6 +55,16 @@ body.welcome .wl-main {
   color: var(--ink-soft);
 }
 
+.wl-top-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.wl-login {
+  padding: 6px 16px;
+}
+
 .wl-main {
   max-width: 1200px;
   margin: 0 auto;
@@ -67,7 +77,7 @@ body.welcome .wl-main {
   display: grid;
   grid-template-columns: minmax(340px, 420px) minmax(0, 1fr);
   gap: 56px;
-  align-items: start;
+  align-items: stretch; /* 右边样张区跟左边一样高：顶边、底边都对齐 */
   padding: 28px 0 64px;
 }
 
@@ -117,7 +127,7 @@ body.welcome .wl-main {
 /* 桌面：和网站里放纸的地方一样的点阵灰底 */
 .wl-desk {
   position: relative;
-  height: 600px;
+  min-height: 560px;
   margin: 0;
   overflow: hidden;
   background-color: var(--canvas);
@@ -137,22 +147,23 @@ body.welcome .wl-main {
   transform-origin: 50% 100%;
 }
 
+/* 三张样张整组在样张区里上下居中（样张区跟左栏一样高，高度不固定） */
 .wl-s1 {
   left: 6%;
-  top: 76px;
+  top: calc(50% - 194px);
   transform: rotate(-6deg);
 }
 
 .wl-s2 {
   left: 50%;
-  top: 40px;
+  top: calc(50% - 230px);
   margin-left: -140px;
   z-index: 2;
 }
 
 .wl-s3 {
   right: 6%;
-  top: 92px;
+  top: calc(50% - 178px);
   z-index: 1;
   transform: rotate(5deg);
 }
@@ -713,6 +724,15 @@ body.welcome .wl-main {
     padding: 14px 20px;
   }
 
+  .wl-login {
+    display: none; /* 手机上登录表单就在最上面 */
+  }
+
+  .wl-slogan {
+    font-size: 18px;
+    letter-spacing: 2px;
+  }
+
   .wl-brand {
     font-size: 20px;
   }
@@ -764,6 +784,7 @@ body.welcome .wl-main {
 
   .wl-desk {
     height: 250px;
+    min-height: 0;
     margin: 24px -16px 0;
     border-radius: 0;
   }
