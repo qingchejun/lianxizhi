@@ -3,7 +3,7 @@
  * 没登录：首页显示介绍兼登录页（对谷歌公开、可收录）；GUEST_PAGES 里的板块页照常打开；其余页面一律 302 回首页（免费版账号见 FREE_PAGES），带上 next=原址，
  * 登录后回原页。静态资源与接口放行——接口各自验登录（requireSession），页面里的数据也只在登录后拉取。
  */
-const PUBLIC_PREFIXES = ['/api/', '/css/', '/js/', '/fonts/', '/icons/', '/v/'] /* /v/ 是奥数视频，functions/v 自己验登录和版本 */
+const PUBLIC_PREFIXES = ['/api/', '/css/', '/js/', '/fonts/', '/icons/', '/v/', '/nx/'] /* /v/ 是奥数视频，functions/v 自己验登录和版本；/nx/ 是访问统计转发（server/stats.js） */
 const PUBLIC_FILES = ['/robots.txt', '/sitemap.xml', '/favicon.ico'] /* 给搜索引擎的两份文件优先于下面按扩展名的拒绝 */
 const HOME = ['/', '/index', '/index.html']
 const WELCOME = ['/welcome', '/welcome.html']

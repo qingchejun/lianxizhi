@@ -1,4 +1,5 @@
-import { decide, assetCacheControl } from '../server/gate.js'
+import { decide, assetCacheControl, pagePath } from '../server/gate.js'
+import { wantsStats, statsTag } from '../server/stats.js'
 import { readCookie, verify, COOKIE } from '../server/session.js'
 import { meBySession } from '../server/auth-core.js'
 import { repo } from '../server/repo-d1.js'
@@ -43,7 +44,7 @@ export async function onRequest(context) {
   if (r.file) {
     /* 内页（/kousuan/coushifa）：文件在根目录，按表去取；登录态照常写进网页 */
     const page = await context.env.ASSETS.fetch(new URL(r.file, url))
-    return withCache(withMe(page, me, context.env), 'private, no-cache')
+    return withCache(withMe(page, me, context.env, url), 'private, no-cache')
   }
   if (r.action === 'redirect') {
     return new Response(null, { status: 302, headers: { Location: r.location, 'Cache-Control': 'private, no-store' } })
@@ -51,7 +52,7 @@ export async function onRequest(context) {
   if (r.action === 'locked') {
     /* 免费版打开完整版的板块：原网址上显示上锁说明页（能补填邀请码），不跳转、不收录 */
     const page = await context.env.ASSETS.fetch(new URL('/locked', url))
-    const out = withCache(withMe(page, me, context.env), 'private, no-cache')
+    const out = withCache(withMe(page, me, context.env, url), 'private, no-cache')
     out.headers.set('X-Robots-Tag', 'noindex')
     return out
   }
@@ -59,10 +60,10 @@ export async function onRequest(context) {
     const page = await context.env.ASSETS.fetch(new URL('/welcome', url))
     /* 没登录的首页：顺带告诉页面为什么要重新登录（被别的设备挤掉 / 登录方式升级），只是一句提示 */
     const why = me && !me.ok ? { ok: false, kicked: !!me.kicked, relogin: !!me.relogin } : { ok: false }
-    return withCache(withMe(page, why, context.env), 'private, no-cache')
+    return withCache(withMe(page, why, context.env, url), 'private, no-cache')
   }
   /* 登录后的页面：同一网址登录前后内容不同，不许进共享缓存，浏览器每次回源确认 */
-  return withCache(withMe(await context.next(), me, context.env), 'private, no-cache')
+  return withCache(withMe(await context.next(), me, context.env, url), 'private, no-cache')
 }
 
 /* 只给网页注入；字段与 /api/auth/me 的返回一致（js/account.js init 直接用） */
@@ -85,12 +86,17 @@ function meScript(me, env) {
     ';window.__SUMSUM_TS=' + JSON.stringify(ts).replace(/</g, '\\u003c') + '</script>'
 }
 
-function withMe(res, me, env) {
+function withMe(res, me, env, url) {
   const type = res.headers.get('Content-Type') || ''
   if (!type.includes('text/html') || typeof HTMLRewriter === 'undefined') return res
   const tag = meScript(me, env)
+  /* 访问统计脚本（server/stats.js）：只在正式网址加，扫码打分页、管理页不加 */
+  const stats = url && wantsStats(url.hostname, pagePath(url.pathname)) ? statsTag() : ''
   return new HTMLRewriter().on('head', {
-    element(el) { el.prepend(tag, { html: true }) }
+    element(el) {
+      el.prepend(tag, { html: true })
+      if (stats) el.append(stats, { html: true })
+    }
   }).transform(res)
 }
 
