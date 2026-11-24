@@ -4,7 +4,8 @@
 #   （.mp4 被 .gitignore 忽略，素材要用 git add -f）
 #   origin/main ── 登记提交（js/aoshu-videos.js 等，可以没有）── 素材提交（只加 _publish/<id>.mp4、可选 _publish/<id>.jpg）← 分支顶端
 #
-# 流程：检查文件（moov 在前）→ 传到 R2 的 aoshu/<id>.mp4 / .jpg → 确认 video.qingchejun.com 能取到、大小一致
+# 流程：检查文件（moov 在前）→ mp4 传到 R2 lianxizhi-video 桶（不公开，经本站 /v/ 只给完整版）、jpg 封面传到 lianxizhi-poster 桶（公开，video.zhihebi.com）
+#      → 确认两边大小一致
 #      → 把登记提交（不含素材）变基到最新 main 并推送（Cloudflare Pages 自动部署）→ 删掉 publish/<id> 分支。
 # 视频文件只经过这个临时分支，不会进 main。
 #
@@ -58,19 +59,27 @@ jobs:
           ID="${{ steps.meta.outputs.id }}"
           npx --yes wrangler@4 r2 object put "lianxizhi-video/aoshu/$ID.mp4" --file="_publish/$ID.mp4" --content-type=video/mp4 --remote
           if [ -f "_publish/$ID.jpg" ]; then
-            npx --yes wrangler@4 r2 object put "lianxizhi-video/aoshu/$ID.jpg" --file="_publish/$ID.jpg" --content-type=image/jpeg --remote
+            npx --yes wrangler@4 r2 object put "lianxizhi-poster/aoshu/$ID.jpg" --file="_publish/$ID.jpg" --content-type=image/jpeg --cache-control="public, max-age=2592000" --remote
           fi
 
       - name: 确认线上能取到
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           ID="${{ steps.meta.outputs.id }}"
-          for ext in mp4 jpg; do
-            f="_publish/$ID.$ext"; [ -f "$f" ] || continue
+          # mp4 不再公开（2026-11-24 起只给完整版）：从桶里取回来比大小
+          npx --yes wrangler@4 r2 object get "lianxizhi-video/aoshu/$ID.mp4" --file=/tmp/back.mp4 --remote
+          want=$(stat -c %s "_publish/$ID.mp4"); got=$(stat -c %s /tmp/back.mp4)
+          echo "$ID.mp4 本地 $want 字节，桶里 $got 字节"
+          [ "$want" = "$got" ] || { echo "::error::视频大小不一致"; exit 1; }
+          f="_publish/$ID.jpg"
+          if [ -f "$f" ]; then
             want=$(stat -c %s "$f")
-            got=$(curl -fsSI "https://video.qingchejun.com/aoshu/$ID.$ext?v=$GITHUB_RUN_ID" | tr -d '\r' | awk 'tolower($1)=="content-length:"{print $2}')
-            echo "$ID.$ext 本地 $want 字节，线上 $got 字节"
-            [ "$want" = "$got" ] || { echo "::error::线上文件大小不一致"; exit 1; }
-          done
+            got=$(curl -fsSI "https://video.zhihebi.com/aoshu/$ID.jpg?v=$GITHUB_RUN_ID" | tr -d '\r' | awk 'tolower($1)=="content-length:"{print $2}')
+            echo "$ID.jpg 本地 $want 字节，线上 $got 字节"
+            [ "$want" = "$got" ] || { echo "::error::封面大小不一致"; exit 1; }
+          fi
 
       - name: 登记提交推到 main
         run: |

@@ -40,7 +40,7 @@ python3 assemble.py           # 确认后出全片 final.mp4
 python3 shoot.py timing.json cover cover.jpg
 ```
 
-上线（一键）：推送 `publish/<id>` 分支，`.github/workflows/publish-aoshu-video.yml` 会把视频和封面传到 R2，确认线上能取到后再把登记提交推到 main。
+上线（一键）：推送 `publish/<id>` 分支，`.github/workflows/publish-aoshu-video.yml` 会把视频传到 R2 的 lianxizhi-video 桶（不公开，经本站 /v/aoshu/<id>.mp4 只给完整版）、封面传到 lianxizhi-poster 桶（公开，video.zhihebi.com），确认大小一致后再把登记提交推到 main。
 
 ```sh
 git checkout -B publish/<id> origin/main
@@ -51,7 +51,7 @@ git push origin publish/<id>
 ```
 
 需要仓库里设好 `CLOUDFLARE_API_TOKEN`（只给 R2 编辑权限）和 `CLOUDFLARE_ACCOUNT_ID` 两个 Actions secret。
-手动备用：`npx wrangler r2 object put lianxizhi-video/aoshu/<id>.mp4 --file=… --content-type=video/mp4 --remote`，再登记推 main。
+手动备用：`npx wrangler r2 object put lianxizhi-video/aoshu/<id>.mp4 --file=… --content-type=video/mp4 --remote`；封面 `npx wrangler r2 object put lianxizhi-poster/aoshu/<id>.jpg --file=… --content-type=image/jpeg --remote`（封面别传进 lianxizhi-video，那个桶已不公开）。再登记推 main。
 
 ## 读音核对（19 课起）
 
