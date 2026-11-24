@@ -1848,6 +1848,12 @@ select.input {
   color: var(--ink-soft);
 }
 
+.site-foot a { /* 反馈邮箱：跟页脚文字同色，只加下划线表示能点 */
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 @media (max-width: 820px) {
   .site-foot-in {
     grid-template-columns: 1fr;
