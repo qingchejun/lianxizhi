@@ -433,7 +433,7 @@
   /* 「清空错字集」：在集的一律当作今天毕业（n 与 first 留着，历史统计不丢）。
      跟登记一样不可逆（面板上有 confirm 拦一道），点选集顺手全清，免得残留的选择
      把刚毕业的字又收回来。 */
-  /* only：可选，只清这些字（人教版下只清课本里的字，洪恩的错字留着） */
+  /* only：可选，只清这些字（人教版下只清课本里的字，某恩的错字留着） */
   function clear(only) {
     var t = today()
     Object.keys(marks).forEach(function (ch) {

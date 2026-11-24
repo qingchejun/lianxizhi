@@ -18,7 +18,7 @@
        的前提下尽量排成一页（100 字时是 10×10、每字约 10.7mm）。
        手动挡是给「想印大一点、一周拆两张」的情况留的。 */
     perPage: 0,
-    font: 'kai', // 'kai' 楷体 | 'hei' 黑体。默认楷体，课本和洪恩里都是楷体字形
+    font: 'kai', // 'kai' 楷体 | 'hei' 黑体。默认楷体，课本和某恩里都是楷体字形
     copies: 1,
     /*
      * 看哪一张卷子：
@@ -35,14 +35,14 @@
     withWrong: false,
     title: '',
     /*
-     * 字表（2026-11 加）：'hongen' 洪恩识字（默认，原来的一切照旧）| 'rj1a' 人教版一年级上册……
+     * 字表（2026-11 加）：'hongen' 某恩识字（默认，原来的一切照旧）| 'rj1a' 人教版一年级上册……
      * lesson：人教版「学校学到第几课」（跨单元连续编号，0 = 整册都算学过）；
-     * unit：人教版「单元检查」页签印第几单元。两项在洪恩下不起作用。
+     * unit：人教版「单元检查」页签印第几单元。两项在某恩下不起作用。
      */
     book: 'hongen',
     lesson: 0,
     unit: 1,
-    /* 人教版每日一卷的认识字：'seq' 按课本顺序往下、一轮内不重复（默认）| 'rand' 随机。洪恩不用这项 */
+    /* 人教版每日一卷的认识字：'seq' 按课本顺序往下、一轮内不重复（默认）| 'rand' 随机。某恩不用这项 */
     order: 'seq',
     /* 认字 / 写字 两大块（写字只用人教版）。和 mode 一样不记：打开识字页永远先是认字 */
     pane: 'ren',
@@ -118,7 +118,7 @@
     var book = Z().hasBook(String(s.book)) ? String(s.book) : DEFAULTS.book
     var n = Math.round(Number(s.lesson))
     if (!Number.isFinite(n) || n <= 0) return 0
-    /* 洪恩下这一项不起作用，但原样留着：切回人教版时进度还在 */
+    /* 某恩下这一项不起作用，但原样留着：切回人教版时进度还在 */
     var max = Z().lessonsOf(book).length
     return max ? Math.min(max, n) : Math.min(999, n)
   }

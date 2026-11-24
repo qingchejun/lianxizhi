@@ -39,7 +39,7 @@
     return s.book !== S.shizi.HONGEN
   }
 
-  /* 错字集只有一份；用人教版时只看课本里的字（洪恩独有的错字不上人教版的卷，见 shizi-core 的 inScope） */
+  /* 错字集只有一份；用人教版时只看课本里的字（某恩独有的错字不上人教版的卷，见 shizi-core 的 inScope） */
   function wrongAll() {
     return S.shiziMark.all().filter(S.shizi.inScope)
   }
@@ -91,7 +91,7 @@
     pickedForWeek = sliceKey(settings)
   }
 
-  /* 附页缓存认的是「哪一段」：洪恩看周次，人教版看单元 */
+  /* 附页缓存认的是「哪一段」：某恩看周次，人教版看单元 */
   function sliceKey(s) {
     return s.book + ':' + (isRj(s) ? s.unit : s.week)
   }
@@ -221,7 +221,7 @@
       copies: els.copies.value,
       withWrong: els.withWrong.checked,
       book: els.book.value,
-      /* 「学到第几课」只在人教版下从下拉框读；洪恩下下拉框是空的，沿用记着的值，
+      /* 「学到第几课」只在人教版下从下拉框读；某恩下下拉框是空的，沿用记着的值，
          切回人教版时进度还在（sanitize 会按所选那一册钳位） */
       lesson: els.book.value === settings.book && isRj(settings) ? els.lesson.value : settings.lesson,
       unit: settings.unit,
@@ -687,7 +687,7 @@
 
   /*
    * 换字表 / 改「学校学到」：今天那张每日卷如果还没点过字，按新字表重出一张
-   * （不然切到人教版，卷上还是洪恩的字）；点过字的不动，免得把孩子的标记弄丢，下一张自然按新字表出。
+   * （不然切到人教版，卷上还是某恩的字）；点过字的不动，免得把孩子的标记弄丢，下一张自然按新字表出。
    */
   function onBookChange() {
     var before = settings.book + ':' + settings.lesson + ':' + settings.order
@@ -716,7 +716,7 @@
     var weekTab = $('mode-tabs').querySelector('[data-mode="week"]')
     if (weekTab) weekTab.textContent = rj ? '单元检查' : '本周复习'
     if (!rj) {
-      $('book-hint').textContent = '按洪恩识字的顺序，每日一卷从全部 1600 字里抽。'
+      $('book-hint').textContent = '按某恩识字的顺序，每日一卷从全部 1600 字里抽。'
       return
     }
     var ls = S.shizi.lessonsOf(s.book)
@@ -900,7 +900,7 @@
     if (!n) return
     /* 清空是不可逆的，而且攒了几个月的东西 —— 值得拦一道。人教版下只清课本里的字 */
     if (!root.confirm('清空错字集里的 ' + n + ' 个字？这一步撤不回来。\n\n' +
-      (isRj(settings) ? '只清人教版课本里的字，洪恩的错字不动。' : '') + '每个字累计进过几次的记录会留着。')) return
+      (isRj(settings) ? '只清人教版课本里的字，某恩的错字不动。' : '') + '每个字累计进过几次的记录会留着。')) return
     S.shiziMark.clear(isRj(settings) ? S.shizi.inScope : null)
     refresh()
   })
@@ -919,7 +919,7 @@
    * 这是这个功能好不好用的关键，理由见 js/shizi-mark.js 的文件头。
    */
   /*
-   * 用人教版时，最新那张还没考的卷子上如果有课本外的字（旧版规则下出的卷：洪恩的错字也上卷），
+   * 用人教版时，最新那张还没考的卷子上如果有课本外的字（旧版规则下出的卷：某恩的错字也上卷），
    * 而且还没点过字，就按现在的规则重出一张。点过字的不动，免得丢标记；登记过的卷绝不改。
    */
   function refreshStalePaper() {
