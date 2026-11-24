@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-print-name="口算 · 纸和笔">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,9 +7,15 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=c5db7fcb1f" />
   <meta name="theme-color" content="#f6f7f9" />
   <script>try{if(localStorage.getItem("lianxizhi:rail")==="fold")document.documentElement.classList.add("rail-folded")}catch(e){}</script>
-  <title>口算 · 纸和笔</title>
-  <meta name="description" content="给孩子打印 A4 练习纸 · 口算：加减乘除、四则运算，自定义范围和题量，可附答案页。" />
-  <link rel="stylesheet" href="css/app.css?v=f5139d7866" />
+  <title>口算题生成器：按进位退位出题，A4 打印带答案 · 纸和笔</title>
+  <meta name="description" content="不用登录，直接出口算题：10 以内、20 以内进退位、100 以内加减、乘法口诀、四则运算，一页 A4 直接打印，可附答案页。登录后扫码打分，下一张专练孩子错的题。" />
+  <link rel="canonical" href="https://zhihebi.com/kousuan" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="纸和笔" />
+  <meta property="og:title" content="口算题生成器：按进位退位出题，A4 打印带答案 · 纸和笔" />
+  <meta property="og:description" content="不用登录，直接出口算题：10 以内、20 以内进退位、100 以内加减、乘法口诀、四则运算，一页 A4 直接打印，可附答案页。登录后扫码打分，下一张专练孩子错的题。" />
+  <meta property="og:url" content="https://zhihebi.com/kousuan" />
+  <link rel="stylesheet" href="css/app.css?v=6e99537020" />
   <link rel="stylesheet" href="css/sheet.css?v=a0e1aaaa2e" />
   <style id="page-style">@page { size: A4 portrait; margin: 15mm; }</style>
 </head>
@@ -42,12 +48,12 @@
     </div>
   </div>
 </nav>
-<script src="js/sidebar.js?v=6b43ca3afd" defer></script>
+<script src="js/sidebar.js?v=f58fc6025c" defer></script>
 <!-- /rail -->
 
 <div class="work">
   <header class="work-head">
-    <h1 class="work-title">口算</h1>
+    <h1 class="work-title">口算题<small class="work-tag"> · 下一张专练孩子错的</small></h1>
     <span class="work-sum" id="work-sum"></span>
     <span class="work-grow"></span>
     <button type="button" id="btn-regen" class="btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/></svg>重新生成</button>
@@ -59,7 +65,30 @@
     <!-- ======== 练习纸预览（所见即所得） ======== -->
     <main class="preview" id="preview-wrap">
       <div class="notice" id="notice" hidden></div>
+      <div class="guest-note" data-guest-note hidden>
+        <p><b>不用登录就能出题、打印。</b>登录后纸角会印一个二维码：孩子做完，手机扫一下点出错题，下一张专练这些。</p>
+        <button type="button" class="btn" data-login>登录 / 注册</button>
+      </div>
       <div id="preview"></div>
+      <article class="board-intro" aria-labelledby="bi-how">
+        <h2 id="bi-how">口算题怎么出：选范围、选进位退位，一键一页</h2>
+        <p>右边的设置里先点一个快速预设：10 以内加减、20 以内进退位、100 以内加减、乘法口诀、四则入门，一年级常练的几种都在。想细调，就改运算模式、数的范围和题量；加减法可以只出进位退位题、以进位退位为主，或者一道都不出。答案可以放在末尾，也可以随机挖空，比如 7 + □ = 15。</p>
+        <p>每点一次「重新生成」就换一批题，设置自动记住，明天打开还是这一套。复制当前网址发给别人，对方打开就是同一张卷子，同班家长可以一起用。</p>
+
+        <h2>错哪练哪：扫码打分，下一张专练错题</h2>
+        <p>登录后，纸的左下角会印一个二维码。孩子做完，家长用手机扫一下，点出做错的那几道题，或者整张打个「会了 / 一般 / 不会」。下一张口算题会把错过的算式散着插进去，再练一遍；整张打了「不会」，或者错的多是进位退位题，下一张就多出进位退位题。同一个预设连着两张都「会了」，会提示你换到下一档。不用记哪道错了，纸会记。</p>
+
+        <h2>一页五分钟，附答案页好批改</h2>
+        <p>默认一页 20 道，一年级孩子五分钟左右做完，做得完才坚持得下来。打印时可以附一页答案，家长对着改很快；加减法的答案页还能附上凑十、破十的提示，孩子卡住时照着讲就行。题目不重复、跳过 7 + 0 这类送分题，都在「更多选项」里。</p>
+
+        <h2>常见问题</h2>
+        <div class="bi-faq">
+          <div><h3>要登录吗？</h3><p>出题、打印不用登录。扫码打分、按错题出下一张、换电脑接着练，这些要登录。</p></div>
+          <div><h3>适合几年级？</h3><p>现在的预设按一年级来；范围和运算可以自己改，二年级的乘法口诀、四则运算也能出。</p></div>
+          <div><h3>一页能出多少题？</h3><p>2 到 100 道都行，纵向、横向，2 到 4 列随你选，排版会自动铺满一页 A4。</p></div>
+          <div><h3>还有别的练习吗？</h3><p>纸和笔还有<a href="/shudu">儿童数独</a>，以及奥数、识字、拼音等板块，<a href="/">回首页</a>看全部。</p></div>
+        </div>
+      </article>
     </main>
 
     <!-- ======== 设置 ======== -->
@@ -185,8 +214,8 @@
 <script src="js/store.js?v=c6aac93871"></script>
 <script src="js/sheets-core.js?v=4a37e8f3d0"></script>
 <script src="js/vendor/qrcode.js?v=18ae399f81"></script>
-<script src="js/sheets.js?v=bcd53ba5e4"></script>
-<script src="js/shell.js?v=27b531f441"></script>
+<script src="js/sheets.js?v=2dfb8c7e4d"></script>
+<script src="js/shell.js?v=6972c54f86"></script>
 <script src="js/generator.js?v=9c5023f4c1"></script>
 <script src="js/settings.js?v=cd7373d7c9"></script>
 <script src="js/render.js?v=4756ada9e0"></script>
@@ -194,7 +223,7 @@
 <script src="js/backup.js?v=f21895fa7e"></script>
 <script src="js/help.js?v=08cc5b2aca"></script>
 <script src="js/account.js?v=8c5bb3b2db"></script>
-<script src="js/account-ui.js?v=c68f323f85"></script>
+<script src="js/account-ui.js?v=2f4ad07441"></script>
 <script src="js/sync-core.js?v=5f4122b899"></script>
 <script src="js/sync.js?v=13dd97b911"></script>
 <script>

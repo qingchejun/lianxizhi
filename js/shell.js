@@ -159,7 +159,9 @@
   root.addEventListener('beforeprint', function () {
     if (printTitle !== null) return
     printTitle = doc.title
-    doc.title = printTitle + ' · ' + stamp()
+    /* 给搜索引擎的标题很长（「口算题生成器：……」），打印出来的文件名用短名：<html data-print-name="口算 · 纸和笔"> */
+    var short = doc.documentElement && doc.documentElement.getAttribute && doc.documentElement.getAttribute('data-print-name')
+    doc.title = (short || printTitle) + ' · ' + stamp()
   })
 
   root.addEventListener('afterprint', function () {

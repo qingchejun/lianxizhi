@@ -14,7 +14,7 @@ export async function onRequest(context) {
   if (www && url.hostname.startsWith('www.')) return movedTo(www.location)
   const pre = decide(url.pathname, url.search, false)
   if (pre.action === 'deny') return new Response('Not found', { status: 404, headers: { 'Cache-Control': 'no-store' } })
-  if (pre.action === 'pass') { /* 静态资源、接口：不查库 */
+  if (pre.action === 'pass' && pre.asset) { /* 静态资源、接口：不查库（没登录也放行的板块页不走这里：要验登录、写登录态） */
     const res = await context.next()
     const cc = pre.asset && !url.pathname.startsWith('/api/') ? assetCacheControl(url.search, res.status) : null
     if (!cc) return res

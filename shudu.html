@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-print-name="数独 · 纸和笔">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,9 +7,15 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=c5db7fcb1f" />
   <meta name="theme-color" content="#f6f7f9" />
   <script>try{if(localStorage.getItem("lianxizhi:rail")==="fold")document.documentElement.classList.add("rail-folded")}catch(e){}</script>
-  <title>数独 · 纸和笔</title>
-  <meta name="description" content="给孩子打印 A4 练习纸 · 数独：四宫格、六宫格、九宫格，保证不用猜就能推出来，可在线玩，可印两份同题比赛。" />
-  <link rel="stylesheet" href="css/app.css?v=f5139d7866" />
+  <title>儿童数独打印：四宫格到九宫格，保证不用猜 · 纸和笔</title>
+  <meta name="description" content="不用登录，直接打印儿童数独：四宫格、六宫格、九宫格，每道题都保证一步步推得出来、不用猜。可附答案页，能印两份同题比赛，也能在屏幕上直接玩。" />
+  <link rel="canonical" href="https://zhihebi.com/shudu" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="纸和笔" />
+  <meta property="og:title" content="儿童数独打印：四宫格到九宫格，保证不用猜 · 纸和笔" />
+  <meta property="og:description" content="不用登录，直接打印儿童数独：四宫格、六宫格、九宫格，每道题都保证一步步推得出来、不用猜。可附答案页，能印两份同题比赛，也能在屏幕上直接玩。" />
+  <meta property="og:url" content="https://zhihebi.com/shudu" />
+  <link rel="stylesheet" href="css/app.css?v=6e99537020" />
   <link rel="stylesheet" href="css/sheet.css?v=a0e1aaaa2e" />
   <link rel="stylesheet" href="css/shudu.css?v=d0c37fbf8f" />
   <!-- 数独页固定 A4 纵向（竖着放盘最大，横向反而排不下），不像口算页那样动态切换 -->
@@ -44,12 +50,12 @@
     </div>
   </div>
 </nav>
-<script src="js/sidebar.js?v=6b43ca3afd" defer></script>
+<script src="js/sidebar.js?v=f58fc6025c" defer></script>
 <!-- /rail -->
 
 <div class="work">
   <header class="work-head">
-    <h1 class="work-title">数独</h1>
+    <h1 class="work-title">儿童数独<small class="work-tag"> · 每一步都推得出来</small></h1>
     <span class="work-sum" id="work-sum"></span>
     <span class="work-grow"></span>
     <button type="button" id="btn-regen" class="btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/></svg>重新生成</button>
@@ -61,11 +67,33 @@
     <!-- ======== 练习纸预览（所见即所得，也是在线作答区） ======== -->
     <main class="preview" id="preview-wrap">
       <div class="notice" id="notice" hidden></div>
+      <div class="guest-note" data-guest-note hidden>
+        <p><b>不用登录就能出题、打印。</b>登录后纸角会印一个二维码：孩子做完，手机扫一下点出错题，下一张专练这些。</p>
+        <button type="button" class="btn" data-login>登录 / 注册</button>
+      </div>
       <!-- 电脑上作答面板在纸的右边，手机上贴屏幕底部（见 css/shudu.css） -->
       <div class="play-row">
         <div id="preview"></div>
         <div class="num-bar" id="num-bar" hidden></div>
       </div>
+      <article class="board-intro" aria-labelledby="bi-why">
+        <h2 id="bi-why">为什么保证不用猜</h2>
+        <p>很多数独题要试着填、填错了再擦，孩子容易越做越烦。这里的每一道题出好以后，都用只靠排除的方法从头解一遍：每一步都能找到一个只能填这个数的格子，才算合格。孩子卡住了，说明有一条线索还没看到，而不是要靠运气。</p>
+
+        <h2>四宫格、六宫格、九宫格怎么选</h2>
+        <p>一年级刚开始，建议从四宫格起步：只有 1 到 4 四个数，行、列、2×2 的小宫各不重复，十分钟就能讲明白规则。四宫格做得顺了换六宫格，再到标准的九宫格。难度用滑块调提示的多少，提示越少越难；每一档都保证推得出来。</p>
+
+        <h2>两份同题对战，也能在屏幕上玩</h2>
+        <p>打印份数选 2 份，印出来是同样的题，兄弟姐妹或者亲子比谁先做完。每页放几道题可以选，自动模式会让格子尽量大，方便小手写字。打印时可以附答案页，小图集中印在最后。不想打印的时候，屏幕上点格子就能直接填数字。</p>
+
+        <h2>常见问题</h2>
+        <div class="bi-faq">
+          <div><h3>要登录吗？</h3><p>出题、打印、在屏幕上玩都不用登录。登录后纸上会印二维码，做完扫一下，点太简单、刚好还是太难，下一张自动调提示的多少。</p></div>
+          <div><h3>几岁能玩？</h3><p>认识 1 到 4、能看懂横竖，就能玩四宫格，一般幼儿园大班到一年级就可以开始。</p></div>
+          <div><h3>一次能出多少题？</h3><p>一次最多 20 道，题目不重复；每页 1 到 4 道，或者自动排。</p></div>
+          <div><h3>还有别的练习吗？</h3><p>纸和笔还有<a href="/kousuan">口算题</a>，以及火柴棒算式、密码、迷宫、数织等思维游戏，<a href="/">回首页</a>看全部。</p></div>
+        </div>
+      </article>
     </main>
 
     <!-- ======== 设置 ======== -->
@@ -140,8 +168,8 @@
 <script src="js/store.js?v=c6aac93871"></script>
 <script src="js/sheets-core.js?v=4a37e8f3d0"></script>
 <script src="js/vendor/qrcode.js?v=18ae399f81"></script>
-<script src="js/sheets.js?v=bcd53ba5e4"></script>
-<script src="js/shell.js?v=27b531f441"></script>
+<script src="js/sheets.js?v=2dfb8c7e4d"></script>
+<script src="js/shell.js?v=6972c54f86"></script>
 <script src="js/render.js?v=4756ada9e0"></script>
 <script src="js/shudu-core.js?v=658de65c54"></script>
 <script src="js/shudu-settings.js?v=8077fece13"></script>
@@ -151,7 +179,7 @@
 <script src="js/backup.js?v=f21895fa7e"></script>
 <script src="js/help.js?v=08cc5b2aca"></script>
 <script src="js/account.js?v=8c5bb3b2db"></script>
-<script src="js/account-ui.js?v=c68f323f85"></script>
+<script src="js/account-ui.js?v=2f4ad07441"></script>
 <script src="js/sync-core.js?v=5f4122b899"></script>
 <script src="js/sync.js?v=13dd97b911"></script>
 <script>

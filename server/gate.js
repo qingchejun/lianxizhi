@@ -1,12 +1,15 @@
 /**
  * 登录门槛的规则（纯函数，tools/check-gate.js 校验）。
- * 没登录：首页显示介绍兼登录页（对谷歌公开、可收录）；其余页面一律 302 回首页，带上 next=原址，
+ * 没登录：首页显示介绍兼登录页（对谷歌公开、可收录）；GUEST_PAGES 里的板块页照常打开；其余页面一律 302 回首页，带上 next=原址，
  * 登录后回原页。静态资源与接口放行——接口各自验登录（requireSession），页面里的数据也只在登录后拉取。
  */
 const PUBLIC_PREFIXES = ['/api/', '/css/', '/js/', '/fonts/', '/icons/']
 const PUBLIC_FILES = ['/robots.txt', '/sitemap.xml', '/favicon.ico'] /* 给搜索引擎的两份文件优先于下面按扩展名的拒绝 */
 const HOME = ['/', '/index', '/index.html']
 const WELCOME = ['/welcome', '/welcome.html']
+/* 没登录也能出题、打印的板块页（2026-11-24 第二期，先开口算和数独）：纸上不印二维码、不记录，
+   扫码打分、错哪练哪、保存进度仍要登录（js/sheets.js）。要开放新板块就往这里加 */
+const GUEST_PAGES = ['/kousuan', '/kousuan.html', '/shudu', '/shudu.html']
 
 /* 站点根目录就是仓库根目录：源码、脚本、文档、配置都在里面，登没登录都不给 */
 const DENY_PREFIXES = ['/server/', '/tools/', '/docs/', '/functions/', '/node_modules/', '/.']
@@ -40,6 +43,7 @@ export function decide(path, search, loggedIn) {
   /* 介绍页只经由首页出现，不单独开一个网址（避免同一内容两个网址被收录） */
   if (WELCOME.includes(path)) return { action: 'redirect', location: '/' }
   if (loggedIn) return { action: 'pass' }
+  if (GUEST_PAGES.includes(path)) return { action: 'pass' }
   if (path === '/') return { action: 'welcome' }
   /* /index、/index.html 与 / 同内容：没登录时并到 /，只留一个网址给谷歌 */
   if (HOME.includes(path)) return { action: 'redirect', location: '/' + (search || '') }

@@ -53,8 +53,16 @@
     }
   }
 
+  /* 没登录（口算、数独免登录出题打印）：点这里直接打开登录框，不弹菜单 */
+  function guest() {
+    var A0 = root.SumSum && root.SumSum.account
+    var pre = root.__SUMSUM_ME
+    return !(A0 && A0.state && A0.state.loggedIn) && !(pre && pre.ok)
+  }
   user.addEventListener('click', function (e) {
     e.stopPropagation()
+    var ui = root.SumSum && root.SumSum.accountUI
+    if (guest() && ui && ui.open) { openMenu(false); ui.open('login'); return }
     openMenu(menu.hidden)
   })
   menu.addEventListener('click', function (e) {
@@ -65,6 +73,9 @@
   })
   doc.addEventListener('click', function (e) {
     if (!menu.hidden && !menu.contains(e.target)) openMenu(false)
+    var login = e.target.closest && e.target.closest('[data-login]')
+    var ui = root.SumSum && root.SumSum.accountUI
+    if (login && ui && ui.open) ui.open('login')
   })
   doc.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !menu.hidden) {
@@ -97,9 +108,14 @@
     var email = state && state.loggedIn ? state.email : ''
     var box = user.querySelector('[data-account-email]')
     var initial = user.querySelector('[data-account-initial]')
-    if (box) box.textContent = email || '账号'
+    var out = !email && guest()
+    var sub = user.querySelector('.rail-who small')
+    if (box) box.textContent = email || (out ? '登录 / 注册' : '账号')
+    if (sub) sub.textContent = out ? '登录后进度自动同步' : '练习进度自动同步'
     if (initial) initial.textContent = email ? email.charAt(0).toUpperCase() : ''
-    user.title = email ? email + '（点开账号菜单）' : '账号'
+    user.title = email ? email + '（点开账号菜单）' : (out ? '登录或注册' : '账号')
+    /* 纸上方「不用登录就能出题、打印」的提示条：只给没登录的人看 */
+    Array.prototype.forEach.call(doc.querySelectorAll('[data-guest-note]'), function (n) { n.hidden = !out })
     /* 管理员多一项：邀请码管理 */
     var adminItem = menu.querySelector('[data-admin-link]')
     if (state && state.admin && !adminItem) {

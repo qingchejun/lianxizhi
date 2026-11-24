@@ -856,3 +856,11 @@ body.welcome .wl-main {
 @media (max-width: 760px) {
   .wl-faq { display: block; }
 }
+
+/* 已开放免登录的板块名带链接（口算、数独）：看着跟别的板块名一样，悬停才显出是链接 */
+.wl-mods b a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid var(--line-strong);
+}
+.wl-mods b a:hover { color: var(--blue); border-bottom-color: var(--blue); }

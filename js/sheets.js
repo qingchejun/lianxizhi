@@ -100,12 +100,33 @@
   }
 
   /* 板块渲染完调用。info: { module, title, idParts, units, items, ref } */
+  /* 登录了没有：account.js 探到之前先看服务器写进网页的登录态（functions/_middleware.js），免得已登录的人首屏少了二维码 */
+  function signedIn() {
+    var A = root.SumSum && root.SumSum.account
+    if (A && A.state && A.state.loggedIn) return true
+    var pre = root.__SUMSUM_ME
+    return !!(pre && pre.ok)
+  }
+
+  /* 没登录也能出题打印（口算、数独，见 server/gate.js GUEST_PAGES）：纸上不印二维码、不记录这张纸。
+     在页面上登录后马上把二维码补上 */
+  var loginHooked = false
+  function hookLogin() {
+    var A = root.SumSum && root.SumSum.account
+    if (loginHooked || !A || !A.onChange) return
+    loginHooked = true
+    A.onChange(function (st) {
+      if (st.loggedIn && current && root.document) placeQr(root.document, current.id)
+    })
+  }
+
   function use(info) {
     var date = today()
     var id = C().makeId(info.module + '|' + info.idParts + '|' + date)
     current = { id: id, info: info, date: date }
     if (root.document) {
-      placeQr(root.document, id)
+      hookLogin()
+      if (signedIn()) placeQr(root.document, id)
       /* 识字、拼音本页就能逐字 / 逐题登记，不加「登记」按钮（拼音的登记页本身就跳回这里） */
       var kind = C().MODULE_KIND[info.module]
       if (kind === 'three' || kind === 'game') ensureButton(root.document)
@@ -115,7 +136,7 @@
 
   /* 把当前这张纸记下来（已有记录就不动，免得重复打印冲掉打分） */
   function ensureSaved() {
-    if (!current) return null
+    if (!current || !signedIn()) return null
     var S = root.SumSum.store
     var key = C().keyOf(current.id)
     if (S.get(key)) {
@@ -205,6 +226,11 @@
     b.title = '孩子做完后打分：会了 / 一般 / 不会，或点做错的题'
     b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3 8-8M20 12v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h11"/></svg>打分'
     b.addEventListener('click', function () {
+      if (!signedIn()) {
+        var ui = root.SumSum.accountUI
+        if (ui && ui.open) ui.open('login', '登录后就能打分：孩子做完，手机扫一下纸角的二维码点一下哪里错了，下一张就专练这些。')
+        return
+      }
       var id = ensureSaved()
       if (id) root.location.href = '/mark?id=' + id
     })
@@ -213,6 +239,8 @@
 
   if (root.addEventListener && root.document) {
     root.addEventListener('beforeprint', ensureSaved)
+    if (root.document.readyState === 'loading') root.document.addEventListener('DOMContentLoaded', hookLogin)
+    else hookLogin()
   }
 
   root.SumSum = root.SumSum || {}
@@ -222,6 +250,7 @@
     markDone: markDone,
     current: function () { return current },
     qrSvg: qrSvg,
+    signedIn: signedIn,
     markUrl: markUrl,
     today: today
   }

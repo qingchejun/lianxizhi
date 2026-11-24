@@ -457,10 +457,12 @@
     }
   }
 
-  function open(v) {
+  /* hint：没登录时点了要登录的功能（如板块页的「打分」），在登录表单里说一句为什么要登录 */
+  function open(v, hint) {
     if (!dlg) build()
     view = A.state.loggedIn ? 'account' : (v || 'login')
     render()
+    if (hint && !A.state.loggedIn) say(esc(hint), '')
     if (!inline) dlg.showModal()
   }
 

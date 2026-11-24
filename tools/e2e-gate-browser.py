@@ -53,18 +53,18 @@ with sync_playwright() as p:
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))
 
-    page.goto(BASE + '/kousuan')
-    check('没登录打开口算 → 拦回首页', '/?next=' in page.url, page.url)
+    page.goto(BASE + '/pinyin')  # 口算、数独 2026-11-24 起免登录，换拼音测拦截
+    check('没登录打开拼音 → 拦回首页', '/?next=' in page.url, page.url)
     check('首页是介绍页', page.is_visible('.wl-auth'))
     page.wait_for_selector('form[data-view="login"]', timeout=5000)
     check('被拦下时首页直接显示登录表单', page.is_visible('form[data-view="login"]'))
 
     a = f'gate-a-{STAMP}@test.local'
     register(page, a, make_invite())
-    page.wait_for_url('**/kousuan**', timeout=30000)
-    check('注册完成 → 回到原来要去的口算页', '/kousuan' in page.url, page.url)
+    page.wait_for_url('**/pinyin**', timeout=30000)
+    check('注册完成 → 回到原来要去的拼音页', '/pinyin' in page.url, page.url)
     page.wait_for_selector('.sheet', timeout=10000)
-    check('口算页正常显示', page.is_visible('.sheet'))
+    check('拼音页正常显示', page.is_visible('.sheet'))
 
     page.evaluate("SumSum.accountUI.initialSync")  # 等首次同步挂好监听再改数据
     page.wait_for_load_state('networkidle')

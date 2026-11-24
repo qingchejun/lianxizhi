@@ -22,9 +22,16 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   check('扫码登记页：没登录 → 登录后回到这张纸', d('/mark', '?id=abc234', false).location === '/?next=' + encodeURIComponent('/mark?id=abc234'))
   check('二维码库放行', d('/js/vendor/qrcode.js', '', false).action === 'pass')
   check('密码重设邮件链接 /?reset= 落在介绍页', d('/', '?reset=ab', false).action === 'welcome')
-  var r = d('/kousuan', '?mode=add&seed=3', false)
-  check('没登录打开板块页 → 跳首页并记住原址', r.action === 'redirect' &&
-    r.location === '/?next=' + encodeURIComponent('/kousuan?mode=add&seed=3'), r.location)
+  var r = d('/pinyin', '?mode=add&seed=3', false)
+  check('没登录打开没开放的板块页 → 跳首页并记住原址', r.action === 'redirect' &&
+    r.location === '/?next=' + encodeURIComponent('/pinyin?mode=add&seed=3'), r.location)
+  check('口算、数独没登录也放行（免登录出题打印）', ['/kousuan', '/kousuan.html', '/shudu', '/shudu.html'].every(function (p) {
+    return d(p, '?seed=3', false).action === 'pass'
+  }))
+  check('其余板块没登录照样拦', ['/aoshu', '/shizi', '/pinyin.html', '/huochai', '/mima', '/migong', '/zhizhi', '/index.html', '/help'].every(function (p) {
+    return d(p, '', false).action === 'redirect'
+  }))
+  check('开放页面不能借大小写或尾斜杠绕到别处', d('/KOUSUAN', '', false).action === 'redirect' && d('/kousuan/../aoshu', '', false).action !== 'pass')
   check('管理页同样拦', d('/admin.html', '', false).action === 'redirect')
   check('大小写绕不过（/CSS/ 不算静态目录）', d('/CSS/x.css', '', false).action === 'redirect' && d('/CSS/../kousuan.html', '', false).action !== 'pass')
   check('登录后一切放行', ['/', '/kousuan', '/admin.html', '/pinyin.html'].every(function (p) {
@@ -72,9 +79,15 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   var banned = S.COOKIE + '=' + await S.sign({ uid: 'u2', pwver: 1, exp: now + 60000 }, SECRET)
   var forged = S.COOKIE + '=' + (await S.sign({ uid: 'u1', pwver: 2, exp: now + 60000 }, 'wrong'))
 
-  var c = ctx('/kousuan')
+  var c = ctx('/pinyin')
   var res = await M.onRequest(c)
-  check('无 cookie 访问板块 → 302 首页', res.status === 302 && res.headers.get('Location').indexOf('/?next=') === 0 && c.calls.next === 0)
+  check('无 cookie 访问没开放的板块 → 302 首页', res.status === 302 && res.headers.get('Location').indexOf('/?next=') === 0 && c.calls.next === 0)
+
+  c = ctx('/kousuan')
+  res = await M.onRequest(c)
+  check('无 cookie 访问口算 → 200 页面照常打开', res.status === 200 && c.calls.next === 1)
+  check('口算页注入的是「没登录」', (await res.text()).indexOf('"ok":false') >= 0 || typeof HTMLRewriter === 'undefined')
+  check('没登录的口算页也不进共享缓存', /private/.test(res.headers.get('Cache-Control') || ''))
 
   c = ctx('/', null)
   res = await M.onRequest(c)
@@ -87,14 +100,14 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   check('有效登录 → 放行', res.status === 200 && c.calls.next === 1)
   check('登录后的页面标 private（不进共享缓存）', /private/.test(res.headers.get('Cache-Control') || ''), res.headers.get('Cache-Control'))
 
-  c = ctx('/kousuan', oldPw)
+  c = ctx('/pinyin', oldPw)
   check('改过密码的旧登录态 → 拦', (await M.onRequest(c)).status === 302)
-  c = ctx('/kousuan', banned)
+  c = ctx('/pinyin', banned)
   check('停用账号 → 拦', (await M.onRequest(c)).status === 302)
-  c = ctx('/kousuan', forged)
+  c = ctx('/pinyin', forged)
   check('伪造签名 → 拦', (await M.onRequest(c)).status === 302)
   dbDown = true
-  c = ctx('/kousuan', good)
+  c = ctx('/pinyin', good)
   check('数据库出错 → 按没登录处理（宁可拦）', (await M.onRequest(c)).status === 302)
   dbDown = false
 
@@ -130,7 +143,7 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   c = ctx('/js/store.js', null, 'lianxizhi.pages.dev')
   res = await M.onRequest(c)
   check('旧地址的静态文件照常给', res.status === 200 && c.calls.next === 1)
-  c = ctx('/kousuan', null, 'abc123.lianxizhi.pages.dev')
+  c = ctx('/pinyin', null, 'abc123.lianxizhi.pages.dev')
   res = await M.onRequest(c)
   check('预览部署地址不跳', res.status === 302 && res.headers.get('Location').indexOf('/?next=') === 0)
   var MV = await import('../server/move.js')
