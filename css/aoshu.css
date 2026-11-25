@@ -890,3 +890,139 @@
 [data-aoshu-fixed] [data-review-group] {
   display: none;
 }
+
+/* ============ 试看（2026-11-25）：完整版的课，免费版、没登录的人点开能看讲解页和前两道题（js/aoshu-main.js paintTrial） ============ */
+
+.topic-legend .lock {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: var(--ink-faint);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.trial-bar {
+  max-width: 210mm;
+  margin: 0 auto 16px;
+  padding: 14px 18px;
+  background: var(--card);
+  border: 1px solid var(--card-edge);
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.trial-bar.flash { animation: trial-flash 1.2s ease-out; }
+@keyframes trial-flash {
+  0% { box-shadow: 0 0 0 3px var(--blue); }
+  100% { box-shadow: 0 0 0 3px transparent; }
+}
+.trial-head b { color: var(--ink); }
+.trial-head p { margin: 2px 0 0; }
+.trial-ways {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.trial-way {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.trial-way > span {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.trial-way .redeem-form { margin: 0; }
+.trial-way .lk-want-msg { margin: 0; font-size: 12px; }
+
+/* 纸上的占位框：后面的题只占位，不放题目 */
+.trial-lock {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 3mm;
+  padding-top: 1mm;
+}
+.trial-lock::after {
+  content: '';
+  position: absolute;
+  inset: 7mm 0 3mm 7mm;
+  background: #f6f6f3;
+  border: 1px dashed #c9c9c4;
+  border-radius: 2mm;
+}
+.trial-lock .aq-num { color: #999; }
+.trial-lock-txt {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  margin: 0 auto;
+  padding: 2mm 5mm;
+  font-size: 14px;
+  color: #555;
+  background: #fff;
+  border: 1px solid #c9c9c4;
+  border-radius: 10mm;
+}
+
+.video-locked {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: flex-end;
+  background: #101318;
+  border-radius: 8px;
+}
+.video-locked img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: .45;
+}
+.video-locked span {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #fff;
+  background: rgba(0, 0, 0, .45);
+}
+.video-locked .lock {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.aoshu-trial #btn-mark,
+.aoshu-trial #btn-learned { display: none; }
+
+/* 试看不能打印：按 Ctrl+P 也只出一句说明 */
+@media print {
+  .aoshu-trial #preview,
+  .aoshu-trial .trial-bar { display: none !important; }
+  .aoshu-trial body::after {
+    content: '这一课是纸和笔完整版内容，开通后可以整课打印：zhihebi.com/aoshu';
+    display: block;
+    padding: 40mm 20mm;
+    font-size: 16px;
+    text-align: center;
+  }
+}
+.topic-legend-lock { padding-top: 0 !important; border-top: 0 !important; margin-top: -4px !important; }
+/* 试看时上面已经有试看条讲怎么开通，「不用登录就能出题」那条先收起来 */
+.aoshu-trial [data-guest-note] { display: none !important; }

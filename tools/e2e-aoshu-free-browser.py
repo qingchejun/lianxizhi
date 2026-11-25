@@ -1,7 +1,7 @@
 # 奥数前三课公开（2026-11-25）浏览器验收：
 #   1. 源码：标题、描述、canonical、H1、介绍文字、全部课程表都写在网页里，可收录；站点地图有 /aoshu；
-#   2. 没登录：打开是默认的第 03 课（有视频），纸上没二维码；前三课能切换，后面的课挂锁，点了弹出注册框说明；
-#      ?topic=后面的课 → 提示并改出第 01 课；没有综合复习；H1 不被脚本改掉；
+#   2. 没登录：打开是默认的第 03 课（有视频），纸上没二维码；前三课能切换，后面的课挂锁，点了进试看；
+#      ?topic=后面的课 → 这一课的试看；没有综合复习；H1 不被脚本改掉；
 #   3. 第 03 课视频没登录能看，其他课视频 403；
 #   4. 完整版账号：全部课都开，没有锁，有综合复习，H1 换成课名；
 #   5. 全程没有脚本报错。
@@ -77,15 +77,18 @@ with sync_playwright() as p:
     vs = page.evaluate("fetch(document.querySelector('#video-group video').src, {headers: {Range: 'bytes=0-'}}).then(r => r.status)")
     check('第 03 课视频没登录能播', vs in (200, 206), vs)
     check('其他课视频没登录 403', page.evaluate("fetch('/v/aoshu/xulie.mp4').then(r => r.status)") == 403)
+    # 后面的课：试看（2026-11-25 起，细节见 tools/e2e-aoshu-trial-browser.py）
     page.click('#topic-list [data-pick="yiduobushao2"]')
-    page.wait_for_selector('dialog.account-dialog[open] form[data-view="register"]', timeout=5000)
-    check('点挂锁的课 → 弹出注册框并说明', '完整版' in page.inner_text('dialog.account-dialog[open]'))
-    close_dialogs(page)
-    check('挂锁的课点了不切换', (page.query_selector('#topic-list .tp.cur .nm').text_content()) == '移多补少（基础篇）')
-    page.goto(BASE + '/aoshu?topic=xulie')
+    page.wait_for_selector('#trial-bar', timeout=5000)
+    check('点挂锁的课 → 进试看，不弹框', page.query_selector('dialog.account-dialog[open]') is None and '试看' in page.inner_text('#trial-bar'))
+    page.goto(BASE + '/aoshu')
     page.wait_for_selector('#preview .sheet', timeout=15000)
     close_dialogs(page)
-    check('?topic=后面的课 → 提示属于完整版，改出第 01 课', '属于完整版' in page.inner_text('#notice') and page.query_selector('#topic-list .tp.cur .nm').text_content() == '数的大小比较')
+    check('再打开奥数页回到能打印的课（试看课不存）', page.query_selector('#trial-bar') is None and page.query_selector('#topic-list .tp.cur .nm').text_content() == '移多补少（基础篇）')
+    page.goto(BASE + '/aoshu?topic=xulie')
+    page.wait_for_selector('#trial-bar', timeout=15000)
+    close_dialogs(page)
+    check('?topic=后面的课 → 这一课的试看', page.query_selector('#topic-list .tp.cur .nm').text_content() == '数列找规律')
     page.locator('.board-intro').screenshot(path='/tmp/aoshu-intro.png')
     page.screenshot(path='/tmp/aoshu-guest.png')
     check('侧栏奥数不挂锁', page.query_selector('.rail-link.is-locked[data-module="奥数"]') is None)

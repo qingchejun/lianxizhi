@@ -423,6 +423,26 @@
     )
   }
 
+  /*
+   * 试看（2026-11-25）：免费版、没登录的人点开完整版的课，练习页只露前几道、解析页只露第 1 题。
+   * 后面的题照真题量高度排版（纸面看着和真卷一样满），但网页里只放占位框，不放题目文字。
+   */
+  function lockedBlockHTML(cls, idx, mm, first, text) {
+    var p = P()
+    return '<div class="' + cls + ' trial-lock"' + heightStyle(mm) + '>' +
+      '<span class="aq-num">' + p.numLabel(idx) + '</span>' +
+      (first ? '<span class="trial-lock-txt">' + p.esc(text) + '</span>' : '') + '</div>'
+  }
+  function trialBlock(real, cls, keep, text) {
+    var shown = false
+    return function (q, idx, mm, workMM) {
+      if (idx <= keep) return real(q, idx, mm, workMM)
+      var first = !shown
+      shown = true
+      return lockedBlockHTML(cls, idx, mm, first, text)
+    }
+  }
+
   function pageHTML(opts) {
     var p = P()
     return (
@@ -590,7 +610,7 @@
   function sheetsHTML(container, questions, opts) {
     var probeHTML = questions
       .map(function (q, i) {
-        return opts.blockHTML(q, i + 1)
+        return (opts.probeHTML || opts.blockHTML)(q, i + 1)
       })
       .join('')
     var gridClass = opts.gridClass
@@ -659,11 +679,13 @@
       lesson = lessonPages(container, topic, s, topic.lesson.title)
     }
 
+    var trial = opts.trial || 0
     if (s.practicePage) {
       practice = sheetsHTML(container, questions, {
         title: title,
         gridClass: 'aoshu-grid',
-        blockHTML: questionBlockHTML,
+        blockHTML: trial ? trialBlock(questionBlockHTML, 'aq', trial, '开通完整版后，整页题目都能打印') : questionBlockHTML,
+        probeHTML: questionBlockHTML,
         pad: MM.workMin,
         workMax: MM.workMax,
         minH: MM.minQ,
@@ -676,7 +698,8 @@
       answer = sheetsHTML(container, questions, {
         title: solTitle(s, opts, title),
         gridClass: 'sol-grid',
-        blockHTML: solutionBlockHTML,
+        blockHTML: trial ? trialBlock(solutionBlockHTML, 'sol', 1, '开通完整版后，每道题都有分步解析') : solutionBlockHTML,
+        probeHTML: solutionBlockHTML,
         pad: MM.solPad,
         compact: true,
         footPrefix: '解析 · '

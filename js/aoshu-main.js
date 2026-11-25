@@ -44,23 +44,26 @@
   function isOpen(id) {
     return FULL || !!FIXED || FREE_IDS.indexOf(id) >= 0
   }
-  var lockNote = ''
+  /* 试看（2026-11-25）：完整版的课，免费版、没登录的人也能点开看——讲解页看全，练习只露前两道、解析只露第 1 题，不能打印。
+     打开页面时不自动落在试看课上（上次看的是试看课就回第 01 课）；点目录、点「接着学」、打开带课号的网址才进试看 */
+  var TRIAL_KEEP = 2
   if (!isOpen(settings.topic)) {
-    var asked = S.aoshu.OUTLINE.filter(function (o) { return o.id === settings.topic })[0]
-    if (asked && new URLSearchParams(root.location.search).has('topic')) {
-      lockNote = '第 ' + asked.no + ' 课「' + asked.name + '」属于完整版，先给你出第 01 课。前三课不用登录就能用；填邀请码开通完整版后，全部课都能用。'
+    var askedByUrl = new URLSearchParams(root.location.search).get('topic') === settings.topic
+    if (!askedByUrl || !S.aoshu.topics[settings.topic]) {
+      settings = S.aoshu.settings.sanitize(Object.assign({}, settings, { topic: FREE_IDS[0], title: '' }))
     }
-    settings = S.aoshu.settings.sanitize(Object.assign({}, settings, { topic: FREE_IDS[0], title: '' }))
+  }
+  if (!FULL && !FIXED) {
+    var legend = doc.querySelector('.topic-legend')
+    if (legend) legend.insertAdjacentHTML('afterend', '<p class="topic-legend topic-legend-lock"><svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>= 完整版，点开可以试看</p>')
+  }
+  function inTrial(s) {
+    return !s.review && !isOpen(s.topic)
   }
   if (!FULL && settings.review) settings = S.aoshu.settings.sanitize(Object.assign({}, settings, { review: false }))
   var reviewGroup = doc.querySelector('[data-review-group]')
   if (!FULL && !FIXED && reviewGroup) reviewGroup.style.display = 'none'
 
-  function askFull(id) {
-    var o = S.aoshu.OUTLINE.filter(function (x) { return x.id === id })[0]
-    var hint = '第 ' + o.no + ' 课「' + o.name + '」属于完整版：前三课免费，后面的课要填邀请码开通完整版。'
-    if (S.accountUI && S.accountUI.open) S.accountUI.open('register', hint)
-  }
 
   /*
    * 「已学」标记：与设置分开存（不进 URL），value 是知识点 id 数组。
@@ -118,8 +121,6 @@
   /* 点课名 = 去上这一课：复习卷开着也直接退出（勾的混哪几课保留），哪怕点的就是原来那一课 */
   function selectTopic(id) {
     if (FIXED && id !== FIXED) return
-    if (!isOpen(id)) return askFull(id)
-    lockNote = ''
     if (id === settings.topic && !settings.review) return
     settings = S.aoshu.settings.sanitize(
       Object.assign({}, settings, { topic: id, title: '', review: false })
@@ -194,7 +195,7 @@
   /* 顶栏：当前这一课的「标记为已学」。综合复习卷不是某一课，藏起来 */
   function paintLearnedBtn() {
     var b = $('btn-learned')
-    b.hidden = settings.review
+    b.hidden = settings.review || inTrial(settings)
     var on = learned.has(settings.topic)
     b.classList.toggle('on', on)
     b.setAttribute('aria-pressed', String(on))
@@ -209,14 +210,14 @@
   function renderNextHint() {
     var btn = $('btn-next')
     var next = S.aoshu.OUTLINE.filter(function (o) {
-      return S.aoshu.topics[o.id] && isOpen(o.id) && !learned.has(o.id)
+      return S.aoshu.topics[o.id] && !learned.has(o.id)
     })[0]
     if (!next || (next.id === settings.topic && !settings.review)) {
       btn.hidden = true
       return
     }
     btn.hidden = false
-    btn.textContent = '接着学 → ' + next.no + ' ' + next.name + (S.aoshuVideos.of(next.id) ? '（有视频）' : '')
+    btn.textContent = '接着学 → ' + next.no + ' ' + next.name + (isOpen(next.id) ? (S.aoshuVideos.of(next.id) ? '（有视频）' : '') : '（试看）')
     btn.onclick = function () {
       if (settings.review) {
         settings = S.aoshu.settings.sanitize(Object.assign({}, settings, { review: false }))
@@ -398,6 +399,15 @@
       return
     }
     group.hidden = false
+    if (!isOpen(s.topic)) {
+      /* 试看：视频只给完整版（服务器 functions/v 也拦着），这里放封面和时长 */
+      group.innerHTML =
+        '<div class="row-between"><div class="group-title">讲解视频</div>' +
+          '<span class="lbl">' + durText(v.dur) + ' · 完整版可看</span></div>' +
+        '<div class="video-locked">' + (v.poster ? '<img src="' + v.poster + '" alt="" loading="lazy">' : '') +
+          '<span>' + LOCK_SVG + '第 ' + o.no + ' 课讲解视频 · 开通完整版后可看</span></div>'
+      return
+    }
     /* 文字来自大纲常量和视频登记表，没有用户输入 */
     group.innerHTML =
       '<div class="row-between"><div class="group-title">讲解视频</div>' +
@@ -517,7 +527,7 @@
   }
 
   function registerSheet(s, topic, result, seed) {
-    if (!S.sheets || !s.practicePage || !result.questions.length) return
+    if (!S.sheets || !s.practicePage || !result.questions.length || inTrial(s)) return
     var units = []
     var items = result.questions.map(function (q, i) {
       var tid = s.review ? q.topicId : topic.id
@@ -536,9 +546,122 @@
     })
   }
 
+  /* ---------- 试看条：纸张上方说明 + 两种开通方式 ---------- */
+  var PRINT_HTML = $('btn-print').innerHTML
+  var WANT_KEY = 'zhihebi:lk-want' /* 跟完整版说明页同一个记号：弹框里注册完回来自动登记 */
+  var trialTracked = {}
+  function isGuest() {
+    var A = S.account
+    return !(A && A.state && A.state.loggedIn) && !LOGGED_IN
+  }
+  function wantCall(method) {
+    return root.fetch('/api/auth/want', method === 'POST'
+      ? { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{"want":true}' }
+      : { credentials: 'same-origin' }).then(function (r) { return r.json() })
+  }
+  var wantEmail = ''
+  function wantDone(email) {
+    wantEmail = email
+    var b = doc.querySelector('[data-trial-want]')
+    var m = doc.querySelector('[data-trial-want-msg]')
+    if (b) { b.disabled = true; b.textContent = '已登记' }
+    if (m) { m.textContent = '付费开通上线那天，发邮件到 ' + email + ' 告诉你。'; m.hidden = false }
+  }
+  function wantRecord() {
+    var m = doc.querySelector('[data-trial-want-msg]')
+    wantCall('POST').then(function (d) {
+      if (d && d.ok && d.wanted) return wantDone(d.email)
+      if (m) { m.textContent = (d && d.error) || '没登记上，稍后再试一次。'; m.hidden = false }
+    }).catch(function () {
+      if (m) { m.textContent = '网络不太好，没登记上，稍后再试一次。'; m.hidden = false }
+    })
+  }
+  var wantChecked = false
+  function buildTrialBar(o) {
+    var bar = $('trial-bar')
+    if (!bar) {
+      bar = doc.createElement('div')
+      bar.id = 'trial-bar'
+      bar.className = 'trial-bar'
+      $('preview').parentNode.insertBefore(bar, $('preview'))
+      bar.addEventListener('click', function (ev) {
+        if (ev.target.closest('[data-trial-want]')) {
+          if (isGuest()) {
+            try { root.sessionStorage.setItem(WANT_KEY, '1') } catch (e) { /* 忽略 */ }
+            if (S.accountUI && S.accountUI.open) S.accountUI.open('register', '注册一个免费账号，付费开通上线那天发邮件告诉你。')
+          } else wantRecord()
+        }
+        if (ev.target.closest('[data-trial-login]') && S.accountUI && S.accountUI.open) S.accountUI.open('register', '先注册或登录，再填邀请码开通完整版。')
+      })
+    }
+    var guest = isGuest()
+    var key = o.id + (guest ? ':g' : ':u')
+    if (bar.getAttribute('data-key') === key) return /* 改难度、换一批不重画，别把填了一半的邀请码冲掉 */
+    bar.setAttribute('data-key', key)
+    /* 文字来自大纲常量，没有用户输入 */
+    bar.innerHTML =
+      '<div class="trial-head"><b>第 ' + o.no + ' 课「' + o.name + '」是完整版内容，现在是试看</b>' +
+        '<p>讲解页能看全；练习题只显示前 ' + TRIAL_KEEP + ' 道，解析只显示第 1 题。开通完整版后，54 课都能整课打印，带讲解视频。</p></div>' +
+      '<div class="trial-ways">' +
+        '<div class="trial-way"><span>朋友给了邀请码</span>' +
+          (guest
+            ? '<button type="button" class="btn" data-trial-login>注册 / 登录后填码</button>'
+            : '<form class="redeem-form" data-redeem novalidate><input class="input input-code" type="text" name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="如 K7M2-QF9W" aria-label="邀请码">' +
+              '<button type="submit" class="btn btn-primary">开通完整版</button><p class="redeem-msg" data-redeem-msg role="alert" hidden></p></form>') +
+        '</div>' +
+        '<div class="trial-way"><span>付费开通 2027 年 1 月上线</span>' +
+          '<button type="button" class="btn" data-trial-want>' + (guest ? '注册，开通时通知我' : '开通时通知我') + '</button>' +
+          '<p class="lk-want-msg" data-trial-want-msg role="status" hidden></p></div>' +
+      '</div>'
+    if (guest) return
+    if (wantEmail) return wantDone(wantEmail)
+    if (wantChecked) return
+    wantChecked = true
+    var pending = false
+    try { pending = root.sessionStorage.getItem(WANT_KEY) === '1'; root.sessionStorage.removeItem(WANT_KEY) } catch (e) { /* 忽略 */ }
+    if (pending) wantRecord()
+    else wantCall('GET').then(function (d) { if (d && d.ok && d.wanted) wantDone(d.email) }).catch(function () {})
+  }
+  function paintTrial(s) {
+    var trial = inTrial(s)
+    doc.documentElement.classList.toggle('aoshu-trial', trial)
+    var bar = $('trial-bar')
+    if (trial) buildTrialBar(outlineOf(s.topic))
+    else if (bar) bar.remove()
+    var pb = $('btn-print')
+    var label = trial ? '开通完整版' : '打印'
+    if (pb.textContent !== label) {
+      if (trial) pb.textContent = label
+      else pb.innerHTML = PRINT_HTML
+    }
+    pb.title = trial ? '这一课是完整版内容，试看不能打印' : ''
+    var mark = $('btn-mark')
+    if (mark) mark.hidden = trial
+    /* 记一笔试看了哪一课（访问统计的自定义事件，只记课号，不记账号）：12-08 定收费时看家长最常点开哪几课 */
+    if (trial && !trialTracked[s.topic]) {
+      trialTracked[s.topic] = 1
+      try { if (root.rybbit && root.rybbit.event) root.rybbit.event('aoshu_trial', { lesson: outlineOf(s.topic).no }) } catch (e) { /* 统计没加载就算了 */ }
+    }
+  }
+  /* 在弹框里注册、登录完（页面不刷新）：完整版直接刷新；免费版把试看条换成登录后的样子 */
+  doc.addEventListener('DOMContentLoaded', function () {
+    var A = S.account
+    if (!A || !A.onChange) return
+    A.onChange(function () {
+      if (!A.state.loggedIn) return
+      if (A.state.plan === 'full' && !FULL) { root.location.reload(); return }
+      if (inTrial(settings)) buildTrialBar(outlineOf(settings.topic))
+    })
+  })
+
   /* 主流程：保存设置 → 同步表单 → 生成题目 → 渲染练习纸 */
   function refresh() {
-    S.aoshu.settings.save(settings)
+    var trial = inTrial(settings)
+    if (!trial) S.aoshu.settings.save(settings)
+    else {
+      /* 试看课不存进设置（下次打开回到能打印的课），网址带上课号，刷新、转发都还是这一课的试看 */
+      try { root.history.replaceState(null, '', root.location.pathname + '?topic=' + encodeURIComponent(settings.topic)) } catch (e) { /* 忽略 */ }
+    }
     var topic = S.aoshu.topics[settings.topic]
     var switched = builtTopicId !== topic.id
     if (switched) {
@@ -561,13 +684,15 @@
     })
     var pages = S.aoshu.render.render($('preview'), settings, result.questions, {
       review: settings.review,
-      topicCount: result.topicCount
+      topicCount: result.topicCount,
+      trial: trial ? TRIAL_KEEP : 0
     })
     fitPreview()
     registerSheet(settings, topic, result, seed)
     renderVideo(settings)
     renderScope(settings)
     paintHead(settings, pages)
+    paintTrial(settings)
 
     var notice = $('notice')
     if (result.noTopics) {
@@ -582,16 +707,12 @@
           ' 道（少于设定的 ' + settings.count +
           ' 道）。可以减少题量、提高难度档，或多勾选几种题型。'
       notice.hidden = false
-    } else if (lockNote) {
-      notice.textContent = lockNote
-      notice.hidden = false
     } else {
       notice.hidden = true
     }
   }
 
   function onFormChange() {
-    lockNote = ''
     settings = readForm()
     refresh()
   }
@@ -610,6 +731,11 @@
   })
 
   $('btn-print').addEventListener('click', function () {
+    if (inTrial(settings)) {
+      var bar = $('trial-bar')
+      if (bar) { bar.scrollIntoView({ block: 'nearest' }); bar.classList.remove('flash'); void bar.offsetWidth; bar.classList.add('flash') }
+      return
+    }
     root.print()
   })
 
