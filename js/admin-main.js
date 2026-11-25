@@ -165,7 +165,7 @@
     var pl = e.target.closest('[data-plan]')
     if (pl) {
       var full = pl.dataset.plan === 'full'
-      if (!root.confirm(full ? '给这个账号开通完整版？' : '把这个账号改回免费版？其余七个板块会锁上。')) return
+      if (!root.confirm(full ? '给这个账号开通完整版？' : '把这个账号改回免费版？奥数、识字、拼音会锁上。')) return
       api('/api/admin/users/plan', { id: pl.dataset.uid, plan: pl.dataset.plan }).then(function (r) {
         if (r.status !== 200) root.alert(r.body.error || '操作没成功，稍后再试。')
         load()

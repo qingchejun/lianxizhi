@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-print-name="火柴 · 纸和笔">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,9 +7,15 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=c5db7fcb1f" />
   <meta name="theme-color" content="#f6f7f9" />
   <script>try{if(localStorage.getItem("lianxizhi:rail")==="fold")document.documentElement.classList.add("rail-folded")}catch(e){}</script>
-  <title>火柴 · 纸和笔</title>
-  <meta name="description" content="给孩子打印 A4 练习纸 · 火柴棒算式：拿走、添上或移动一根火柴，让错的算式变对。每道题只有一个答案，四关循序渐进，答案页标出动的是哪一根。" />
-  <link rel="stylesheet" href="css/app.css?v=c534483a8f" />
+  <title>火柴棒等式题：移动一根火柴使等式成立，附答案 · 纸和笔</title>
+  <meta name="description" content="不用登录，直接打印火柴棒等式题：拿走、添上或移动一根火柴，让错的算式变对。四关由易到难，每道题只有一个答案，答案页标出动的是哪一根。" />
+  <link rel="canonical" href="https://zhihebi.com/huochai" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="纸和笔" />
+  <meta property="og:title" content="火柴棒等式题：移动一根火柴使等式成立，附答案 · 纸和笔" />
+  <meta property="og:description" content="不用登录，直接打印火柴棒等式题：拿走、添上或移动一根火柴，让错的算式变对。四关由易到难，每道题只有一个答案，答案页标出动的是哪一根。" />
+  <meta property="og:url" content="https://zhihebi.com/huochai" />
+  <link rel="stylesheet" href="css/app.css?v=5999ba089b" />
   <link rel="stylesheet" href="css/sheet.css?v=a0e1aaaa2e" />
   <link rel="stylesheet" href="css/huochai.css?v=5459137526" />
   <!-- 火柴页固定 A4 纵向 -->
@@ -20,21 +26,21 @@
 <div class="app">
 <!-- rail:火柴 -->
 <nav class="rail" aria-label="板块">
-  <div class="rail-top"><a class="rail-brand" href="index.html" aria-label="纸和笔 · 今天"><img src="icons/mark.svg?v=e200a2b101" width="28" height="28" alt=""><span>纸和笔<small>少报班，少看屏</small></span></a><button type="button" class="rail-fold" data-rail-fold aria-label="收起侧栏" title="收起侧栏"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15M15.5 10l-2 2 2 2"/></svg></button></div>
+  <div class="rail-top"><a class="rail-brand" href="/" aria-label="纸和笔 · 今天"><img src="icons/mark.svg?v=e200a2b101" width="28" height="28" alt=""><span>纸和笔<small>少报班，少看屏</small></span></a><button type="button" class="rail-fold" data-rail-fold aria-label="收起侧栏" title="收起侧栏"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15M15.5 10l-2 2 2 2"/></svg></button></div>
   <span class="rail-label">练习</span>
-  <a class="rail-link" href="index.html" data-module="今天" title="今天"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><rect class="f" x="7" y="12.5" width="4" height="4" rx="1"/></svg><span>今天</span></a>
-  <a class="rail-link" href="kousuan.html" data-module="口算" title="口算"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7.5h5.5M7.25 4.75v5.5M14 7.5h5.5M5 14.25l4.5 4.5M9.5 14.25L5 18.75M14 15h5.5M14 18.25h5.5"/></svg><span>口算</span></a>
-  <a class="rail-link" href="aoshu.html" data-module="奥数" title="奥数"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.75l8.5 15.5h-17z"/><circle cx="12" cy="14" r="2.75"/></svg><span>奥数</span></a>
-  <a class="rail-link" href="shizi.html" data-module="识字" title="识字"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 4 5v13.5c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5zM12 6.5V20"/></svg><span>识字</span></a>
-  <a class="rail-link" href="pinyin.html" data-module="拼音" title="拼音"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="14.25" r="4.25"/><path d="M14.75 10v8.5M7 5.25h8M4 20.25h16"/></svg><span>拼音</span></a>
+  <a class="rail-link" href="/" data-module="今天" title="今天"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><rect class="f" x="7" y="12.5" width="4" height="4" rx="1"/></svg><span>今天</span></a>
+  <a class="rail-link" href="/kousuan" data-module="口算" title="口算"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7.5h5.5M7.25 4.75v5.5M14 7.5h5.5M5 14.25l4.5 4.5M9.5 14.25L5 18.75M14 15h5.5M14 18.25h5.5"/></svg><span>口算</span></a>
+  <a class="rail-link" href="/aoshu" data-module="奥数" title="奥数"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.75l8.5 15.5h-17z"/><circle cx="12" cy="14" r="2.75"/></svg><span>奥数</span></a>
+  <a class="rail-link" href="/shizi" data-module="识字" title="识字"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 4 5v13.5c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5zM12 6.5V20"/></svg><span>识字</span></a>
+  <a class="rail-link" href="/pinyin" data-module="拼音" title="拼音"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="14.25" r="4.25"/><path d="M14.75 10v8.5M7 5.25h8M4 20.25h16"/></svg><span>拼音</span></a>
   <span class="rail-label">游戏</span>
-  <a class="rail-link" href="shudu.html" data-module="数独" title="数独"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M9.33 4v16M14.67 4v16M4 9.33h16M4 14.67h16"/></svg><span>数独</span></a>
-  <a class="rail-link active" href="huochai.html" data-module="火柴" title="火柴" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18L15.5 8.5M17.5 6.5h.01M9 19.5h10"/><circle class="f" cx="17" cy="7" r="1.75"/></svg><span>火柴</span></a>
-  <a class="rail-link" href="mima.html" data-module="密码" title="密码"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M7.75 10.5V7.75a4.25 4.25 0 0 1 8.5 0v2.75M8.5 15.5h.01M12 15.5h.01M15.5 15.5h.01"/></svg><span>密码</span></a>
-  <a class="rail-link" href="migong.html" data-module="迷宫" title="迷宫"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 4H6.5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20h9M12.5 4h5A2.5 2.5 0 0 1 20 6.5V20M8.5 4v4.5h4M16 8.5V16M8 12.5V16h4"/></svg><span>迷宫</span></a>
-  <a class="rail-link" href="zhizhi.html" data-module="数织" title="数织"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 4v16M4 12h16"/><rect class="f" x="6.25" y="6.25" width="3.5" height="3.5" rx=".75"/><rect class="f" x="14.25" y="14.25" width="3.5" height="3.5" rx=".75"/></svg><span>数织</span></a>
+  <a class="rail-link" href="/shudu" data-module="数独" title="数独"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M9.33 4v16M14.67 4v16M4 9.33h16M4 14.67h16"/></svg><span>数独</span></a>
+  <a class="rail-link active" href="/huochai" data-module="火柴" title="火柴" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18L15.5 8.5M17.5 6.5h.01M9 19.5h10"/><circle class="f" cx="17" cy="7" r="1.75"/></svg><span>火柴</span></a>
+  <a class="rail-link" href="/mima" data-module="密码" title="密码"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M7.75 10.5V7.75a4.25 4.25 0 0 1 8.5 0v2.75M8.5 15.5h.01M12 15.5h.01M15.5 15.5h.01"/></svg><span>密码</span></a>
+  <a class="rail-link" href="/migong" data-module="迷宫" title="迷宫"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 4H6.5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20h9M12.5 4h5A2.5 2.5 0 0 1 20 6.5V20M8.5 4v4.5h4M16 8.5V16M8 12.5V16h4"/></svg><span>迷宫</span></a>
+  <a class="rail-link" href="/zhizhi" data-module="数织" title="数织"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 4v16M4 12h16"/><rect class="f" x="6.25" y="6.25" width="3.5" height="3.5" rx=".75"/><rect class="f" x="14.25" y="14.25" width="3.5" height="3.5" rx=".75"/></svg><span>数织</span></a>
   <span class="rail-gap"></span>
-  <a class="rail-link rail-tool" href="help.html" data-help title="使用说明"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .9-1 1.6v.3M12 16.75h.01"/></svg><span>使用说明</span></a>
+  <a class="rail-link rail-tool" href="/help" data-help title="使用说明"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .9-1 1.6v.3M12 16.75h.01"/></svg><span>使用说明</span></a>
   <div class="rail-me">
     <button type="button" class="rail-user" data-account-menu aria-haspopup="menu" aria-expanded="false" title="账号"><span class="rail-avatar" data-account-initial aria-hidden="true"></span><span class="rail-who"><b data-account-email>账号</b><small>练习进度自动同步</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 10l4-4 4 4M8 14l4 4 4-4"/></svg></button>
     <div class="rail-menu" role="menu" hidden>
@@ -44,12 +50,12 @@
     </div>
   </div>
 </nav>
-<script src="js/sidebar.js?v=ad4375e882" defer></script>
+<script src="js/sidebar.js?v=ec2f085f3e" defer></script>
 <!-- /rail -->
 
 <div class="work">
   <header class="work-head">
-    <h1 class="work-title">火柴</h1>
+    <h1 class="work-title">火柴棒等式题<small class="work-tag"> · 动一根火柴，让算式变对</small></h1>
     <span class="work-sum" id="work-sum"></span>
     <span class="work-grow"></span>
     <button type="button" id="btn-regen" class="btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/></svg>重新生成</button>
@@ -61,7 +67,31 @@
     <!-- ======== 练习纸预览（所见即所得） ======== -->
     <main class="preview" id="preview-wrap">
       <div class="notice" id="notice" hidden></div>
+      <div class="guest-note" data-guest-note hidden>
+        <p><b>不用登录就能出题、打印。</b>登录后纸角会印一个二维码：孩子做完，手机扫一下点太简单、刚好还是太难，下一张自动升降关。</p>
+        <button type="button" class="btn" data-login>登录 / 注册</button>
+      </div>
       <div id="preview"></div>
+      <article class="board-intro" aria-labelledby="bi-how">
+          <h2 id="bi-how">火柴棒等式题怎么玩</h2>
+          <p>纸上印着一道用火柴棒拼出来的算式，数字像电子表那样一根一根拼，加号两根、减号一根。这道算式是错的，题目旁边写着要怎么动：拿走一根、添上一根，或者移动一根火柴，让等式成立。孩子把拿走的那根打个叉，添上的那根用铅笔画出来，再把改好的算式写在横线上。</p>
+          <p>做这种题，孩子要同时想两件事：哪个数字多一根或少一根能变成别的数，比如 9 拿走一根能变成 3 或 5，6 添一根能变成 8；改完以后算式还得算得对。比单纯算题多了一层观察，又不用写很多字。</p>
+
+          <h2>四关由易到难：拿走、添上、移动</h2>
+          <p>第 1 关只拿走一根，10 以内；第 2 关添上一根，卷面上用淡虚线标出能放火柴的空位；第 3 关移动一根，可以在同一个数字里挪，也可以挪到别处；第 4 关数字到 20，有两位数。一页 5 道，默认出一页，一年级孩子五分钟左右做完。</p>
+
+          <h2>每道题只有一个答案，附答案页</h2>
+          <p>每道题出好以后都会把所有动法试一遍，只有一种动法能让等式成立才留下，孩子不会找到第二个答案跟答案页对不上。打印时可以附答案页：印着正确的算式，并在原图上标出动的是哪一根，家长对着改很快。打印份数选 2 份，同一套题印两张，亲子比谁先改对。</p>
+
+          <h2>常见问题</h2>
+          <div class="bi-faq">
+            <div><h3>要登录吗？</h3><p>出题、打印都不用登录。登录后纸上会印二维码，做完扫一下，点太简单、刚好还是太难，下一张自动升一关或降一关。</p></div>
+            <div><h3>在国外能用吗？</h3><p>能。打开网页就能出题、打印，不用装软件。</p></div>
+            <div><h3>几岁能玩？</h3><p>会 10 以内加减法就能玩第 1 关，一般一年级上学期就可以开始。</p></div>
+            <div><h3>一次能出多少题？</h3><p>1 到 10 道，一页 5 道；答案页一页能放 10 道。</p></div>
+            <div><h3>还有别的练习吗？</h3><p>纸和笔还有<a href="/kousuan">口算题</a>、<a href="/shudu">儿童数独</a>、<a href="/mima">密码推理题</a>等，<a href="/">回首页</a>看全部。</p></div>
+          </div>
+      </article>
     </main>
 
     <!-- ======== 设置 ======== -->
@@ -115,7 +145,7 @@
 <script src="js/store.js?v=c6aac93871"></script>
 <script src="js/sheets-core.js?v=4a37e8f3d0"></script>
 <script src="js/vendor/qrcode.js?v=18ae399f81"></script>
-<script src="js/sheets.js?v=2dfb8c7e4d"></script>
+<script src="js/sheets.js?v=52367c3425"></script>
 <script src="js/shell.js?v=6972c54f86"></script>
 <script src="js/render.js?v=4756ada9e0"></script>
 <script src="js/huochai-core.js?v=7ce437e562"></script>
@@ -123,9 +153,9 @@
 <script src="js/huochai-render.js?v=6452faafbc"></script>
 <script src="js/huochai-main.js?v=d1da6ce971"></script>
 <script src="js/backup.js?v=f21895fa7e"></script>
-<script src="js/help.js?v=37517a8f12"></script>
-<script src="js/account.js?v=6a2811e40e"></script>
-<script src="js/account-ui.js?v=d856f0147e"></script>
+<script src="js/help.js?v=05def041de"></script>
+<script src="js/account.js?v=9790a36543"></script>
+<script src="js/account-ui.js?v=7eb723d81f"></script>
 <script src="js/sync-core.js?v=5f4122b899"></script>
 <script src="js/sync.js?v=13dd97b911"></script>
 <script>

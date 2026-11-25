@@ -55,7 +55,7 @@
 
   var state = { loggedIn: false, email: '', admin: false, plan: '' }
   var listeners = []
-  /* plan：free = 免费版（口算、数独），full = 完整版；没给就沿用服务器写进网页的 __SUMSUM_PLAN */
+  /* plan：free = 免费版（口算、数独和游戏组），full = 完整版；没给就沿用服务器写进网页的 __SUMSUM_PLAN */
   function setLogin(email, admin, plan) {
     state.loggedIn = !!email
     state.email = email || ''

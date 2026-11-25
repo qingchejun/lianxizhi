@@ -108,7 +108,7 @@
     return !!(pre && pre.ok)
   }
 
-  /* 没登录也能出题打印（口算、数独，见 server/gate.js GUEST_PAGES）：纸上不印二维码、不记录这张纸。
+  /* 没登录也能出题打印（口算、数独和游戏组，见 server/gate.js GUEST_PAGES）：纸上不印二维码、不记录这张纸。
      在页面上登录后马上把二维码补上 */
   var loginHooked = false
   function hookLogin() {

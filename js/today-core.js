@@ -48,7 +48,7 @@
   var GAME_MIN = {                           /* 每题分钟，按关卡 L1–L4 */
     huochai: [1, 1, 1.5, 1.5],
     mima: [1, 1.25, 1.5, 2],
-    migong: [1.25, 1.25, 1.5, 2],
+    migong: [1, 2, 3, 4],
     zhizhi: [1.25, 2.5, 4, 6]
   }
   function minutes(raw) {
@@ -232,7 +232,7 @@
     huochai: [{ name: '拿走一根', note: '10 以内' }, { name: '添上一根', note: '10 以内' }, { name: '挪一挪', note: '10 以内' }, { name: '两位数挑战', note: '20 以内' }],
     mima: [{ name: '点点入门' }, { name: '双色点' }, { name: '读题破译' }, { name: '大侦探' }],
     zhizhi: [{ name: '迷你涂画', note: '5×5' }, { name: '小小图案', note: '8×8' }, { name: '大发现', note: '10×10' }, { name: '像素大师', note: '12×12' }],
-    migong: [{ name: '起步小路', note: '10 以内加法' }, { name: '岔路寻踪', note: '10 以内加减' }, { name: '进位翻山', note: '20 以内进位加' }, { name: '终极大冒险', note: '20 以内加减' }]
+    migong: [{ name: '小小迷宫', note: '8×8' }, { name: '小探险', note: '12×12' }, { name: '大迷宫', note: '16×16' }, { name: '迷宫挑战', note: '20×20' }]
   }
   var GAME_RULES = {
     huochai: { unit: '题', max: 10, def: 5 },

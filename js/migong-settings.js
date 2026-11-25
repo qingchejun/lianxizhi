@@ -1,5 +1,5 @@
 /**
- * 算式迷宫页设置管理：默认值、输入校验（钳位）、localStorage 持久化、URL 参数编解码。
+ * 儿童迷宫页设置管理：默认值、输入校验（钳位）、localStorage 持久化、URL 参数编解码。
  * 加载优先级：默认值 ← localStorage ← URL 参数。套路与 js/mima-settings.js 一致。
  */
 (function (root) {
@@ -8,7 +8,7 @@
   var KEY = 'sumsum:migong:v1'
 
   var DEFAULTS = Object.freeze({
-    level: 'L1', // 一年级从 10 以内加法起步
+    level: 'L1', // 8×8 起步
     /* 一张卷 4 张迷宫：两页的量，做完正好休息 */
     count: 4,
     /* 默认印两份：父子同题对战（L1/L2 同页双份，大迷宫整卷分份印） */

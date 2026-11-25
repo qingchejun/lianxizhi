@@ -115,25 +115,35 @@ with sync_playwright() as p:
     check('点侧栏「登录 / 注册」直接弹登录框', gp.is_visible('dialog.account-dialog[open] form[data-view="login"]'))
 
     # ---------- 其余板块（完整版）：原网址显示完整版说明页（2026-11-25 起不再拦回首页） ----------
-    for path in ['/aoshu', '/shizi', '/huochai']:
+    for path in ['/aoshu', '/shizi', '/pinyin']:
         resp = gp.goto(BASE + path)
         gp.wait_for_selector('.lk-card', timeout=10000)
         check('没登录打开 ' + path + ' → 原网址显示完整版说明、有登录按钮、不收录',
               path in gp.url and '/?next=' not in gp.url and gp.is_visible('[data-lk-guest] [data-login]')
               and not gp.is_visible('[data-redeem]') and resp.headers.get('x-robots-tag') == 'noindex', gp.url)
     locks = gp.eval_on_selector_all('.rail-link.is-locked', 'els => els.map(e => e.dataset.module)')
-    check('没登录时侧栏给七个完整版板块挂锁', locks == ['奥数', '识字', '拼音', '火柴', '密码', '迷宫', '数织'], locks)
+    check('没登录时侧栏给三个完整版板块挂锁', locks == ['奥数', '识字', '拼音'], locks)
     gp.click('[data-lk-guest] [data-login]')
     gp.wait_for_selector('dialog[open] form[data-view="login"]', timeout=5000)
     check('完整版说明页点「登录 / 注册」→ 弹出登录框', gp.is_visible('dialog[open] form[data-view="login"]'))
     gp.goto(BASE + '/')
     hrefs = gp.eval_on_selector_all('#wl-what ~ * a, .wl-stars a, .wl-mods a', 'els => els.map(e => e.getAttribute("href"))')
     check('首页九个板块都能点', all(h in hrefs for h in ['/kousuan', '/aoshu', '/shizi', '/pinyin', '/shudu', '/huochai', '/mima', '/migong', '/zhizhi']), hrefs)
-    check('首页页脚有全站链接（含凑十法内页）', gp.query_selector('.site-foot .sitelinks a[href="/kousuan/coushifa"]') is not None)
+    check('首页页脚列出全部板块和凑十法内页', gp.query_selector('footer.sf a[href="/kousuan/coushifa"]') is not None
+          and len(gp.query_selector_all('footer.sf .sf-col a')) == 13)
+    head = gp.eval_on_selector_all('.sh-nav a', 'els => els.map(e => e.getAttribute("href"))')
+    check('首页页眉排着九个板块', head == ['/kousuan', '/aoshu', '/shizi', '/pinyin', '/shudu', '/huochai', '/mima', '/migong', '/zhizhi'], head)
+    gp.click('.sh-act a[href="/#register"]')
+    gp.wait_for_selector('.wl-auth [data-goto="register"].active', timeout=5000)
+    check('页眉点「免费注册」→ 首页登录框切到注册', gp.is_visible('.wl-auth [data-goto="register"].active'))
+    gp.goto(BASE + '/privacy')
+    check('隐私说明页有页眉、没有页脚', gp.query_selector('.sh-nav a[href="/shudu"]') is not None and gp.query_selector('footer.sf') is None)
     gp.goto(BASE + '/kousuan/coushifa')
     check('凑十法页有面包屑：首页 › 口算', gp.eval_on_selector_all('.crumbs a', 'els => els.map(e => e.getAttribute("href"))') == ['/', '/kousuan'])
     gp.goto(BASE + '/kousuan')
     check('口算页设置栏有「专项练习」入口', gp.query_selector('.special-row a[href="/kousuan/coushifa"]') is not None)
+    check('板块页不放页眉页脚（侧栏就是导航），侧栏链接用正式网址', gp.query_selector('footer.sf, header.sh') is None
+          and gp.get_attribute('.rail-link[data-module="数独"]', 'href') == '/shudu')
 
     check('全程没有脚本报错', not errs, errs)
     br.close()

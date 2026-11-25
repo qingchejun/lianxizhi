@@ -247,12 +247,10 @@
   width: 70%;
 }
 
-.pp-maze span {
-  font-size: 5.5cqw;
-}
-
-.pp-maze span.path {
-  background: #e4e7ec;
+.pp-maze {
+  display: block;
+  width: 62%;
+  margin: 3cqw auto 8cqw;
 }
 
 /* 火柴：一道小火柴算式 */
@@ -588,7 +586,8 @@
   margin: auto calc(-1 * clamp(20px, 3vw, 56px)) 0;
 }
 
-.today-foot .site-foot-in {
+.today-foot .sf-in,
+.today-foot .sf-bot {
   max-width: 1600px;
 }
 

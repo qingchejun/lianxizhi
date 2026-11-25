@@ -26,10 +26,10 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   check('没登录打开要登录的页面 → 跳首页并记住原址', r.action === 'redirect' &&
     r.location === '/?next=' + encodeURIComponent('/help?a=3'), r.location)
   /* 2026-11-25 整站结构：没开放的板块不再把没登录的人带回首页，在原网址显示「完整版」说明页（不收录） */
-  check('没登录打开还没开放的板块 → 原网址显示完整版说明页', ['/aoshu', '/shizi', '/pinyin.html', '/huochai', '/mima/', '/migong', '/zhizhi'].every(function (p) {
+  check('没登录打开还没开放的板块 → 原网址显示完整版说明页', ['/aoshu', '/shizi', '/pinyin.html', '/pinyin/'].every(function (p) {
     return d(p, '?seed=3', false).action === 'locked'
   }))
-  check('口算、数独没登录也放行（免登录出题打印）', ['/kousuan', '/kousuan.html', '/shudu', '/shudu.html'].every(function (p) {
+  check('口算、数独和游戏组没登录也放行（免登录出题打印）', ['/kousuan', '/kousuan.html', '/shudu', '/shudu.html', '/huochai', '/mima/', '/migong.html', '/zhizhi'].every(function (p) {
     return d(p, '?seed=3', false).action === 'pass'
   }))
   check('其余要登录的页面没登录照样拦', ['/index.html', '/help', '/mark', '/admin', '/aoshu/x', '/pinyinx'].every(function (p) {
@@ -53,7 +53,7 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
 
   /* --- 免费版（2026-11-24 放开注册）：白名单，每个网页 × 各种写法都试 --- */
   var fs = require('fs')
-  var FREE_OK = ['index', 'kousuan', 'shudu', 'mark', 'help', 'privacy', '404']
+  var FREE_OK = ['index', 'kousuan', 'shudu', 'huochai', 'mima', 'migong', 'zhizhi', 'mark', 'help', 'privacy', '404']
   var htmls = fs.readdirSync(require('path').join(__dirname, '..')).filter(function (f) { return /\.html$/.test(f) })
   var free = { ok: true, plan: 'free' }, full = { ok: true, plan: 'full' }
   var leaks = []

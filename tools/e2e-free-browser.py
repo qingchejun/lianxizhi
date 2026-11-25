@@ -86,10 +86,14 @@ with sync_playwright() as p:
     page.wait_for_selector('#today-cards .dk-shelf', timeout=30000)
     close_help(page)
     shelves = page.inner_text('#today-cards')
-    check('今天页：免费版只摆口算、数独', '免费版可用' in shelves and '口算' in shelves and '数独' in shelves, shelves[:200])
-    check('今天页：另外七个板块列在「完整版」下面', page.query_selector_all('.dk-lock-list a').__len__() == 7)
+    check('今天页：免费版摆口算和五个游戏', all(k in shelves for k in ['口算', '数独', '火柴', '密码', '迷宫', '数织']), shelves[:300])
+    check('今天页：奥数、识字、拼音列在「完整版」下面', page.eval_on_selector_all('.dk-lock-list a b', 'els => els.map(e => e.textContent)') == ['奥数', '识字', '拼音'])
     locks = page.eval_on_selector_all('.rail-link.is-locked', 'els => els.map(e => e.dataset.module)')
-    check('侧栏七个板块挂锁', sorted(locks) == sorted(['奥数', '识字', '拼音', '火柴', '密码', '迷宫', '数织']), locks)
+    check('侧栏三个完整版板块挂锁', sorted(locks) == sorted(['奥数', '识字', '拼音']), locks)
+    for path in ['/huochai', '/mima', '/migong', '/zhizhi']:
+        page.goto(BASE + path)
+        page.wait_for_selector('#preview .sheet', timeout=15000)
+        check('免费版打开 ' + path + ' → 直接能出题', page.query_selector('.lk-card') is None)
 
     # ---------- 上锁页 ----------
     for path in ['/aoshu', '/aoshu/', '/aoshu.html', '/shizi', '/admin']:
@@ -145,7 +149,7 @@ with sync_playwright() as p:
     b2 = register(p2, f'full-{STAMP}@test.local', make_invite())
     enter_code(p2, b2['dev_code'])
     p2.wait_for_selector('#today-cards .dk-shelf', timeout=30000)
-    check('带邀请码注册 → 直接完整版（今天页九个板块）', '免费版可用' not in p2.inner_text('#today-cards') and not p2.query_selector_all('.rail-link.is-locked'))
+    check('带邀请码注册 → 直接完整版（今天页九个板块）', p2.query_selector('.dk-locked') is None and not p2.query_selector_all('.rail-link.is-locked'))
 
     c3 = br.new_context()
     p3 = c3.new_page()

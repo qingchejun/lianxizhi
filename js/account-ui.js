@@ -219,7 +219,7 @@
   /* 账号页里的版本：免费版能补填邀请码开通完整版 */
   function planBlock() {
     if (A.state.plan === 'free') {
-      return '<div class="account-plan"><p><b>免费版</b> · 可以用口算、数独，扫码打分、按错题出下一张都有。</p>' +
+      return '<div class="account-plan"><p><b>免费版</b> · 可以用口算、数独、火柴、密码、迷宫、数织，扫码打分、按错题出下一张都有。</p>' +
         redeemForm() + '</div>'
     }
     return '<div class="account-plan"><p><b>完整版</b> · 九个板块都能用。</p></div>'

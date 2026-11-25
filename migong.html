@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-print-name="迷宫 · 纸和笔">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,11 +7,17 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=c5db7fcb1f" />
   <meta name="theme-color" content="#f6f7f9" />
   <script>try{if(localStorage.getItem("lianxizhi:rail")==="fold")document.documentElement.classList.add("rail-folded")}catch(e){}</script>
-  <title>迷宫 · 纸和笔</title>
-  <meta name="description" content="给孩子打印 A4 练习纸 · 算式迷宫：满盘算式只有答案对的格子才能踩，从「起」一路踩到「终」，每张迷宫只有一条全踩对的路线，四关循序渐进，答案页附路线图。" />
-  <link rel="stylesheet" href="css/app.css?v=c534483a8f" />
+  <title>儿童迷宫打印：迷宫生成器，四档大小，附答案 · 纸和笔</title>
+  <meta name="description" content="不用登录，直接打印儿童迷宫：8×8 到 20×20 四档大小，每张只有一条通路，同一张卷子不重复。孩子拿笔从起点画到出口，可附红线答案页。" />
+  <link rel="canonical" href="https://zhihebi.com/migong" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="纸和笔" />
+  <meta property="og:title" content="儿童迷宫打印：迷宫生成器，四档大小，附答案 · 纸和笔" />
+  <meta property="og:description" content="不用登录，直接打印儿童迷宫：8×8 到 20×20 四档大小，每张只有一条通路，同一张卷子不重复。孩子拿笔从起点画到出口，可附红线答案页。" />
+  <meta property="og:url" content="https://zhihebi.com/migong" />
+  <link rel="stylesheet" href="css/app.css?v=5999ba089b" />
   <link rel="stylesheet" href="css/sheet.css?v=a0e1aaaa2e" />
-  <link rel="stylesheet" href="css/migong.css?v=46b586e7ea" />
+  <link rel="stylesheet" href="css/migong.css?v=0f3d3a8253" />
   <!-- 迷宫页固定 A4 纵向 -->
   <style>@page { size: A4 portrait; margin: 15mm; }</style>
 </head>
@@ -20,21 +26,21 @@
 <div class="app">
 <!-- rail:迷宫 -->
 <nav class="rail" aria-label="板块">
-  <div class="rail-top"><a class="rail-brand" href="index.html" aria-label="纸和笔 · 今天"><img src="icons/mark.svg?v=e200a2b101" width="28" height="28" alt=""><span>纸和笔<small>少报班，少看屏</small></span></a><button type="button" class="rail-fold" data-rail-fold aria-label="收起侧栏" title="收起侧栏"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15M15.5 10l-2 2 2 2"/></svg></button></div>
+  <div class="rail-top"><a class="rail-brand" href="/" aria-label="纸和笔 · 今天"><img src="icons/mark.svg?v=e200a2b101" width="28" height="28" alt=""><span>纸和笔<small>少报班，少看屏</small></span></a><button type="button" class="rail-fold" data-rail-fold aria-label="收起侧栏" title="收起侧栏"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15M15.5 10l-2 2 2 2"/></svg></button></div>
   <span class="rail-label">练习</span>
-  <a class="rail-link" href="index.html" data-module="今天" title="今天"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><rect class="f" x="7" y="12.5" width="4" height="4" rx="1"/></svg><span>今天</span></a>
-  <a class="rail-link" href="kousuan.html" data-module="口算" title="口算"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7.5h5.5M7.25 4.75v5.5M14 7.5h5.5M5 14.25l4.5 4.5M9.5 14.25L5 18.75M14 15h5.5M14 18.25h5.5"/></svg><span>口算</span></a>
-  <a class="rail-link" href="aoshu.html" data-module="奥数" title="奥数"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.75l8.5 15.5h-17z"/><circle cx="12" cy="14" r="2.75"/></svg><span>奥数</span></a>
-  <a class="rail-link" href="shizi.html" data-module="识字" title="识字"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 4 5v13.5c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5zM12 6.5V20"/></svg><span>识字</span></a>
-  <a class="rail-link" href="pinyin.html" data-module="拼音" title="拼音"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="14.25" r="4.25"/><path d="M14.75 10v8.5M7 5.25h8M4 20.25h16"/></svg><span>拼音</span></a>
+  <a class="rail-link" href="/" data-module="今天" title="今天"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><rect class="f" x="7" y="12.5" width="4" height="4" rx="1"/></svg><span>今天</span></a>
+  <a class="rail-link" href="/kousuan" data-module="口算" title="口算"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7.5h5.5M7.25 4.75v5.5M14 7.5h5.5M5 14.25l4.5 4.5M9.5 14.25L5 18.75M14 15h5.5M14 18.25h5.5"/></svg><span>口算</span></a>
+  <a class="rail-link" href="/aoshu" data-module="奥数" title="奥数"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.75l8.5 15.5h-17z"/><circle cx="12" cy="14" r="2.75"/></svg><span>奥数</span></a>
+  <a class="rail-link" href="/shizi" data-module="识字" title="识字"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 4 5v13.5c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5zM12 6.5V20"/></svg><span>识字</span></a>
+  <a class="rail-link" href="/pinyin" data-module="拼音" title="拼音"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="14.25" r="4.25"/><path d="M14.75 10v8.5M7 5.25h8M4 20.25h16"/></svg><span>拼音</span></a>
   <span class="rail-label">游戏</span>
-  <a class="rail-link" href="shudu.html" data-module="数独" title="数独"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M9.33 4v16M14.67 4v16M4 9.33h16M4 14.67h16"/></svg><span>数独</span></a>
-  <a class="rail-link" href="huochai.html" data-module="火柴" title="火柴"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18L15.5 8.5M17.5 6.5h.01M9 19.5h10"/><circle class="f" cx="17" cy="7" r="1.75"/></svg><span>火柴</span></a>
-  <a class="rail-link" href="mima.html" data-module="密码" title="密码"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M7.75 10.5V7.75a4.25 4.25 0 0 1 8.5 0v2.75M8.5 15.5h.01M12 15.5h.01M15.5 15.5h.01"/></svg><span>密码</span></a>
-  <a class="rail-link active" href="migong.html" data-module="迷宫" title="迷宫" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 4H6.5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20h9M12.5 4h5A2.5 2.5 0 0 1 20 6.5V20M8.5 4v4.5h4M16 8.5V16M8 12.5V16h4"/></svg><span>迷宫</span></a>
-  <a class="rail-link" href="zhizhi.html" data-module="数织" title="数织"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 4v16M4 12h16"/><rect class="f" x="6.25" y="6.25" width="3.5" height="3.5" rx=".75"/><rect class="f" x="14.25" y="14.25" width="3.5" height="3.5" rx=".75"/></svg><span>数织</span></a>
+  <a class="rail-link" href="/shudu" data-module="数独" title="数独"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M9.33 4v16M14.67 4v16M4 9.33h16M4 14.67h16"/></svg><span>数独</span></a>
+  <a class="rail-link" href="/huochai" data-module="火柴" title="火柴"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18L15.5 8.5M17.5 6.5h.01M9 19.5h10"/><circle class="f" cx="17" cy="7" r="1.75"/></svg><span>火柴</span></a>
+  <a class="rail-link" href="/mima" data-module="密码" title="密码"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M7.75 10.5V7.75a4.25 4.25 0 0 1 8.5 0v2.75M8.5 15.5h.01M12 15.5h.01M15.5 15.5h.01"/></svg><span>密码</span></a>
+  <a class="rail-link active" href="/migong" data-module="迷宫" title="迷宫" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 4H6.5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20h9M12.5 4h5A2.5 2.5 0 0 1 20 6.5V20M8.5 4v4.5h4M16 8.5V16M8 12.5V16h4"/></svg><span>迷宫</span></a>
+  <a class="rail-link" href="/zhizhi" data-module="数织" title="数织"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 4v16M4 12h16"/><rect class="f" x="6.25" y="6.25" width="3.5" height="3.5" rx=".75"/><rect class="f" x="14.25" y="14.25" width="3.5" height="3.5" rx=".75"/></svg><span>数织</span></a>
   <span class="rail-gap"></span>
-  <a class="rail-link rail-tool" href="help.html" data-help title="使用说明"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .9-1 1.6v.3M12 16.75h.01"/></svg><span>使用说明</span></a>
+  <a class="rail-link rail-tool" href="/help" data-help title="使用说明"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .9-1 1.6v.3M12 16.75h.01"/></svg><span>使用说明</span></a>
   <div class="rail-me">
     <button type="button" class="rail-user" data-account-menu aria-haspopup="menu" aria-expanded="false" title="账号"><span class="rail-avatar" data-account-initial aria-hidden="true"></span><span class="rail-who"><b data-account-email>账号</b><small>练习进度自动同步</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 10l4-4 4 4M8 14l4 4 4-4"/></svg></button>
     <div class="rail-menu" role="menu" hidden>
@@ -44,12 +50,12 @@
     </div>
   </div>
 </nav>
-<script src="js/sidebar.js?v=ad4375e882" defer></script>
+<script src="js/sidebar.js?v=ec2f085f3e" defer></script>
 <!-- /rail -->
 
 <div class="work">
   <header class="work-head">
-    <h1 class="work-title">迷宫</h1>
+    <h1 class="work-title">儿童迷宫<small class="work-tag"> · 拿笔从起点画到出口</small></h1>
     <span class="work-sum" id="work-sum"></span>
     <span class="work-grow"></span>
     <button type="button" id="btn-regen" class="btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/></svg>重新生成</button>
@@ -61,7 +67,31 @@
     <!-- ======== 练习纸预览（所见即所得） ======== -->
     <main class="preview" id="preview-wrap">
       <div class="notice" id="notice" hidden></div>
+      <div class="guest-note" data-guest-note hidden>
+        <p><b>不用登录就能出题、打印。</b>登录后纸角会印一个二维码：孩子做完，手机扫一下点太简单、刚好还是太难，下一张自动升降关。</p>
+        <button type="button" class="btn" data-login>登录 / 注册</button>
+      </div>
       <div id="preview"></div>
+      <article class="board-intro" aria-labelledby="bi-how">
+          <h2 id="bi-how">儿童迷宫怎么玩</h2>
+          <p>纸上是一张方格迷宫，入口在左上角，写着「起」；出口在右下角，写着「终」。孩子拿铅笔从入口沿着通道画线，不能穿过墙，画到出口就走出来了。走进死胡同就退回来，换一个岔口再试。</p>
+          <p>走迷宫看着简单，其实是在练眼睛往前看几步、走错了能退回来重新想。可以先教孩子一个办法：一只手贴着一边的墙一直走，总能走出去，只是会绕远；会了以后，再试着先用眼睛找路，最后才动笔。</p>
+
+          <h2>四档大小：8×8 到 20×20</h2>
+          <p>第 1 关 8×8，一页两张，第一次走迷宫从这里开始；第 2 关 12×12，一页两张，岔路多起来；第 3 关 16×16，一页一整张；第 4 关 20×20，路最长，适合家长陪着比谁先走出来。每张迷宫的通道都留得够宽，一年级孩子拿铅笔画得进去。</p>
+
+          <h2>只有一条通路，附红线答案</h2>
+          <p>每一张都是随机生成的，从入口到出口只有一条路，也不会出那种贴着边一下就到的简单迷宫；同一张卷子里不会有两张一样的。打印时可以附答案页，用红线画出那条通路，家长一眼就能对。打印份数选 2 份，同一套迷宫印两张，亲子比谁先走出来。</p>
+
+          <h2>常见问题</h2>
+          <div class="bi-faq">
+            <div><h3>要登录吗？</h3><p>出题、打印都不用登录。登录后纸上会印二维码，做完扫一下，点太简单、刚好还是太难，下一张自动升一关或降一关。</p></div>
+            <div><h3>在国外能用吗？</h3><p>能。打开网页就能出题、打印，不用装软件。</p></div>
+            <div><h3>几岁能玩？</h3><p>能握笔画线就能玩 8×8，一般四五岁就可以开始；16×16 和 20×20 更适合一年级以上。</p></div>
+            <div><h3>一次能出多少张？</h3><p>1 到 8 张。8×8、12×12 一页两张，16×16、20×20 一页一张。</p></div>
+            <div><h3>还有别的练习吗？</h3><p>纸和笔还有<a href="/shudu">儿童数独</a>、<a href="/huochai">火柴棒等式题</a>、<a href="/kousuan">口算题</a>等，<a href="/">回首页</a>看全部。</p></div>
+          </div>
+      </article>
     </main>
 
     <!-- ======== 设置 ======== -->
@@ -70,10 +100,10 @@
       <section class="group">
         <h2 class="group-title">关卡</h2>
         <select id="f-level" class="input" data-seg aria-label="关卡">
-          <option value="L1" data-short="第 1 关">第 1 关 · 起步小路 · 10 以内加法 · 4×4</option>
-          <option value="L2" data-short="第 2 关">第 2 关 · 岔路寻踪 · 10 以内加减 · 5×5</option>
-          <option value="L3" data-short="第 3 关">第 3 关 · 进位翻山 · 20 以内进位加 · 6×6</option>
-          <option value="L4" data-short="第 4 关">第 4 关 · 终极大冒险 · 20 以内加减 · 6×6</option>
+          <option value="L1" data-short="第 1 关">第 1 关 · 小小迷宫 · 8×8</option>
+          <option value="L2" data-short="第 2 关">第 2 关 · 小探险 · 12×12</option>
+          <option value="L3" data-short="第 3 关">第 3 关 · 大迷宫 · 16×16</option>
+          <option value="L4" data-short="第 4 关">第 4 关 · 迷宫挑战 · 20×20</option>
         </select>
         <p class="hint" id="level-hint"></p>
       </section>
@@ -98,13 +128,13 @@
           <input type="checkbox" id="f-nodup" /><span>迷宫不重复</span>
         </label>
         <label class="check">
-          <input type="checkbox" id="f-anspage" /><span>打印时附答案页（唯一路线图）</span>
+          <input type="checkbox" id="f-anspage" /><span>打印时附答案页（红线画出通路）</span>
         </label>
       </section>
 
       <section class="group">
         <label class="field"><span>练习纸标题（选填）</span>
-          <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：算式迷宫 · 第 1 关 起步小路" />
+          <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：儿童迷宫 · 第 1 关 小小迷宫" />
         </label>
         <p class="hint">设置自动保存。复制当前网址发给别人，打开就是同一张卷子。</p>
       </section>
@@ -118,17 +148,17 @@
 <script src="js/store.js?v=c6aac93871"></script>
 <script src="js/sheets-core.js?v=4a37e8f3d0"></script>
 <script src="js/vendor/qrcode.js?v=18ae399f81"></script>
-<script src="js/sheets.js?v=2dfb8c7e4d"></script>
+<script src="js/sheets.js?v=52367c3425"></script>
 <script src="js/shell.js?v=6972c54f86"></script>
 <script src="js/render.js?v=4756ada9e0"></script>
-<script src="js/migong-core.js?v=1c67314beb"></script>
-<script src="js/migong-settings.js?v=f54dbb38d3"></script>
-<script src="js/migong-render.js?v=5201f69dc2"></script>
-<script src="js/migong-main.js?v=2f150d6039"></script>
+<script src="js/migong-core.js?v=1faf9a1bd4"></script>
+<script src="js/migong-settings.js?v=b4fc33361f"></script>
+<script src="js/migong-render.js?v=a98a1980e3"></script>
+<script src="js/migong-main.js?v=8756fe81ff"></script>
 <script src="js/backup.js?v=f21895fa7e"></script>
-<script src="js/help.js?v=37517a8f12"></script>
-<script src="js/account.js?v=6a2811e40e"></script>
-<script src="js/account-ui.js?v=d856f0147e"></script>
+<script src="js/help.js?v=05def041de"></script>
+<script src="js/account.js?v=9790a36543"></script>
+<script src="js/account-ui.js?v=7eb723d81f"></script>
 <script src="js/sync-core.js?v=5f4122b899"></script>
 <script src="js/sync.js?v=13dd97b911"></script>
 <script>

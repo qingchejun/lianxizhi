@@ -1832,47 +1832,105 @@ select.input {
   }
 }
 
-/* ---------- 页脚：关于 / 隐私 / 意见反馈（没登录首页、「今天」底部共用） ---------- */
+/* ---------- 页脚（只在首页：没登录的首页、登录后的「今天」；tools/rail.py 生成） ---------- */
 
-.site-foot {
+.sf {
   border-top: 1px solid var(--card-edge);
   background: var(--panel-bg);
 }
 
-.site-foot-in {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 24px 40px;
+.sf-in,
+.sf-bot {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 28px 32px 36px;
+  padding-left: 32px;
+  padding-right: 32px;
+  box-sizing: border-box;
 }
 
-.site-foot h3 {
-  margin: 0 0 6px;
-  font-size: 13px;
-  font-weight: 600;
+.sf-in {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1fr;
+  gap: 28px 48px;
+  padding-top: 36px;
+  padding-bottom: 28px;
+}
+
+.sf-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font: 19px/1 var(--kai);
+  letter-spacing: 2px;
   color: var(--ink);
+  text-decoration: none;
 }
 
-.site-foot p {
-  margin: 0;
+.sf-brand:hover { color: var(--ink); }
+.sf-brand img { display: block; }
+
+.sf p {
+  margin: 0 0 8px;
   font-size: 13px;
-  line-height: 1.65;
+  line-height: 1.7;
   color: var(--ink-soft);
 }
 
-.site-foot a { /* 反馈邮箱：跟页脚文字同色，只加下划线表示能点 */
+.sf p a { /* 反馈邮箱：跟文字同色，只加下划线表示能点 */
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
+.sf h3 {
+  margin: 2px 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.sf-col a {
+  display: block;
+  padding: 5px 0;
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.sf-col a:hover { color: var(--blue); }
+.sf-col a.sf-sub { padding-left: 14px; }
+.sf-col a.sf-sub::before { content: "└ "; color: var(--ink-faint); }
+.sf-col small { margin-left: 6px; font-size: 11px; color: var(--ink-faint); }
+
+.sf-bot {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+.sf-bot { /* 分隔线只画在内容宽度里，跟上面几栏对齐 */
+  padding-top: 14px;
+  padding-bottom: calc(22px + env(safe-area-inset-bottom));
+  background: linear-gradient(var(--card-edge), var(--card-edge)) top / calc(100% - 64px) 1px no-repeat;
+}
+
 @media (max-width: 820px) {
-  .site-foot-in {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    padding: 24px 16px calc(32px + env(safe-area-inset-bottom));
+  .sf-in {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px 24px;
+    padding: 24px 16px 20px;
+  }
+  .sf-about { grid-column: 1 / -1; }
+  .sf-bot {
+    flex-direction: column;
+    gap: 4px;
+    padding-left: 16px;
+    padding-right: 16px;
+    background-size: calc(100% - 32px) 1px;
   }
 }
 
@@ -2126,11 +2184,3 @@ select.input {
   .lk-card { padding: 24px 18px 16px; }
 }
 
-/* 公开页面底部的全站链接（tools/rail.py 生成） */
-.sitelinks { margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.9; color: var(--ink-soft); }
-.sitelinks p { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 14px; }
-.sitelinks span { min-width: 2.5em; color: var(--ink-soft); }
-.sitelinks a { color: var(--ink-soft); text-decoration: none; }
-.sitelinks a:hover { color: var(--blue); }
-.site-foot .sitelinks { grid-column: 1 / -1; margin-top: 0; padding-top: 16px; }
-.site-foot .sitelinks a { text-decoration: none; }

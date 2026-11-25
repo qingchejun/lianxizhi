@@ -197,18 +197,15 @@
       for (var i = 0; i < 25; i++) cells += '<span' + (heart[i] === '1' ? ' class="on"' : '') + '></span>'
       return '<div class="pp-nono"><div class="pp-board pp-board-fill" style="--n:5">' + cells + '</div></div>'
     },
-    migong: function () {
-      var nums = [3, 7, 5, 9, 6, 2, 8, 4, 10, 1, 7, 5, 9, 3, 6, 8]
-      return '<div class="pp-board pp-maze" style="--n:4">' + nums.map(function (n, i) {
-        return '<span' + ([0, 4, 5, 9, 13, 14, 15].indexOf(i) >= 0 ? ' class="path"' : '') + '>' + n + '</span>'
-      }).join('') + '</div>'
+    migong: function () { /* 一张 5×5 小迷宫（左上进、右下出），跟纸上的样子一致 */
+      return '<svg class="pp-maze" viewBox="-0.2 -0.2 5.4 5.4" aria-hidden="true"><path d="M0 0v1M1 0h1M1 0v1M2 0h1M3 0h1M3 0v1M4 0h1M5 0v1M0 1v1M1 1v1M2 1v1M3 1v1M4 1v1M5 1v1M0 2v1M2 2h1M2 2v1M3 2h1M4 2v1M5 2v1M0 3v1M1 3h1M2 3v1M3 3v1M4 3v1M5 3v1M0 4h1M0 4v1M0 5h1M1 5h1M2 5h1M3 4v1M3 5h1M5 4v1" fill="none" stroke="#111" stroke-width="0.09" stroke-linecap="square"/></svg>'
     }
   }
   var GAME_TEXT = {
     huochai: { name: '火柴', note: '动一根火柴让算式变对', more: '换一关' },
     mima: { name: '密码', note: '看线索推出密码', more: '换一关' },
     zhizhi: { name: '数织', note: '涂完是一幅小图', more: '换一关' },
-    migong: { name: '迷宫', note: '算对了才走得通', more: '换一关' }
+    migong: { name: '迷宫', note: '拿笔从起点画到出口', more: '换一关' }
   }
   function gameCard(g) {
     var t = GAME_TEXT[g.key]
@@ -229,15 +226,11 @@
 
   var data = S.today.build(storage(), new Date())
   doc.getElementById('today-date').textContent = data.date + ' · 一页纸，五分钟，挑两三张就够'
-  /* 免费版（2026-11-24 放开注册）：只摆口算、数独两张；另外七个板块列在下面，点进去是上锁页（能补填邀请码） */
+  /* 免费版（2026-11-24 放开注册；11-25 游戏组全部开放）：摆口算和五个游戏；奥数、识字、拼音列在下面，点进去是上锁页（能补填邀请码） */
   var LOCKED_LIST = [
-    ['aoshu.html', '奥数', '一天一课，先看讲解视频再做题'],
-    ['shizi.html', '识字', '每日一卷，没认出的字自动复习'],
-    ['pinyin.html', '拼音', '易混字母、声调、拼读'],
-    ['huochai.html', '火柴', '动一根火柴让算式变对'],
-    ['mima.html', '密码', '看线索推出密码'],
-    ['migong.html', '迷宫', '算对了才走得通'],
-    ['zhizhi.html', '数织', '涂完是一幅小图']
+    ['/aoshu', '奥数', '一天一课，先看讲解视频再做题'],
+    ['/shizi', '识字', '每日一卷，没认出的字自动复习'],
+    ['/pinyin', '拼音', '易混字母、声调、拼读']
   ]
   function lockedShelf() {
     return '<section class="dk-shelf dk-locked" aria-label="完整版"><h2>完整版 · 填邀请码开通</h2><div class="dk-lock-list">' +
@@ -246,7 +239,7 @@
       }).join('') + '</div></section>'
   }
   doc.getElementById('today-cards').innerHTML = root.__SUMSUM_PLAN === 'free'
-    ? shelf('免费版可用', [kousuanCard(data.kousuan), shuduCard(data.shudu)]) + lockedShelf()
+    ? shelf('练习', [kousuanCard(data.kousuan)]) + shelf('游戏', [shuduCard(data.shudu)].concat(data.games.map(gameCard))) + lockedShelf()
     : shelf('练习', [aoshuCard(data.aoshu), shiziCard(data.shizi), kousuanCard(data.kousuan), pinyinCard(data.pinyin)]) +
       shelf('游戏', [shuduCard(data.shudu)].concat(data.games.map(gameCard)))
 

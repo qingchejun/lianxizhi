@@ -14,7 +14,7 @@ body.welcome {
   min-height: 100svh;
 }
 
-body.welcome .wl-top,
+body.welcome .sh,
 body.welcome .wl-main {
   width: 100%;
 }
@@ -23,47 +23,90 @@ body.welcome .wl-main {
   flex: 1 0 auto;
 }
 
-.wl-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px 32px;
+/* 页眉（没有侧栏的页面：首页、隐私说明、404；tools/rail.py 生成）。九个板块直接排开，一点就到 */
+.sh {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--card-edge);
+  background: var(--card);
 }
 
-.wl-brand {
+.sh-in {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  max-width: 1200px;
+  height: 64px;
+  margin: 0 auto;
+  padding: 0 32px;
+  box-sizing: border-box;
+}
+
+.sh-brand {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   font: 22px/1 var(--kai);
   letter-spacing: 3px;
   color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
 }
 
-.wl-brand:hover {
+.sh-brand:hover { color: var(--ink); }
+.sh-brand img { display: block; }
+
+.sh-nav {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.sh-group {
+  margin-right: 6px;
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+.sh-nav a {
+  padding: 6px 9px;
+  border-radius: 6px;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.sh-nav a:hover {
+  background: var(--field);
   color: var(--ink);
 }
 
-.wl-brand img {
-  display: block;
+.sh-nav i {
+  width: 1px;
+  height: 16px;
+  margin: 0 14px;
+  background: var(--card-edge);
 }
 
-.wl-invite {
-  font-size: 13px;
-  color: var(--ink-soft);
-}
-
-.wl-top-right {
-  display: inline-flex;
+.sh-act {
+  display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
+  white-space: nowrap;
 }
 
-.wl-login {
-  padding: 6px 16px;
+.sh-login {
+  padding: 6px 10px;
+  font-size: 14px;
+  color: var(--ink-2);
+  text-decoration: none;
 }
+
+.sh-login:hover { color: var(--ink); }
 
 .wl-main {
   max-width: 1200px;
@@ -720,25 +763,28 @@ body.welcome .wl-main {
 
 /* 手机：一栏。表单在最上面，样张变成一排小图 */
 @media (max-width: 820px) {
-  .wl-top {
-    padding: 14px 20px;
+  .sh-in {
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    height: auto;
+    padding: 10px 16px 6px;
   }
 
-  .wl-login {
-    display: none; /* 手机上登录表单就在最上面 */
+  .sh-nav { /* 手机：板块排成一行，左右滑 */
+    order: 3;
+    flex-basis: 100%;
+    overflow-x: auto;
   }
+
+  .sh-act { margin-left: auto; }
 
   .wl-slogan {
     font-size: 18px;
     letter-spacing: 2px;
   }
 
-  .wl-brand {
+  .sh-brand {
     font-size: 20px;
-  }
-
-  .wl-invite {
-    font-size: 12px;
   }
 
   .wl-main {

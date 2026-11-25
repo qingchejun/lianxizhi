@@ -53,8 +53,8 @@
     }
   }
 
-  var FREE_MODULES = ['今天', '口算', '数独']
-  /* 没登录（口算、数独免登录出题打印）：点这里直接打开登录框，不弹菜单 */
+  var FREE_MODULES = ['今天', '口算', '数独', '火柴', '密码', '迷宫', '数织']
+  /* 没登录（口算、数独和游戏组免登录出题打印）：点这里直接打开登录框，不弹菜单 */
   function guest() {
     var A0 = root.SumSum && root.SumSum.account
     var pre = root.__SUMSUM_ME
@@ -115,7 +115,7 @@
     if (sub) sub.textContent = out ? '登录后进度自动同步' : '练习进度自动同步'
     if (initial) initial.textContent = email ? email.charAt(0).toUpperCase() : ''
     user.title = email ? email + '（点开账号菜单）' : (out ? '登录或注册' : '账号')
-    /* 免费版和没登录的人：口算、数独以外的板块挂一把锁（只是提示；真正拦的是服务器，见 server/gate.js FREE_PAGES、FULL_BOARDS）。
+    /* 免费版和没登录的人：奥数、识字、拼音挂一把锁（只是提示；真正拦的是服务器，见 server/gate.js FREE_PAGES、FULL_BOARDS）。
        2026-11-25 起没登录的人点上锁的板块也能进去看这个板块是什么（原网址显示完整版说明页） */
     var plan = (state && state.plan) || root.__SUMSUM_PLAN || ''
     var free = !!email && plan === 'free' || !email && !out && root.__SUMSUM_PLAN === 'free'
