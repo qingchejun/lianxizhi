@@ -43,6 +43,9 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   check('内页文件自己的网址 301 到正式网址（只留一个网址）', ['/coushifa', '/coushifa.html', '/coushifa/'].every(function (p) {
     var r = d(p, '?x=1', false); return r.action === 'moved' && r.location === '/kousuan/coushifa?x=1'
   }) && d('/coushifa', '', true).action === 'moved')
+  check('破十法内页：没登录、免费版、完整版都放行，文件自己的网址 301', ['/kousuan/poshifa', '/kousuan/poshifa/'].every(function (p) {
+    return d(p, '', false).file === '/poshifa' && d(p, '', { ok: true, plan: 'free' }).file === '/poshifa' && d(p, '', true).file === '/poshifa'
+  }) && d('/poshifa.html', '?a=1', false).location === '/kousuan/poshifa?a=1')
   check('管理页同样拦', d('/admin.html', '', false).action === 'redirect')
   check('大小写绕不过（/CSS/ 不算静态目录）', d('/CSS/x.css', '', false).action === 'redirect' && d('/CSS/../kousuan.html', '', false).action !== 'pass')
   check('登录后一切放行', ['/', '/kousuan', '/admin.html', '/pinyin.html'].every(function (p) {
@@ -60,7 +63,7 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   htmls.forEach(function (f) {
     var base = f.replace(/\.html$/, '')
     if (base === 'welcome' || base === 'locked') return
-    if (base === 'coushifa') return /* 内页文件：自己的网址 301 到 /kousuan/coushifa，上面单独测 */
+    if (base === 'coushifa' || base === 'poshifa') return /* 内页文件：自己的网址 301 到 /kousuan/…，上面单独测 */
     ;['/' + base, '/' + base + '/', '/' + base + '.html', '/' + base + '.html/', '/' + base + '//'].forEach(function (p) {
       var a = d(p, '', free).action
       var want = FREE_OK.indexOf(base) >= 0 ? 'pass' : 'locked'

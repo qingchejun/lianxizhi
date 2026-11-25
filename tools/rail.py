@@ -80,7 +80,7 @@ PAGES = {
     'index.html': '今天', 'kousuan.html': '口算', 'aoshu.html': '奥数',
     'shizi.html': '识字', 'shudu.html': '数独', 'mima.html': '密码', 'zhizhi.html': '数织',
     'migong.html': '迷宫', 'huochai.html': '火柴', 'pinyin.html': '拼音', 'help.html': '使用说明', 'admin.html': '邀请码管理', 'mark.html': '打分',
-    'locked.html': '上锁', 'coushifa.html': '口算',
+    'locked.html': '上锁', 'coushifa.html': '口算', 'poshifa.html': '口算',
 }
 
 
@@ -149,7 +149,7 @@ HEAD_NAMES = [(g, [(n, h) for n, h, *_ in items if n != '今天']) for g, items 
 FOOT_NAME = {'口算': '口算题', '奥数': '奥数', '识字': '识字', '拼音': '拼音', '数独': '儿童数独',
              '火柴': '火柴棒等式题', '密码': '密码推理题', '迷宫': '儿童迷宫', '数织': '数织游戏'}
 FULL_ONLY = ['奥数', '识字', '拼音']  # 完整版才能出题，链接后面标小字
-INNER = {'口算': [('凑十法练习题', '/kousuan/coushifa')]}
+INNER = {'口算': [('凑十法练习题', '/kousuan/coushifa'), ('破十法练习题', '/kousuan/poshifa')]}
 
 
 def sitehead():

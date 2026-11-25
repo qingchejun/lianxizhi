@@ -129,8 +129,8 @@ with sync_playwright() as p:
     gp.goto(BASE + '/')
     hrefs = gp.eval_on_selector_all('#wl-what ~ * a, .wl-stars a, .wl-mods a', 'els => els.map(e => e.getAttribute("href"))')
     check('首页九个板块都能点', all(h in hrefs for h in ['/kousuan', '/aoshu', '/shizi', '/pinyin', '/shudu', '/huochai', '/mima', '/migong', '/zhizhi']), hrefs)
-    check('首页页脚列出全部板块和凑十法内页', gp.query_selector('footer.sf a[href="/kousuan/coushifa"]') is not None
-          and len(gp.query_selector_all('footer.sf .sf-col a')) == 13)
+    check('首页页脚列出全部板块和凑十法、破十法内页', gp.query_selector('footer.sf a[href="/kousuan/coushifa"]') is not None and gp.query_selector('footer.sf a[href="/kousuan/poshifa"]') is not None
+          and len(gp.query_selector_all('footer.sf .sf-col a')) == 14)
     head = gp.eval_on_selector_all('.sh-nav a', 'els => els.map(e => e.getAttribute("href"))')
     check('首页页眉排着九个板块', head == ['/kousuan', '/aoshu', '/shizi', '/pinyin', '/shudu', '/huochai', '/mima', '/migong', '/zhizhi'], head)
     check('首页第一屏没有登录表单，主按钮「直接出题」去口算页', gp.query_selector('.wl-hero form') is None
@@ -161,7 +161,7 @@ with sync_playwright() as p:
     gp.goto(BASE + '/kousuan/coushifa')
     check('凑十法页有面包屑：首页 › 口算', gp.eval_on_selector_all('.crumbs a', 'els => els.map(e => e.getAttribute("href"))') == ['/', '/kousuan'])
     gp.goto(BASE + '/kousuan')
-    check('口算页快速预设里有「凑十法练习题」，排在预设按钮后面', gp.evaluate("[...document.querySelectorAll('#preset-row .preset')].map(e => e.textContent).slice(-2).join('|')") == '四则入门|凑十法练习题' and gp.query_selector('#preset-row a.preset-link[href=\"/kousuan/coushifa\"]') is not None)
+    check('口算页快速预设里有「凑十法练习题」，排在预设按钮后面', gp.evaluate("[...document.querySelectorAll('#preset-row .preset')].map(e => e.textContent).slice(-3).join('|')") == '四则入门|凑十法练习题|破十法练习题' and gp.query_selector('#preset-row a.preset-link[href=\"/kousuan/coushifa\"]') is not None)
     check('板块页不放页眉页脚（侧栏就是导航），侧栏链接用正式网址', gp.query_selector('footer.sf, header.sh') is None
           and gp.get_attribute('.rail-link[data-module="数独"]', 'href') == '/shudu')
 

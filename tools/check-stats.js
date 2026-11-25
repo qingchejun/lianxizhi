@@ -7,7 +7,7 @@ let n = 0
 const ok = (name, fn) => { fn(); n++; console.log('✓ ' + name) }
 
 ok('正式网址的普通网页加统计', () => {
-  for (const p of ['/', '/kousuan', '/kousuan/coushifa', '/aoshu', '/privacy', '/help', '/404']) assert.equal(wantsStats('zhihebi.com', p), true, p)
+  for (const p of ['/', '/kousuan', '/kousuan/coushifa', '/kousuan/poshifa', '/aoshu', '/privacy', '/help', '/404']) assert.equal(wantsStats('zhihebi.com', p), true, p)
 })
 ok('扫码打分页、管理页不加', () => {
   for (const p of ['/mark', '/admin', '/mark/x']) assert.equal(wantsStats('zhihebi.com', p), false, p)

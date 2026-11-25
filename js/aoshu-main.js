@@ -26,7 +26,8 @@
      html 上 data-aoshu-fixed="知识点 id"，只出这一课；目录、综合复习收起；设置单独存，不动奥数页的。
      data-aoshu-preset：第一次打开时的题型勾选（JSON），之后按家长自己改的记着 */
   var FIXED = doc.documentElement.getAttribute('data-aoshu-fixed') || ''
-  if (FIXED) S.aoshu.settings.useKey('sumsum:aoshu:fixed:' + FIXED + ':v1')
+  /* 同一课可以开几个内页（凑十法、破十法都是第 02 课）：data-aoshu-key 区分各页自己的设置 */
+  if (FIXED) S.aoshu.settings.useKey('sumsum:aoshu:fixed:' + (doc.documentElement.getAttribute('data-aoshu-key') || FIXED) + ':v1')
   var firstFixed = FIXED && !S.aoshu.settings.hasStored()
   var settings = S.aoshu.settings.load()
   if (FIXED) {
