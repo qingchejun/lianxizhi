@@ -83,7 +83,8 @@ export async function exchangeCode(code, env, redirectUri, fetchImpl) {
       body: new URLSearchParams({
         code: code, client_id: env.GOOGLE_CLIENT_ID, client_secret: env.GOOGLE_CLIENT_SECRET,
         redirect_uri: redirectUri, grant_type: 'authorization_code'
-      }).toString()
+      }).toString(),
+      signal: AbortSignal.timeout(8000) /* 谷歌那边卡住也别让家长一直等 */
     })
     if (!r.ok) return null
     const d = await r.json()

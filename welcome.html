@@ -301,7 +301,7 @@
         banned: '账号已被停用。'
       }
       var gerr = params.get('gerr')
-      if (GERR[gerr]) {
+      if (gerr && Object.prototype.hasOwnProperty.call(GERR, gerr)) {
         history.replaceState(null, '', '/')
         return UI.open('login', GERR[gerr])
       }
