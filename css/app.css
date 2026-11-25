@@ -2076,8 +2076,39 @@ select.input {
   font-weight: 600;
   color: var(--ink);
 }
+/* 奥数页「全部课程」：一课一行，三列；有视频、免费的课后面标小字 */
+.board-intro > h3 {
+  margin: 18px 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.bi-lessons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 28px;
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.bi-lessons span {
+  display: inline-block;
+  min-width: 30px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.bi-lessons small {
+  margin-left: 6px;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.bi-lessons small.free { color: var(--blue); }
 @media (max-width: 760px) {
   .board-intro { padding: 24px 18px 16px; }
+  .bi-lessons { grid-template-columns: 1fr; }
   .bi-faq { grid-template-columns: 1fr; }
   .guest-note { flex-direction: column; align-items: stretch; }
 }

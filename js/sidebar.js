@@ -53,7 +53,7 @@
     }
   }
 
-  var FREE_MODULES = ['今天', '口算', '数独', '火柴', '密码', '迷宫', '数织']
+  var FREE_MODULES = ['今天', '口算', '奥数', '数独', '火柴', '密码', '迷宫', '数织']
   /* 没登录（口算、数独和游戏组免登录出题打印）：点这里直接打开登录框，不弹菜单 */
   function guest() {
     var A0 = root.SumSum && root.SumSum.account

@@ -144,7 +144,7 @@
         title: '注册',
         html: tabs('register') + '<form data-view="register" novalidate>' + EMAIL +
           field('密码', '<input class="input" type="password" name="password" required minlength="8" autocomplete="new-password">', '至少 8 位') +
-          field('邀请码（选填）', '<input class="input input-code" type="text" name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="K7M2-QF9W">', '有邀请码就填上，开通完整版；没有就空着，先免费用口算、数独和四个思维游戏') +
+          field('邀请码（选填）', '<input class="input input-code" type="text" name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="K7M2-QF9W">', '有邀请码就填上，开通完整版；没有就空着，先免费用口算、数独、四个思维游戏和奥数前三课') +
           (tsKey() ? '<div class="ts-box" data-ts></div>' : '') +
           MSG + '<button type="submit" class="btn btn-primary btn-lg auth-submit" data-act="submit">注册，发验证码到邮箱</button>' +
           '<p class="auth-help">注册即表示同意<a href="/privacy" target="_blank" rel="noopener">隐私说明</a>。</p></form>' + GOOGLE

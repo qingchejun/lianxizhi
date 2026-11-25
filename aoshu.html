@@ -7,11 +7,17 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=c5db7fcb1f" />
   <meta name="theme-color" content="#f6f7f9" />
   <script>try{if(localStorage.getItem("lianxizhi:rail")==="fold")document.documentElement.classList.add("rail-folded")}catch(e){}</script>
-  <title>奥数 · 纸和笔</title>
-  <meta name="description" content="给孩子打印 A4 练习纸 · 奥数：40 个思维知识点，每个有讲解页、练习题和分步解析。" />
-  <link rel="stylesheet" href="css/app.css?v=a6a884a731" />
+  <title>小学奥数思维题：每课讲解视频、练习题和分步解析，A4 打印 · 纸和笔</title>
+  <meta name="description" content="纸和笔奥数：54 课思维知识点，从数的大小比较、凑十法、移多补少到数字谜、找规律、等量代换，每课有讲解页、练习题和分步解析，31 课配 3～5 分钟讲解视频。前三课不用登录，直接出题、A4 打印。" />
+  <link rel="canonical" href="https://zhihebi.com/aoshu" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="纸和笔" />
+  <meta property="og:title" content="小学奥数思维题：每课讲解视频、练习题和分步解析，A4 打印 · 纸和笔" />
+  <meta property="og:description" content="纸和笔奥数：54 课思维知识点，从数的大小比较、凑十法、移多补少到数字谜、找规律、等量代换，每课有讲解页、练习题和分步解析，31 课配 3～5 分钟讲解视频。前三课不用登录，直接出题、A4 打印。" />
+  <meta property="og:url" content="https://zhihebi.com/aoshu" />
+  <link rel="stylesheet" href="css/app.css?v=38bf539148" />
   <link rel="stylesheet" href="css/sheet.css?v=a0e1aaaa2e" />
-  <link rel="stylesheet" href="css/aoshu.css?v=38cf632db6" />
+  <link rel="stylesheet" href="css/aoshu.css?v=fdb6d72a59" />
   <!-- 奥数页固定 A4 纵向（文字题横向排版无意义），不像口算页那样动态切换 -->
   <style>@page { size: A4 portrait; margin: 15mm; }</style>
 </head>
@@ -44,7 +50,7 @@
     </div>
   </div>
 </nav>
-<script src="js/sidebar.js?v=ec2f085f3e" defer></script>
+<script src="js/sidebar.js?v=e13fe80aa9" defer></script>
 <!-- /rail -->
 
 <!-- ======== 知识点目录 ======== -->
@@ -68,7 +74,7 @@
 
 <div class="work">
   <header class="work-head">
-    <h1 class="work-title" id="lesson-title">奥数</h1>
+    <h1 class="work-title" id="lesson-title">小学奥数思维题</h1>
     <button type="button" id="btn-learned" class="btn btn-sm learned-btn"><span class="dot" aria-hidden="true"></span><span class="txt">标记为已学</span></button>
     <span class="work-grow"></span>
     <span class="work-sum" id="work-sum"></span>
@@ -81,7 +87,39 @@
     <!-- ======== 练习纸预览（所见即所得） ======== -->
     <main class="preview" id="preview-wrap">
       <div class="notice" id="notice" hidden></div>
+      <div class="guest-note" data-guest-note hidden>
+        <p><b>前三课不用登录就能出题、打印，第 03 课的讲解视频也能直接看。</b>后面的课属于完整版，填邀请码开通；登录后纸角会印二维码，孩子做完扫一下打分，没掌握的课进「待复习」。</p>
+        <button type="button" class="btn" data-login>登录 / 注册</button>
+      </div>
       <div id="preview"></div>
+      <article class="board-intro" aria-labelledby="bi-what">
+        <h2 id="bi-what">一课一个思维方法：先讲，再练，再解析</h2>
+        <p>纸和笔奥数按一节一节的课来排，一共 54 课，从一年级上册就能开始。每课打印出来是一沓 A4：讲解页（这类题是什么、怎么想、例题示范、一句口诀）、练习题（默认 5 道，排得下就一页）、解析页（每道题分步写清楚，家长照着讲）。31 课配了 3～5 分钟的讲解视频，适合先让孩子看一遍，再拿笔做题。</p>
+        <p>前三课「数的大小比较」「凑十、平十和破十」「移多补少（基础篇）」不用登录，打开就能出题、打印，第 03 课的讲解视频也公开。后面的课属于完整版，左边目录里挂着锁。</p>
+
+        <h2>家长怎么用：一天一课</h2>
+        <p><b>先看讲解。</b>有视频的课，放大播放给孩子看一遍；没视频的课，家长照着讲解页讲两分钟，例题一起做。</p>
+        <p><b>再做练习。</b>点「打印」，孩子在纸上做。点「重新生成」就换一批题，不怕做重复。</p>
+        <p><b>最后对解析。</b>解析页每题都有「想一想、第 1 步、第 2 步、验一验」，错在哪一步一眼看得出来。登录后扫纸角二维码点出错题，没掌握的课会进「待复习」。</p>
+        <p>学过的课点圆点标成「已学」；完整版还能出综合复习卷，把学过的几课混在一张纸上。</p>
+
+        <h2>全部课程</h2>
+        <h3>第一阶段 · 立足算理（01～20 课）</h3>
+        <ol class="bi-lessons"><li><span>01</span>数的大小比较<small class="free">免费</small></li><li><span>02</span>凑十、平十和破十<small class="free">免费</small></li><li><span>03</span>移多补少（基础篇）<small>有视频</small><small class="free">免费</small></li><li><span>04</span>移多补少（提高篇）<small>有视频</small></li><li><span>05</span>巧填算符</li><li><span>06</span>数字谜问题（基础篇）<small>有视频</small></li><li><span>07</span>数字谜问题（提高篇）<small>有视频</small></li><li><span>08</span>数列找规律<small>有视频</small></li><li><span>09</span>图形找规律<small>有视频</small></li><li><span>10</span>等量代换<small>有视频</small></li><li><span>11</span>重叠问题<small>有视频</small></li><li><span>12</span>枚举法初步<small>有视频</small></li><li><span>13</span>分堆与枚举<small>有视频</small></li><li><span>14</span>空瓶换水<small>有视频</small></li><li><span>15</span>火柴棒游戏<small>有视频</small></li><li><span>16</span>间隔问题<small>有视频</small></li><li><span>17</span>排队问题<small>有视频</small></li><li><span>18</span>趣味陷阱题<small>有视频</small></li><li><span>19</span>合理分组问题<small>有视频</small></li><li><span>20</span>和不变与差不变<small>有视频</small></li></ol>
+        <h3>第一阶段补充（B01～B14 课）</h3>
+        <ol class="bi-lessons"><li><span>B01</span>推理比较：比长短<small>有视频</small></li><li><span>B02</span>推理比较：比轻重<small>有视频</small></li><li><span>B03</span>认识钟表：整时和半时<small>有视频</small></li><li><span>B04</span>认识钟表：几时几分<small>有视频</small></li><li><span>B05</span>轴对称图形<small>有视频</small></li><li><span>B06</span>镜子里的对称<small>有视频</small></li><li><span>B07</span>叠加覆盖：叠放顺序<small>有视频</small></li><li><span>B08</span>叠加覆盖：翻转问题<small>有视频</small></li><li><span>B09</span>蜗牛爬井<small>有视频</small></li><li><span>B10</span>间隔问题（补充）<small>有视频</small></li><li><span>B11</span>线角初步：认识线<small>有视频</small></li><li><span>B12</span>线角初步：认识角<small>有视频</small></li><li><span>B13</span>平面图形：认识三角形<small>有视频</small></li><li><span>B14</span>平面图形：认识四边形<small>有视频</small></li></ol>
+        <h3>第二阶段 · 思维启蒙（21～40 课）</h3>
+        <ol class="bi-lessons"><li><span>21</span>加减法文字谜</li><li><span>22</span>加减法添去括号（一）</li><li><span>23</span>加减法添去括号（二）</li><li><span>24</span>乘法的意义与性质</li><li><span>25</span>除法的三层含义</li><li><span>26</span>四则混合运算</li><li><span>27</span>余数的应用（一）</li><li><span>28</span>余数的应用（二）</li><li><span>29</span>化加为乘</li><li><span>30</span>奇数与偶数</li><li><span>31</span>一笔作画问题</li><li><span>32</span>图形计数初步</li><li><span>33</span>还原问题初步</li><li><span>34</span>统筹优化初步</li><li><span>35</span>数阵图初步</li><li><span>36</span>错中求解问题</li><li><span>37</span>线段图应用（一）</li><li><span>38</span>线段图应用（二）</li><li><span>39</span>排序推理</li><li><span>40</span>列表推理</li></ol>
+
+        <h2>常见问题</h2>
+        <div class="bi-faq">
+          <div><h3>要登录吗？</h3><p>前三课出题、打印都不用登录。登录后纸角会印一个二维码，孩子做完扫一下打分；后面的课要完整版账号，注册时填邀请码开通。</p></div>
+          <div><h3>适合几年级？</h3><p>第一阶段和补充课对应一年级，从「数的大小比较」「凑十法」起步；第二阶段（21 课以后）讲乘除法、余数、线段图，适合一年级下学期到二年级。每课右边都能选难度。</p></div>
+          <div><h3>跟学校的数学课是什么关系？</h3><p>不重复课本，讲的是课本例题背后的思路：同一类题怎么想、怎么画、怎么验。前几课和课本贴得最近，凑十法、破十法这样的课也单独做了练习页：<a href="/kousuan/coushifa">凑十法练习题</a>、<a href="/kousuan/poshifa">破十法练习题</a>。</p></div>
+          <div><h3>视频能下载、能打印吗？</h3><p>视频只在屏幕上播放，不打印、不提供下载。纸上只有题和解析，孩子做题时不用盯屏幕。</p></div>
+          <div><h3>还有别的吗？</h3><p>每天的计算练习去<a href="/kousuan">口算题生成器</a>，思维游戏有<a href="/shudu">儿童数独</a>、<a href="/huochai">火柴棒等式题</a>、<a href="/mima">密码推理题</a>，<a href="/">回首页</a>看全部。</p></div>
+        </div>
+      </article>
     </main>
 
     <!-- ======== 设置 ======== -->
@@ -121,7 +159,7 @@
         </label>
       </section>
 
-      <section class="group">
+      <section class="group" data-review-group>
         <h2 class="group-title">综合复习</h2>
         <label class="check">
           <input type="checkbox" id="f-review" /><span>出一张综合复习卷（从选的几课里混合出题）</span>
@@ -158,7 +196,7 @@
 <script src="js/sheets.js?v=52367c3425"></script>
 <script src="js/shell.js?v=6972c54f86"></script>
 <script src="js/render.js?v=4756ada9e0"></script>
-<script src="js/aoshu-topics.js?v=d76f77f289"></script>
+<script src="js/aoshu-topics.js?v=1ee83bef9f"></script>
 <script src="js/aoshu-videos.js?v=ab3a78c7cc"></script>
 <script src="js/aoshu-topic-daxiao.js?v=71b1833378"></script>
 <script src="js/aoshu-topic-coushi.js?v=1881bc1b0b"></script>
@@ -216,11 +254,11 @@
 <script src="js/aoshu-settings.js?v=916a53d5c1"></script>
 <script src="js/aoshu-batch.js?v=dca20ba065"></script>
 <script src="js/aoshu-render.js?v=5af5c202d4"></script>
-<script src="js/aoshu-main.js?v=a60d196199"></script>
+<script src="js/aoshu-main.js?v=2210eb0a24"></script>
 <script src="js/backup.js?v=f21895fa7e"></script>
-<script src="js/help.js?v=baebb51945"></script>
+<script src="js/help.js?v=8e815ad950"></script>
 <script src="js/account.js?v=9790a36543"></script>
-<script src="js/account-ui.js?v=5378640253"></script>
+<script src="js/account-ui.js?v=f7ca87a050"></script>
 <script src="js/sync-core.js?v=5f4122b899"></script>
 <script src="js/sync.js?v=13dd97b911"></script>
 <script>

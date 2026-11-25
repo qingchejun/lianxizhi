@@ -148,7 +148,7 @@ for page, current in PAGES.items():
 HEAD_NAMES = [(g, [(n, h) for n, h, *_ in items if n != '今天']) for g, items in GROUPS]
 FOOT_NAME = {'口算': '口算题', '奥数': '奥数', '识字': '识字', '拼音': '拼音', '数独': '儿童数独',
              '火柴': '火柴棒等式题', '密码': '密码推理题', '迷宫': '儿童迷宫', '数织': '数织游戏'}
-FULL_ONLY = ['奥数', '识字', '拼音']  # 完整版才能出题，链接后面标小字
+FULL_ONLY = ['识字', '拼音']  # 奥数 11-25 起前三课免费，不再标  # 完整版才能出题，链接后面标小字
 INNER = {'口算': [('凑十法练习题', '/kousuan/coushifa'), ('破十法练习题', '/kousuan/poshifa')]}
 
 

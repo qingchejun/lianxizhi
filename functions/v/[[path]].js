@@ -5,6 +5,8 @@ import { requireSession } from '../../server/session.js'
    并放进 Cloudflare 节点缓存：同一个节点第二个人看就不用再回 R2，国内播放不变慢。
    封面图（.jpg）仍走 video.zhihebi.com 公开地址（首页要用），这里只管 mp4。 */
 const OK_PATH = /^\/v\/(aoshu\/[a-z0-9_-]{1,64}\.mp4)$/
+/* 公开的课的视频（2026-11-25 奥数前三课公开，只有第 03 课有视频；js/aoshu-topics.js FREE） */
+export const FREE_VIDEOS = ['aoshu/yiduobushao.mp4']
 const EDGE_TTL = 'public, max-age=2592000'
 const BROWSER_TTL = 'private, max-age=86400'
 
@@ -30,7 +32,7 @@ export async function onRequestGet(context) {
   const url = new URL(context.request.url)
   const m = url.pathname.match(OK_PATH)
   if (!m) return deny(404, 'Not found')
-  if (!(await fullUser(context))) return deny(403, '奥数讲解视频属于完整版，登录完整版账号后再看。')
+  if (!FREE_VIDEOS.includes(m[1]) && !(await fullUser(context))) return deny(403, '奥数讲解视频属于完整版，登录完整版账号后再看。')
   const bucket = context.env.VIDEO
   if (!bucket) return deny(503, '视频暂时打不开，稍后再试。')
 

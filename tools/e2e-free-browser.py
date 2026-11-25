@@ -89,19 +89,19 @@ with sync_playwright() as p:
     check('今天页：免费版摆口算和五个游戏', all(k in shelves for k in ['口算', '数独', '火柴', '密码', '迷宫', '数织']), shelves[:300])
     check('今天页：奥数、识字、拼音列在「完整版」下面', page.eval_on_selector_all('.dk-lock-list a b', 'els => els.map(e => e.textContent)') == ['奥数', '识字', '拼音'])
     locks = page.eval_on_selector_all('.rail-link.is-locked', 'els => els.map(e => e.dataset.module)')
-    check('侧栏三个完整版板块挂锁', sorted(locks) == sorted(['奥数', '识字', '拼音']), locks)
+    check('侧栏两个完整版板块挂锁（奥数 11-25 起前三课免费，不挂）', sorted(locks) == sorted(['识字', '拼音']), locks)
     for path in ['/huochai', '/mima', '/migong', '/zhizhi']:
         page.goto(BASE + path)
         page.wait_for_selector('#preview .sheet', timeout=15000)
         check('免费版打开 ' + path + ' → 直接能出题', page.query_selector('.lk-card') is None)
 
     # ---------- 上锁页 ----------
-    for path in ['/aoshu', '/aoshu/', '/aoshu.html', '/shizi', '/admin']:
+    for path in ['/shizi', '/shizi/', '/shizi.html', '/pinyin', '/admin']:  # 奥数 11-25 起前三课公开，见 e2e-aoshu-free-browser.py
         resp = page.goto(BASE + path)
         ok = page.query_selector('.lk-card') is not None and page.query_selector('[data-redeem]') is not None
         check('免费版打开 ' + path + ' → 上锁页、能填邀请码', ok and resp.status == 200, [resp.status, page.url])
-    page.goto(BASE + '/aoshu')
-    check('上锁页按网址显示板块名', '奥数' in page.inner_text('#lk-name'))
+    page.goto(BASE + '/shizi')
+    check('上锁页按网址显示板块名', '识字' in page.inner_text('#lk-name'))
     check('上锁页不收录', 'noindex' in (page.evaluate("fetch(location.href).then(r => r.headers.get('X-Robots-Tag'))") or ''))
     v = video(page)
     check('免费版看奥数视频 → 403', v['status'] == 403, v)
@@ -119,7 +119,7 @@ with sync_playwright() as p:
     page.keyboard.press('Escape')
 
     # ---------- 补填邀请码 ----------
-    page.goto(BASE + '/aoshu')
+    page.goto(BASE + '/shizi')
     page.fill('.lk-card [data-redeem] input[name="invite"]', 'ABCD-2345')
     page.click('.lk-card [data-redeem] button[type="submit"]')
     page.wait_for_selector('.lk-card [data-redeem-msg]:not([hidden])', timeout=10000)
@@ -127,9 +127,9 @@ with sync_playwright() as p:
     code = make_invite()
     page.fill('.lk-card [data-redeem] input[name="invite"]', code)
     page.click('.lk-card [data-redeem] button[type="submit"]')
-    page.wait_for_selector('.topic-nav, #preview .sheet', timeout=30000)
+    page.wait_for_selector('.lk-card', state='detached', timeout=30000)
     close_help(page)
-    check('补填好码 → 刷新后奥数页能用', page.query_selector('.lk-card') is None and '/aoshu' in page.url)
+    check('补填好码 → 刷新后识字页能用', page.query_selector('.lk-card') is None and '/shizi' in page.url)
     check('侧栏的锁没了', not page.query_selector_all('.rail-link.is-locked'))
     v = video(page)
     check('完整版能看视频（整段 200）', v['status'] == 200 and v['len'] > 1000 and v['type'] == 'video/mp4', v)

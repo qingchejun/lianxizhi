@@ -36,6 +36,32 @@
     settings = S.aoshu.settings.sanitize(Object.assign({}, settings, preset, { topic: FIXED, review: false }))
   }
 
+  /* 前三课公开（2026-11-25 站长定）：没登录、免费版只能出公开的几课，后面的课在目录里挂锁，点了说明怎么开通；
+     综合复习卷要混好几课，也只给完整版。服务器只认 /aoshu 整页放行，锁哪几课由这里管（视频另由 functions/v 把关） */
+  var LOGGED_IN = !!root.__SUMSUM_PLAN
+  var FULL = root.__SUMSUM_PLAN === 'full'
+  var FREE_IDS = S.aoshu.FREE || []
+  function isOpen(id) {
+    return FULL || !!FIXED || FREE_IDS.indexOf(id) >= 0
+  }
+  var lockNote = ''
+  if (!isOpen(settings.topic)) {
+    var asked = S.aoshu.OUTLINE.filter(function (o) { return o.id === settings.topic })[0]
+    if (asked && new URLSearchParams(root.location.search).has('topic')) {
+      lockNote = '第 ' + asked.no + ' 课「' + asked.name + '」属于完整版，先给你出第 01 课。前三课不用登录就能用；填邀请码开通完整版后，全部课都能用。'
+    }
+    settings = S.aoshu.settings.sanitize(Object.assign({}, settings, { topic: FREE_IDS[0], title: '' }))
+  }
+  if (!FULL && settings.review) settings = S.aoshu.settings.sanitize(Object.assign({}, settings, { review: false }))
+  var reviewGroup = doc.querySelector('[data-review-group]')
+  if (!FULL && !FIXED && reviewGroup) reviewGroup.style.display = 'none'
+
+  function askFull(id) {
+    var o = S.aoshu.OUTLINE.filter(function (x) { return x.id === id })[0]
+    var hint = '第 ' + o.no + ' 课「' + o.name + '」属于完整版：前三课免费，后面的课要填邀请码开通完整版。'
+    if (S.accountUI && S.accountUI.open) S.accountUI.open('register', hint)
+  }
+
   /*
    * 「已学」标记：与设置分开存（不进 URL），value 是知识点 id 数组。
    * 用户可能跳着学，交互是清单式：目录每一行自带圆点，点圆点直接切换
@@ -92,6 +118,8 @@
   /* 点课名 = 去上这一课：复习卷开着也直接退出（勾的混哪几课保留），哪怕点的就是原来那一课 */
   function selectTopic(id) {
     if (FIXED && id !== FIXED) return
+    if (!isOpen(id)) return askFull(id)
+    lockNote = ''
     if (id === settings.topic && !settings.review) return
     settings = S.aoshu.settings.sanitize(
       Object.assign({}, settings, { topic: id, title: '', review: false })
@@ -116,6 +144,7 @@
   var CAM_SVG =
     '<svg class="cam" viewBox="0 0 24 24" aria-label="有讲解视频"><rect x="3" y="6" width="13" height="12" rx="2"/>' +
     '<path d="M16 10l5-3v10l-5-3z"/></svg>'
+  var LOCK_SVG = '<svg class="lock" viewBox="0 0 24 24" aria-label="完整版"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>'
   var TICK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>'
 
   /* 目录文字全来自大纲常量（OUTLINE），没有用户输入，可以直接拼 HTML */
@@ -126,13 +155,14 @@
     }).map(function (o) {
       var done = learned.has(o.id)
       var ready = !!S.aoshu.topics[o.id]
-      var cls = 'tp' + (done ? ' done' : '') + (ready && o.id === settings.topic && !settings.review ? ' cur' : '')
-      var dot = ready
+      var shut = ready && !isOpen(o.id)
+      var cls = 'tp' + (done ? ' done' : '') + (shut ? ' shut' : '') + (ready && o.id === settings.topic && !settings.review ? ' cur' : '')
+      var dot = ready && !shut
         ? '<button type="button" class="tp-dot" data-learn="' + o.id + '" title="' +
           (done ? '取消「已学」标记' : '标为已学') + '" aria-pressed="' + done + '">' + TICK_SVG + '</button>'
         : '<span class="tp-dot" aria-hidden="true"></span>'
       var name = '<span class="no">' + o.no + '</span><span class="nm">' + o.name + '</span>' +
-        (S.aoshuVideos.of(o.id) ? CAM_SVG : '')
+        (S.aoshuVideos.of(o.id) ? CAM_SVG : '') + (shut ? LOCK_SVG : '')
       var btn = ready
         ? '<button type="button" class="tp-name" data-pick="' + o.id + '">' + name + '</button>'
         : '<button type="button" class="tp-name" disabled title="还没做好，敬请期待">' + name + '</button>'
@@ -179,7 +209,7 @@
   function renderNextHint() {
     var btn = $('btn-next')
     var next = S.aoshu.OUTLINE.filter(function (o) {
-      return S.aoshu.topics[o.id] && !learned.has(o.id)
+      return S.aoshu.topics[o.id] && isOpen(o.id) && !learned.has(o.id)
     })[0]
     if (!next || (next.id === settings.topic && !settings.review)) {
       btn.hidden = true
@@ -397,12 +427,14 @@
   /* 顶栏：第几课叫什么、这一沓纸由哪几部分组成 */
   function paintHead(s, pages) {
     var o = outlineOf(s.topic)
-    if (!FIXED) $('lesson-title').textContent = s.review ? '综合复习卷' : '第 ' + o.no + ' 课 · ' + o.name /* 单课内页的 H1 写死在网页里（给搜索引擎） */
+    /* 单课内页、没登录时（搜索引擎看到的就是这样）H1 用网页里写死的；课名放进顶栏小字 */
+    var lessonName = s.review ? '综合复习卷' : '第 ' + o.no + ' 课 · ' + o.name
+    if (!FIXED && LOGGED_IN) $('lesson-title').textContent = lessonName
     var parts = []
     if (pages.lesson) parts.push('讲解 ' + pages.lesson + ' 页')
     if (pages.practice) parts.push('练习 ' + pages.practice + ' 页')
     if (pages.answer) parts.push('解析 ' + pages.answer + ' 页')
-    S.shell.summary([parts.join(' + ')])
+    S.shell.summary(!FIXED && !LOGGED_IN ? [lessonName, parts.join(' + ')] : [parts.join(' + ')])
     paintLearnedBtn()
   }
 
@@ -550,12 +582,16 @@
           ' 道（少于设定的 ' + settings.count +
           ' 道）。可以减少题量、提高难度档，或多勾选几种题型。'
       notice.hidden = false
+    } else if (lockNote) {
+      notice.textContent = lockNote
+      notice.hidden = false
     } else {
       notice.hidden = true
     }
   }
 
   function onFormChange() {
+    lockNote = ''
     settings = readForm()
     refresh()
   }

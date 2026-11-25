@@ -115,14 +115,14 @@ with sync_playwright() as p:
     check('点侧栏「登录 / 注册」直接弹登录框', gp.is_visible('dialog.account-dialog[open] form[data-view="login"]'))
 
     # ---------- 其余板块（完整版）：原网址显示完整版说明页（2026-11-25 起不再拦回首页） ----------
-    for path in ['/aoshu', '/shizi', '/pinyin']:
+    for path in ['/shizi', '/pinyin']:  # 奥数 11-25 起前三课公开
         resp = gp.goto(BASE + path)
         gp.wait_for_selector('.lk-card', timeout=10000)
         check('没登录打开 ' + path + ' → 原网址显示完整版说明、有登录按钮、不收录',
               path in gp.url and '/?next=' not in gp.url and gp.is_visible('[data-lk-guest] [data-login]')
               and not gp.is_visible('[data-redeem]') and resp.headers.get('x-robots-tag') == 'noindex', gp.url)
     locks = gp.eval_on_selector_all('.rail-link.is-locked', 'els => els.map(e => e.dataset.module)')
-    check('没登录时侧栏给三个完整版板块挂锁', locks == ['奥数', '识字', '拼音'], locks)
+    check('没登录时侧栏给两个完整版板块挂锁', locks == ['识字', '拼音'], locks)
     gp.click('[data-lk-guest] [data-login]')
     gp.wait_for_selector('dialog[open] form[data-view="login"]', timeout=5000)
     check('完整版说明页点「登录 / 注册」→ 弹出登录框', gp.is_visible('dialog[open] form[data-view="login"]'))

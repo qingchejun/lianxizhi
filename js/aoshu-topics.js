@@ -591,6 +591,9 @@
   root.SumSum = root.SumSum || {}
   root.SumSum.aoshu = root.SumSum.aoshu || {}
   root.SumSum.aoshu.OUTLINE = OUTLINE
+  /* 免费公开的课（2026-11-25 站长定前三课）：没登录、免费版都能出题打印，第 03 课的讲解视频也公开。
+     服务器那边各有一份：server/gate.js 放行 /aoshu，functions/v 放行这几课的视频 */
+  root.SumSum.aoshu.FREE = ['daxiao', 'coushi', 'yiduobushao']
   root.SumSum.aoshu.DIFFICULTY = DIFFICULTY
   /* 公共工具，供各知识点文件（js/aoshu-topic-*.js）复用 */
   root.SumSum.aoshu.util = {

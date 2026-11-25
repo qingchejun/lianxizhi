@@ -673,6 +673,21 @@
   stroke-linejoin: round;
 }
 
+/* 没登录、免费版：前三课以外的课挂锁（js/aoshu-main.js isOpen），点了弹出开通说明 */
+.tp.shut .tp-name {
+  color: var(--ink-soft);
+}
+
+.tp-name .lock {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: var(--ink-faint);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
 .topic-legend {
   display: flex;
   align-items: center;
