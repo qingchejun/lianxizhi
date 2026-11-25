@@ -445,6 +445,40 @@ import('../server/auth-core.js').then(async function (A) {
   for (var zi = 0; zi < 40; zi++) await A.openSession(Z, 'uz', T + zi * 1000)
   check('反复登录：结束的记录最多留 20 条', Z._sessions.filter(function (s) { return s.ended_at }).length <= 20 && Z._sessions.filter(function (s) { return !s.ended_at }).length === 3, Z._sessions.length)
 
+  /* ---- 谷歌登录（googleLogin） ---- */
+  var G = memRepo()
+  var g1 = await A.googleLogin(G, T, { email: 'New@Gmail.com' })
+  var gu = G.users[0]
+  check('谷歌登录：没有账号 → 新建免费版、已验证、发登录态', g1.status === 200 && G.users.length === 1 && gu.email === 'new@gmail.com' && gu.verified === 1 && gu.plan === 'free' && g1.session.uid === gu.id, g1)
+  var g2 = await A.googleLogin(G, T + 1000, { email: 'new@gmail.com' })
+  check('谷歌登录：同一个邮箱再来 → 还是那个账号，不重复建', g2.status === 200 && G.users.length === 1 && g2.session.uid === gu.id)
+  check('谷歌登录新建的账号：密码随机，猜不出', gu.pw_hash.length === 64 && (await A.login(G, T + 2000, { email: 'new@gmail.com', password: 'a'.repeat(64) })).status === 401)
+
+  var H = memRepo()
+  var hpw = 'b'.repeat(64)
+  await A.register(H, T, { email: 'old@test.local', password: hpw })
+  await H.setVerified(H.users[0].id)
+  H.users[0].plan = 'full'
+  var h1 = await A.googleLogin(H, T + 1000, { email: 'OLD@test.local' })
+  check('谷歌登录：邮箱已有账号 → 登进原账号，版本、密码都不动', h1.status === 200 && h1.session.uid === H.users[0].id && h1.body.plan === 'full' && H.users.length === 1)
+  check('原来的密码照样能登录', (await A.login(H, T + 2000, { email: 'old@test.local', password: hpw })).status === 200)
+
+  var J = memRepo()
+  var jpw = 'c'.repeat(64)
+  await A.register(J, T, { email: 'victim@gmail.com', password: jpw }) /* 抢注：没验证过邮箱 */
+  var jv = J.users[0].pwver
+  await A.openSession(J, J.users[0].id, T + 10)
+  var j1 = await A.googleLogin(J, T + 1000, { email: 'victim@gmail.com' })
+  check('谷歌登录：没验证过的账号 → 算验证过，同时换掉密码、作废旧登录', j1.status === 200 && J.users[0].verified === 1 && J.users[0].pwver === jv + 1 && j1.session.pwver === jv + 1
+        && J._sessions.every(function (x) { return x.ended_at }))
+  check('抢注的人用自己设的密码登不进去了', (await A.login(J, T + 2000, { email: 'victim@gmail.com', password: jpw })).status === 401)
+
+  var K = memRepo()
+  await A.register(K, T, { email: 'ban@gmail.com', password: jpw })
+  K.users[0].banned = 1
+  check('谷歌登录：停用的账号 → 403', (await A.googleLogin(K, T, { email: 'ban@gmail.com' })).status === 403)
+  check('谷歌登录：没有邮箱 → 422', (await A.googleLogin(K, T, {})).status === 422)
+
   console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ auth-core 注册/验证码全部通过')
   process.exit(bad ? 1 : 0)
 }).catch(function (e) { console.error(e); process.exit(1) })

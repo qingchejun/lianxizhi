@@ -1635,6 +1635,28 @@ select.input {
   background: var(--green-tint);
 }
 
+/* 谷歌登录（登录、注册页签底下）：白底描边，跟邮箱登录的蓝色主按钮分开主次 */
+.auth-or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 12px;
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+.auth-or::before, .auth-or::after { content: ""; flex: 1; height: 1px; background: var(--card-edge); }
+.auth-google {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  color: var(--ink);
+  text-decoration: none;
+  background: #fff;
+  border: 1px solid var(--line-strong);
+}
+.auth-google:hover { border-color: var(--ink-faint); background: #fafbfc; }
+
 .auth-help {
   margin: -2px 0 0;
   font-size: 13px;

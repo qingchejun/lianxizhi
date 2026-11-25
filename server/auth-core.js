@@ -322,6 +322,35 @@ export async function login(repo, now, body, ctx) {
   return { status: 200, body: { ok: true, admin: !!user.admin, plan: planOf(user) }, session: { uid: user.id, pwver: user.pwver } }
 }
 
+/* ---- 谷歌登录（2026-11-25）：profile 是 server/google.js 从谷歌换回、已核对过的 {email}（谷歌确认过邮箱属于这个人）。
+   1. 邮箱已有账号 → 直接登进这个账号；
+   2. 账号还没验证过邮箱（可能是别人抢先用这个邮箱注册、知道密码）→ 换掉密码、作废旧登录，再算验证过，
+      免得抢注的人拿着自己设的密码登进来；
+   3. 没有账号 → 新建免费版账号，密码设成谁也猜不出的随机值（想用密码登录，在登录框点「忘记密码」设一个）。 ---- */
+export async function googleLogin(repo, now, profile) {
+  const email = normEmail(profile && profile.email)
+  if (!validEmail(email)) return { status: 422, body: { ok: false, error: '谷歌没有给出可用的邮箱。' } }
+  let user = await repo.userByEmail(email)
+  if (user && user.banned) return { status: 403, body: { ok: false, error: '账号已被停用。' } }
+  if (user && !user.verified) {
+    const salt = randomHex(16)
+    await repo.updateUser(user.id, { pw_salt: salt, pw_hash: await sha256hex(salt + randomHex(32)), pwver: user.pwver + 1, verified: 1 })
+    await repo.sessionsEndAll(user.id, now, 'pw')
+    if (user.invite_id) await repo.inviteActivate(user.invite_id, now)
+    user = await repo.userById(user.id)
+  }
+  if (!user) {
+    const salt = randomHex(16)
+    await repo.insertUser({
+      id: crypto.randomUUID(), email: email,
+      pw_hash: await sha256hex(salt + randomHex(32)), pw_salt: salt,
+      pwver: 1, verified: 1, created_at: now, invite_id: null, plan: PLAN_FREE
+    })
+    user = await repo.userByEmail(email)
+  }
+  return { status: 200, body: { ok: true, admin: !!user.admin, plan: planOf(user) }, session: { uid: user.id, pwver: user.pwver } }
+}
+
 /* ---- 找回密码：发 6 位验证码到邮箱（2026-11 改版：不再发链接，手机微信里不用跳浏览器）。
    无论邮箱是否存在都 200（spec：不泄露注册情况） ---- */
 export async function forgot(repo, now, body, ctx) {

@@ -111,6 +111,25 @@
     return '<div class="auth-head"><h2>' + title + '</h2>' + (sub ? '<p>' + sub + '</p>' : '') + '</div>'
   }
 
+  /* 谷歌登录（2026-11-25，server/google.js）：登录、注册页签底下各放一个。
+     谷歌不让在微信里打开的网页用它登录，微信里点了只提示去浏览器打开 */
+  var GOOGLE = '<div class="auth-or"><span>或者</span></div>' +
+    '<a class="btn btn-lg auth-google" href="/api/auth/google/start" data-google>' +
+    '<svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>' +
+    '用 Google 账号登录</a>'
+  function googleClick(e) {
+    var a = e.target.closest && e.target.closest('[data-google]')
+    if (!a) return
+    if (/MicroMessenger/i.test(root.navigator.userAgent)) {
+      e.preventDefault()
+      say('微信里用不了谷歌登录：点右上角「…」，选「在浏览器打开」再登录；或者用邮箱登录。', '')
+      return
+    }
+    /* 登录后回到哪一页：首页被拦下时带着 ?next=，其余就是当前这一页 */
+    var next = new URLSearchParams(root.location.search).get('next') || (root.location.pathname + root.location.search)
+    a.href = '/api/auth/google/start?next=' + encodeURIComponent(next)
+  }
+
   function forms() {
     var who = '<b>' + esc(mem.email) + '</b>'
     return {
@@ -119,7 +138,7 @@
         html: tabs('login') + '<form data-view="login" novalidate>' + EMAIL +
           '<label class="auth-field"><span>密码<button type="button" class="link-btn quiet" data-goto="forgot">忘记密码？</button></span>' +
           '<input class="input" type="password" name="password" required autocomplete="current-password" minlength="8"></label>' +
-          MSG + '<button type="submit" class="btn btn-primary btn-lg auth-submit" data-act="submit">登录</button></form>'
+          MSG + '<button type="submit" class="btn btn-primary btn-lg auth-submit" data-act="submit">登录</button></form>' + GOOGLE
       },
       register: {
         title: '注册',
@@ -128,7 +147,7 @@
           field('邀请码（选填）', '<input class="input input-code" type="text" name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="K7M2-QF9W">', '有邀请码就填上，开通完整版；没有就空着，先免费用口算、数独和四个思维游戏') +
           (tsKey() ? '<div class="ts-box" data-ts></div>' : '') +
           MSG + '<button type="submit" class="btn btn-primary btn-lg auth-submit" data-act="submit">注册，发验证码到邮箱</button>' +
-          '<p class="auth-help">注册即表示同意<a href="/privacy" target="_blank" rel="noopener">隐私说明</a>。</p></form>'
+          '<p class="auth-help">注册即表示同意<a href="/privacy" target="_blank" rel="noopener">隐私说明</a>。</p></form>' + GOOGLE
       },
       code: {
         title: '验证邮箱',
@@ -172,7 +191,7 @@
         title: '删除账号',
         html: head('删除账号', '账号和云端的练习记录会一起删掉，删了找不回来。这台设备上的本机记录不受影响。') +
           '<form data-view="delete" novalidate>' +
-          field('当前密码', '<input class="input" type="password" name="password" required autocomplete="current-password" minlength="8">') +
+          field('当前密码', '<input class="input" type="password" name="password" required autocomplete="current-password" minlength="8">', '用 Google 账号注册、没设过密码的：先退出，在登录框点「忘记密码」设一个') +
           MSG + '<div class="account-row"><button type="submit" class="btn btn-danger" data-act="submit">确认删除</button>' +
           '<button type="button" class="btn" data-goto="account">返回</button></div></form>'
       }
@@ -588,6 +607,7 @@
   function boot() {
     A = root.SumSum && root.SumSum.account
     doc.addEventListener('submit', onRedeem, true)
+    doc.addEventListener('click', googleClick)
     doc.addEventListener('input', function (e) { if (e.target && e.target.closest && e.target.closest('[data-redeem]')) onInput(e) })
     var host = doc.querySelector('[data-account-inline]')
     var trigger = doc.querySelector('[data-account]')
