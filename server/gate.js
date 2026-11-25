@@ -9,7 +9,7 @@ const HOME = ['/', '/index', '/index.html']
 const WELCOME = ['/welcome', '/welcome.html']
 /* 没登录也能出题、打印的板块页（2026-11-24 先开口算和数独；11-25 游戏组火柴、密码、迷宫、数织一起开）：纸上不印二维码、不记录，
    扫码打分、错哪练哪、保存进度仍要登录（js/sheets.js）。要开放新板块就往这里加 */
-const GUEST_PAGES = ['/kousuan', '/shudu', '/huochai', '/mima', '/migong', '/zhizhi', '/privacy', '/kousuan/coushifa', '/kousuan/poshifa', '/aoshu']
+const GUEST_PAGES = ['/kousuan', '/shudu', '/huochai', '/mima', '/migong', '/zhizhi', '/privacy', '/kousuan/coushifa', '/kousuan/poshifa', '/aoshu', '/help']
 /* 内页：网址挂在板块下面，文件放在根目录（相对路径、盖指纹、侧栏脚本都只认根目录的 html）。
    中间层按这张表去取文件；文件自己的网址（/coushifa）301 到正式网址，同一内容只留一个网址 */
 export const INNER_PAGES = { '/kousuan/coushifa': '/coushifa', '/kousuan/poshifa': '/poshifa' }

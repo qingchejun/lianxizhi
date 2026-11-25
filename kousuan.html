@@ -15,7 +15,7 @@
   <meta property="og:title" content="口算题生成器：按进位退位出题，A4 打印带答案 · 纸和笔" />
   <meta property="og:description" content="不用登录，直接出口算题：10 以内、20 以内进退位、100 以内加减、乘法口诀、四则运算，一页 A4 直接打印，可附答案页。登录后扫码打分，下一张专练孩子错的题。" />
   <meta property="og:url" content="https://zhihebi.com/kousuan" />
-  <link rel="stylesheet" href="css/app.css?v=8cc020950e" />
+  <link rel="stylesheet" href="css/app.css?v=37d770b85d" />
   <link rel="stylesheet" href="css/sheet.css?v=a0e1aaaa2e" />
   <style id="page-style">@page { size: A4 portrait; margin: 15mm; }</style>
 </head>
@@ -57,6 +57,8 @@
     <span class="work-sum" id="work-sum"></span>
     <span class="work-grow"></span>
     <button type="button" id="btn-regen" class="btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/></svg>重新生成</button>
+    <a class="head-help" href="/help#print" target="_blank" rel="noopener">打印帮助</a>
+    <label class="head-check" title="打印时多一页答案，家长对着批改"><input type="checkbox" id="h-anspage" /><span>附答案页</span></label>
     <button type="button" id="btn-print" class="btn btn-primary btn-lg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V4h10v5M7 17H5a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2M7 14h10v6H7z"/></svg>打印</button>
   </header>
 
@@ -252,14 +254,14 @@
 <script src="js/store.js?v=c6aac93871"></script>
 <script src="js/sheets-core.js?v=a708637534"></script>
 <script src="js/vendor/qrcode.js?v=18ae399f81"></script>
-<script src="js/sheets.js?v=52367c3425"></script>
+<script src="js/sheets.js?v=bfb71ef38f"></script>
 <script src="js/shell.js?v=6972c54f86"></script>
 <script src="js/generator.js?v=9c5023f4c1"></script>
 <script src="js/settings.js?v=cd7373d7c9"></script>
 <script src="js/render.js?v=4756ada9e0"></script>
-<script src="js/main.js?v=cf9da6b2bb"></script>
+<script src="js/main.js?v=c4b7e1fabc"></script>
 <script src="js/backup.js?v=f21895fa7e"></script>
-<script src="js/help.js?v=8e815ad950"></script>
+<script src="js/help.js?v=14785111cc"></script>
 <script src="js/account.js?v=9790a36543"></script>
 <script src="js/account-ui.js?v=f7ca87a050"></script>
 <script src="js/sync-core.js?v=5f4122b899"></script>

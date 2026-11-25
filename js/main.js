@@ -33,6 +33,9 @@
     title: $('f-title')
   }
 
+  /* 顶栏「附答案页」（2026-11-25）：和右边「更多选项」里的「打印时附答案页」是同一个设置，勾哪一处两处都跟着变 */
+  var headAns = $('h-anspage')
+
   var settings = S.settings.load()
 
   function fillForm(s) {
@@ -52,6 +55,7 @@
     els.skiptrivial.checked = s.skipTrivial
     els.nodup.checked = s.noDuplicates
     els.anspage.checked = s.answerPage
+    if (headAns) headAns.checked = s.answerPage
     els.stephint.checked = s.stepHint
     els.title.value = s.title
   }
@@ -230,8 +234,15 @@
 
   function onFormChange() {
     settings = readForm()
+    if (headAns) headAns.checked = settings.answerPage
     refresh()
   }
+
+  if (headAns) headAns.addEventListener('change', function () {
+    els.anspage.checked = headAns.checked
+    lastTouched = ''
+    onFormChange()
+  })
 
   Object.keys(els).forEach(function (k) {
     els[k].addEventListener('change', function () {

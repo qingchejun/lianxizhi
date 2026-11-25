@@ -234,7 +234,9 @@
       var id = ensureSaved()
       if (id) root.location.href = '/mark?id=' + id
     })
-    print.parentNode.insertBefore(b, print)
+    /* 口算页「打印」左边还有「打印帮助」「附答案页」（2026-11-25）：打分放在它们前面，让「附答案页」紧挨着「打印」 */
+    var anchor = print.parentNode.querySelector('.head-help, .head-check') || print
+    print.parentNode.insertBefore(b, anchor)
   }
 
   if (root.addEventListener && root.document) {

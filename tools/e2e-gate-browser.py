@@ -62,16 +62,16 @@ with sync_playwright() as p:
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))
 
-    page.goto(BASE + '/help')  # 2026-11-25 起没开放的板块显示完整版说明页（不再拦回首页），换使用说明页测拦截
-    check('没登录打开使用说明 → 拦回首页', '/?next=' in page.url, page.url)
+    page.goto(BASE + '/mark')  # 2026-11-25 起没开放的板块显示完整版说明页、使用说明也公开，换扫码打分页测拦截
+    check('没登录打开扫码打分页 → 拦回首页', '/?next=' in page.url, page.url)
     check('首页是介绍页', page.is_visible('.wl-hero'))
     page.wait_for_selector('form[data-view="login"]', timeout=5000)
     check('被拦下时首页直接显示登录表单', page.is_visible('form[data-view="login"]'))
 
     a = f'gate-a-{STAMP}@test.local'
     register(page, a, make_invite())
-    page.wait_for_url('**/help**', timeout=30000)
-    check('注册完成 → 回到原来要去的页面', '/help' in page.url, page.url)
+    page.wait_for_url('**/mark**', timeout=30000)
+    check('注册完成 → 回到原来要去的页面', '/mark' in page.url, page.url)
     page.goto(BASE + '/pinyin')
     page.wait_for_selector('.sheet', timeout=10000)
     check('拼音页正常显示', page.is_visible('.sheet'))

@@ -2384,3 +2384,25 @@ select.input {
 @media print {
   .loop-demo { display: none; }
 }
+
+/* 板块页顶栏：「打印」左边的小复选框和「打印帮助」链接（口算页，2026-11-25） */
+.work-head .head-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--ink-2);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.work-head .head-check input { width: 16px; height: 16px; margin: 0; accent-color: var(--blue); }
+.work-head .head-help {
+  font-size: 13px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.work-head .head-help:hover { color: var(--blue); }
+@media print {
+  .work-head .head-check, .work-head .head-help { display: none; }
+}

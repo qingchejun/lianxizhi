@@ -180,7 +180,7 @@ def sitefoot():
             '      <p>一位一年级家长给自己孩子做的练习纸网站：能在家练好的不送去报班，能在纸上做的不让孩子盯屏幕。口算、奥数前三课和纸笔游戏打开就能打印；做完扫一下纸角，下一张专练错的。</p>\n'
             '      <p>意见反馈：<a href="mailto:hi@zhihebi.com">hi@zhihebi.com</a>，一般一两天内回复。</p>\n'
             '    </section>\n' + ''.join(cols) +
-            '    <nav class="sf-col" aria-label="关于"><h3>关于</h3><a href="/">纸和笔首页</a><a href="/privacy">隐私说明</a><a href="mailto:hi@zhihebi.com">意见反馈</a></nav>\n'
+            '    <nav class="sf-col" aria-label="关于"><h3>关于</h3><a href="/">纸和笔首页</a><a href="/help">使用说明</a><a href="/help#print">打印与存 PDF</a><a href="/privacy">隐私说明</a><a href="mailto:hi@zhihebi.com">意见反馈</a></nav>\n'
             '  </div>\n'
             '  <div class="sf-bot"><span>© 2026 纸和笔 · zhihebi.com</span><span>少报班，少看屏 · 一页纸，五分钟</span></div>\n'
             '</footer>')

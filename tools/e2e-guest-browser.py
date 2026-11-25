@@ -130,7 +130,7 @@ with sync_playwright() as p:
     hrefs = gp.eval_on_selector_all('#wl-what ~ * a, .wl-stars a, .wl-mods a', 'els => els.map(e => e.getAttribute("href"))')
     check('首页九个板块都能点', all(h in hrefs for h in ['/kousuan', '/aoshu', '/shizi', '/pinyin', '/shudu', '/huochai', '/mima', '/migong', '/zhizhi']), hrefs)
     check('首页页脚列出全部板块和凑十法、破十法内页', gp.query_selector('footer.sf a[href="/kousuan/coushifa"]') is not None and gp.query_selector('footer.sf a[href="/kousuan/poshifa"]') is not None
-          and len(gp.query_selector_all('footer.sf .sf-col a')) == 14)
+          and len(gp.query_selector_all('footer.sf .sf-col a')) == 16)  # 11 个练习游戏 + 关于栏 5 个（11-25 加使用说明、打印与存 PDF）
     head = gp.eval_on_selector_all('.sh-nav a', 'els => els.map(e => e.getAttribute("href"))')
     check('首页页眉排着九个板块', head == ['/kousuan', '/aoshu', '/shizi', '/pinyin', '/shudu', '/huochai', '/mima', '/migong', '/zhizhi'], head)
     check('首页第一屏没有登录表单，主按钮「免费出一张口算题」去口算页的 20 以内进退位（跟中间那张样张一致）', gp.query_selector('.wl-hero form') is None
