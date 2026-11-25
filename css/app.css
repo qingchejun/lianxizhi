@@ -2220,15 +2220,23 @@ select.input {
 .lk-guest { margin: 4px 0 20px; }
 .lk-guest .btn { margin-top: 4px; }
 /* 样张（识字、拼音，只能看）+ 两条开通路：朋友的邀请码 / 付费开通（2026-11-25） */
-.lk-sample { margin: 18px 0 6px; }
-.lk-sample img {
-  display: block;
-  width: 100%;
-  height: auto;
-  border: 1px solid var(--card-edge);
+.lk-sample {
+  margin: 18px 0 6px;
+  padding: 20px 0 12px;
+  background-color: var(--canvas);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+  background-size: 16px 16px;
   border-radius: 10px;
 }
-.lk-sample figcaption { margin-top: 6px; font-size: 13px; color: var(--ink-soft); text-align: center; }
+.lk-sample img {
+  display: block;
+  width: min(300px, 80%);
+  height: auto;
+  margin: 0 auto;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(20, 24, 32, 0.1), 0 10px 26px rgba(20, 24, 32, 0.14);
+}
+.lk-sample figcaption { margin-top: 10px; font-size: 13px; color: var(--ink-soft); text-align: center; }
 .lk-ways-title { margin: 22px 0 10px; font-size: 16px; color: var(--ink); }
 .lk-ways {
   display: grid;
