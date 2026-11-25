@@ -1002,6 +1002,11 @@ select.input {
   border-color: var(--blue);
 }
 
+/* 专项练习内页（口算 → 凑十法等）：长得跟预设一样，箭头表示会去另一页 */
+.preset-link { text-decoration: none; }
+.preset-link::after { content: "›"; margin-left: 5px; font-size: 15px; color: var(--ink-faint); }
+.preset-link:hover::after { color: var(--blue); }
+
 .preset.on {
   color: var(--blue);
   font-weight: 600;
@@ -1900,8 +1905,6 @@ select.input {
 }
 
 .sf-col a:hover { color: var(--blue); }
-.sf-col a.sf-sub { padding-left: 14px; }
-.sf-col a.sf-sub::before { content: "└ "; color: var(--ink-faint); }
 .sf-col small { margin-left: 6px; font-size: 11px; color: var(--ink-faint); }
 
 .sf-bot {
@@ -2040,11 +2043,6 @@ select.input {
   line-height: 1.85;
 }
 .board-intro a { color: var(--blue); }
-/* 板块设置栏里的「专项练习」入口（口算 → 凑十法等内页） */
-.special-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 10px 0 0; font-size: 13px; }
-.special-row span { color: var(--ink-soft); }
-.special-row a { color: var(--blue); text-decoration: none; }
-.special-row a:hover { text-decoration: underline; }
 .bi-faq {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

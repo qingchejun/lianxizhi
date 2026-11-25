@@ -144,7 +144,7 @@ for page, current in PAGES.items():
 # 2. 页脚只放在首页（没登录的首页 welcome.html 和登录后的「今天」index.html，网址都是 /）；
 #    有侧栏的板块页、内页不放页脚，侧栏就是它们的导航。
 # 页面里只留 <!-- sitehead --> … <!-- /sitehead -->、<!-- sitefoot --> … <!-- /sitefoot --> 标记，内容在这里生成。
-# 链接文字用各页的主词（锚文本 = 目标页关键词）；加内页时往 INNER 里加一行（挂在所属板块下面）。
+# 链接文字用各页的主词（锚文本 = 目标页关键词）；加内页时往 INNER 里加一行（排在所属板块后面）。
 HEAD_NAMES = [(g, [(n, h) for n, h, *_ in items if n != '今天']) for g, items in GROUPS]
 FOOT_NAME = {'口算': '口算题', '奥数': '奥数', '识字': '识字', '拼音': '拼音', '数独': '儿童数独',
              '火柴': '火柴棒等式题', '密码': '密码推理题', '迷宫': '儿童迷宫', '数织': '数织游戏'}
@@ -170,7 +170,7 @@ def sitefoot():
         for n, h in items:
             tag = '<small>完整版</small>' if n in FULL_ONLY else ''
             links.append('<a href="%s">%s%s</a>' % (h, FOOT_NAME[n], tag))
-            links += ['<a class="sf-sub" href="%s">%s</a>' % (u, t) for t, u in INNER.get(n, [])]
+            links += ['<a href="%s">%s</a>' % (u, t) for t, u in INNER.get(n, [])]  # 内页跟板块平起平坐
         cols.append('    <nav class="sf-col" aria-label="%s"><h3>%s</h3>%s</nav>\n' % (g, g, ''.join(links)))
     return ('<footer class="sf">\n  <div class="sf-in">\n'
             '    <section class="sf-about">\n'

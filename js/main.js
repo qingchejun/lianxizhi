@@ -254,7 +254,9 @@
       )
       refresh()
     })
-    $('preset-row').appendChild(btn)
+    // 专项练习内页的链接写死在 html 里（搜索引擎看得到），预设按钮插在它前面
+    var row = $('preset-row')
+    row.insertBefore(btn, row.querySelector('.preset-link'))
   })
 
   /* 重新生成：参数不变，换一批随机题——换种子即可（种子已写进网址，可复现） */
