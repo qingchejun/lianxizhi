@@ -42,9 +42,9 @@ def register(page, email, invite=''):
     codes = []
     page.on('response', lambda r: codes.append(r) if r.url.endswith('/api/auth/register') else None)
     page.goto(BASE + '/')
-    page.wait_for_selector('.wl-auth form[data-view="login"]', timeout=10000)
+    page.wait_for_selector('[data-wl-signup]', timeout=10000)
     page.click('[data-wl-signup]')
-    page.wait_for_selector('.wl-auth form[data-view="register"]', timeout=5000)
+    page.wait_for_selector('dialog.account-dialog form[data-view="register"]', timeout=5000)
     page.fill('form[data-view="register"] input[name="email"]', email)
     page.fill('form[data-view="register"] input[name="password"]', 'password123')
     if invite:
@@ -172,7 +172,7 @@ with sync_playwright() as p:
     page.fill('dialog.account-dialog form[data-view="delete"] input[name="password"]', 'password123')
     page.click('dialog.account-dialog form[data-view="delete"] [data-act="submit"]')
     page.wait_for_url(BASE + '/', timeout=15000)
-    check('删除账号后回到首页（没登录）', page.query_selector('.wl-auth') is not None)
+    check('删除账号后回到首页（没登录）', page.query_selector('.wl-hero') is not None)
     lg = page.evaluate("""async (e) => {
       const r = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: e, password: 'x'.repeat(64) }) })
       return r.status }""", email)

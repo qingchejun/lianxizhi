@@ -34,8 +34,8 @@ def close_help(page):
 
 
 def login(page):
-    page.goto(BASE + '/')
-    page.wait_for_selector('.wl-auth form[data-view="login"]', timeout=10000)
+    page.goto(BASE + '/#login')  # 2026-11-25 起首页登录是弹出框
+    page.wait_for_selector('dialog.account-dialog form[data-view="login"]', timeout=10000)
     page.fill('form[data-view="login"] input[name="email"]', EMAIL)
     page.fill('form[data-view="login"] input[name="password"]', 'password123')
     page.click('form[data-view="login"] [data-act="submit"]')
@@ -45,13 +45,13 @@ def login(page):
 
 def logged_in(page):
     page.goto(BASE + '/')
-    page.wait_for_selector('#today-cards .dk-shelf, .wl-auth form[data-view="login"]', timeout=15000)
+    page.wait_for_selector('#today-cards .dk-shelf, .wl-hero', timeout=15000)
     return page.query_selector('#today-cards .dk-shelf') is not None
 
 
 def login_msg(page):
     page.wait_for_timeout(500)
-    m = page.query_selector('.wl-auth [data-msg]:not([hidden])')
+    m = page.query_selector('dialog.account-dialog [data-msg]:not([hidden])')
     return m.inner_text() if m else ''
 
 
@@ -74,7 +74,7 @@ with sync_playwright() as p:
     codes = []
     d1.on('response', lambda r: codes.append(r) if r.url.endswith('/api/auth/register') else None)
     d1.goto(BASE + '/')
-    d1.wait_for_selector('.wl-auth form[data-view="login"]', timeout=10000)
+    d1.wait_for_selector('[data-wl-signup]', timeout=10000)
     d1.click('[data-wl-signup]')
     d1.fill('form[data-view="register"] input[name="email"]', EMAIL)
     d1.fill('form[data-view="register"] input[name="password"]', 'password123')

@@ -51,7 +51,7 @@ def type_code(page, code):
 
 
 def login(page, email, password):
-    page.goto(BASE + '/')
+    page.goto(BASE + '/#login')  # 2026-11-25 起首页登录是弹出框
     page.fill('form[data-view="login"] input[name="email"]', email)
     page.fill('form[data-view="login"] input[name="password"]', password)
     page.click('form[data-view="login"] [data-act="submit"]')
@@ -64,7 +64,7 @@ def logout(page):
     page.wait_for_selector('.rail-menu [data-logout]', state='visible', timeout=5000)
     page.click('.rail-menu [data-logout]')
     page.wait_for_url(BASE + '/', timeout=10000)
-    page.wait_for_selector('.wl-auth', timeout=10000)
+    page.wait_for_selector('.wl-hero', timeout=10000)
 
 
 with sync_playwright() as p:
@@ -77,7 +77,7 @@ with sync_playwright() as p:
     apis = []
     page.on('response', lambda r: apis.append(r) if '/api/' in r.url else None)
     page.goto(BASE + '/')
-    page.click('.wl-auth [data-goto="register"]')
+    page.click('[data-wl-signup]')
     page.fill('form[data-view="register"] input[name="email"]', EMAIL)
     page.fill('form[data-view="register"] input[name="password"]', 'password123')
     page.fill('form[data-view="register"] input[name="invite"]', make_invite())
@@ -118,6 +118,7 @@ with sync_playwright() as p:
         time.sleep(wait)
     apis2 = []
     page2.on('response', lambda r: apis2.append(r) if '/api/' in r.url else None)
+    page2.click('.sh-act a')  # 退出后回到首页，登录是弹出框
     page2.click('form[data-view="login"] [data-goto="forgot"]')
     page2.fill('form[data-view="forgot"] input[name="email"]', EMAIL)
     page2.click('form[data-view="forgot"] [data-act="submit"]')

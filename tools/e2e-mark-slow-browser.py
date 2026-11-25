@@ -23,6 +23,9 @@ def check(name, ok, extra=''):
 
 async def login(page):
     await page.goto(BASE + '/')
+    # 2026-11-25 起首页登录是弹出框：被拦下回首页时自动弹出，否则点右上角「登录 / 注册」
+    if not await page.is_visible('form[data-view="login"]'):
+        await page.click('.sh-act a')
     await page.fill('form[data-view="login"] input[name="email"]', EMAIL)
     await page.fill('form[data-view="login"] input[name="password"]', PASSWORD)
     await page.click('form[data-view="login"] [data-act="submit"]')

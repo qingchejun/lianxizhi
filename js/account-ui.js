@@ -3,8 +3,8 @@
  *
  * 两种挂法，同一套视图：
  *   弹窗 —— 板块页左下角「账号」按钮（[data-account]）打开 <dialog>；
- *   内嵌 —— 没登录时的首页（welcome.html）里有 [data-account-inline]，表单直接画在页面上，
- *          手机微信里点开就能填，不用再点一下弹窗。
+ *   内嵌 —— 页面里有 [data-account-inline]，表单直接画在页面上（2026-11-25 起首页不再用，保留这种挂法）；
+ *   没登录时的首页（welcome.html）body 上有 [data-account-boot]：照常探登录态，按钮自己调 open()。
  * view 切换 + data-act / data-goto 事件委托；登录成功 → sync.init（confirm 由本文件提供）。
  * 改版前发出去的重设链接 /?reset=<token> 仍然认（重设要重问邮箱：PBKDF2 盐需要它）。
  */
@@ -125,7 +125,7 @@
         title: '注册',
         html: tabs('register') + '<form data-view="register" novalidate>' + EMAIL +
           field('密码', '<input class="input" type="password" name="password" required minlength="8" autocomplete="new-password">', '至少 8 位') +
-          field('邀请码（选填）', '<input class="input input-code" type="text" name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="K7M2-QF9W">', '有邀请码就填上，开通完整版；没有就空着，先免费用口算和数独') +
+          field('邀请码（选填）', '<input class="input input-code" type="text" name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="K7M2-QF9W">', '有邀请码就填上，开通完整版；没有就空着，先免费用口算、数独和四个思维游戏') +
           (tsKey() ? '<div class="ts-box" data-ts></div>' : '') +
           MSG + '<button type="submit" class="btn btn-primary btn-lg auth-submit" data-act="submit">注册，发验证码到邮箱</button>' +
           '<p class="auth-help">注册即表示同意<a href="/privacy" target="_blank" rel="noopener">隐私说明</a>。</p></form>'
@@ -548,7 +548,8 @@
     view = A.state.loggedIn ? 'account' : (v || 'login')
     render()
     if (hint && !A.state.loggedIn) say(esc(hint), '')
-    if (!inline) dlg.showModal()
+    else if (!A.state.loggedIn && view === 'login' && WHY[A.state.why]) say(WHY[A.state.why]) /* 被挤下线 / 要重新登录：说一句为什么 */
+    if (!inline && !dlg.open) dlg.showModal()
   }
 
   /* 补填邀请码：账号页、上锁页里的 [data-redeem] 表单都走这里。开通后刷新，上锁的板块直接能用 */
@@ -590,7 +591,7 @@
     doc.addEventListener('input', function (e) { if (e.target && e.target.closest && e.target.closest('[data-redeem]')) onInput(e) })
     var host = doc.querySelector('[data-account-inline]')
     var trigger = doc.querySelector('[data-account]')
-    if (!A || (!host && !trigger)) return
+    if (!A || (!host && !trigger && !doc.querySelector('[data-account-boot]'))) return
     if (host) {
       build(host)
       view = host.getAttribute('data-account-inline') || 'login'

@@ -14,7 +14,7 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
 
   /* --- 纯规则 --- */
   var d = G.decide
-  check('静态资源放行（css/js/字体/图标）', ['/css/app.css', '/js/store.js', '/fonts/pinyin-kids.woff2', '/icons/favicon.svg', '/icons/apple-touch-icon.png']
+  check('静态资源放行（css/js/字体/图标）', ['/css/app.css', '/js/store.js', '/fonts/pinyin-kids.woff2', '/icons/favicon.svg', '/icons/apple-touch-icon.png', '/img/samples/kousuan.jpg']
     .every(function (p) { return d(p, '', false).action === 'pass' }))
   check('接口放行（接口自己验登录）', d('/api/auth/login', '', false).action === 'pass')
   check('没登录打开首页 → 介绍兼登录页', d('/', '', false).action === 'welcome')

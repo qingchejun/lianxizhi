@@ -33,9 +33,12 @@ def make_invite():
 def register(page, email, invite):
     codes = []
     page.on('response', lambda r: codes.append(r) if r.url.endswith('/api/auth/register') else None)
-    # 2026-11 改版：没登录的首页把表单直接画在页面上（.wl-auth），不再弹窗
+    # 2026-11-25 起首页的登录、注册是弹出框：已经弹出登录框（被拦下回首页）就切到注册页签，没弹就点「免费注册」
     if not page.is_visible('form[data-view="register"]'):
-        page.click('.wl-auth [data-goto="register"]')
+        if page.is_visible('dialog[open] [data-goto="register"]'):
+            page.click('dialog[open] [data-goto="register"]')
+        else:
+            page.click('[data-wl-signup]')
     page.fill('form[data-view="register"] input[name="email"]', email)
     page.fill('form[data-view="register"] input[name="password"]', 'password123')
     page.fill('form[data-view="register"] input[name="invite"]', invite)
@@ -61,7 +64,7 @@ with sync_playwright() as p:
 
     page.goto(BASE + '/help')  # 2026-11-25 起没开放的板块显示完整版说明页（不再拦回首页），换使用说明页测拦截
     check('没登录打开使用说明 → 拦回首页', '/?next=' in page.url, page.url)
-    check('首页是介绍页', page.is_visible('.wl-auth'))
+    check('首页是介绍页', page.is_visible('.wl-hero'))
     page.wait_for_selector('form[data-view="login"]', timeout=5000)
     check('被拦下时首页直接显示登录表单', page.is_visible('form[data-view="login"]'))
 
@@ -84,7 +87,7 @@ with sync_playwright() as p:
     page.click('[data-account-menu]')  # 2026-11 二次改版：退出登录在栏底账号菜单里
     page.click('.rail-menu [data-logout]')
     page.wait_for_url(BASE + '/', timeout=10000)
-    check('退出登录 → 回到介绍页', page.is_visible('.wl-auth'))
+    check('退出登录 → 回到介绍页', page.is_visible('.wl-hero'))
     check('本机还留着 A 的数据（还没换账号）', page.evaluate("localStorage.getItem('sumsum:e2e:mine:v1')") is not None)
 
     b = f'gate-b-{STAMP}@test.local'

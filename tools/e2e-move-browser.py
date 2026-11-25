@@ -40,6 +40,9 @@ with sync_playwright() as p:
     ctx = br.new_context(viewport={'width': 1280, 'height': 860})
     pg = ctx.new_page()
     pg.goto(LOCAL + '/')
+    # 2026-11-25 起首页登录是弹出框：被拦下回首页时自动弹出，否则点右上角「登录 / 注册」
+    if not pg.is_visible('form[data-view="login"]'):
+        pg.click('.sh-act a')
     pg.fill('form[data-view="login"] input[name="email"]', EMAIL)
     pg.fill('form[data-view="login"] input[name="password"]', PASSWORD)
     pg.click('form[data-view="login"] [data-act="submit"]')

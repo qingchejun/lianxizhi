@@ -21,6 +21,9 @@ def check(name, ok, extra=''):
 
 
 def login(page):
+    # 2026-11-25 起首页登录是弹出框：被拦下回首页时自动弹出，否则点右上角「登录 / 注册」
+    if not page.is_visible('form[data-view="login"]'):
+        page.click('.sh-act a')
     page.fill('form[data-view="login"] input[name="email"]', EMAIL)
     page.fill('form[data-view="login"] input[name="password"]', PASSWORD)
     page.click('form[data-view="login"] [data-act="submit"]')

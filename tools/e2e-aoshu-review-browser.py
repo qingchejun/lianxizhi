@@ -54,7 +54,7 @@ with sync_playwright() as p:
     codes = []
     page.on('response', lambda r: codes.append(r) if r.url.endswith('/api/auth/register') else None)
     page.goto(BASE + '/')
-    page.wait_for_selector('.wl-auth form[data-view="login"]', timeout=10000)
+    page.wait_for_selector('[data-wl-signup]', timeout=10000)
     page.click('[data-wl-signup]')
     page.fill('form[data-view="register"] input[name="email"]', f'review-{int(time.time())}@test.local')
     page.fill('form[data-view="register"] input[name="password"]', 'password123')

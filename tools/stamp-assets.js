@@ -18,7 +18,7 @@ var path = require('path')
 var crypto = require('crypto')
 
 var ROOT = path.join(__dirname, '..')
-var ASSET_DIRS = ['js', 'css', 'fonts', 'icons']
+var ASSET_DIRS = ['js', 'css', 'fonts', 'icons', 'img']
 
 function hashOf(buf) {
   return crypto.createHash('sha256').update(buf).digest('hex').slice(0, 10)

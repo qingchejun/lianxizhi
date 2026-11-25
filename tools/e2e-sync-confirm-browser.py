@@ -14,6 +14,9 @@ def check(name, ok, extra=''):
 
 
 def login(pg):
+    # 2026-11-25 起首页登录是弹出框：被拦下回首页时自动弹出，否则点右上角「登录 / 注册」
+    if not pg.is_visible('form[data-view="login"]'):
+        pg.click('.sh-act a')
     pg.fill('form[data-view="login"] input[name="email"]', 'preview@local.test')
     pg.fill('form[data-view="login"] input[name="password"]', 'preview123')
     pg.click('form[data-view="login"] [data-act="submit"]')

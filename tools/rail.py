@@ -159,7 +159,7 @@ def sitehead():
     return ('<header class="sh"><div class="sh-in">\n'
             '  <a class="sh-brand" href="/" aria-label="纸和笔首页"><img src="/icons/mark.svg" width="28" height="28" alt=""><span>纸和笔</span></a>\n'
             '  <nav class="sh-nav" aria-label="板块">' + nav + '</nav>\n'
-            '  <div class="sh-act"><a class="sh-login" href="/#login">登录</a><a class="btn btn-primary" href="/#register">免费注册</a></div>\n'
+            '  <div class="sh-act"><a class="btn btn-primary sh-login" href="/#login">登录 / 注册</a></div>\n'
             '</div></header>')
 
 
