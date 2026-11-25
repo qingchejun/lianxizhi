@@ -16,6 +16,9 @@ export const INNER_PAGES = { '/kousuan/coushifa': '/coushifa' }
 /* 免费版账号能打开的网页（白名单，2026-11-24 放开注册）：其余网页一律显示上锁说明页。
    用白名单而不是「锁哪几个」：以后新加的板块默认就是完整版专属，不会忘了锁 */
 const FREE_PAGES = ['/', '/index', '/kousuan', '/shudu', '/mark', '/help', '/privacy', '/404', '/kousuan/coushifa']
+/* 完整版板块（2026-11-25 整站结构）：没登录的人打开时不再带回首页，在原网址显示「完整版」说明页（不收录），
+   侧栏、首页都能点进来看这个板块是什么。开放给没登录的人时，从这里挪到 GUEST_PAGES / FREE_PAGES */
+const FULL_BOARDS = ['/aoshu', '/shizi', '/pinyin', '/huochai', '/mima', '/migong', '/zhizhi']
 /* 上锁说明页只由中间层在原网址上显示，不单独开网址 */
 const LOCKED = ['/locked', '/locked.html']
 
@@ -71,6 +74,7 @@ export function decide(path, search, me) {
     return file ? { action: 'pass', file: file } : { action: 'pass' }
   }
   if (GUEST_PAGES.includes(page)) return file ? { action: 'pass', file: file } : { action: 'pass' }
+  if (FULL_BOARDS.includes(page)) return { action: 'locked' }
   if (path === '/') return { action: 'welcome' }
   /* /index、/index.html 与 / 同内容：没登录时并到 /，只留一个网址给谷歌 */
   if (HOME.includes(path)) return { action: 'redirect', location: '/' + (search || '') }

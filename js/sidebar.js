@@ -115,13 +115,14 @@
     if (sub) sub.textContent = out ? '登录后进度自动同步' : '练习进度自动同步'
     if (initial) initial.textContent = email ? email.charAt(0).toUpperCase() : ''
     user.title = email ? email + '（点开账号菜单）' : (out ? '登录或注册' : '账号')
-    /* 免费版：口算、数独以外的板块挂一把锁（只是提示；真正拦的是服务器，见 server/gate.js FREE_PAGES） */
+    /* 免费版和没登录的人：口算、数独以外的板块挂一把锁（只是提示；真正拦的是服务器，见 server/gate.js FREE_PAGES、FULL_BOARDS）。
+       2026-11-25 起没登录的人点上锁的板块也能进去看这个板块是什么（原网址显示完整版说明页） */
     var plan = (state && state.plan) || root.__SUMSUM_PLAN || ''
     var free = !!email && plan === 'free' || !email && !out && root.__SUMSUM_PLAN === 'free'
     if (sub && !out) sub.textContent = free ? '免费版' : '练习进度自动同步'
     Array.prototype.forEach.call(doc.querySelectorAll('.rail-link[data-module]'), function (a) {
       var m = a.getAttribute('data-module')
-      var lock = free && FREE_MODULES.indexOf(m) < 0
+      var lock = (free || out) && FREE_MODULES.indexOf(m) < 0
       a.classList.toggle('is-locked', lock)
       var icon = a.querySelector('.rail-lock')
       if (lock && !icon) {

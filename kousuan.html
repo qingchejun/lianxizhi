@@ -15,7 +15,7 @@
   <meta property="og:title" content="口算题生成器：按进位退位出题，A4 打印带答案 · 纸和笔" />
   <meta property="og:description" content="不用登录，直接出口算题：10 以内、20 以内进退位、100 以内加减、乘法口诀、四则运算，一页 A4 直接打印，可附答案页。登录后扫码打分，下一张专练孩子错的题。" />
   <meta property="og:url" content="https://zhihebi.com/kousuan" />
-  <link rel="stylesheet" href="css/app.css?v=e81251fa73" />
+  <link rel="stylesheet" href="css/app.css?v=c534483a8f" />
   <link rel="stylesheet" href="css/sheet.css?v=a0e1aaaa2e" />
   <style id="page-style">@page { size: A4 portrait; margin: 15mm; }</style>
 </head>
@@ -48,7 +48,7 @@
     </div>
   </div>
 </nav>
-<script src="js/sidebar.js?v=fb14dd3b96" defer></script>
+<script src="js/sidebar.js?v=ad4375e882" defer></script>
 <!-- /rail -->
 
 <div class="work">
@@ -81,13 +81,24 @@
         <h2>一页五分钟，附答案页好批改</h2>
         <p>默认一页 20 道，一年级孩子五分钟左右做完，做得完才坚持得下来。打印时可以附一页答案，家长对着改很快；加减法的答案页还能附上凑十、破十的提示，孩子卡住时照着讲就行。还没学会拆数的孩子，可以先做<a href="/kousuan/coushifa">凑十法练习题</a>，有方法讲解和分步解析。题目不重复、跳过 7 + 0 这类送分题，都在「更多选项」里。</p>
 
+        <h2>专项练习：一种方法练透</h2>
+        <p class="bi-special"><a href="/kousuan/coushifa">凑十法练习题</a>：20 以内进位加法，先讲「看大数、拆小数、凑成十」，再练，最后附分步解析。</p>
+
         <h2>常见问题</h2>
         <div class="bi-faq">
           <div><h3>要登录吗？</h3><p>出题、打印不用登录。扫码打分、按错题出下一张、换电脑接着练，这些要登录。</p></div>
+          <div><h3>在国外能用吗？</h3><p>能。打开网页就能出题、打印，不用装软件；题目按国内一年级的进度来。</p></div>
           <div><h3>适合几年级？</h3><p>现在的预设按一年级来；范围和运算可以自己改，二年级的乘法口诀、四则运算也能出。</p></div>
           <div><h3>一页能出多少题？</h3><p>2 到 100 道都行，纵向、横向，2 到 4 列随你选，排版会自动铺满一页 A4。</p></div>
           <div><h3>还有别的练习吗？</h3><p>纸和笔还有<a href="/shudu">儿童数独</a>，以及奥数、识字、拼音等板块，<a href="/">回首页</a>看全部。</p></div>
         </div>
+        <!-- sitelinks -->
+<nav class="sitelinks" aria-label="全部练习">
+  <p><a href="/">纸和笔首页</a></p>
+  <p><span>练习</span><a href="/kousuan">口算题</a><a href="/aoshu">奥数</a><a href="/shizi">识字</a><a href="/pinyin">拼音</a><a href="/kousuan/coushifa">凑十法练习题</a></p>
+  <p><span>游戏</span><a href="/shudu">儿童数独</a><a href="/huochai">火柴棒算式</a><a href="/mima">密码推理</a><a href="/migong">算式迷宫</a><a href="/zhizhi">数织涂画</a></p>
+</nav>
+<!-- /sitelinks -->
       </article>
     </main>
 
@@ -97,6 +108,7 @@
       <section class="group">
         <h2 class="group-title">快速预设</h2>
         <div class="preset-row" id="preset-row"></div>
+        <p class="special-row"><span>专项练习</span><a href="/kousuan/coushifa">凑十法练习题</a></p>
       </section>
 
       <section class="group">

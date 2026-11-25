@@ -885,6 +885,23 @@ body.welcome .wl-main {
   border-bottom: 1px solid var(--line-strong);
 }
 .wl-mods b a:hover { color: var(--blue); border-bottom-color: var(--blue); }
+.wl-star-name b a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid var(--line-strong);
+}
+.wl-star-name b a:hover { color: var(--blue); border-bottom-color: var(--blue); }
+/* 完整版板块（2026-11-25 起也能点进去看介绍）：名字后面一个灰色小字 */
+.wl-full {
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  vertical-align: 1px;
+}
 
 /* 隐私说明等文字页（privacy.html） */
 .legal {

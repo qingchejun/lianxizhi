@@ -139,6 +139,30 @@ for page, current in PAGES.items():
     path.write_text(text, encoding='utf-8')
     print('✓', page)
 
+# 公开页面底部的全站链接（2026-11-25 整站结构）：首页、全部板块、内页。页面里只留
+# <!-- sitelinks --> … <!-- /sitelinks --> 标记，内容在这里生成；加内页时往 INNER 里加一行。
+INNER = [('凑十法练习题', '/kousuan/coushifa')]
+BOARD_URL = {'口算': ('口算题', '/kousuan'), '奥数': ('奥数', '/aoshu'), '识字': ('识字', '/shizi'), '拼音': ('拼音', '/pinyin'),
+             '数独': ('儿童数独', '/shudu'), '火柴': ('火柴棒算式', '/huochai'), '密码': ('密码推理', '/mima'),
+             '迷宫': ('算式迷宫', '/migong'), '数织': ('数织涂画', '/zhizhi')}
+
+
+def sitelinks():
+    groups = [('练习', [BOARD_URL[n] for n, *_ in GROUPS[0][1] if n in BOARD_URL] + INNER),
+              ('游戏', [BOARD_URL[n] for n, *_ in GROUPS[1][1] if n in BOARD_URL])]
+    rows = ''.join('  <p><span>%s</span>%s</p>\n' % (g, ''.join('<a href="%s">%s</a>' % (u, t) for t, u in items)) for g, items in groups)
+    return '<nav class="sitelinks" aria-label="全部练习">\n  <p><a href="/">纸和笔首页</a></p>\n' + rows + '</nav>'
+
+
+for page in ['welcome.html', 'kousuan.html', 'shudu.html', 'coushifa.html', 'privacy.html']:
+    path = ROOT / page
+    text = path.read_text(encoding='utf-8')
+    pat = re.compile(r'(<!-- sitelinks -->).*?(<!-- /sitelinks -->)', re.S)
+    if not pat.search(text):
+        raise SystemExit('%s 里没找到 <!-- sitelinks --> 标记' % page)
+    path.write_text(pat.sub(lambda m: m.group(1) + '\n' + sitelinks() + '\n' + m.group(2), text), encoding='utf-8')
+    print('✓ 全站链接', page)
+
 # 侧栏重写会带回没盖指纹的 js/sidebar.js 引用：顺手重盖一遍（见 tools/stamp-assets.js）
 import subprocess
 subprocess.run(['node', str(ROOT / 'tools' / 'stamp-assets.js')], check=True)

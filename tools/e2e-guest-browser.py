@@ -3,7 +3,7 @@
 #   2. 没登录：纸上没有二维码，打印不记录、不上传；顶上有提示条，侧栏显示「登录 / 注册」；
 #   3. 点「打分」弹出登录框并说明为什么要登录；在框里登录后不刷新页面，二维码就补上，打印开始记录；
 #   4. 打印时介绍文字和提示条都不上纸，文件名用短名；
-#   5. 其余板块没登录照样拦回首页。
+#   5. 其余板块没登录：原网址显示完整版说明页（2026-11-25）；首页九个板块可点、页脚全站链接、面包屑、专项练习入口。
 # 用法：先起本机预览（npx wrangler pages dev . --port 8999 --binding SESSION_SECRET=dev-secret --binding DEV_SHOW_CODE=1），
 #   账号 preview@local.test / preview123 要先存在，再
 #   /opt/homebrew/opt/python@3.10/bin/python3.10 tools/e2e-guest-browser.py
@@ -114,10 +114,26 @@ with sync_playwright() as p:
     gp.click('[data-account-menu]')
     check('点侧栏「登录 / 注册」直接弹登录框', gp.is_visible('dialog.account-dialog[open] form[data-view="login"]'))
 
-    # ---------- 其余板块照样拦 ----------
+    # ---------- 其余板块（完整版）：原网址显示完整版说明页（2026-11-25 起不再拦回首页） ----------
     for path in ['/aoshu', '/shizi', '/huochai']:
-        gp.goto(BASE + path)
-        check('没登录打开 ' + path + ' → 拦回首页', '/?next=' in gp.url, gp.url)
+        resp = gp.goto(BASE + path)
+        gp.wait_for_selector('.lk-card', timeout=10000)
+        check('没登录打开 ' + path + ' → 原网址显示完整版说明、有登录按钮、不收录',
+              path in gp.url and '/?next=' not in gp.url and gp.is_visible('[data-lk-guest] [data-login]')
+              and not gp.is_visible('[data-redeem]') and resp.headers.get('x-robots-tag') == 'noindex', gp.url)
+    locks = gp.eval_on_selector_all('.rail-link.is-locked', 'els => els.map(e => e.dataset.module)')
+    check('没登录时侧栏给七个完整版板块挂锁', locks == ['奥数', '识字', '拼音', '火柴', '密码', '迷宫', '数织'], locks)
+    gp.click('[data-lk-guest] [data-login]')
+    gp.wait_for_selector('dialog[open] form[data-view="login"]', timeout=5000)
+    check('完整版说明页点「登录 / 注册」→ 弹出登录框', gp.is_visible('dialog[open] form[data-view="login"]'))
+    gp.goto(BASE + '/')
+    hrefs = gp.eval_on_selector_all('#wl-what ~ * a, .wl-stars a, .wl-mods a', 'els => els.map(e => e.getAttribute("href"))')
+    check('首页九个板块都能点', all(h in hrefs for h in ['/kousuan', '/aoshu', '/shizi', '/pinyin', '/shudu', '/huochai', '/mima', '/migong', '/zhizhi']), hrefs)
+    check('首页页脚有全站链接（含凑十法内页）', gp.query_selector('.site-foot .sitelinks a[href="/kousuan/coushifa"]') is not None)
+    gp.goto(BASE + '/kousuan/coushifa')
+    check('凑十法页有面包屑：首页 › 口算', gp.eval_on_selector_all('.crumbs a', 'els => els.map(e => e.getAttribute("href"))') == ['/', '/kousuan'])
+    gp.goto(BASE + '/kousuan')
+    check('口算页设置栏有「专项练习」入口', gp.query_selector('.special-row a[href="/kousuan/coushifa"]') is not None)
 
     check('全程没有脚本报错', not errs, errs)
     br.close()

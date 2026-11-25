@@ -22,13 +22,17 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   check('扫码登记页：没登录 → 登录后回到这张纸', d('/mark', '?id=abc234', false).location === '/?next=' + encodeURIComponent('/mark?id=abc234'))
   check('二维码库放行', d('/js/vendor/qrcode.js', '', false).action === 'pass')
   check('密码重设邮件链接 /?reset= 落在介绍页', d('/', '?reset=ab', false).action === 'welcome')
-  var r = d('/pinyin', '?mode=add&seed=3', false)
-  check('没登录打开没开放的板块页 → 跳首页并记住原址', r.action === 'redirect' &&
-    r.location === '/?next=' + encodeURIComponent('/pinyin?mode=add&seed=3'), r.location)
+  var r = d('/help', '?a=3', false)
+  check('没登录打开要登录的页面 → 跳首页并记住原址', r.action === 'redirect' &&
+    r.location === '/?next=' + encodeURIComponent('/help?a=3'), r.location)
+  /* 2026-11-25 整站结构：没开放的板块不再把没登录的人带回首页，在原网址显示「完整版」说明页（不收录） */
+  check('没登录打开还没开放的板块 → 原网址显示完整版说明页', ['/aoshu', '/shizi', '/pinyin.html', '/huochai', '/mima/', '/migong', '/zhizhi'].every(function (p) {
+    return d(p, '?seed=3', false).action === 'locked'
+  }))
   check('口算、数独没登录也放行（免登录出题打印）', ['/kousuan', '/kousuan.html', '/shudu', '/shudu.html'].every(function (p) {
     return d(p, '?seed=3', false).action === 'pass'
   }))
-  check('其余板块没登录照样拦', ['/aoshu', '/shizi', '/pinyin.html', '/huochai', '/mima', '/migong', '/zhizhi', '/index.html', '/help'].every(function (p) {
+  check('其余要登录的页面没登录照样拦', ['/index.html', '/help', '/mark', '/admin', '/aoshu/x', '/pinyinx'].every(function (p) {
     return d(p, '', false).action === 'redirect'
   }))
   check('开放页面不能借大小写或尾斜杠绕到别处', d('/KOUSUAN', '', false).action === 'redirect' && d('/kousuan/../aoshu', '', false).action !== 'pass')
@@ -83,6 +87,15 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
     }))
   check('正常的中文与编码路径不误伤', d('/js/store.js', '', false).action === 'pass' && d('/fonts/Andika-OFL.txt', '', false).action === 'pass')
 
+  /* 侧栏的锁（js/sidebar.js FREE_MODULES）要和服务器规则一致：开放给没登录 / 免费版的板块不挂锁，其余挂锁 */
+  var sideSrc = require('fs').readFileSync(require('path').join(__dirname, '..', 'js', 'sidebar.js'), 'utf8')
+  var freeMods = JSON.parse(/FREE_MODULES = (\[[^\]]*\])/.exec(sideSrc)[1].replace(/'/g, '"'))
+  var BOARD_PATH = { 口算: '/kousuan', 奥数: '/aoshu', 识字: '/shizi', 拼音: '/pinyin', 数独: '/shudu', 火柴: '/huochai', 密码: '/mima', 迷宫: '/migong', 数织: '/zhizhi' }
+  check('侧栏的锁和服务器规则一致（没登录、免费版）', Object.keys(BOARD_PATH).every(function (m) {
+    var open = freeMods.indexOf(m) >= 0
+    return (d(BOARD_PATH[m], '', false).action === 'pass') === open && (d(BOARD_PATH[m], '', { ok: true, plan: 'free' }).action === 'pass') === open
+  }), freeMods)
+
   /* --- 中间件整链 --- */
   var SECRET = 'gate-secret'
   var users = { u1: { id: 'u1', pwver: 2, banned: 0 }, u2: { id: 'u2', pwver: 1, banned: 1 }, u3: { id: 'u3', pwver: 1, banned: 0, plan: 'free', email: 'f@x.co', verified: 1 } }
@@ -123,7 +136,11 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
 
   var c = ctx('/pinyin')
   var res = await M.onRequest(c)
-  check('无 cookie 访问没开放的板块 → 302 首页', res.status === 302 && res.headers.get('Location').indexOf('/?next=') === 0 && c.calls.next === 0)
+  check('无 cookie 访问没开放的板块 → 原网址显示完整版说明页、不收录', res.status === 200 && c.calls.next === 0 &&
+    c.calls.assets.some(function (u) { return /\/locked$/.test(u) }) && res.headers.get('X-Robots-Tag') === 'noindex')
+  c = ctx('/help')
+  res = await M.onRequest(c)
+  check('无 cookie 访问要登录的页面 → 302 首页', res.status === 302 && res.headers.get('Location').indexOf('/?next=') === 0 && c.calls.next === 0)
 
   c = ctx('/kousuan')
   res = await M.onRequest(c)
@@ -142,23 +159,23 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   check('有效登录 → 放行', res.status === 200 && c.calls.next === 1)
   check('登录后的页面标 private（不进共享缓存）', /private/.test(res.headers.get('Cache-Control') || ''), res.headers.get('Cache-Control'))
 
-  c = ctx('/pinyin', oldPw)
+  c = ctx('/help', oldPw)
   check('改过密码的旧登录态 → 拦', (await M.onRequest(c)).status === 302)
-  c = ctx('/pinyin', banned)
+  c = ctx('/help', banned)
   check('停用账号 → 拦', (await M.onRequest(c)).status === 302)
-  c = ctx('/pinyin', forged)
+  c = ctx('/help', forged)
   check('伪造签名 → 拦', (await M.onRequest(c)).status === 302)
-  c = ctx('/pinyin', kicked)
+  c = ctx('/help', kicked)
   check('被第 4 台挤掉的设备 → 拦', (await M.onRequest(c)).status === 302)
   c = ctx('/', kicked)
   res = await M.onRequest(c)
   check('被挤掉的设备回首页 → 登录页知道是被挤掉的', res.status === 200 && ((await res.text()).indexOf('"kicked":true') >= 0 || typeof HTMLRewriter === 'undefined'))
-  c = ctx('/pinyin', noSid)
+  c = ctx('/help', noSid)
   check('没有设备记录的旧登录 → 拦（上线后都重新登录一次）', (await M.onRequest(c)).status === 302)
-  c = ctx('/pinyin', otherSid)
+  c = ctx('/help', otherSid)
   check('拿别的账号的设备记录 → 拦', (await M.onRequest(c)).status === 302)
   dbDown = true
-  c = ctx('/pinyin', good)
+  c = ctx('/help', good)
   check('数据库出错 → 按没登录处理（宁可拦）', (await M.onRequest(c)).status === 302)
   dbDown = false
 
@@ -194,7 +211,7 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   c = ctx('/js/store.js', null, 'lianxizhi.pages.dev')
   res = await M.onRequest(c)
   check('旧地址的静态文件照常给', res.status === 200 && c.calls.next === 1)
-  c = ctx('/pinyin', null, 'abc123.lianxizhi.pages.dev')
+  c = ctx('/help', null, 'abc123.lianxizhi.pages.dev')
   res = await M.onRequest(c)
   check('预览部署地址不跳', res.status === 302 && res.headers.get('Location').indexOf('/?next=') === 0)
   var MV = await import('../server/move.js')

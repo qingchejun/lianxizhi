@@ -528,6 +528,20 @@ a {
   letter-spacing: 0.5px;
 }
 
+/* 面包屑（内页，2026-11-25）：标题前一行小字「首页 › 口算 ›」 */
+.crumbs {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: -8px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.crumbs a { color: var(--ink-soft); text-decoration: none; }
+.crumbs a:hover { color: var(--blue); }
+
 .work-sum {
   min-width: 0;
   overflow: hidden;
@@ -1968,6 +1982,11 @@ select.input {
   line-height: 1.85;
 }
 .board-intro a { color: var(--blue); }
+/* 板块设置栏里的「专项练习」入口（口算 → 凑十法等内页） */
+.special-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 10px 0 0; font-size: 13px; }
+.special-row span { color: var(--ink-soft); }
+.special-row a { color: var(--blue); text-decoration: none; }
+.special-row a:hover { text-decoration: underline; }
 .bi-faq {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2088,6 +2107,9 @@ select.input {
 }
 .lk-card p { font-size: 15px; line-height: 1.8; margin: 0 0 12px; }
 .lk-now b { color: var(--ink); }
+.lk-now a { color: var(--blue); }
+.lk-guest { margin: 4px 0 20px; }
+.lk-guest .btn { margin-top: 4px; }
 .lk-redeem {
   margin: 22px 0 18px;
   padding: 18px 18px 8px;
@@ -2103,3 +2125,12 @@ select.input {
   .lk-scroll { padding: 16px 12px 40px; overflow: visible; }
   .lk-card { padding: 24px 18px 16px; }
 }
+
+/* 公开页面底部的全站链接（tools/rail.py 生成） */
+.sitelinks { margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.9; color: var(--ink-soft); }
+.sitelinks p { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 14px; }
+.sitelinks span { min-width: 2.5em; color: var(--ink-soft); }
+.sitelinks a { color: var(--ink-soft); text-decoration: none; }
+.sitelinks a:hover { color: var(--blue); }
+.site-foot .sitelinks { grid-column: 1 / -1; margin-top: 0; padding-top: 16px; }
+.site-foot .sitelinks a { text-decoration: none; }

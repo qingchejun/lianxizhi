@@ -9,10 +9,10 @@
   <script>try{if(localStorage.getItem("lianxizhi:rail")==="fold")document.documentElement.classList.add("rail-folded")}catch(e){}</script>
   <title>完整版 · 纸和笔</title>
   <meta name="robots" content="noindex" />
-  <link rel="stylesheet" href="css/app.css?v=e81251fa73" />
+  <link rel="stylesheet" href="css/app.css?v=c534483a8f" />
 </head>
 <body>
-<!-- 免费版打开完整版的板块时，中间层在原网址上显示这一页（functions/_middleware.js，server/gate.js FREE_PAGES）。
+<!-- 免费版、或没登录的人打开完整版的板块时，中间层在原网址上显示这一页（functions/_middleware.js，server/gate.js FREE_PAGES / FULL_BOARDS）。
      本页没有单独网址；板块名按当前网址填。 -->
 <div class="app">
 <!-- rail:上锁 -->
@@ -41,7 +41,7 @@
     </div>
   </div>
 </nav>
-<script src="js/sidebar.js?v=fb14dd3b96" defer></script>
+<script src="js/sidebar.js?v=ad4375e882" defer></script>
 <!-- /rail -->
 
 <div class="work">
@@ -53,8 +53,12 @@
       <p class="lk-kicker">这个板块属于完整版</p>
       <h2 id="lk-name">完整版板块</h2>
       <p class="lk-desc" id="lk-desc">填邀请码开通完整版后就能用。</p>
-      <p class="lk-now">你现在是<b>免费版</b>：口算、数独都能用，扫码打分、按错题出下一张、换设备同步也都有。完整版另外还有奥数（带讲解视频）、识字、拼音、火柴、密码、迷宫、数织七个板块。</p>
-      <div class="lk-redeem">
+      <div class="lk-guest" data-lk-guest hidden>
+        <p class="lk-now">这个板块要用完整版账号登录。还没有账号也没关系：<a href="kousuan.html">口算</a>、<a href="shudu.html">数独</a>不用登录就能出题、打印；注册免费账号后，纸角会印二维码，做完扫码打分，下一张按错题出。</p>
+        <button type="button" class="btn btn-primary" data-login>登录 / 注册</button>
+      </div>
+      <p class="lk-now" data-lk-free>你现在是<b>免费版</b>：口算、数独都能用，扫码打分、按错题出下一张、换设备同步也都有。完整版另外还有奥数（带讲解视频）、识字、拼音、火柴、密码、迷宫、数织七个板块。</p>
+      <div class="lk-redeem" data-lk-free>
         <h3>有邀请码？现在就开通</h3>
         <form class="redeem-form" data-redeem novalidate>
           <input class="input input-code" type="text" name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="如 K7M2-QF9W" aria-label="邀请码">
@@ -80,6 +84,12 @@
     mima: ['密码', '看几条线索，一步步排除，推出密码。练的是推理。'],
     migong: ['迷宫', '算式迷宫：只有算对的格子才能踩，走到出口就是全对。'],
     zhizhi: ['数织', '按数字线索涂格子，涂完揭晓一幅小图。']
+  }
+  /* 没登录：换成「登录 / 注册」说明，藏起补填邀请码（要先登录） */
+  var me = window.__SUMSUM_ME
+  if (!(me && me.ok)) {
+    document.querySelector('[data-lk-guest]').hidden = false
+    Array.prototype.forEach.call(document.querySelectorAll('[data-lk-free]'), function (n) { n.hidden = true })
   }
   var key = location.pathname.replace(/\/+$/, '').replace(/\.html$/, '').replace(/^\//, '')
   var b = BOARDS[key]

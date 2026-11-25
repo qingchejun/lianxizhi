@@ -1,5 +1,5 @@
 # 登录门槛 + 换账号不串数据，浏览器全流程（2026-11-21）。
-# 没登录打开板块页 → 被拦回首页、自动弹登录框 → 用邀请码注册 A → 回到原板块页 →
+# 没登录打开要登录的页面 → 被拦回首页、自动弹登录框 → 用邀请码注册 A → 回到原板块页 →
 # 记一条练习数据 → 退出（回介绍页）→ 同一浏览器注册 B → A 的数据不在本机、也没推进 B 的云端。
 # 用法：先起 wrangler（同 tools/e2e-account.sh，不带 --d1），再
 #   /opt/homebrew/opt/python@3.10/bin/python3.10 tools/e2e-gate-browser.py
@@ -59,16 +59,17 @@ with sync_playwright() as p:
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))
 
-    page.goto(BASE + '/pinyin')  # 口算、数独 2026-11-24 起免登录，换拼音测拦截
-    check('没登录打开拼音 → 拦回首页', '/?next=' in page.url, page.url)
+    page.goto(BASE + '/help')  # 2026-11-25 起没开放的板块显示完整版说明页（不再拦回首页），换使用说明页测拦截
+    check('没登录打开使用说明 → 拦回首页', '/?next=' in page.url, page.url)
     check('首页是介绍页', page.is_visible('.wl-auth'))
     page.wait_for_selector('form[data-view="login"]', timeout=5000)
     check('被拦下时首页直接显示登录表单', page.is_visible('form[data-view="login"]'))
 
     a = f'gate-a-{STAMP}@test.local'
     register(page, a, make_invite())
-    page.wait_for_url('**/pinyin**', timeout=30000)
-    check('注册完成 → 回到原来要去的拼音页', '/pinyin' in page.url, page.url)
+    page.wait_for_url('**/help**', timeout=30000)
+    check('注册完成 → 回到原来要去的页面', '/help' in page.url, page.url)
+    page.goto(BASE + '/pinyin')
     page.wait_for_selector('.sheet', timeout=10000)
     check('拼音页正常显示', page.is_visible('.sheet'))
 
