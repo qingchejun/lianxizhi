@@ -68,7 +68,7 @@
     <main class="preview" id="preview-wrap">
       <div class="notice" id="notice" hidden></div>
       <div class="guest-note" data-guest-note hidden>
-        <p><b>不用登录就能出题、打印。</b>登录后纸角会印一个二维码：孩子做完，手机扫一下点太简单、刚好还是太难，下一张自动升降关。</p>
+        <p><b>不用登录就能出题、打印。</b>登录后纸角会印一个二维码：孩子做完，手机扫一下点太简单、刚好还是太难，下一张自动升降一档难度。</p>
         <button type="button" class="btn" data-login>登录 / 注册</button>
       </div>
       <div id="preview"></div>
@@ -78,14 +78,14 @@
           <p>走迷宫看着简单，其实是在练眼睛往前看几步、走错了能退回来重新想。可以先教孩子一个办法：一只手贴着一边的墙一直走，总能走出去，只是会绕远；会了以后，再试着先用眼睛找路，最后才动笔。</p>
 
           <h2>四档大小：8×8 到 20×20</h2>
-          <p>第 1 关 8×8，一页两张，第一次走迷宫从这里开始；第 2 关 12×12，一页两张，岔路多起来；第 3 关 16×16，一页一整张；第 4 关 20×20，路最长，适合家长陪着比谁先走出来。每张迷宫的通道都留得够宽，一年级孩子拿铅笔画得进去。</p>
+          <p>「入门」8×8，一页两张，第一次走迷宫从这里开始；「简单」12×12，一页两张，岔路多起来；「中等」16×16，一页一整张；「挑战」20×20，路最长，适合家长陪着比谁先走出来。每张迷宫的通道都留得够宽，一年级孩子拿铅笔画得进去。</p>
 
           <h2>只有一条通路，附红线答案</h2>
           <p>每一张都是随机生成的，从入口到出口只有一条路，也不会出那种贴着边一下就到的简单迷宫；同一张卷子里不会有两张一样的。打印时可以附答案页，用红线画出那条通路，家长一眼就能对。打印份数选 2 份，同一套迷宫印两张，亲子比谁先走出来。</p>
 
           <h2>常见问题</h2>
           <div class="bi-faq">
-            <div><h3>要登录吗？</h3><p>出题、打印都不用登录。登录后纸上会印二维码，做完扫一下，点太简单、刚好还是太难，下一张自动升一关或降一关。</p></div>
+            <div><h3>要登录吗？</h3><p>出题、打印都不用登录。登录后纸上会印二维码，做完扫一下，点太简单、刚好还是太难，下一张自动升一档或降一档。</p></div>
             <div><h3>在国外能用吗？</h3><p>能。打开网页就能出题、打印，不用装软件。</p></div>
             <div><h3>几岁能玩？</h3><p>能握笔画线就能玩 8×8，一般四五岁就可以开始；16×16 和 20×20 更适合一年级以上。</p></div>
             <div><h3>一次能出多少张？</h3><p>1 到 8 张。8×8、12×12 一页两张，16×16、20×20 一页一张。</p></div>
@@ -98,12 +98,12 @@
     <aside class="panel" id="panel" aria-label="设置">
 
       <section class="group">
-        <h2 class="group-title">关卡</h2>
-        <select id="f-level" class="input" data-seg aria-label="关卡">
-          <option value="L1" data-short="第 1 关">第 1 关 · 小小迷宫 · 8×8</option>
-          <option value="L2" data-short="第 2 关">第 2 关 · 小探险 · 12×12</option>
-          <option value="L3" data-short="第 3 关">第 3 关 · 大迷宫 · 16×16</option>
-          <option value="L4" data-short="第 4 关">第 4 关 · 迷宫挑战 · 20×20</option>
+        <h2 class="group-title">难度</h2>
+        <select id="f-level" class="input" data-seg aria-label="难度">
+          <option value="L1" data-short="入门">入门 · 小小迷宫 · 8×8</option>
+          <option value="L2" data-short="简单">简单 · 小探险 · 12×12</option>
+          <option value="L3" data-short="中等">中等 · 大迷宫 · 16×16</option>
+          <option value="L4" data-short="挑战">挑战 · 超大迷宫 · 20×20</option>
         </select>
         <p class="hint" id="level-hint"></p>
       </section>
@@ -134,7 +134,7 @@
 
       <section class="group">
         <label class="field"><span>练习纸标题（选填）</span>
-          <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：儿童迷宫 · 第 1 关 小小迷宫" />
+          <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：儿童迷宫 · 入门 · 小小迷宫" />
         </label>
         <p class="hint">设置自动保存。复制当前网址发给别人，打开就是同一张卷子。</p>
       </section>
@@ -146,17 +146,17 @@
 
 <!-- render.js 只为取 parts 零件与 refreshDates，不会渲染口算内容 -->
 <script src="js/store.js?v=c6aac93871"></script>
-<script src="js/sheets-core.js?v=4a37e8f3d0"></script>
+<script src="js/sheets-core.js?v=a708637534"></script>
 <script src="js/vendor/qrcode.js?v=18ae399f81"></script>
 <script src="js/sheets.js?v=52367c3425"></script>
 <script src="js/shell.js?v=6972c54f86"></script>
 <script src="js/render.js?v=4756ada9e0"></script>
-<script src="js/migong-core.js?v=1faf9a1bd4"></script>
+<script src="js/migong-core.js?v=7ebb4f4f00"></script>
 <script src="js/migong-settings.js?v=b4fc33361f"></script>
-<script src="js/migong-render.js?v=a98a1980e3"></script>
-<script src="js/migong-main.js?v=8756fe81ff"></script>
+<script src="js/migong-render.js?v=aad7558e2a"></script>
+<script src="js/migong-main.js?v=ae28ba4a56"></script>
 <script src="js/backup.js?v=f21895fa7e"></script>
-<script src="js/help.js?v=05def041de"></script>
+<script src="js/help.js?v=baebb51945"></script>
 <script src="js/account.js?v=9790a36543"></script>
 <script src="js/account-ui.js?v=5378640253"></script>
 <script src="js/sync-core.js?v=5f4122b899"></script>

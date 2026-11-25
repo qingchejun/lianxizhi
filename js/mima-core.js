@@ -20,6 +20,9 @@
 (function (root) {
   'use strict'
 
+  /* 四档难度的叫法（2026-11-25 站长定：不叫「第几关」，免得家长以为只有四关）。LEVELS 的 key 仍是 L1–L4 */
+  var DIFF = ['入门', '简单', '中等', '挑战']
+
   /* 可复现随机源（mulberry32）。与 js/shudu-core.js、js/generator.js 里的同名
      函数是同一个算法，这里有意再抄一份而不是共享：种子语义各模块独立，
      共享就得给已经正常工作的页面插加载顺序依赖——为 8 行代码不值得。 */
@@ -51,7 +54,7 @@
    *   strip：卷面附不附"划掉数字带"（训练轮）
    */
   var LEVELS = {
-    L1: { key: 'L1', no: 1, name: '点点入门', N: 3, pool: [1, 2, 3, 4, 5, 6], rowMin: 4, rowMax: 5, bZero: true, dots: true, strip: true },
+    L1: { key: 'L1', no: 1, name: '单色点', N: 3, pool: [1, 2, 3, 4, 5, 6], rowMin: 4, rowMax: 5, bZero: true, dots: true, strip: true },
     L2: { key: 'L2', no: 2, name: '双色点', N: 3, pool: [1, 2, 3, 4, 5, 6, 7, 8, 9], rowMin: 4, rowMax: 4, bZero: false, dots: true, strip: true },
     L3: { key: 'L3', no: 3, name: '读题破译', N: 3, pool: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], rowMin: 4, rowMax: 4, bZero: false, dots: false, strip: false },
     L4: { key: 'L4', no: 4, name: '大侦探', N: 4, pool: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], rowMin: 3, rowMax: 4, bZero: false, dots: false, strip: false }
@@ -340,7 +343,7 @@
 
   function titleFor(s) {
     var lv = levelOf(s.level)
-    return '密码推理 · 第 ' + lv.no + ' 关 ' + lv.name
+    return '密码推理 · ' + DIFF[lv.no - 1] + ' · ' + lv.name
   }
 
   root.SumSum = root.SumSum || {}

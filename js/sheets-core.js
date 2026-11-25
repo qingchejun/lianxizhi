@@ -333,7 +333,8 @@
 
   function gameLevelText(module, settings) {
     if (module === 'shudu') return settings.clues + ' 个提示数'
-    return '第 ' + String(settings.level || 'L1').replace('L', '') + ' 关'
+    /* 游戏四档难度（2026-11-25 起不叫「第几关」） */
+    return ['入门', '简单', '中等', '挑战'][Number(String(settings.level || 'L1').replace('L', '')) - 1] || '入门'
   }
 
   /* ---------- 保存打分（登记页、今天页用） ---------- */

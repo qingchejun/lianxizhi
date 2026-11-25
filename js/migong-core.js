@@ -17,6 +17,9 @@
 (function (root) {
   'use strict'
 
+  /* 四档难度的叫法（2026-11-25 站长定：不叫「第几关」，免得家长以为只有四关）。LEVELS 的 key 仍是 L1–L4 */
+  var DIFF = ['入门', '简单', '中等', '挑战']
+
   /* 可复现随机源（mulberry32 + 种子预搅动，与旧版同一个，分享出去的网址换了题型也能复现） */
   function makeRandom(seed) {
     var t = seed >>> 0
@@ -42,7 +45,7 @@
     L1: { key: 'L1', no: 1, name: '小小迷宫', N: 8, minPath: 21, cell: 8.5, perPage: 2 },
     L2: { key: 'L2', no: 2, name: '小探险', N: 12, minPath: 37, cell: 6.2, perPage: 2 },
     L3: { key: 'L3', no: 3, name: '大迷宫', N: 16, minPath: 61, cell: 10, perPage: 1 },
-    L4: { key: 'L4', no: 4, name: '迷宫挑战', N: 20, minPath: 87, cell: 8, perPage: 1 }
+    L4: { key: 'L4', no: 4, name: '超大迷宫', N: 20, minPath: 87, cell: 8, perPage: 1 }
   }
 
   var LEVEL_ORDER = ['L1', 'L2', 'L3', 'L4']
@@ -147,7 +150,7 @@
 
   function titleFor(s) {
     var lv = levelOf(s.level)
-    return '儿童迷宫 · 第 ' + lv.no + ' 关 ' + lv.name
+    return '儿童迷宫 · ' + DIFF[lv.no - 1] + ' · ' + lv.name
   }
 
   root.SumSum = root.SumSum || {}

@@ -143,7 +143,7 @@
   function gameBody(rec, st) {
     var cur = (rec.ref && rec.ref.settings) || {}
     return segHTML(rec, 'all', GAME, st.levels.all && st.levels.all.level) +
-      '<p class="rule">这张是' + esc(SC.gameLevelText(rec.module, cur)) + '。太简单下一张升一档，太难降一档，刚好不变。</p>'
+      '<p class="rule">这张是「' + esc(SC.gameLevelText(rec.module, cur)) + '」。太简单下一张升一档，太难降一档，刚好不变。</p>'
   }
 
   function charsBody(rec) {
@@ -193,7 +193,7 @@
       var f = rec.module === 'shudu' ? 'clues' : 'level'
       if (a && a.changed) {
         cur[f] = a.next
-        msg = '下一张自动' + (rec.rating.all.level === 'good' ? '加难' : '降难') + '到' + SC.gameLevelText(rec.module, cur) + '。'
+        msg = '下一张自动' + (rec.rating.all.level === 'good' ? '加难' : '降难') + '到「' + SC.gameLevelText(rec.module, cur) + '」。'
       } else {
         msg = '下一张难度不变。'
       }

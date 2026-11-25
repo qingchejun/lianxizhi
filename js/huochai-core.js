@@ -17,6 +17,9 @@
 (function (root) {
   'use strict'
 
+  /* 四档难度的叫法（2026-11-25 站长定：不叫「第几关」，免得家长以为只有四关）。LEVELS 的 key 仍是 L1–L4 */
+  var DIFF = ['入门', '简单', '中等', '挑战']
+
   var SEG = ['abcdef', 'bc', 'abdeg', 'abcdg', 'bcfg', 'acdfg', 'acdefg', 'abc', 'abcdefg', 'abcdfg']
   var DIGIT_SEGS = 'abcdefg'
   var OP_SEGS = 'hv'
@@ -32,7 +35,7 @@
     L1: { key: 'L1', no: 1, name: '拿走一根', kind: 'take', max: 9, two: false },
     L2: { key: 'L2', no: 2, name: '添上一根', kind: 'add', max: 9, two: false },
     L3: { key: 'L3', no: 3, name: '挪一挪', kind: 'move', max: 9, two: false },
-    L4: { key: 'L4', no: 4, name: '两位数挑战', kind: 'move', max: 20, two: true }
+    L4: { key: 'L4', no: 4, name: '两位数', kind: 'move', max: 20, two: true }
   }
   var LEVEL_ORDER = ['L1', 'L2', 'L3', 'L4']
   var KIND_TEXT = { take: '拿走一根', add: '添上一根', move: '移动一根' }
@@ -253,7 +256,7 @@
 
   function titleFor(s) {
     var lv = levelOf(s.level)
-    return '火柴棒算式 · 第 ' + lv.no + ' 关 ' + lv.name
+    return '火柴棒算式 · ' + DIFF[lv.no - 1] + ' · ' + lv.name
   }
 
   root.SumSum = root.SumSum || {}

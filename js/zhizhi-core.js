@@ -8,6 +8,9 @@
 (function (root) {
   'use strict'
 
+  /* 四档难度的叫法（2026-11-25 站长定：不叫「第几关」，免得家长以为只有四关）。LEVELS 的 key 仍是 L1–L4 */
+  var DIFF = ['入门', '简单', '中等', '挑战']
+
   /* ---------- 随机数（每模块自带一份，mulberry32） ---------- */
 
   function makeRandom(seed) {
@@ -303,7 +306,7 @@
 
   function titleFor(s) {
     var lv = levelOf(s.level)
-    return '数织涂画 · 第 ' + lv.no + ' 关 ' + lv.name
+    return '数织涂画 · ' + DIFF[lv.no - 1] + ' · ' + lv.name
   }
 
   function generate(s) {

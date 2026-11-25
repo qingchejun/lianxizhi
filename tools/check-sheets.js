@@ -149,7 +149,7 @@ var sd = C.gameStep('shudu', { shape: 's9', clues: 35 }, 'good', { min: 27, max:
 check(sd.next.clues === 31 && sd.next.shape === 's9', '数独太简单少给提示 ' + sd.next.clues)
 check(C.gameStep('shudu', { shape: 's4', clues: 12 }, 'bad', { min: 5, max: 12 }).changed === false, '数独到顶不动')
 check(C.gameStep('shudu', { shape: 's4', clues: 6 }, 'good', { min: 5, max: 12 }).next.clues === 5, '数独不低于下限')
-check(C.gameLevelText('huochai', { level: 'L3' }) === '第 3 关' && C.gameLevelText('shudu', { clues: 31 }) === '31 个提示数', 'gameLevelText')
+check(C.gameLevelText('huochai', { level: 'L3' }) === '中等' && C.gameLevelText('shudu', { clues: 31 }) === '31 个提示数', 'gameLevelText')
 
 /* ---------- 保存打分（登记页用）：写记录 + 作用到板块存储，改档不叠加 ---------- */
 function memStore(init) {

@@ -229,10 +229,10 @@
   /* 数独以外几个游戏的关卡名：照抄各 *-core.js 的 LEVELS 与板块页下拉框（check-today 对着下拉框校验）。
      首页不为三行字加载三个题目引擎，所以设置也在这里按同样的钳位规则读 */
   var GAME_LEVELS = {
-    huochai: [{ name: '拿走一根', note: '10 以内' }, { name: '添上一根', note: '10 以内' }, { name: '挪一挪', note: '10 以内' }, { name: '两位数挑战', note: '20 以内' }],
-    mima: [{ name: '点点入门' }, { name: '双色点' }, { name: '读题破译' }, { name: '大侦探' }],
+    huochai: [{ name: '拿走一根', note: '10 以内' }, { name: '添上一根', note: '10 以内' }, { name: '挪一挪', note: '10 以内' }, { name: '两位数', note: '20 以内' }],
+    mima: [{ name: '单色点' }, { name: '双色点' }, { name: '读题破译' }, { name: '大侦探' }],
     zhizhi: [{ name: '迷你涂画', note: '5×5' }, { name: '小小图案', note: '8×8' }, { name: '大发现', note: '10×10' }, { name: '像素大师', note: '12×12' }],
-    migong: [{ name: '小小迷宫', note: '8×8' }, { name: '小探险', note: '12×12' }, { name: '大迷宫', note: '16×16' }, { name: '迷宫挑战', note: '20×20' }]
+    migong: [{ name: '小小迷宫', note: '8×8' }, { name: '小探险', note: '12×12' }, { name: '大迷宫', note: '16×16' }, { name: '超大迷宫', note: '20×20' }]
   }
   var GAME_RULES = {
     huochai: { unit: '题', max: 10, def: 5 },
@@ -260,7 +260,7 @@
     return {
       key: key,
       level: no,
-      title: '第 ' + no + ' 关 · ' + lv.name,
+      title: ['入门', '简单', '中等', '挑战'][no - 1] + ' · ' + lv.name, /* 四档难度，不叫「第几关」（2026-11-25） */
       meta: meta.join(' · '),
       minutes: minutes(count * GAME_MIN[key][no - 1]),
       href: key + '.html',
@@ -336,7 +336,7 @@
         module: m,
         recId: last.id,
         up: SC.levelOf(last) === 'good',
-        text: SC.MODULE_LABEL[m] + '按上次反馈' + (SC.levelOf(last) === 'good' ? '加难' : '降难') + '到' + SC.gameLevelText(m, shown)
+        text: SC.MODULE_LABEL[m] + '按上次反馈' + (SC.levelOf(last) === 'good' ? '加难' : '降难') + '到「' + SC.gameLevelText(m, shown) + '」'
       })
     })
     return out

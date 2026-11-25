@@ -89,7 +89,7 @@
 
     var notice = $('notice')
     if (result.shortfall > 0) {
-      notice.textContent = '这一关的题只有 ' + result.puzzles.length + ' 道，少于设定的 ' + settings.count + ' 道。'
+      notice.textContent = '这一档的题只有 ' + result.puzzles.length + ' 道，少于设定的 ' + settings.count + ' 道。'
       notice.hidden = false
     } else {
       notice.hidden = true

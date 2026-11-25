@@ -8,12 +8,12 @@
   <meta name="theme-color" content="#f6f7f9" />
   <script>try{if(localStorage.getItem("lianxizhi:rail")==="fold")document.documentElement.classList.add("rail-folded")}catch(e){}</script>
   <title>数织游戏：按数字涂格子，涂完是一幅画 · 纸和笔</title>
-  <meta name="description" content="不用登录，直接打印儿童数织（Nonogram）：看行、列边上的数字推理哪几格涂黑，涂完显出一幅画。5×5 到 12×12 四关，每道题不用猜，答案页附起步提示。" />
+  <meta name="description" content="不用登录，直接打印儿童数织（Nonogram）：看行、列边上的数字推理哪几格涂黑，涂完显出一幅画。5×5 到 12×12 四档难度，每道题不用猜，答案页附起步提示。" />
   <link rel="canonical" href="https://zhihebi.com/zhizhi" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="纸和笔" />
   <meta property="og:title" content="数织游戏：按数字涂格子，涂完是一幅画 · 纸和笔" />
-  <meta property="og:description" content="不用登录，直接打印儿童数织（Nonogram）：看行、列边上的数字推理哪几格涂黑，涂完显出一幅画。5×5 到 12×12 四关，每道题不用猜，答案页附起步提示。" />
+  <meta property="og:description" content="不用登录，直接打印儿童数织（Nonogram）：看行、列边上的数字推理哪几格涂黑，涂完显出一幅画。5×5 到 12×12 四档难度，每道题不用猜，答案页附起步提示。" />
   <meta property="og:url" content="https://zhihebi.com/zhizhi" />
   <link rel="stylesheet" href="css/app.css?v=a6a884a731" />
   <link rel="stylesheet" href="css/sheet.css?v=a0e1aaaa2e" />
@@ -68,7 +68,7 @@
     <main class="preview" id="preview-wrap">
       <div class="notice" id="notice" hidden></div>
       <div class="guest-note" data-guest-note hidden>
-        <p><b>不用登录就能出题、打印。</b>登录后纸角会印一个二维码：孩子做完，手机扫一下点太简单、刚好还是太难，下一张自动升降关。</p>
+        <p><b>不用登录就能出题、打印。</b>登录后纸角会印一个二维码：孩子做完，手机扫一下点太简单、刚好还是太难，下一张自动升降一档难度。</p>
         <button type="button" class="btn" data-login>登录 / 注册</button>
       </div>
       <div id="preview"></div>
@@ -77,15 +77,15 @@
           <p>数织也叫 Nonogram，是一种涂格子的推理游戏。网格左边的数字管这一行，上方的数字管这一列：一个数表示这条线里有一段连着的黑格，数字是几就连几格；两个数就是按顺序两段，中间至少空一格；0 表示整条线都不涂。孩子按数字推出哪些格子该涂黑，全部涂对，纸上就会显出一幅画。</p>
           <p>从哪下手：先找能排满的线，比如 5×5 里印着 5 的那一行直接涂满，印着 0 的整行打叉；再把一段黑格分别贴着左边和右边各摆一次，两种摆法重叠的格子一定是黑的。行推出一点，列再推出一点，图案就慢慢出来了。</p>
 
-          <h2>四关由易到难：5×5 到 12×12</h2>
-          <p>第 1 关 5×5，是字母、数字和简单图形，第一次玩从这里开始；第 2 关 8×8，动物和日常用品；第 3 关 10×10，要行和列来回推；第 4 关 12×12，一整页一幅大图，适合安静的下午慢慢涂。屏幕上每张题卡都能先试玩，再决定打不打印。</p>
+          <h2>四档难度由易到难：5×5 到 12×12</h2>
+          <p>「入门」5×5，是字母、数字和简单图形，第一次玩从这里开始；「简单」8×8，动物和日常用品；「中等」10×10，要行和列来回推；「挑战」12×12，一整页一幅大图，适合安静的下午慢慢涂。屏幕上每张题卡都能先试玩，再决定打不打印。</p>
 
           <h2>不用猜，答案页附起步提示</h2>
           <p>每道题都只用数数和推理就能做出来，不需要试着涂。打印时可以附答案页：有完成图，还有头几步的起步提示，比如「第 5 行印着 5，正好排满」，孩子看一条就能接着往下推。打印份数选 2 份，同一幅图亲子各涂一张，比谁先涂出来。</p>
 
           <h2>常见问题</h2>
           <div class="bi-faq">
-            <div><h3>要登录吗？</h3><p>出题、打印都不用登录。登录后纸上会印二维码，做完扫一下，点太简单、刚好还是太难，下一张自动升一关或降一关。</p></div>
+            <div><h3>要登录吗？</h3><p>出题、打印都不用登录。登录后纸上会印二维码，做完扫一下，点太简单、刚好还是太难，下一张自动升一档或降一档。</p></div>
             <div><h3>在国外能用吗？</h3><p>能。打开网页就能出题、打印，不用装软件。</p></div>
             <div><h3>几岁能玩？</h3><p>会数到 5、知道横行竖列就能玩 5×5，一般一年级就可以开始。</p></div>
             <div><h3>一次能出多少题？</h3><p>1 到 8 道，小图一页两道，12×12 一页一道，同一张卷子不重复。</p></div>
@@ -98,12 +98,12 @@
     <aside class="panel" id="panel" aria-label="设置">
 
       <section class="group">
-        <h2 class="group-title">关卡</h2>
-        <select id="f-level" class="input" data-seg aria-label="关卡">
-          <option value="L1" data-short="第 1 关">第 1 关 · 迷你涂画 · 5×5</option>
-          <option value="L2" data-short="第 2 关">第 2 关 · 小小图案 · 8×8</option>
-          <option value="L3" data-short="第 3 关">第 3 关 · 大发现 · 10×10</option>
-          <option value="L4" data-short="第 4 关">第 4 关 · 像素大师 · 12×12</option>
+        <h2 class="group-title">难度</h2>
+        <select id="f-level" class="input" data-seg aria-label="难度">
+          <option value="L1" data-short="入门">入门 · 迷你涂画 · 5×5</option>
+          <option value="L2" data-short="简单">简单 · 小小图案 · 8×8</option>
+          <option value="L3" data-short="中等">中等 · 大发现 · 10×10</option>
+          <option value="L4" data-short="挑战">挑战 · 像素大师 · 12×12</option>
         </select>
         <p class="hint" id="level-hint"></p>
       </section>
@@ -134,7 +134,7 @@
 
       <section class="group">
         <label class="field"><span>练习纸标题（选填）</span>
-          <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：数织涂画 · 第 1 关 迷你涂画" />
+          <input type="text" id="f-title" class="input" maxlength="30" placeholder="留空则自动生成，如：数织涂画 · 入门 · 迷你涂画" />
         </label>
         <p class="hint">设置自动保存。复制当前网址发给别人，打开就是同一张卷子。</p>
       </section>
@@ -146,19 +146,19 @@
 
 <!-- render.js 只为取 parts 零件与 refreshDates，不会渲染口算内容 -->
 <script src="js/store.js?v=c6aac93871"></script>
-<script src="js/sheets-core.js?v=4a37e8f3d0"></script>
+<script src="js/sheets-core.js?v=a708637534"></script>
 <script src="js/vendor/qrcode.js?v=18ae399f81"></script>
 <script src="js/sheets.js?v=52367c3425"></script>
 <script src="js/shell.js?v=6972c54f86"></script>
 <script src="js/render.js?v=4756ada9e0"></script>
 <script src="js/zhizhi-art.js?v=ec7902130e"></script>
-<script src="js/zhizhi-core.js?v=d7fb0d5ea3"></script>
+<script src="js/zhizhi-core.js?v=efed5c19a8"></script>
 <script src="js/zhizhi-settings.js?v=d682283ba4"></script>
-<script src="js/zhizhi-render.js?v=c22b487148"></script>
-<script src="js/zhizhi-play.js?v=0847c1f806"></script>
-<script src="js/zhizhi-main.js?v=3eb5df015d"></script>
+<script src="js/zhizhi-render.js?v=5106f51530"></script>
+<script src="js/zhizhi-play.js?v=37a4835f31"></script>
+<script src="js/zhizhi-main.js?v=b3e6fed81b"></script>
 <script src="js/backup.js?v=f21895fa7e"></script>
-<script src="js/help.js?v=05def041de"></script>
+<script src="js/help.js?v=baebb51945"></script>
 <script src="js/account.js?v=9790a36543"></script>
 <script src="js/account-ui.js?v=5378640253"></script>
 <script src="js/sync-core.js?v=5f4122b899"></script>

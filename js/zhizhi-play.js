@@ -217,7 +217,7 @@
     d.className = 'zhizhi-play-dialog'
     d.innerHTML =
       '<header class="zp-head">' +
-      '<span class="zp-title">第 ' + lv.no + ' 关 · 在线试玩</span>' +
+      '<span class="zp-title">' + ['入门', '简单', '中等', '挑战'][lv.no - 1] + ' · 在线试玩</span>' +
       '<button type="button" class="zp-close" aria-label="关闭">×</button>' +
       '</header>' +
       '<p class="zp-status">' + HINT + '</p>' +

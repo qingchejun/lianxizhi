@@ -202,17 +202,17 @@
     }
   }
   var GAME_TEXT = {
-    huochai: { name: '火柴', note: '动一根火柴让算式变对', more: '换一关' },
-    mima: { name: '密码', note: '看线索推出密码', more: '换一关' },
-    zhizhi: { name: '数织', note: '涂完是一幅小图', more: '换一关' },
-    migong: { name: '迷宫', note: '拿笔从起点画到出口', more: '换一关' }
+    huochai: { name: '火柴', note: '动一根火柴让算式变对', more: '换难度' },
+    mima: { name: '密码', note: '看线索推出密码', more: '换难度' },
+    zhizhi: { name: '数织', note: '涂完是一幅小图', more: '换难度' },
+    migong: { name: '迷宫', note: '拿笔从起点画到出口', more: '换难度' }
   }
   function gameCard(g) {
     var t = GAME_TEXT[g.key]
     return paper({
       name: t.name, mins: g.minutes, kind: '上次的设置',
       href: g.href, printHref: g.printHref, cls: 'pp-games pp-' + g.key,
-      sheetTitle: t.name + ' · 第 ' + g.level + ' 关', face: GAME_FACE[g.key](),
+      sheetTitle: t.name + ' · ' + ['入门', '简单', '中等', '挑战'][g.level - 1], face: GAME_FACE[g.key](),
       title: g.title,
       lines: '<p class="dk-meta">' + esc(g.meta) + '</p><p class="dk-note">' + t.note + '</p>',
       printText: '打印',
