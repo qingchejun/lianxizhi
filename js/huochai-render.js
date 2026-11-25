@@ -114,7 +114,7 @@
   }
 
   function headHTML(title) {
-    return '<header class="sheet-head"><h2 class="sheet-title">' + P().esc(title) + '</h2>' + P().metaHTML() + '</header>'
+    return '<header class="sheet-head"><div class="sheet-title">' + P().esc(title) + '</div>' + P().metaHTML() + '</header>'
   }
 
   function itemHTML(entry, lv) {

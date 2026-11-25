@@ -85,7 +85,7 @@
   function headHTML(title) {
     return (
       '<header class="sheet-head">' +
-      '<h2 class="sheet-title">' + P().esc(title) + '</h2>' +
+      '<div class="sheet-title">' + P().esc(title) + '</div>' +
       P().metaHTML() +
       '</header>'
     )

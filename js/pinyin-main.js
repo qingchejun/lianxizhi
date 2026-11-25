@@ -103,10 +103,10 @@
   function overview(title, text, ids) {
     const c = counts(ids)
     const due = ids.filter(id => stateOf(id).cls === 'due')
-    return '<section class="group"><h2 class="group-title">' + title + '</h2><p class="hint">' + text + '</p>' +
+    return '<section class="group"><div class="group-title">' + title + '</div><p class="hint">' + text + '</p>' +
       '<dl class="py-stats"><div><dt>已稳固</dt><dd>' + c.solid + '</dd></div><div><dt>待复核</dt><dd>' + c.due + '</dd></div>' +
       '<div><dt>没练过</dt><dd>' + c.fresh + '</dd></div></dl></section>' +
-      (due.length ? '<section class="group"><h2 class="group-title">该复核了</h2><ul class="py-items">' +
+      (due.length ? '<section class="group"><div class="group-title">该复核了</div><ul class="py-items">' +
         due.map(id => item(D.directions[id].label, href({ topic: id }), id)).join('') + '</ul></section>' : '')
   }
 
@@ -119,7 +119,7 @@
   function catalog() {
     if (view === 'history') {
       sumEl.textContent = '历史卷 · 共 ' + data.sheets.length + ' 张'
-      host.innerHTML = '<section class="group"><h2 class="group-title">按卷号找</h2>' +
+      host.innerHTML = '<section class="group"><div class="group-title">按卷号找</div>' +
         '<p class="hint">输入纸上右上角印的卷号，比如 1121-K7QM。</p>' +
         '<input class="input" type="search" id="py-find" placeholder="卷号" autocomplete="off" spellcheck="false"></section>'
       if (!data.sheets.length) {
@@ -300,7 +300,7 @@
       const name = group.phase === 'check' ? '换题再试 · ' + group.label.replace(/^复习 · /, '')
         : group.phase === 'observe' ? group.label : '第 ' + (normalIdx + 1) + ' 组 · ' + group.label.replace(/^复习 · /, '')
       body = '<section class="group py-now" style="--pinyin-size:' + size + 'px">' +
-        '<div class="py-now-head"><h2 class="group-title">' + esc(name) + '</h2>' +
+        '<div class="py-now-head"><div class="group-title">' + esc(name) + '</div>' +
         '<button type="button" class="btn btn-sm" data-action="child-view"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="11.5" rx="2"/><path d="M9 20h6M12 16.5V20"/></svg>孩子视图</button></div>' +
         '<p class="hint">顺利的题什么都不点。孩子读不出来、要提示，才点对应的按钮。</p>' +
         '<ol class="py-rows">' + group.items.map(row).join('') + '</ol>' +
@@ -332,7 +332,7 @@
         '<p class="py-reason"><span>为什么练这个</span>' + esc(sheet.reason) + '</p>' +
         '<p class="py-meta">' + esc(md(sheet.date)) + ' · 卷号 <b>' + esc(sheet.id) + '</b></p>' +
       '</section>' +
-      '<section class="group"><h2 class="group-title">分组<span class="sub">点一组登记</span></h2>' + progress() + '</section>' +
+      '<section class="group"><div class="group-title">分组<span class="sub">点一组登记</span></div>' + progress() + '</section>' +
       body +
       '<section class="group"><div class="row-between"><span class="lbl">题目字号</span>' +
         '<div class="seg-ctl py-size" role="group" aria-label="题目字号">' + [26, 32, 40].map(v =>

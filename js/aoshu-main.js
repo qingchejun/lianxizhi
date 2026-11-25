@@ -400,7 +400,7 @@
     group.hidden = false
     /* 文字来自大纲常量和视频登记表，没有用户输入 */
     group.innerHTML =
-      '<div class="row-between"><h2 class="group-title">讲解视频</h2>' +
+      '<div class="row-between"><div class="group-title">讲解视频</div>' +
         '<span class="lbl">' + durText(v.dur) + ' · 只在屏幕播放</span></div>' +
       '<div class="video-box" id="video-box">' +
         '<div class="video-top"><span>第 ' + o.no + ' 课 · ' + o.name + ' · 讲解视频</span>' +

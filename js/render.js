@@ -156,7 +156,7 @@
     return (
       '<section class="sheet" data-cols="' + opts.cols + '">' +
       '<header class="sheet-head">' +
-      '<h2 class="sheet-title">' + esc(opts.title) + '</h2>' +
+      '<div class="sheet-title">' + esc(opts.title) + '</div>' +
       metaHTML() +
       '</header>' +
       '<div class="sheet-grid" style="--cols:' + opts.cols +

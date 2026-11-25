@@ -74,7 +74,7 @@
             <p><b>不用登录就能出题、打印。</b>登录后纸角会印一个二维码：孩子做完，手机扫一下点出错题，下一张专练这些。</p>
             <button type="button" class="btn" data-login>登录，开启扫码打分</button>
           </div>
-          <div id="preview"></div>
+          <div id="preview"><!-- bake:preview --><section class="sheet sheet-sudoku playable"><header class="sheet-head"><div class="sheet-title">四宫格数独 · 给 7 个提示</div><div class="sheet-meta"><span class="meta-date"></span><span class="gap"></span>姓名<span class="line w-l"></span><span class="gap"></span>用时<span class="line w-s"></span>分<span class="gap"></span>得分<span class="line w-m"></span></div></header><div class="sudoku-stage"><div class="sudoku-grid"><div class="sudoku-item"><p class="sudoku-rule">① 每行、每列、每个粗框小宫都要有 1~4，各出现一次</p><div class="sudoku" data-n="4" data-shape="s4" style="width:168mm;height:168mm;grid-template-columns:repeat(4,42mm);grid-auto-rows:42mm;font-size:7.9mm;--bd:1.2mm;--bdi:0.3mm"><div class="cell blank" data-i="0" role="button" tabindex="0"></div><div class="cell br blank" data-i="1" role="button" tabindex="0"></div><div class="cell given">4</div><div class="cell blank" data-i="3" role="button" tabindex="0"></div><div class="cell bb given">1</div><div class="cell bb br given">4</div><div class="cell bb given">2</div><div class="cell bb blank" data-i="7" role="button" tabindex="0"></div><div class="cell blank" data-i="8" role="button" tabindex="0"></div><div class="cell br blank" data-i="9" role="button" tabindex="0"></div><div class="cell given">3</div><div class="cell blank" data-i="11" role="button" tabindex="0"></div><div class="cell blank" data-i="12" role="button" tabindex="0"></div><div class="cell br given">2</div><div class="cell given">1</div><div class="cell blank" data-i="15" role="button" tabindex="0"></div></div></div></div></div><footer class="sheet-foot">第 1 题 / 共 1 题　·　第 1 份</footer></section><section class="sheet sheet-sudoku"><header class="sheet-head"><div class="sheet-title">四宫格数独 · 给 7 个提示</div><div class="sheet-meta"><span class="meta-date"></span><span class="gap"></span>姓名<span class="line w-l"></span><span class="gap"></span>用时<span class="line w-s"></span>分<span class="gap"></span>得分<span class="line w-m"></span></div></header><div class="sudoku-stage"><div class="sudoku-grid"><div class="sudoku-item"><p class="sudoku-rule">① 每行、每列、每个粗框小宫都要有 1~4，各出现一次</p><div class="sudoku" data-n="4" data-shape="s4" style="width:168mm;height:168mm;grid-template-columns:repeat(4,42mm);grid-auto-rows:42mm;font-size:7.9mm;--bd:1.2mm;--bdi:0.3mm"><div class="cell blank" data-i="0" role="button" tabindex="0"></div><div class="cell br blank" data-i="1" role="button" tabindex="0"></div><div class="cell given">4</div><div class="cell blank" data-i="3" role="button" tabindex="0"></div><div class="cell bb given">1</div><div class="cell bb br given">4</div><div class="cell bb given">2</div><div class="cell bb blank" data-i="7" role="button" tabindex="0"></div><div class="cell blank" data-i="8" role="button" tabindex="0"></div><div class="cell br blank" data-i="9" role="button" tabindex="0"></div><div class="cell given">3</div><div class="cell blank" data-i="11" role="button" tabindex="0"></div><div class="cell blank" data-i="12" role="button" tabindex="0"></div><div class="cell br given">2</div><div class="cell given">1</div><div class="cell blank" data-i="15" role="button" tabindex="0"></div></div></div></div></div><footer class="sheet-foot">第 1 题 / 共 1 题　·　第 2 份</footer></section><!-- /bake:preview --></div>
         <article class="board-intro" aria-labelledby="bi-why">
           <h2 id="bi-why">为什么保证不用猜</h2>
           <p>很多数独题要试着填、填错了再擦，孩子容易越做越烦。这里的每一道题出好以后，都用只靠排除的方法从头解一遍：每一步都能找到一个只能填这个数的格子，才算合格。孩子卡住了，说明有一条线索还没看到，而不是要靠运气。</p>
@@ -103,7 +103,7 @@
     <aside class="panel" id="panel" aria-label="设置">
 
       <section class="group">
-        <h2 class="group-title">盘型</h2>
+        <div class="group-title">盘型</div>
         <select id="f-shape" class="input" data-seg aria-label="盘型">
           <option value="s4" data-short="四宫格">四宫格 4×4 · 行、列、2×2 宫</option>
           <option value="s6" data-short="六宫格">六宫格 6×6 · 行、列、2×3 宫</option>
@@ -113,14 +113,14 @@
       </section>
 
       <section class="group">
-        <h2 class="group-title">难度：<span id="clues-label"></span></h2>
+        <div class="group-title">难度：<span id="clues-label"></span></div>
         <input type="range" id="f-clues" class="slider" step="1" />
         <div class="slider-ends"><span id="clues-min"></span><span id="clues-max"></span></div>
         <p class="hint">提示越少越难。每一档都保证一步步推得出来，不用猜。</p>
       </section>
 
       <section class="group">
-        <h2 class="group-title">题量与排版</h2>
+        <div class="group-title">题量与排版</div>
         <div class="row-between">
           <label class="lbl" for="f-count">题目数量</label>
           <input type="number" id="f-count" class="input" min="1" max="20" step="1" data-stepper />
@@ -173,10 +173,10 @@
 <script src="js/vendor/qrcode.js?v=18ae399f81"></script>
 <script src="js/sheets.js?v=bfb71ef38f"></script>
 <script src="js/shell.js?v=6972c54f86"></script>
-<script src="js/render.js?v=4756ada9e0"></script>
+<script src="js/render.js?v=7ee86eb2c8"></script>
 <script src="js/shudu-core.js?v=658de65c54"></script>
 <script src="js/shudu-settings.js?v=8077fece13"></script>
-<script src="js/shudu-render.js?v=dff98254c4"></script>
+<script src="js/shudu-render.js?v=16b2a01378"></script>
 <script src="js/shudu-play.js?v=08ea0fff72"></script>
 <script src="js/shudu-main.js?v=55decde4f3"></script>
 <script src="js/backup.js?v=f21895fa7e"></script>

@@ -59,8 +59,8 @@
         : '先做重点题。顺利再做复习，有余量再做「试一试」。卡住时用下面的教学卡，讲完做「换题再试」，随后可以收工。'
     const keys = answers(sheet.groups)
     const range = ids => ids.length > 2 ? ids[0] + '–' + ids.at(-1) : ids.join('、')
-    return '<article class="sheet pinyin-print"><header class="sheet-head"><h2 class="sheet-title">拼音练习 · ' +
-      escape(sheet.title) + '</h2><div class="sheet-meta">' + escape(sheet.date) + '　卷号 ' + escape(sheet.id) +
+    return '<article class="sheet pinyin-print"><header class="sheet-head"><div class="sheet-title">拼音练习 · ' +
+      escape(sheet.title) + '</div><div class="sheet-meta">' + escape(sheet.date) + '　卷号 ' + escape(sheet.id) +
       '</div></header>' +
       sheet.groups.map(group =>
         '<section class="py-group"><h3>' + (group.phase === 'check' ? '换题再试 · ' : '') + escape(group.label) +

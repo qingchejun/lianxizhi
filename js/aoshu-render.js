@@ -428,7 +428,7 @@
     return (
       '<section class="sheet">' +
       '<header class="sheet-head">' +
-      '<h2 class="sheet-title">' + p.esc(opts.title) + '</h2>' +
+      '<div class="sheet-title">' + p.esc(opts.title) + '</div>' +
       p.metaHTML() +
       '</header>' +
       '<div class="' + opts.gridClass + '">' + opts.blocksHTML + '</div>' +

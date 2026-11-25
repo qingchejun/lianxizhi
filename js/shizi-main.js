@@ -818,7 +818,7 @@
     }
     box.innerHTML = S.shiziXie.sheets({ size: settings.xieSize, trace: settings.xieTrace, copies: settings.copies, title: settings.title },
       l, function (title) {
-        return '<header class="sheet-head"><h2 class="sheet-title">' + S.render.parts.esc(title) + '</h2>' + S.render.parts.metaHTML() + '</header>'
+        return '<header class="sheet-head"><div class="sheet-title">' + S.render.parts.esc(title) + '</div>' + S.render.parts.metaHTML() + '</header>'
       }).join('')
     $('btn-print').disabled = false
     $('btn-print').hidden = false

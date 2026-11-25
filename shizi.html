@@ -87,7 +87,7 @@
 
       <!-- 字表：某恩 / 人教版（按课）。人教版时多一个「学校学到」，每日一卷只考教过的课 -->
       <section class="group" id="sec-book">
-        <h2 class="group-title">字表</h2>
+        <div class="group-title">字表</div>
         <label class="field"><span>考哪套字</span>
           <select id="f-book" class="input">
             <option value="hongen">某恩识字（1600 字）</option>
@@ -122,7 +122,7 @@
       </section>
 
       <section class="group mark-legend" id="mark-legend">
-        <h2 class="group-title">卷面标记</h2>
+        <div class="group-title">卷面标记</div>
         <span><i class="sw pick"></i>点了：这次没认出，登记时记下</span>
         <span><i class="sw"></i>在错字集里，右上角是还差几次认出</span>
         <span><i class="sw half"></i>认出过一次，3 天后复核</span>
@@ -154,14 +154,14 @@
 
       <!-- 「历史」页签：统计在左边纸张区，这里只放说明 -->
       <section class="group" id="sec-history" hidden>
-        <h2 class="group-title">历史错字</h2>
+        <div class="group-title">历史错字</div>
         <p class="hint">只要错过一次的字都记在这里，学会移出了也不删。<b>次数</b>是一共错过几次：
           收进错字集算一次，之后每次复习结算时没认出来再加一次。</p>
         <p class="hint" id="hist-append-hint">「本周复习」附的错字页按次数抽字：错得越多越容易被抽到；上次复习认出来的（半红），机会减半。</p>
       </section>
 
       <section class="group" id="sec-layout">
-        <h2 class="group-title">排版</h2>
+        <div class="group-title">排版</div>
         <label class="field"><span>每页字数</span>
           <select id="f-perpage" class="input">
             <option value="0">自动（尽量一页）</option>
@@ -189,7 +189,7 @@
       </section>
 
       <section class="group" id="sec-wrong">
-        <h2 class="group-title">错字集<span class="sub" id="wrong-title-n"></span></h2>
+        <div class="group-title">错字集<span class="sub" id="wrong-title-n"></span></div>
         <!-- 只在「本周复习」模式下有意义：错字集模式整张卷子就是错字 -->
         <label class="check" id="sec-append">
           <input type="checkbox" id="f-withwrong" /><span>附一页错字（抽 20 个，错得多的优先）</span>
@@ -257,17 +257,17 @@
 <script src="js/vendor/qrcode.js?v=18ae399f81"></script>
 <script src="js/sheets.js?v=bfb71ef38f"></script>
 <script src="js/shell.js?v=6972c54f86"></script>
-<script src="js/render.js?v=4756ada9e0"></script>
+<script src="js/render.js?v=7ee86eb2c8"></script>
 <script src="js/shizi-data.js?v=c3c3176849"></script>
 <script src="js/shizi-rj-data.js?v=597075cde5"></script>
 <script src="js/shizi-core.js?v=97726de3cf"></script>
 <script src="js/shizi-settings.js?v=90a47d5022"></script>
-<script src="js/shizi-render.js?v=32ff04b5f3"></script>
+<script src="js/shizi-render.js?v=ed9452eb5d"></script>
 <script src="js/shizi-xie-data.js?v=090d7d3f5a"></script>
 <script src="js/vendor/hanzi-writer.min.js?v=17b11a1e02"></script>
 <script src="js/shizi-xie.js?v=8e8b3dc002"></script>
 <script src="js/shizi-mark.js?v=089f7ca236"></script>
-<script src="js/shizi-main.js?v=b408830310"></script>
+<script src="js/shizi-main.js?v=51b35f21ea"></script>
 <script src="js/backup.js?v=f21895fa7e"></script>
 <script src="js/help.js?v=14785111cc"></script>
 <script src="js/account.js?v=9790a36543"></script>
