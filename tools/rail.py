@@ -148,13 +148,15 @@ for page, current in PAGES.items():
 HEAD_NAMES = [(g, [(n, h) for n, h, *_ in items if n != '今天']) for g, items in GROUPS]
 FOOT_NAME = {'口算': '口算题', '奥数': '奥数', '识字': '识字', '拼音': '拼音', '数独': '儿童数独',
              '火柴': '火柴棒等式题', '密码': '密码推理题', '迷宫': '儿童迷宫', '数织': '数织游戏'}
+# 页眉位置窄，大多用短名；单看容易猜错的三个写全（2026-11-25 站长同意）。只改显示文字，侧栏、锁、data-module 仍用短名
+HEAD_NAME = {'口算': '口算题', '火柴': '火柴棒', '密码': '密码推理'}
 FULL_ONLY = ['识字', '拼音']  # 奥数 11-25 起前三课免费，不再标  # 完整版才能出题，链接后面标小字
 INNER = {'口算': [('凑十法练习题', '/kousuan/coushifa'), ('破十法练习题', '/kousuan/poshifa')]}
 
 
 def sitehead():
     nav = '<i aria-hidden="true"></i>'.join(
-        '<span class="sh-group">%s</span>%s' % (g, ''.join('<a href="%s">%s</a>' % (h, n) for n, h in items))
+        '<span class="sh-group">%s</span>%s' % (g, ''.join('<a href="%s">%s</a>' % (h, HEAD_NAME.get(n, n)) for n, h in items))
         for g, items in HEAD_NAMES)
     return ('<header class="sh"><div class="sh-in">\n'
             '  <a class="sh-brand" href="/" aria-label="纸和笔首页"><img src="/icons/mark.svg" width="28" height="28" alt=""><span>纸和笔</span></a>\n'
@@ -175,7 +177,7 @@ def sitefoot():
     return ('<footer class="sf">\n  <div class="sf-in">\n'
             '    <section class="sf-about">\n'
             '      <a class="sf-brand" href="/"><img src="/icons/mark.svg" width="22" height="22" alt=""><span>纸和笔</span></a>\n'
-            '      <p>一位一年级家长给自己孩子做的练习纸网站：能在家练好的不送去报班，能在纸上做的不让孩子盯屏幕。现在免费开放给更多家长。</p>\n'
+            '      <p>一位一年级家长给自己孩子做的练习纸网站：能在家练好的不送去报班，能在纸上做的不让孩子盯屏幕。口算、奥数前三课和纸笔游戏打开就能打印；做完扫一下纸角，下一张专练错的。</p>\n'
             '      <p>意见反馈：<a href="mailto:hi@zhihebi.com">hi@zhihebi.com</a>，一般一两天内回复。</p>\n'
             '    </section>\n' + ''.join(cols) +
             '    <nav class="sf-col" aria-label="关于"><h3>关于</h3><a href="/">纸和笔首页</a><a href="/privacy">隐私说明</a><a href="mailto:hi@zhihebi.com">意见反馈</a></nav>\n'

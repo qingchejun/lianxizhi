@@ -2219,19 +2219,160 @@ select.input {
 .lk-now a { color: var(--blue); }
 .lk-guest { margin: 4px 0 20px; }
 .lk-guest .btn { margin-top: 4px; }
-.lk-redeem {
-  margin: 22px 0 18px;
-  padding: 18px 18px 8px;
+/* 样张（识字、拼音，只能看）+ 两条开通路：朋友的邀请码 / 付费开通（2026-11-25） */
+.lk-sample { margin: 18px 0 6px; }
+.lk-sample img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--card-edge);
+  border-radius: 10px;
+}
+.lk-sample figcaption { margin-top: 6px; font-size: 13px; color: var(--ink-soft); text-align: center; }
+.lk-ways-title { margin: 22px 0 10px; font-size: 16px; color: var(--ink); }
+.lk-ways {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.lk-way {
+  padding: 16px 16px 6px;
   background: var(--field);
   border: 1px solid var(--card-edge);
   border-radius: 10px;
 }
-.lk-redeem h3 { margin: 0 0 10px; font-size: 15px; color: var(--ink); }
+.lk-way h4 { margin: 0 0 8px; font-size: 15px; color: var(--ink); }
+.lk-card .lk-way p { font-size: 14px; line-height: 1.7; margin: 0 0 10px; }
+.lk-way > .btn, .lk-way [data-lk-guest] .btn { margin-bottom: 10px; }
+.lk-way .redeem-form { flex-wrap: wrap; }
+.lk-way .redeem-form .input-code { min-width: 0; flex: 1 1 120px; }
+.lk-card .lk-want-msg { font-size: 13px; color: var(--ink-2); }
 .lk-help { font-size: 13px !important; color: var(--ink-soft); margin-top: 10px !important; }
 .lk-back { font-size: 14px !important; }
 .lk-back a { color: var(--blue); }
 @media (max-width: 760px) {
   .lk-scroll { padding: 16px 12px 40px; overflow: visible; }
   .lk-card { padding: 24px 18px 16px; }
+  .lk-ways { grid-template-columns: 1fr; }
 }
 
+
+/* ---------- 「错哪练哪」三格示意图（首页、口算页介绍共用，2026-11-25） ----------
+   纸和手机都是照真实样子缩小画的示意；黄色底只是给看图的人指出那道题，真纸上不会标 */
+.loop-demo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin: 20px 0 28px;
+}
+.loop-demo .ld-art {
+  display: grid;
+  place-items: center;
+  height: 236px;
+  background-color: var(--canvas);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+  background-size: 16px 16px;
+  border-radius: 12px;
+}
+.loop-demo p { margin: 0; }
+.loop-demo .ld-cap {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.loop-demo .ld-cap b {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  font-size: 12px;
+  color: #fff;
+  background: var(--ink);
+  border-radius: 50%;
+}
+.ld-paper {
+  position: relative;
+  width: 140px;
+  aspect-ratio: 210 / 297;
+  padding: 12px 12px 10px;
+  background: #fff;
+  color: #111;
+  box-shadow: 0 1px 2px rgba(20, 24, 32, 0.1), 0 8px 22px rgba(20, 24, 32, 0.12);
+}
+.ld-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 5px;
+  margin-bottom: 7px;
+  border-bottom: 1px solid #222;
+  font-size: 9px;
+}
+.ld-head span { color: #666; }
+.ld-calc {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 10px;
+  line-height: 2.05;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ld-calc i { font: 13px/1 var(--kai); color: #3a3f48; font-style: normal; }
+.ld-wrong i {
+  display: inline-block;
+  padding: 0 4px;
+  color: #3a3f48;
+  border: 1.5px solid var(--red);
+  border-radius: 50%;
+}
+.ld-again { margin: 0 -4px; padding: 0 4px; background: #fff3b0; }
+.ld-qr {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  width: 16px;
+  height: 16px;
+  background:
+    linear-gradient(#111, #111) 0 0 / 6px 6px no-repeat,
+    linear-gradient(#111, #111) 100% 0 / 6px 6px no-repeat,
+    linear-gradient(#111, #111) 0 100% / 6px 6px no-repeat,
+    linear-gradient(#111, #111) 9px 9px / 3px 3px no-repeat;
+}
+.ld-phone {
+  width: 128px;
+  height: 212px;
+  padding: 16px 10px 10px;
+  background: #fff;
+  border: 5px solid #23262d;
+  border-radius: 20px;
+  box-shadow: 0 8px 22px rgba(20, 24, 32, 0.14);
+}
+.loop-demo .ld-ph-title { font-size: 11px; font-weight: 600; color: var(--ink); }
+.loop-demo .ld-ph-sub { margin-top: 8px; font-size: 9px; color: var(--ink-2); }
+.ld-lv { display: flex; gap: 4px; margin-top: 7px; }
+.ld-lv span, .ld-chips span {
+  flex: 1;
+  padding: 3px 0;
+  font-size: 9px;
+  text-align: center;
+  color: var(--ink-2);
+  border: 1px solid var(--card-edge);
+  border-radius: 5px;
+}
+.ld-lv .on { color: var(--blue-deep); background: var(--blue-tint); border-color: var(--blue); }
+.ld-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 5px; }
+.ld-chips span { font-variant-numeric: tabular-nums; }
+.ld-chips .on { color: var(--red-deep); background: var(--red-tint); border-color: var(--red); }
+@media (max-width: 760px) {
+  .loop-demo { grid-template-columns: 1fr; }
+}
+@media print {
+  .loop-demo { display: none; }
+}

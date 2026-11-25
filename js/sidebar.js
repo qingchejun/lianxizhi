@@ -133,6 +133,14 @@
         a.appendChild(icon)
       } else if (!lock && icon) icon.remove()
     })
+    /* 没登录的人点「今天」看到的是首页介绍，不是每日练习面板，所以叫「首页」（2026-11-25） */
+    var today = doc.querySelector('.rail-link[data-module="今天"]')
+    if (today) {
+      var label = out ? '首页' : '今天'
+      var span = today.querySelector('span')
+      if (span && span.textContent !== label) span.textContent = label
+      today.title = label
+    }
     /* 纸上方「不用登录就能出题、打印」的提示条：只给没登录的人看 */
     Array.prototype.forEach.call(doc.querySelectorAll('[data-guest-note]'), function (n) { n.hidden = !out })
     /* 管理员多一项：邀请码管理 */

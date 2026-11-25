@@ -9,7 +9,7 @@
   <script>try{if(localStorage.getItem("lianxizhi:rail")==="fold")document.documentElement.classList.add("rail-folded")}catch(e){}</script>
   <title>完整版 · 纸和笔</title>
   <meta name="robots" content="noindex" />
-  <link rel="stylesheet" href="css/app.css?v=38bf539148" />
+  <link rel="stylesheet" href="css/app.css?v=76db9bed81" />
 </head>
 <body>
 <!-- 免费版、或没登录的人打开完整版的板块时，中间层在原网址上显示这一页（functions/_middleware.js，server/gate.js FREE_PAGES / FULL_BOARDS）。
@@ -41,7 +41,7 @@
     </div>
   </div>
 </nav>
-<script src="js/sidebar.js?v=e13fe80aa9" defer></script>
+<script src="js/sidebar.js?v=5f91aa6edb" defer></script>
 <!-- /rail -->
 
 <div class="work">
@@ -52,22 +52,36 @@
     <section class="lk-card">
       <p class="lk-kicker">这个板块属于完整版</p>
       <h2 id="lk-name">完整版板块</h2>
-      <p class="lk-desc" id="lk-desc">填邀请码开通完整版后就能用。</p>
-      <div class="lk-guest" data-lk-guest hidden>
-        <p class="lk-now">这个板块要用完整版账号登录。还没有账号也没关系：<a href="/kousuan">口算</a>、<a href="/shudu">数独</a>不用登录就能出题、打印；注册免费账号后，纸角会印二维码，做完扫码打分，下一张按错题出。</p>
-        <button type="button" class="btn btn-primary" data-login>登录 / 注册</button>
+      <p class="lk-desc" id="lk-desc">开通完整版后就能用。</p>
+      <h3 class="lk-ways-title">怎么开通完整版</h3>
+      <div class="lk-ways">
+        <div class="lk-way">
+          <h4>朋友给了邀请码</h4>
+          <div data-lk-free>
+            <form class="redeem-form" data-redeem novalidate>
+              <input class="input input-code" type="text" name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="如 K7M2-QF9W" aria-label="邀请码">
+              <button type="submit" class="btn btn-primary">开通完整版</button>
+              <p class="redeem-msg" data-redeem-msg role="alert" hidden></p>
+            </form>
+            <p class="lk-help">一个码开通一个账号，开通后一直有效。</p>
+          </div>
+          <div data-lk-guest hidden>
+            <p>先登录或注册一个免费账号，再回到这页填邀请码。</p>
+            <button type="button" class="btn" data-login>登录 / 注册</button>
+          </div>
+        </div>
+        <div class="lk-way">
+          <h4>付费开通</h4>
+          <p>2027 年 1 月上线。点一下，开通那天发邮件告诉你。</p>
+          <button type="button" class="btn btn-primary" data-want>开通时通知我</button>
+          <p class="lk-want-msg" data-want-msg role="status" hidden></p>
+        </div>
       </div>
+      <figure class="lk-sample" data-lk-sample="shizi" hidden><img src="img/samples/shizi.jpg?v=3c0f612155" alt="识字每日一卷样张" width="720" height="560" loading="lazy"><figcaption>样张：打印出来就是这样</figcaption></figure>
+      <figure class="lk-sample" data-lk-sample="pinyin" hidden><img src="img/samples/pinyin.jpg?v=5fe7bb7ec5" alt="拼音练习样张" width="720" height="560" loading="lazy"><figcaption>样张：打印出来就是这样</figcaption></figure>
       <p class="lk-now" data-lk-free>你现在是<b>免费版</b>：口算、数独、火柴、密码、迷宫、数织和奥数前三课都能用，扫码打分、按错题出下一张、换设备同步也都有。完整版另外还有全部奥数课（带讲解视频）、识字、拼音。</p>
-      <div class="lk-redeem" data-lk-free>
-        <h3>有邀请码？现在就开通</h3>
-        <form class="redeem-form" data-redeem novalidate>
-          <input class="input input-code" type="text" name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="如 K7M2-QF9W" aria-label="邀请码">
-          <button type="submit" class="btn btn-primary">开通完整版</button>
-          <p class="redeem-msg" data-redeem-msg role="alert" hidden></p>
-        </form>
-        <p class="lk-help">邀请码找邀请你的家长要，一个码只能开通一个账号。</p>
-      </div>
-      <p class="lk-back">先去用：<a href="/kousuan">口算</a> · <a href="/shudu">数独</a> · <a href="/">今天</a></p>
+      <p class="lk-now" data-lk-guest hidden>还没有账号也没关系：<a href="/kousuan">口算题</a>、<a href="/aoshu">奥数前三课</a>、<a href="/shudu">儿童数独</a>和四个纸笔游戏不用登录就能出题、打印。</p>
+      <p class="lk-back">先去用：<a href="/kousuan">口算题</a> · <a href="/aoshu">奥数前三课</a> · <a href="/shudu">儿童数独</a> · <a href="/">首页</a></p>
     </section>
   </main>
 </div>
@@ -87,10 +101,13 @@
   }
   /* 没登录：换成「登录 / 注册」说明，藏起补填邀请码（要先登录） */
   var me = window.__SUMSUM_ME
-  if (!(me && me.ok)) {
-    document.querySelector('[data-lk-guest]').hidden = false
-    Array.prototype.forEach.call(document.querySelectorAll('[data-lk-free]'), function (n) { n.hidden = true })
+  var guest
+  function setGuest(g) {
+    guest = g
+    Array.prototype.forEach.call(document.querySelectorAll('[data-lk-guest]'), function (n) { n.hidden = !g })
+    Array.prototype.forEach.call(document.querySelectorAll('[data-lk-free]'), function (n) { n.hidden = g })
   }
+  setGuest(!(me && me.ok))
   var key = location.pathname.replace(/\/+$/, '').replace(/\.html$/, '').replace(/^\//, '')
   var b = BOARDS[key]
   if (b) {
@@ -100,13 +117,73 @@
     document.getElementById('lk-desc').textContent = b[1]
     var link = document.querySelector('.rail-link[data-module="' + b[0] + '"]')
     if (link) { link.classList.add('active'); link.setAttribute('aria-current', 'page') }
+    /* 真实样张（首页「九个板块」用的同一批图），只能看 */
+    var fig = document.querySelector('[data-lk-sample="' + key + '"]')
+    if (fig) fig.hidden = false
   }
+
+  /* 「开通时通知我」（2026-11-25）：付费开通 2027-01 上线前，先记下想买的账号。
+     没登录：先弹注册框，记一笔「回来要登记」，登录后回到这页自动登记 */
+  var PENDING = 'zhihebi:lk-want'
+  var btn = document.querySelector('[data-want]')
+  var msg = document.querySelector('[data-want-msg]')
+  function done(email) {
+    btn.disabled = true
+    btn.textContent = '已登记'
+    msg.textContent = '付费开通上线那天，发邮件到 ' + email + ' 告诉你。'
+    msg.hidden = false
+  }
+  function call(method) {
+    return fetch('/api/auth/want', method === 'POST'
+      ? { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{"want":true}' }
+      : { credentials: 'same-origin' }).then(function (r) { return r.json() })
+  }
+  function record() {
+    btn.disabled = true
+    call('POST').then(function (d) {
+      if (d && d.ok && d.wanted) { done(d.email); return }
+      btn.disabled = false
+      msg.textContent = (d && d.error) || '没登记上，稍后再试一次。'
+      msg.hidden = false
+    }).catch(function () {
+      btn.disabled = false
+      msg.textContent = '网络不太好，没登记上，稍后再试一次。'
+      msg.hidden = false
+    })
+  }
+  btn.addEventListener('click', function () {
+    if (guest) {
+      try { sessionStorage.setItem(PENDING, '1') } catch (e) {}
+      var ui = window.SumSum && window.SumSum.accountUI
+      if (ui && ui.open) ui.open('register', '注册一个免费账号，付费开通上线那天发邮件告诉你。')
+      return
+    }
+    record()
+  })
+  function settle() {
+    var pending = false
+    try { pending = sessionStorage.getItem(PENDING) === '1'; sessionStorage.removeItem(PENDING) } catch (e) {}
+    if (pending) record()
+    else call('GET').then(function (d) { if (d && d.ok && d.wanted) done(d.email) }).catch(function () {})
+  }
+  if (!guest) settle()
+  /* 在这页的弹框里登录 / 注册完（页面不刷新）：换成登录后的样子；注册时带了邀请码直接是完整版，刷新进板块 */
+  document.addEventListener('DOMContentLoaded', function () {
+    var A = window.SumSum && window.SumSum.account
+    if (!A || !A.onChange) return
+    A.onChange(function () {
+      if (!guest || !A.state.loggedIn) return
+      if (A.state.plan === 'full') { location.reload(); return }
+      setGuest(false)
+      settle()
+    })
+  })
 })()
 </script>
 <script src="js/store.js?v=c6aac93871"></script>
 <script src="js/sheets-core.js?v=a708637534"></script>
 <script src="js/backup.js?v=f21895fa7e"></script>
-<script src="js/changelog.js?v=99f2054715"></script>
+<script src="js/changelog.js?v=a423e1f1cf"></script>
 <script src="js/help.js?v=8e815ad950"></script>
 <script src="js/account.js?v=9790a36543"></script>
 <script src="js/account-ui.js?v=f7ca87a050"></script>

@@ -56,3 +56,7 @@ CREATE TABLE IF NOT EXISTS sessions( -- 登录设备：一个账号最多 3 台�
   ended_reason TEXT -- kicked = 被第 4 台挤掉；logout = 自己退出；pw = 改 / 重设密码
 );
 CREATE INDEX IF NOT EXISTS idx_sessions_uid ON sessions(uid, ended_at);
+CREATE TABLE IF NOT EXISTS wants( -- 「开通时通知我」：付费开通上线前想买完整版的账号（tools/migrate-20261125-wants.sql）
+  uid TEXT PRIMARY KEY,
+  created_at INTEGER NOT NULL
+);

@@ -84,11 +84,20 @@ export function repo(db) {
         db.prepare('DELETE FROM sessions WHERE uid=? AND ended_at IS NOT NULL AND id NOT IN (SELECT id FROM sessions WHERE uid=? AND ended_at IS NOT NULL ORDER BY ended_at DESC LIMIT 20)').bind(uid, uid)
       ])
     },
+    /* 「开通时通知我」（wants 表，tools/migrate-20261125-wants.sql） */
+    async wantAdd(uid, now) {
+      await db.prepare('INSERT OR IGNORE INTO wants(uid, created_at) VALUES(?, ?)').bind(uid, now).run()
+    },
+    async wantAt(uid) {
+      const r = await db.prepare('SELECT created_at FROM wants WHERE uid=?').bind(uid).first()
+      return r ? r.created_at : null
+    },
     async deleteUser(id) {
       await db.batch([
         db.prepare('DELETE FROM data WHERE user_id=?').bind(id),
         db.prepare('DELETE FROM tokens WHERE user_id=?').bind(id),
         db.prepare('DELETE FROM sessions WHERE uid=?').bind(id),
+        db.prepare('DELETE FROM wants WHERE uid=?').bind(id),
         db.prepare('DELETE FROM users WHERE id=?').bind(id)
       ])
     },

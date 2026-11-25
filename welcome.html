@@ -15,7 +15,7 @@
   <meta property="og:title" content="纸和笔 · 小学生每日打印练习纸：错哪练哪，一页五分钟" />
   <meta property="og:description" content="每天一页 A4 练习：口算、识字、拼音、奥数和思维游戏。做完扫码打个分，第二天按错题自动安排。少报班，少看屏。" />
   <meta property="og:image" content="https://zhihebi.com/icons/apple-touch-icon.png" />
-  <link rel="stylesheet" href="css/app.css?v=38bf539148" />
+  <link rel="stylesheet" href="css/app.css?v=76db9bed81" />
   <link rel="stylesheet" href="css/welcome.css?v=2b3eb841f4" />
 </head>
 <body class="welcome" data-account-boot>
@@ -25,7 +25,7 @@
 <!-- sitehead -->
 <header class="sh"><div class="sh-in">
   <a class="sh-brand" href="/" aria-label="纸和笔首页"><img src="/icons/mark.svg?v=e200a2b101" width="28" height="28" alt=""><span>纸和笔</span></a>
-  <nav class="sh-nav" aria-label="板块"><span class="sh-group">练习</span><a href="/kousuan">口算</a><a href="/aoshu">奥数</a><a href="/shizi">识字</a><a href="/pinyin">拼音</a><i aria-hidden="true"></i><span class="sh-group">游戏</span><a href="/shudu">数独</a><a href="/huochai">火柴</a><a href="/mima">密码</a><a href="/migong">迷宫</a><a href="/zhizhi">数织</a></nav>
+  <nav class="sh-nav" aria-label="板块"><span class="sh-group">练习</span><a href="/kousuan">口算题</a><a href="/aoshu">奥数</a><a href="/shizi">识字</a><a href="/pinyin">拼音</a><i aria-hidden="true"></i><span class="sh-group">游戏</span><a href="/shudu">数独</a><a href="/huochai">火柴棒</a><a href="/mima">密码推理</a><a href="/migong">迷宫</a><a href="/zhizhi">数织</a></nav>
   <div class="sh-act"><a class="btn btn-primary sh-login" href="/#login">登录 / 注册</a></div>
 </div></header>
 <!-- /sitehead -->
@@ -38,10 +38,10 @@
       <p class="wl-lead">给小学生出 A4 练习纸：口算、奥数、识字、拼音，外加数独、火柴、密码、迷宫、数织。每页大约五分钟，孩子做得完、天天坚持得下来。孩子做完，家长用手机扫一下纸角的二维码，点一下哪里卡住了，第二天的纸就按这个排。现在有一年级的内容，二年级 2027 年秋季上线。</p>
 
       <div class="wl-cta">
-        <a class="btn btn-primary btn-lg" href="/kousuan">直接出题，不用登录</a>
+        <a class="btn btn-primary btn-lg" href="/kousuan?carryMode=carryonly">免费出一张口算题</a>
         <a class="btn btn-lg wl-cta-2" href="/#register" data-wl-signup>免费注册</a>
       </div>
-      <p class="wl-cta-note">口算、数独和四个思维游戏不注册也能出题打印；注册后能扫码打分，下一张按错题出。</p>
+      <p class="wl-cta-note">不用登录，打开就是一张 20 以内进退位口算题，能换题、能打印。数独、四个思维游戏和奥数前三课也一样；注册后能扫码打分，下一张按错题出。</p>
       <div class="wl-points">
         <div><b>在纸上做</b><span>孩子不盯屏幕</span></div>
         <div><b>一页五分钟</b><span>做得完，坚持得住</span></div>
@@ -52,18 +52,19 @@
     </div>
 
     <figure class="wl-desk" aria-label="练习纸样张：口算、识字、拼音">
-      <!-- 三张样张都是照真实卷面缩小画的：页眉、日期姓名栏、题目排法与打印出来一致 -->
-      <div class="wl-sheet wl-s1" aria-hidden="true">
-        <div class="ws-head"><b>口算 · 20 以内进位加法</b><span>日期____ 姓名____</span></div>
+      <!-- 三张样张都是照真实卷面缩小画的：页眉、日期姓名栏、题目排法与打印出来一致。
+           中间最前面放口算（wl-s2）：首屏按钮点进去就是这张（20 以内进退位），看到什么点开就是什么（2026-11-25） -->
+      <div class="wl-sheet wl-s2" aria-hidden="true">
+        <div class="ws-head"><b>口算 · 20 以内进退位</b><span>日期____ 姓名____</span></div>
         <ol class="ws-calc">
-          <li>8 + 5 =</li><li>9 + 7 =</li><li>6 + 6 =</li><li>7 + 4 =</li>
-          <li>9 + 3 =</li><li>5 + 8 =</li><li>8 + 8 =</li><li>4 + 9 =</li>
-          <li>7 + 6 =</li><li>9 + 9 =</li><li>6 + 5 =</li><li>8 + 4 =</li>
-          <li>3 + 9 =</li><li>7 + 7 =</li><li>5 + 6 =</li><li>9 + 2 =</li>
-          <li>6 + 8 =</li><li>4 + 7 =</li><li>8 + 3 =</li><li>7 + 9 =</li>
+          <li>8 + 5 =</li><li>12 − 6 =</li><li>6 + 6 =</li><li>15 − 7 =</li>
+          <li>9 + 3 =</li><li>11 − 4 =</li><li>8 + 8 =</li><li>13 − 9 =</li>
+          <li>7 + 6 =</li><li>14 − 8 =</li><li>6 + 5 =</li><li>16 − 9 =</li>
+          <li>3 + 9 =</li><li>12 − 5 =</li><li>5 + 6 =</li><li>11 − 3 =</li>
+          <li>6 + 8 =</li><li>17 − 8 =</li><li>8 + 3 =</li><li>13 − 6 =</li>
         </ol>
       </div>
-      <div class="wl-sheet wl-s2" aria-hidden="true">
+      <div class="wl-sheet wl-s1" aria-hidden="true">
         <div class="ws-head"><b>识字 · 每日一卷</b><span>日期____ 姓名____</span></div>
         <div class="ws-zi"><span>汽</span><span>蜓</span><span>燕</span><span>营</span><span>童</span><span>急</span><span>还</span><span>骗</span><span>蚪</span><span>渐</span><span>宣</span><span>补</span><span>破</span><span>间</span><span>业</span><span>凤</span><span>饲</span><span>冷</span><span>通</span><span>利</span></div>
       </div>
@@ -110,6 +111,39 @@
   <section class="wl-block" aria-labelledby="wl-loop">
     <h2 id="wl-loop">错哪练哪：扫一下纸角，第二天按错题出</h2>
     <p>每张练习纸的左下角都有一个小二维码。孩子做完，家长用手机微信扫一下，给这张纸打个分：会了、一般、不会；想更准，就把做错的题点出来。扫一张就能把今天打印的纸都打完分，前后不到一分钟。</p>
+    <figure class="loop-demo" aria-label="错哪练哪示意：孩子做错 12 − 6，家长扫码点出这一道，第二天的纸上再练一遍">
+      <div class="ld-step">
+        <div class="ld-art" aria-hidden="true">
+          <div class="ld-paper">
+            <div class="ld-head"><b>口算</b><span>11-24</span></div>
+            <ol class="ld-calc"><li>8 + 5 = <i>13</i></li><li>15 − 7 = <i>8</i></li><li class="ld-wrong">12 − 6 = <i>5</i></li><li>9 + 3 = <i>12</i></li><li>14 − 8 = <i>6</i></li><li>7 + 6 = <i>13</i></li></ol>
+            <span class="ld-qr"></span>
+          </div>
+        </div>
+        <p class="ld-cap"><b>1</b>孩子在纸上做，12 − 6 算成了 5。</p>
+      </div>
+      <div class="ld-step">
+        <div class="ld-art" aria-hidden="true">
+          <div class="ld-phone">
+            <p class="ld-ph-title">口算 · 11-24</p>
+            <div class="ld-lv"><span>会了</span><span class="on">一般</span><span>不会</span></div>
+            <p class="ld-ph-sub">点出做错的题</p>
+            <div class="ld-chips"><span>8 + 5</span><span>15 − 7</span><span class="on">12 − 6</span><span>9 + 3</span><span>14 − 8</span><span>7 + 6</span></div>
+          </div>
+        </div>
+        <p class="ld-cap"><b>2</b>家长用手机扫纸角的二维码，点出这一道。</p>
+      </div>
+      <div class="ld-step">
+        <div class="ld-art" aria-hidden="true">
+          <div class="ld-paper">
+            <div class="ld-head"><b>口算</b><span>11-25</span></div>
+            <ol class="ld-calc"><li>6 + 7 =</li><li>13 − 5 =</li><li>9 + 8 =</li><li class="ld-again">12 − 6 =</li><li>11 − 7 =</li><li>5 + 9 =</li></ol>
+            <span class="ld-qr"></span>
+          </div>
+        </div>
+        <p class="ld-cap"><b>3</b>第二天的纸上，12 − 6 又出现了，再练一遍。</p>
+      </div>
+    </figure>
     <div class="wl-easy">
       <div><b><a href="/kousuan">口算题</a></b><p>做错的题，下一张再出；进位、退位错得多，就多出这类题；连着两张都会了，提醒你升一档。</p></div>
       <div><b>奥数</b><p>打了「一般」或点过错题的课，自动进待复习，过几天在复习卷里再考一次。</p></div>
@@ -207,10 +241,11 @@
   <section class="wl-block" aria-labelledby="wl-faq">
     <h2 id="wl-faq">常见问题</h2>
     <div class="wl-faq">
-      <div><h3>要钱吗？</h3><p>口算和数独、火柴、密码、迷宫、数织这几个游戏免费，奥数前三课也免费，不注册就能出题打印，注册后还能扫码打分、按错题出下一张。奥数后面的课和识字、拼音属于完整版，现在凭邀请码开通。</p></div>
-      <div><h3>家里需要打印机吗？</h3><p>需要能打 A4 的打印机，家用黑白的就够。没有打印机，也可以把纸存成 PDF 拿去打印店。</p></div>
+      <div><h3>哪些练习纸不用登录就能打印？</h3><p>口算题、儿童数独、火柴棒等式题、密码推理题、儿童迷宫、数织游戏，还有奥数前三课，打开就能出题、打印，不花钱。注册免费账号后，纸角会印二维码，能扫码打分、按错题出下一张，换电脑练习进度也跟着走。奥数后面的课和识字、拼音属于完整版，现在凭朋友给的邀请码开通，付费开通 2027 年 1 月上线。</p></div>
+      <div><h3>扫码以后，下一张会怎么变？</h3><p>拿口算举例：孩子把 12 − 6 算成了 5，家长用手机扫一下纸角的二维码，点出这一道。下一张口算题会把 12 − 6 插进去再练一遍；如果错的多是进位、退位题，下一张就多出这类题。连着两张都「会了」，会提示你升一档。</p></div>
+      <div><h3>家里没有打印机，可以用吗？</h3><p>可以，存成 PDF 拿去打印店。在电脑上点「打印」：Chrome、Edge 在打印窗口的「目标打印机」里选「另存为 PDF」；Mac 自带的 Safari 点打印窗口左下角的「PDF」，再选「存储为 PDF」。A4 黑白打印就够。</p></div>
+      <div><h3>跟学校的课本对得上吗？</h3><p>识字可以选人教版课本字表，只考学校已经教过的字；口算按孩子的进度选范围和题型，也能出乘法口诀；拼音、奥数按一年级的通用内容出题，可以自己调题型和题量。</p></div>
       <div><h3>手机能用吗？</h3><p>打分、看进度用手机就行；挑题、打印建议在电脑上打开，屏幕上的纸就是打出来的样子。</p></div>
-      <div><h3>跟学校的课本对得上吗？</h3><p>识字可以选人教版课本字表，只考学校已经教过的字；口算、拼音、奥数按一年级的通用内容出题，可以自己调题型和题量。</p></div>
       <div><h3>孩子要看屏幕吗？</h3><p>题目都在纸上做。只有奥数的讲解视频需要孩子看，每期 5 分钟以内。</p></div>
     </div>
   </section>
@@ -221,7 +256,7 @@
   <div class="sf-in">
     <section class="sf-about">
       <a class="sf-brand" href="/"><img src="/icons/mark.svg?v=e200a2b101" width="22" height="22" alt=""><span>纸和笔</span></a>
-      <p>一位一年级家长给自己孩子做的练习纸网站：能在家练好的不送去报班，能在纸上做的不让孩子盯屏幕。现在免费开放给更多家长。</p>
+      <p>一位一年级家长给自己孩子做的练习纸网站：能在家练好的不送去报班，能在纸上做的不让孩子盯屏幕。口算、奥数前三课和纸笔游戏打开就能打印；做完扫一下纸角，下一张专练错的。</p>
       <p>意见反馈：<a href="mailto:hi@zhihebi.com">hi@zhihebi.com</a>，一般一两天内回复。</p>
     </section>
     <nav class="sf-col" aria-label="练习"><h3>练习</h3><a href="/kousuan">口算题</a><a href="/kousuan/coushifa">凑十法练习题</a><a href="/kousuan/poshifa">破十法练习题</a><a href="/aoshu">奥数</a><a href="/shizi">识字<small>完整版</small></a><a href="/pinyin">拼音<small>完整版</small></a></nav>

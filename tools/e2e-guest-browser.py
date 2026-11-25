@@ -133,8 +133,9 @@ with sync_playwright() as p:
           and len(gp.query_selector_all('footer.sf .sf-col a')) == 14)
     head = gp.eval_on_selector_all('.sh-nav a', 'els => els.map(e => e.getAttribute("href"))')
     check('首页页眉排着九个板块', head == ['/kousuan', '/aoshu', '/shizi', '/pinyin', '/shudu', '/huochai', '/mima', '/migong', '/zhizhi'], head)
-    check('首页第一屏没有登录表单，主按钮「直接出题」去口算页', gp.query_selector('.wl-hero form') is None
-          and gp.get_attribute('.wl-cta .btn-primary', 'href') == '/kousuan')
+    check('首页第一屏没有登录表单，主按钮「免费出一张口算题」去口算页的 20 以内进退位（跟中间那张样张一致）', gp.query_selector('.wl-hero form') is None
+          and gp.get_attribute('.wl-cta .btn-primary', 'href') == '/kousuan?carryMode=carryonly'
+          and '20 以内进退位' in gp.inner_text('.wl-s2 .ws-head'))
     gal = gp.eval_on_selector_all('.wl-gal figure a', 'els => els.map(e => e.getAttribute("href"))')
     check('首页九张样张，各链到自己的板块', gal == ['/kousuan', '/aoshu', '/shizi', '/pinyin', '/shudu', '/huochai', '/mima', '/migong', '/zhizhi'], gal)
     gp.locator('.wl-gal').scroll_into_view_if_needed()

@@ -15,7 +15,7 @@
   <meta property="og:title" content="口算题生成器：按进位退位出题，A4 打印带答案 · 纸和笔" />
   <meta property="og:description" content="不用登录，直接出口算题：10 以内、20 以内进退位、100 以内加减、乘法口诀、四则运算，一页 A4 直接打印，可附答案页。登录后扫码打分，下一张专练孩子错的题。" />
   <meta property="og:url" content="https://zhihebi.com/kousuan" />
-  <link rel="stylesheet" href="css/app.css?v=38bf539148" />
+  <link rel="stylesheet" href="css/app.css?v=76db9bed81" />
   <link rel="stylesheet" href="css/sheet.css?v=a0e1aaaa2e" />
   <style id="page-style">@page { size: A4 portrait; margin: 15mm; }</style>
 </head>
@@ -48,7 +48,7 @@
     </div>
   </div>
 </nav>
-<script src="js/sidebar.js?v=e13fe80aa9" defer></script>
+<script src="js/sidebar.js?v=5f91aa6edb" defer></script>
 <!-- /rail -->
 
 <div class="work">
@@ -67,7 +67,7 @@
       <div class="notice" id="notice" hidden></div>
       <div class="guest-note" data-guest-note hidden>
         <p><b>不用登录就能出题、打印。</b>登录后纸角会印一个二维码：孩子做完，手机扫一下点出错题，下一张专练这些。</p>
-        <button type="button" class="btn" data-login>登录 / 注册</button>
+        <button type="button" class="btn" data-login>登录，开启扫码记错题</button>
       </div>
       <div id="preview"></div>
       <article class="board-intro" aria-labelledby="bi-how">
@@ -77,6 +77,39 @@
 
         <h2>错哪练哪：扫码打分，下一张专练错题</h2>
         <p>登录后，纸的左下角会印一个二维码。孩子做完，家长用手机扫一下，点出做错的那几道题，或者整张打个「会了 / 一般 / 不会」。下一张口算题会把错过的算式散着插进去，再练一遍；整张打了「不会」，或者错的多是进位退位题，下一张就多出进位退位题。同一个预设连着两张都「会了」，会提示你换到下一档。不用记哪道错了，纸会记。</p>
+        <figure class="loop-demo" aria-label="错哪练哪示意：孩子做错 12 − 6，家长扫码点出这一道，第二天的纸上再练一遍">
+          <div class="ld-step">
+            <div class="ld-art" aria-hidden="true">
+              <div class="ld-paper">
+                <div class="ld-head"><b>口算</b><span>11-24</span></div>
+                <ol class="ld-calc"><li>8 + 5 = <i>13</i></li><li>15 − 7 = <i>8</i></li><li class="ld-wrong">12 − 6 = <i>5</i></li><li>9 + 3 = <i>12</i></li><li>14 − 8 = <i>6</i></li><li>7 + 6 = <i>13</i></li></ol>
+                <span class="ld-qr"></span>
+              </div>
+            </div>
+            <p class="ld-cap"><b>1</b>孩子在纸上做，12 − 6 算成了 5。</p>
+          </div>
+          <div class="ld-step">
+            <div class="ld-art" aria-hidden="true">
+              <div class="ld-phone">
+                <p class="ld-ph-title">口算 · 11-24</p>
+                <div class="ld-lv"><span>会了</span><span class="on">一般</span><span>不会</span></div>
+                <p class="ld-ph-sub">点出做错的题</p>
+                <div class="ld-chips"><span>8 + 5</span><span>15 − 7</span><span class="on">12 − 6</span><span>9 + 3</span><span>14 − 8</span><span>7 + 6</span></div>
+              </div>
+            </div>
+            <p class="ld-cap"><b>2</b>家长用手机扫纸角的二维码，点出这一道。</p>
+          </div>
+          <div class="ld-step">
+            <div class="ld-art" aria-hidden="true">
+              <div class="ld-paper">
+                <div class="ld-head"><b>口算</b><span>11-25</span></div>
+                <ol class="ld-calc"><li>6 + 7 =</li><li>13 − 5 =</li><li>9 + 8 =</li><li class="ld-again">12 − 6 =</li><li>11 − 7 =</li><li>5 + 9 =</li></ol>
+                <span class="ld-qr"></span>
+              </div>
+            </div>
+            <p class="ld-cap"><b>3</b>第二天的纸上，12 − 6 又出现了，再练一遍。</p>
+          </div>
+        </figure>
 
         <h2>一页五分钟，附答案页好批改</h2>
         <p>默认一页 20 道，一年级孩子五分钟左右做完，做得完才坚持得下来。打印时可以附一页答案，家长对着改很快；加减法的答案页还能附上凑十、破十的提示，孩子卡住时照着讲就行。还没学会拆数的孩子，可以先做<a href="/kousuan/coushifa">凑十法练习题</a>和<a href="/kousuan/poshifa">破十法练习题</a>，有方法讲解和分步解析。题目不重复、跳过 7 + 0 这类送分题，都在「更多选项」里。</p>

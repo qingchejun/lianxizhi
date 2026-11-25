@@ -103,6 +103,14 @@ with sync_playwright() as p:
     page.goto(BASE + '/shizi')
     check('上锁页按网址显示板块名', '识字' in page.inner_text('#lk-name'))
     check('上锁页不收录', 'noindex' in (page.evaluate("fetch(location.href).then(r => r.headers.get('X-Robots-Tag'))") or ''))
+    check('上锁页有识字样张、两条开通路', page.is_visible('[data-lk-sample="shizi"]') and page.is_visible('[data-want]') and page.is_visible('.lk-card [data-redeem]'))
+    # 「开通时通知我」（2026-11-25）：免费版点一下就登记，刷新后显示已登记
+    page.click('[data-want]')
+    page.wait_for_selector('[data-want-msg]:not([hidden])', timeout=10000)
+    check('点「开通时通知我」→ 已登记，写明发到哪个邮箱', page.is_disabled('[data-want]') and '@' in page.inner_text('[data-want-msg]'), page.inner_text('[data-want-msg]'))
+    page.reload()
+    page.wait_for_selector('[data-want-msg]:not([hidden])', timeout=10000)
+    check('刷新后仍显示已登记', page.inner_text('[data-want]') == '已登记')
     v = video(page)
     check('免费版看奥数视频 → 403', v['status'] == 403, v)
 

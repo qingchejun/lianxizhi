@@ -45,6 +45,9 @@ function memRepo() {
     async sessionGet(id) { return this._sessions.find(function (s) { return s.id === id }) || null },
     async sessionInsert(s) { this._sessions.push(Object.assign({ ended_at: null, ended_reason: null }, s)) },
     async sessionsAlive(uid, since) { return this._sessions.filter(function (s) { return s.uid === uid && !s.ended_at && s.created_at > since }) },
+    _wants: {},
+    async wantAdd(uid, now) { if (!this._wants[uid]) this._wants[uid] = now },
+    async wantAt(uid) { return this._wants[uid] || null },
     async sessionEnd(id, now, reason) { var s = this._sessions.find(function (x) { return x.id === id && !x.ended_at }); if (s) { s.ended_at = now; s.ended_reason = reason } },
     async sessionsEndAll(uid, now, reason) { this._sessions.forEach(function (s) { if (s.uid === uid && !s.ended_at) { s.ended_at = now; s.ended_reason = reason } }) },
     async sessionTouch(id, now) { var s = this._sessions.find(function (x) { return x.id === id }); if (s) s.last_seen = now },
@@ -478,6 +481,20 @@ import('../server/auth-core.js').then(async function (A) {
   K.users[0].banned = 1
   check('谷歌登录：停用的账号 → 403', (await A.googleLogin(K, T, { email: 'ban@gmail.com' })).status === 403)
   check('谷歌登录：没有邮箱 → 422', (await A.googleLogin(K, T, {})).status === 422)
+
+  /* ---- 「开通时通知我」（wantFull，2026-11-25）---- */
+  var W = memRepo()
+  W.users.push({ id: 'w1', email: 'w@x.co', pwver: 2, verified: 1, plan: 'free' })
+  check('通知我：没登录 → 401', (await A.wantFull(W, null, T, true)).status === 401)
+  check('通知我：登录态的 pwver 过期 → 401', (await A.wantFull(W, { uid: 'w1', pwver: 1 }, T, true)).status === 401)
+  var w0 = await A.wantFull(W, { uid: 'w1', pwver: 2 }, T, false)
+  check('通知我：只查不登记 → wanted=false', w0.status === 200 && w0.body.wanted === false, w0.body)
+  var w1 = await A.wantFull(W, { uid: 'w1', pwver: 2 }, T + 5, true)
+  check('通知我：登记后 wanted=true，回邮箱', w1.status === 200 && w1.body.wanted === true && w1.body.email === 'w@x.co', w1.body)
+  await A.wantFull(W, { uid: 'w1', pwver: 2 }, T + 99, true)
+  check('通知我：重复点不改第一次的时间', W._wants.w1 === T + 5)
+  W.users[0].banned = 1
+  check('通知我：停用的账号 → 401', (await A.wantFull(W, { uid: 'w1', pwver: 2 }, T, true)).status === 401)
 
   console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ auth-core 注册/验证码全部通过')
   process.exit(bad ? 1 : 0)

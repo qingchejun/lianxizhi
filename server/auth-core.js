@@ -227,6 +227,17 @@ export async function redeemInvite(repo, session, now, body, ctx) {
   return { status: 200, body: { ok: true, plan: PLAN_FULL } }
 }
 
+/* ---- 「开通时通知我」：付费开通上线前，先记下想买完整版的账号（2026-11-25 站长定，付费 2027-01 上线后发邮件通知）。
+   record=false 只查不登记；重复登记保留第一次的时间。只记账号 id 和时间，邮箱从 users 表取 ---- */
+export async function wantFull(repo, session, now, record) {
+  if (!session) return { status: 401, body: { ok: false, error: '先登录。' } }
+  const user = await repo.userById(session.uid)
+  if (!user || user.pwver !== session.pwver || user.banned) return { status: 401, body: { ok: false, error: '先登录。' } }
+  if (record) await repo.wantAdd(user.id, now)
+  const at = await repo.wantAt(user.id)
+  return { status: 200, body: { ok: true, wanted: !!at, email: user.email, plan: planOf(user) } }
+}
+
 /* 账号版本：只认数据库里明写的 free；老账号（加列前就有的）一律算完整版 */
 export function planOf(user) {
   return user && user.plan === PLAN_FREE ? PLAN_FREE : PLAN_FULL
