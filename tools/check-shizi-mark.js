@@ -224,6 +224,53 @@ var pv7 = M.ensurePaper()
 check(pv7 && pv7.d === T1 && pv7.wrong.indexOf('觅') >= 0 && pv7.wrong.length === 10,
   'S7：积压满 10 个，今晚新标的觅仍上明天的卷（位子从逾期老字里匀）', pv7 && pv7.wrong)
 
+/* S9：卷子日期跑到了日历前面（2026-11-26 站长实测）。某天连考两张后，每张卷都比真实日期
+   早一两天（11-25 晚登记的是 11-27 的卷），而错字的到期日按真实日期算（没认出 → 11-26）。
+   下一张卷（11-28）若按卷面日期组卷：昨晚认出的字（复核日 11-28）被当成「今天到期」先占位，
+   昨晚没认出的字（11-26）算逾期，又排在 11-10 的老积压后面，一个都上不了卷。
+   规矩：组卷按「最多到明天」的真实日期看到期，卷面日期照旧往后排。 */
+M = fresh({
+  'sumsum:shizi:wrong:v3': JSON.stringify((function () {
+    var seed = {}
+    '甲乙丙丁戊己庚辛壬癸子丑寅卯辰'.split('').forEach(function (ch) {
+      seed[ch] = { add: '2026-11-01', n: 1, k: 0, due: '2026-11-10' } // 老积压，早就逾期
+    })
+    '吼腊衔趁额'.split('').forEach(function (ch) {
+      seed[ch] = { add: '2026-11-01', n: 1, k: 0, due: T0 } // 今晚卷上的错字位
+    })
+    '捏瀑售缝鹊'.split('').forEach(function (ch) {
+      seed[ch] = { add: '2026-11-01', n: 1, k: 0, due: T0 }
+    })
+    return seed
+  })()),
+  'sumsum:shizi:daily:v1': JSON.stringify({ papers: [
+    { d: T1, chars: '茂', wrong: '', settled: true },
+    { d: T2, chars: '吼腊衔趁额捏瀑售缝鹊', wrong: '吼腊衔趁额捏瀑售缝鹊', settled: false }
+  ] })
+})
+M.setToday(function () { return T0 })
+'吼腊衔趁额'.split('').forEach(function (ch) { M.togglePick(ch) }) // 没认出这 5 个，其余 5 个认出
+M.settle(Array.from('吼腊衔趁额捏瀑售缝鹊'), M.paperAt(1))
+var pv9 = M.ensurePaper()
+check(pv9 && pv9.d === '2026-11-23', 'S9：卷面日期照旧接着往后排', pv9 && pv9.d)
+check(pv9 && Array.from('吼腊衔趁额').every(function (ch) { return pv9.wrong.indexOf(ch) >= 0 }),
+  'S9：今晚没认出的 5 个字都在下一张卷上', pv9 && pv9.wrong)
+check(pv9 && Array.from('捏瀑售缝鹊').every(function (ch) { return pv9.wrong.indexOf(ch) < 0 }),
+  'S9：今晚认出的字隔 3 天才复核，不上下一张', pv9 && pv9.wrong)
+
+/* S10：第二天把这张没考的卷作废重出（站长 11-26 要的修复路径）：今天还没登记过，
+   组卷按今天看到期 —— 昨晚没认出的（到期日=今天）照样先占位 */
+M = fresh({
+  'sumsum:shizi:wrong:v3': mem['sumsum:shizi:wrong:v3'],
+  'sumsum:shizi:daily:v1': mem['sumsum:shizi:daily:v1']
+})
+M.setToday(function () { return T1 })
+M.discardPaper()
+var pv10 = M.ensurePaper()
+check(pv10 && Array.from('吼腊衔趁额').every(function (ch) { return pv10.wrong.indexOf(ch) >= 0 }) &&
+  Array.from('捏瀑售缝鹊').every(function (ch) { return pv10.wrong.indexOf(ch) < 0 }),
+  'S10：第二天作废重出，昨晚没认出的在、认出的不在', pv10 && pv10.wrong)
+
 /* ---------- S8：人教版顺序模式——每张卷接着上一张往下；作废重来退回原处、出同一批字 ---------- */
 globalThis.SumSum.shizi.useBook('rj1a', 24, 'seq')
 M = fresh({})

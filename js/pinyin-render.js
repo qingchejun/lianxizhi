@@ -73,7 +73,7 @@
         const group = sheet.groups.find(entry => entry.id === card.group)
         return '<div class="py-card"><h4>' + escape(card.label) + (group ? ' · 讲完做第 ' +
           range(group.items.map(item => escape(item.id))) + ' 题' : '') + '</h4>' + teachingLines(card) + '</div>'
-      }).join('') + '</aside></article>'
+      }).join('') + '</aside><div class="py-sign">纸和笔 · zhihebi.com</div></article>'
   }
 
   root.SumSum.pinyinRender = { escape, teaching, prompt, print, answers }

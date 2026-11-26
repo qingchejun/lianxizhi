@@ -181,7 +181,11 @@
     if (last && last.d >= t) nextD = C().addDays(last.d, 1)
     else if (undoSlot && undoSlot.d === t && undoSlot.kind === 'sheet') nextD = C().addDays(t, 1)
     else nextD = t
-    var b = C().buildDaily(marks, nextD, null, lastSeq())
+    /* 卷面日期可以跑到日历前面（同日连考两张后一直早一两天），但错字的到期日是按真实日期记的：
+       组卷按「这张卷实际哪天考」看到期 —— 今天已经登记过就是明天，还没登记就是今天。
+       不然昨晚认出的字提前复核、没认出的反被老积压挤掉（2026-11-26 站长实测） */
+    var due = undoSlot && undoSlot.d === t ? C().addDays(t, 1) : t
+    var b = C().buildDaily(marks, nextD > due ? due : nextD, null, lastSeq())
     var p = { d: nextD, chars: b.chars.join(''), wrong: b.wrong.join(''), settled: false }
     /* 人教版顺序模式：记下这张取到哪了，下一张从这里接着（作废 / 重排把这张删掉，就自然退回去） */
     if (b.seq) { p.book = C().currentBook(); p.seq = b.seq }

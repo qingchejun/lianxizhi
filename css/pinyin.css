@@ -71,6 +71,8 @@
 .py-parent h4 { margin: 2.5mm 0 0.5mm; font-size: 10pt; }
 .py-parent p { margin: 0.8mm 0; }
 .py-parent b { font-weight: 600; }
+/* 落款：拼音卷没有页脚，跟其他板块一样在纸尾靠右写上站名和网址（样式同 sheet.css 的 .sheet-foot::after） */
+.py-sign { margin-top: 2mm; text-align: right; font-size: 9px; letter-spacing: 0.5px; color: #9a9a9a; break-before: avoid; }
 
 @media print {
   .py-kid { display: none !important; }

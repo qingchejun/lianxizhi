@@ -167,9 +167,9 @@ body.landscape .sheet {
   font-size: 11px;
 }
 
-/* 纸上的落款：纸会被带到学校、被别的家长看到。页码居中不动，落款靠右、浅灰小字 */
+/* 纸上的落款：纸会被带到学校、被别的家长看到，写上网址好找回来（2026-11-26 站长定）。页码居中不动，落款靠右、浅灰小字 */
 .sheet-foot::after {
-  content: "纸和笔 · 一页纸，五分钟";
+  content: "纸和笔 · zhihebi.com";
   position: absolute;
   right: 0;
   bottom: 0;
