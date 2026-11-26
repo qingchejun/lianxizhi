@@ -29,7 +29,7 @@ def sheet_keys(page):
 
 
 # ---------- 源码（不跑脚本）----------
-for path, title, h1 in [('/kousuan', '口算题生成器', '口算题'), ('/shudu', '儿童数独打印', '儿童数独')]:
+for path, title, h1 in [('/kousuan', '口算题生成器', '口算题生成器'), ('/shudu', '儿童数独打印', '儿童数独打印')]:
     raw = urllib.request.urlopen(BASE + path).read().decode('utf-8')
     check(path + ' 源码：标题、描述、canonical、H1、介绍文字都在', all(x in raw for x in [
         '<title>' + title, 'name="description"', '<link rel="canonical" href="https://zhihebi.com' + path + '"',

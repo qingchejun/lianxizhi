@@ -1910,7 +1910,7 @@ select.input {
   text-underline-offset: 2px;
 }
 
-.sf h3 {
+.sf-h {
   margin: 2px 0 10px;
   font-size: 13px;
   font-weight: 600;

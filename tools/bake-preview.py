@@ -5,6 +5,9 @@ Search engines that do not run JS (and the first paint before scripts run)
 then see an empty #preview. We capture what a guest sees with default
 settings and write it between bake markers; the page JS replaces it on load.
 
+The kousuan sample uses carryMode=carryonly so the baked problems match the
+page promise (carry / borrow problems), not the random default mix.
+
 Run against the local dev server (port 8999):
   uv run --with playwright python tools/bake-preview.py [base_url]
 Re-run after changing a renderer or the default settings.
@@ -17,7 +20,7 @@ from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parent.parent
 BASE = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8999'
-PAGES = [('kousuan.html', '/kousuan'), ('shudu.html', '/shudu')]
+PAGES = [('kousuan.html', '/kousuan?carryMode=carryonly'), ('shudu.html', '/shudu')]
 START, END = '<!-- bake:preview -->', '<!-- /bake:preview -->'
 BLOCK = re.compile(r'<div id="preview">(?:' + re.escape(START) + r'.*?' + re.escape(END) + r')?</div>', re.S)
 
@@ -27,6 +30,7 @@ def main():
         browser = p.chromium.launch()
         for name, path in PAGES:
             page = browser.new_page()
+            page.add_init_script('localStorage.clear()')
             page.goto(BASE + path, wait_until='networkidle')
             page.wait_for_selector('#preview .sheet')
             html = page.eval_on_selector('#preview', 'el => el.innerHTML').strip()

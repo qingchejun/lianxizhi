@@ -15,7 +15,7 @@
        例外：?reset= 是密码重设邮件的落地链接（js/account-ui.js 接管），必须留在首页。 */
     if (location.search && !/[?&]reset=/.test(location.search)) location.replace('kousuan.html' + location.search)
   </script>
-  <link rel="stylesheet" href="css/app.css?v=37d770b85d" />
+  <link rel="stylesheet" href="css/app.css?v=033d220bb2" />
   <link rel="stylesheet" href="css/today.css?v=bc8b760e03" />
 </head>
 <body data-help-manual>
@@ -85,9 +85,9 @@
       <p>一位一年级家长给自己孩子做的练习纸网站：能在家练好的不送去报班，能在纸上做的不让孩子盯屏幕。口算、奥数前三课和纸笔游戏打开就能打印；做完扫一下纸角，下一张专练错的。</p>
       <p>意见反馈：<a href="mailto:hi@zhihebi.com">hi@zhihebi.com</a>，一般一两天内回复。</p>
     </section>
-    <nav class="sf-col" aria-label="练习"><h3>练习</h3><a href="/kousuan">口算题</a><a href="/kousuan/coushifa">凑十法练习题</a><a href="/kousuan/poshifa">破十法练习题</a><a href="/aoshu">奥数</a><a href="/shizi">识字<small>完整版</small></a><a href="/pinyin">拼音<small>完整版</small></a></nav>
-    <nav class="sf-col" aria-label="游戏"><h3>游戏</h3><a href="/shudu">儿童数独</a><a href="/huochai">火柴棒等式题</a><a href="/mima">密码推理题</a><a href="/migong">儿童迷宫</a><a href="/zhizhi">数织游戏</a></nav>
-    <nav class="sf-col" aria-label="关于"><h3>关于</h3><a href="/">纸和笔首页</a><a href="/help">使用说明</a><a href="/help#print">打印与存 PDF</a><a href="/privacy">隐私说明</a><a href="mailto:hi@zhihebi.com">意见反馈</a></nav>
+    <nav class="sf-col" aria-label="练习"><div class="sf-h">练习</div><a href="/kousuan">口算题</a><a href="/kousuan/coushifa">凑十法练习题</a><a href="/kousuan/poshifa">破十法练习题</a><a href="/aoshu">奥数</a><a href="/shizi">识字<small>完整版</small></a><a href="/pinyin">拼音<small>完整版</small></a></nav>
+    <nav class="sf-col" aria-label="游戏"><div class="sf-h">游戏</div><a href="/shudu">儿童数独</a><a href="/huochai">火柴棒等式题</a><a href="/mima">密码推理题</a><a href="/migong">儿童迷宫</a><a href="/zhizhi">数织游戏</a></nav>
+    <nav class="sf-col" aria-label="关于"><div class="sf-h">关于</div><a href="/">纸和笔首页</a><a href="/help">使用说明</a><a href="/help#print">打印与存 PDF</a><a href="/privacy">隐私说明</a><a href="mailto:hi@zhihebi.com">意见反馈</a></nav>
   </div>
   <div class="sf-bot"><span>© 2026 纸和笔 · zhihebi.com</span><span>少报班，少看屏 · 一页纸，五分钟</span></div>
 </footer>
