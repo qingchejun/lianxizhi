@@ -134,276 +134,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- 分组进度：竖排步骤，当前组蓝框，换题再试 / 试一试 用虚线和缩进区分 ---------- */
-
-.py-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.py-step {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 6px 10px;
-  font: inherit;
-  text-align: left;
-  color: var(--ink);
-  background: #fff;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.py-step:hover {
-  background: var(--field);
-}
-
-.py-step.is-on {
-  background: var(--blue-tint);
-  border-color: #b9c9f1;
-}
-
-.py-dot {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--ink-soft);
-  border: 1.5px solid var(--line-strong);
-  border-radius: 50%;
-}
-
-.py-dot svg {
-  width: 14px;
-  height: 14px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.py-step.is-on .py-dot {
-  color: #fff;
-  background: var(--blue);
-  border-color: var(--blue);
-}
-
-.py-step.is-done .py-dot {
-  color: #fff;
-  background: var(--green);
-  border-color: var(--green);
-}
-
-/* 换题再试（卡住才做）、试一试（有余量才做）：不是必做的组，圆点画成虚线空心 */
-.py-step.is-check,
-.py-step.is-observe {
-  margin-left: 16px;
-  width: calc(100% - 16px);
-}
-
-.py-step.is-check .py-dot,
-.py-step.is-observe .py-dot {
-  width: 14px;
-  height: 14px;
-  margin: 0 4px;
-  border-style: dashed;
-}
-
-.py-step.is-check.is-done .py-dot,
-.py-step.is-observe.is-done .py-dot {
-  width: 22px;
-  height: 22px;
-  margin: 0;
-  border-style: solid;
-}
-
-.py-step-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.py-step-main b {
-  display: block;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.4;
-}
-
-.py-step.is-on .py-step-main b {
-  font-weight: 600;
-  color: var(--blue-deep);
-}
-
-.py-step-main small {
-  font-size: 11px;
-  color: var(--ink-faint);
-}
-
-.py-step-st {
-  flex: none;
-  font-size: 12px;
-  color: var(--ink-soft);
-  font-variant-numeric: tabular-nums;
-}
-
-.py-step.is-done .py-step-st {
-  color: var(--green);
-}
-
-.py-step-st.is-stuck,
-.py-step.is-done .py-step-st.is-stuck { /* 登记完但有题卡住：红色，别被「做完」的绿色盖掉 */
-  color: var(--red);
-}
-
-/* ---------- 当前组逐题登记 ---------- */
-
-.py-now-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.py-now-head .btn svg {
-  width: 16px;
-  height: 16px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.75;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.py-rows {
-  margin: 0 -16px;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid #eceef1;
-}
-
-.py-row {
-  display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 4px 8px;
-  padding: 6px 16px;
-  border-bottom: 1px solid #eceef1;
-}
-
-.py-row.is-open {
-  background: #fffafa;
-}
-
-.py-row.is-skip .py-row-text {
-  color: var(--ink-faint);
-  text-decoration: line-through;
-  text-decoration-thickness: 2px;
-}
-
-.py-row-no {
-  font-size: 12px;
-  color: var(--ink-faint);
-  font-variant-numeric: tabular-nums;
-}
-
-.py-row-text {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  color: var(--ink);
-}
-
-.py-row-btns {
-  display: flex;
-  gap: 4px;
-}
-
-.py-mark {
-  height: 28px;
-  padding: 0 8px;
-  font: inherit;
-  font-size: 12px;
-  white-space: nowrap;
-  color: var(--ink-2);
-  background: #fff;
-  border: 1px solid var(--line-strong);
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.py-mark:hover {
-  color: var(--ink);
-  border-color: #9aa0aa;
-}
-
-.py-mark.is-hint[aria-pressed="true"] {
-  color: var(--amber);
-  background: var(--amber-tint);
-  border-color: #e2b65c;
-  font-weight: 600;
-}
-
-.py-mark.is-miss[aria-pressed="true"] {
-  color: #fff;
-  background: var(--red);
-  border-color: var(--red);
-  font-weight: 600;
-}
-
-.py-mark.is-unpracticed[aria-pressed="true"] {
-  color: #fff;
-  background: var(--ink-soft);
-  border-color: var(--ink-soft);
-}
-
-.py-row-more {
-  grid-column: 2 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 14px;
-  padding: 2px 0 4px;
-}
-
-.py-row-more label:first-child {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--ink-soft);
-}
-
-.py-row-more .input {
-  width: 110px;
-  height: 30px;
-  font-size: 13px;
-}
-
-.py-tone {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--ink-2);
-  cursor: pointer;
-}
-
-.py-tone input {
-  width: 15px;
-  height: 15px;
-  margin: 0;
-  accent-color: var(--blue);
-}
-
 .py-keys {
   font-size: 13px;
   color: var(--ink-soft);
@@ -418,38 +148,27 @@
   color: var(--ink);
 }
 
-.py-foot-hint {
-  margin: 4px 0 0;
+.py-rate .py-keys {
+  margin-top: 12px;
 }
 
-.py-group-foot {
+.py-rate .py-next {
+  margin-top: 14px;
+}
+
+/* ---------- 上课用：每组一行（孩子视图 + 教学卡） ---------- */
+
+.py-teach-row + .py-teach-row {
+  margin-top: 12px;
+}
+
+.py-teach-head {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 8px 12px;
-  padding-top: 4px;
-}
-
-.py-group-foot .btn {
-  height: 38px;
-}
-
-.py-group-foot .link-btn {
-  margin-left: auto;
-  font-size: 13px;
-}
-
-.py-stop {
-  display: flex;
-  align-items: flex-end;
+  justify-content: space-between;
   gap: 8px;
-  padding: 10px 12px;
-  background: var(--field);
-  border-radius: 8px;
-}
-
-.py-stop .field {
-  flex: 1;
+  margin-bottom: 6px;
+  font-size: 14px;
 }
 
 /* ---------- 家长教学卡：平时折叠，卡住时展开 ---------- */

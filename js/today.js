@@ -243,7 +243,7 @@
     : shelf('练习', [aoshuCard(data.aoshu), shiziCard(data.shizi), kousuanCard(data.kousuan), pinyinCard(data.pinyin)]) +
       shelf('游戏', [shuduCard(data.shudu)].concat(data.games.map(gameCard)))
 
-  /* 扫码登记带来的提醒：没登记的纸、口算升档、奥数再练 / 复习卷、游戏自动升降关（可撤销） */
+  /* 打分带来的提醒：各板块没打分的纸、口算升档、奥数再练 / 复习卷 */
   var marksBox = doc.getElementById('today-marks')
   function z2(n) { return (n < 10 ? '0' : '') + n }
   function todayKey() {
@@ -255,24 +255,22 @@
     var n = S.today.markNotes(S.store, todayKey())
     var rows = []
     if (n.pending) {
-      rows.push('<p><span>还有 <b>' + n.pending + '</b> 张纸还没打分。孩子做完后，手机扫纸角的二维码就能打分。' +
-        '</span><a class="btn btn-sm" href="mark?id=' + esc(n.pendingId) + '">去打分</a></p>')
+      rows.push('<p><span>还有纸没打分：' + n.pendingBy.map(function (x) {
+        return '<a href="mark?module=' + x.module + '">' + esc(x.label) + ' <b>' + x.n + '</b> 张</a>'
+      }).join('、') + '。孩子做完后，手机扫纸角的二维码就能打分。</span></p>')
     }
     if (n.kousuanUp) {
-      rows.push('<p><span>口算连续两张都「会了」，可以升到「' + esc(n.kousuanUp) + '」。' +
+      rows.push('<p><span>口算连续两张都全对或只错 1 题，可以升到「' + esc(n.kousuanUp) + '」。' +
         '</span><button type="button" class="btn btn-sm" data-ks-up="' + esc(n.kousuanUp) + '">换到这一档</button></p>')
     }
     if (n.aoshuRetry) {
-      rows.push('<p><span>奥数「' + esc(n.aoshuRetry.label) + '」上次打了「不会」，可以换一批题再练一张。' +
+      rows.push('<p><span>奥数「' + esc(n.aoshuRetry.label) + '」上次错了一半以上，可以换一批题再练一张。' +
         '</span><button type="button" class="btn btn-sm" data-ao-retry="' + esc(n.aoshuRetry.id) + '">再练一张</button></p>')
     }
     if (n.aoshuDue.length >= 3) {
-      rows.push('<p><span>奥数有 <b>' + n.aoshuDue.length + '</b> 课待复习（打了「一般」或点过错题）。' +
+      rows.push('<p><span>奥数有 <b>' + n.aoshuDue.length + '</b> 课待复习（上次有错题）。' +
         '</span><a class="btn btn-sm" href="aoshu.html?review=true&reviewTopics=' + encodeURIComponent(n.aoshuDue.join(',')) + '#print">打印复习卷</a></p>')
     }
-    n.games.forEach(function (g) {
-      rows.push('<p><span>' + esc(g.text) + '。</span><button type="button" class="btn btn-sm" data-game-undo="' + esc(g.recId) + '">撤销</button></p>')
-    })
     marksBox.innerHTML = rows.join('')
     marksBox.hidden = !rows.length
   }
@@ -288,10 +286,6 @@
       } else if (b.dataset.aoRetry) {
         S.today.rollAoshu(S.store, b.dataset.aoRetry)
         root.location.href = 'aoshu.html?topic=' + encodeURIComponent(b.dataset.aoRetry) + '&review=false#print'
-      } else if (b.dataset.gameUndo) {
-        var rec = S.sheetsCore.parse(S.store.getString(S.sheetsCore.keyOf(b.dataset.gameUndo)))
-        if (rec) S.sheetsCore.undoGame(S.store, rec)
-        root.location.reload()
       }
     })
     paintMarks()

@@ -1,8 +1,8 @@
 /**
  * 纸记录（扫码登记）校验脚本。用法：node tools/check-sheets.js
  *
- * 压住：纸号稳定、60 天清理、按错题自动定档、待登记列表、
- * 口算按错题调整下一张、奥数三档作用与撤回、游戏升降关。
+ * 压住：纸号稳定、60 天清理、按错题自动定档、待打分列表（只练习四板块、2 天内、按板块）与历史、
+ * 全对 / 点错题提交、拼音提交换算、口算按错题调整下一张、奥数作用与撤回。游戏 2026-11-27 起不打分。
  */
 'use strict'
 
@@ -54,14 +54,25 @@ var st = C.staleKeys([
 check(st.length === 2 && st.indexOf(C.keyOf('aaaaaa')) >= 0 && st.indexOf(C.keyOf('dddddd')) >= 0, '清理键不对 ' + st)
 check(C.lastTouched(oldRated) === NOW - 5 * DAY, 'lastTouched')
 
-/* ---------- 待登记 ---------- */
-var y = rec('y00000', 'huochai', '2026-11-22', NOW - DAY)
-var d2 = rec('z00000', 'huochai', '2026-11-21', NOW - 2 * DAY)
+/* ---------- 待打分 / 历史 ---------- */
+var y = rec('y00000', 'kousuan', '2026-11-22', NOW - DAY)
+var d2 = rec('z00000', 'kousuan', '2026-11-21', NOW - 2 * DAY)
+var game = rec('g00000', 'huochai', '2026-11-23', NOW)
 var rated = rec('r00000', 'kousuan', '2026-11-23', NOW, { rating: { all: { level: 'good', auto: false, at: NOW } } })
 var done = rec('s00000', 'shizi', '2026-11-23', NOW, { done: true })
-var p = C.pending([y, d2, rated, fresh, done], '2026-11-23')
-check(p.length === 2 && p[0].id === 'cccccc' && p[1].id === 'y00000', '待登记列表不对 ' + p.map(function (r) { return r.id }))
+var szPend = rec('s00001', 'shizi', '2026-11-23', NOW - 10)
+var skipped = rec('k00000', 'kousuan', '2026-11-23', NOW, { done: true, skipped: true })
+var all5 = [y, d2, game, rated, fresh, done, szPend, skipped]
+var p = C.pending(all5, '2026-11-23')
+check(p.map(function (r) { return r.id }).join() === 'cccccc,s00001,y00000', '待打分列表不对 ' + p.map(function (r) { return r.id }))
+check(C.pending(all5, '2026-11-23', 'shizi').map(function (r) { return r.id }).join() === 's00001', '按板块过滤')
+check(C.pending(all5, '2026-11-23', 'huochai').length === 0, '游戏不进待打分')
 check(C.prevDate('2026-03-01') === '2026-02-28', 'prevDate 跨月')
+var hist = C.history(all5, 'kousuan')
+check(hist.length === 5 && hist[hist.length - 1].id === 'z00000', '历史含打过分和超过 2 天的 ' + hist.map(function (r) { return r.id }))
+check(C.resultText(rated) === '全对' && C.resultText(y) === '没打分' && C.resultText(skipped) === '没打分', 'resultText')
+check(C.resultText(rec('w', 'kousuan', '2026-11-23', NOW, { rating: { all: { level: 'ok', at: NOW } }, wrong: ['a', 'b'] })) === '错 2 题', 'resultText 错题')
+check(!C.isPractice('shudu') && C.isPractice('pinyin'), 'isPractice')
 
 /* ---------- 口算 ---------- */
 require('../js/settings.js')
@@ -138,19 +149,6 @@ check(s2.learned.indexOf('c') < 0 && s2.due.indexOf('c') < 0, '改成不会后 c
 var sBad = C.aoshuApply({ learned: ['x'], due: [] }, { x: 'bad' }, [])
 check(sBad.learned.indexOf('x') >= 0, '不会不删以前标的已学')
 
-/* ---------- 游戏 ---------- */
-var h = C.gameStep('huochai', { level: 'L2' }, 'good')
-check(h.next.level === 'L3' && h.changed && h.prev.level === 'L2', '火柴升关')
-check(C.gameStep('huochai', { level: 'L4' }, 'good').changed === false, '到顶不动')
-check(C.gameStep('mima', { level: 'L1' }, 'bad').changed === false, '到底不动')
-check(C.gameStep('migong', { level: 'L3' }, 'bad').next.level === 'L2', '迷宫降关')
-check(C.gameStep('zhizhi', { level: 'L2' }, 'ok').changed === false, '刚好不变')
-var sd = C.gameStep('shudu', { shape: 's9', clues: 35 }, 'good', { min: 27, max: 50 })
-check(sd.next.clues === 31 && sd.next.shape === 's9', '数独太简单少给提示 ' + sd.next.clues)
-check(C.gameStep('shudu', { shape: 's4', clues: 12 }, 'bad', { min: 5, max: 12 }).changed === false, '数独到顶不动')
-check(C.gameStep('shudu', { shape: 's4', clues: 6 }, 'good', { min: 5, max: 12 }).next.clues === 5, '数独不低于下限')
-check(C.gameLevelText('huochai', { level: 'L3' }) === '中等' && C.gameLevelText('shudu', { clues: 31 }) === '31 个提示数', 'gameLevelText')
-
 /* ---------- 保存打分（登记页用）：写记录 + 作用到板块存储，改档不叠加 ---------- */
 function memStore(init) {
   var m = {}
@@ -179,65 +177,48 @@ C.saveRating(st1, st1.get(C.keyOf(ao.id)), { t1: { level: 'bad' }, t2: { level: 
 check(st1.get(LK).join() === 'old', '改成不会后撤回已学 ' + st1.get(LK))
 check(st1.get(DK).length === 0, '改成不会后撤回待复习 ' + st1.get(DK))
 
-var GK = 'sumsum:huochai:v1'
-var st2 = memStore({})
-st2.set(GK, { level: 'L2', seed: 7 })
-var hc = rec('h00001', 'huochai', '2026-11-23', NOW, { ref: { settings: { level: 'L2', seed: 7 } } })
-st2.set(C.keyOf(hc.id), hc)
-C.saveRating(st2, hc, { all: { level: 'good' } }, [], NOW)
-check(st2.get(GK).level === 'L3' && st2.get(GK).seed === 7, '太简单 → 升到 L3 ' + JSON.stringify(st2.get(GK)))
-C.saveRating(st2, st2.get(C.keyOf(hc.id)), { all: { level: 'bad' } }, [], NOW + 1)
-check(st2.get(GK).level === 'L1', '改成太难：先回 L2 再降到 L1，不是从 L3 降 ' + st2.get(GK).level)
-C.saveRating(st2, st2.get(C.keyOf(hc.id)), { all: { level: 'ok' } }, [], NOW + 2)
-check(st2.get(GK).level === 'L2', '改成刚好：回到打分前的 L2')
-C.saveRating(st2, st2.get(C.keyOf(hc.id)), { all: { level: 'good' } }, [], NOW + 3)
-st2.set(GK, { level: 'L1', seed: 7 }) /* 家长之后自己手动改了关卡 */
-C.saveRating(st2, st2.get(C.keyOf(hc.id)), { all: { level: 'ok' } }, [], NOW + 4)
-check(st2.get(GK).level === 'L1', '家长手动改过关卡就不再撤回 ' + st2.get(GK).level)
-
-var st3 = memStore({})
-st3.set(GK, { level: 'L2' })
-var hc2 = rec('h00002', 'huochai', '2026-11-23', NOW, { ref: { settings: { level: 'L2' } } })
-C.saveRating(st3, hc2, { all: { level: 'good' } }, [], NOW)
-check(C.undoGame(st3, st3.get(C.keyOf(hc2.id))) === true && st3.get(GK).level === 'L2', '今天页撤销升关')
-check(st3.get(C.keyOf(hc2.id)).applied.undone === true, '撤销后记下')
-check(C.undoGame(st3, st3.get(C.keyOf(hc2.id))) === false, '不能撤销两次')
-
-/* 终审 I1：同一天几张同关卡的纸都点「太简单」只升一档；回头再点早一张不再叠加 */
-var st6 = memStore({})
-st6.set(GK, { level: 'L1' })
-var g1 = rec('g00001', 'huochai', '2026-11-23', NOW, { ref: { settings: { level: 'L1' } } })
-var g2 = rec('g00002', 'huochai', '2026-11-23', NOW, { ref: { settings: { level: 'L1' } } })
-var g3 = rec('g00003', 'huochai', '2026-11-23', NOW, { ref: { settings: { level: 'L1' } } })
-C.saveRating(st6, g1, { all: { level: 'good' } }, [], NOW)
-C.saveRating(st6, g2, { all: { level: 'good' } }, [], NOW + 1)
-C.saveRating(st6, g3, { all: { level: 'good' } }, [], NOW + 2)
-check(st6.get(GK).level === 'L2', '三张第 1 关都太简单 → 只升到第 2 关 ' + st6.get(GK).level)
-var g4 = rec('g00004', 'huochai', '2026-11-23', NOW + 3, { ref: { settings: { level: 'L2' } } })
-C.saveRating(st6, g4, { all: { level: 'good' } }, [], NOW + 4)
-check(st6.get(GK).level === 'L3', '第 2 关的纸太简单 → 第 3 关')
-C.saveRating(st6, st6.get(C.keyOf('g00001')), { all: { level: 'good' } }, [], NOW + 5)
-check(st6.get(GK).level === 'L3', '回头再点早一张不叠加 ' + st6.get(GK).level)
-
-/* 终审 I2：展开点错题只重算这道题所在的那一课，别的课手动选的档不动 */
-var multi = { units: [{ key: 't1' }, { key: 't2' }], items: [{ key: '1', unit: 't1' }, { key: '2', unit: 't1' }, { key: '3', unit: 't2' }] }
-var lv0 = { t2: { level: 'bad', auto: false } }
-var lv1 = C.autoLevel(multi, lv0, new Set(['1']), '1')
-check(lv1.t2.level === 'bad' && lv1.t2.auto === false, '别的课手动档不被覆盖 ' + JSON.stringify(lv1))
-check(lv1.t1.level === 'ok' && lv1.t1.auto === true, '点错题的那课自动定档 ' + JSON.stringify(lv1.t1))
-var single = { units: [{ key: 'all' }], items: [{ key: 'a' }, { key: 'b' }, { key: 'c' }] }
-check(C.autoLevel(single, {}, new Set(['a']), 'a').all.level === 'good', '单课：错 1/3 → 会了')
-
-var SK = 'sumsum:shudu:v1'
-var st4 = memStore({})
-var sdr = rec('d00001', 'shudu', '2026-11-23', NOW, { ref: { settings: { shape: 's9', clues: 35 } } })
-C.saveRating(st4, sdr, { all: { level: 'good' } }, [], NOW, { clueRange: function () { return { min: 27, max: 50 } } })
-check(st4.get(SK).clues === 31, '数独没存过设置时以纸上的设置为底 ' + JSON.stringify(st4.get(SK)))
-
 var st5 = memStore({})
 var kr = rec('k00009', 'kousuan', '2026-11-23', NOW, { items: [{ key: '8 + 5', cat: 'carry' }] })
 C.saveRating(st5, kr, { all: { level: 'ok', auto: true } }, ['8 + 5'], NOW)
 check(st5.get(C.keyOf(kr.id)).rating.all.at === NOW && st5.keys().length === 1, '口算只写记录')
+
+/* ---------- 提交：全对 / 点错题 ---------- */
+var st7 = memStore({})
+var k20 = rec('k00020', 'kousuan', '2026-11-23', NOW, { items: [] })
+for (var qi = 0; qi < 20; qi++) k20.items.push({ key: 'q' + qi, label: 'q' + qi, cat: 'plain' })
+var sub1 = C.submit(st7, k20, [], NOW)
+check(sub1.rating.all.level === 'good' && sub1.wrong.length === 0 && C.resultText(sub1) === '全对', '全对提交 ' + JSON.stringify(sub1.rating))
+var sub2 = C.submit(st7, sub1, ['q1', 'q2', 'nope'], NOW + 1)
+check(sub2.rating.all.level === 'ok' && sub2.wrong.join() === 'q1,q2', '点错题提交（不认识的 key 丢掉）' + JSON.stringify(sub2))
+check(C.submit(st7, sub2, k20.items.slice(0, 10).map(function (i) { return i.key }), NOW + 2).rating.all.level === 'bad', '错一半 → bad')
+
+var st8 = memStore({})
+st8.set(LK, [])
+var ao2 = rec('a00002', 'aoshu', '2026-11-23', NOW, {
+  units: [{ key: 't1', label: '一' }, { key: 't2', label: '二' }],
+  items: [{ key: '1', unit: 't1' }, { key: '2', unit: 't1' }, { key: '3', unit: 't1' }, { key: '4', unit: 't2' }, { key: '5', unit: 't2' }]
+})
+C.submit(st8, ao2, ['4', '5'], NOW)
+check(st8.get(LK).join() === 't1', '奥数：t1 全对标已学、t2 全错不标 ' + st8.get(LK))
+check((st8.get(DK) || []).join() === 't2', '奥数：错题所在课进待复习 ' + st8.get(DK))
+C.submit(st8, st8.get(C.keyOf('a00002')), [], NOW + 1)
+check(st8.get(LK).slice().sort().join() === 't1,t2' && st8.get(DK).length === 0, '改成全对：撤回再作用 ' + st8.get(LK) + '|' + st8.get(DK))
+check(!st8.get(C.keyOf('a00002')).skipped, '提交后不再是没做')
+
+/* ---------- 拼音提交换算 ---------- */
+var py = {
+  units: [{ key: 'g1', phase: 'independent' }, { key: 'g2', phase: 'independent' }, { key: 'g3', phase: 'observe' },
+    { key: 'g4', phase: 'check', parent: 'g1' }, { key: 'g5', phase: 'check', parent: 'g2' }],
+  items: [{ key: '1', unit: 'g1' }, { key: '2', unit: 'g1' }, { key: '3', unit: 'g2' }, { key: '4', unit: 'g3' },
+    { key: '5', unit: 'g3' }, { key: '6', unit: 'g4' }, { key: '7', unit: 'g5' }]
+}
+var pr = C.pinyinResults(py, [])
+check(pr['1'] === 'ok' && pr['3'] === 'ok' && pr['4'] === 'unpracticed' && pr['6'] === 'unpracticed' && pr['7'] === 'unpracticed', '拼音全对 ' + JSON.stringify(pr))
+var pr2 = C.pinyinResults(py, ['2', '5'])
+check(pr2['1'] === 'ok' && pr2['2'] === 'miss', '独立组点了 = miss ' + JSON.stringify(pr2))
+check(pr2['6'] === 'ok' && pr2['7'] === 'unpracticed', '换题再试跟着卡住的那组 ' + JSON.stringify(pr2))
+check(pr2['4'] === 'ok' && pr2['5'] === 'miss', '试一试点了错题才算做过 ' + JSON.stringify(pr2))
+check(C.pinyinResults(py, ['7'])['7'] === 'miss', '换题再试自己点了错题也算做过')
 
 /* ---------- 二维码 ---------- */
 globalThis.qrcode = require('../js/vendor/qrcode.js')

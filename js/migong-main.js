@@ -72,17 +72,6 @@
 
     var result = S.migong.generate(settings)
     S.migongRender.render($('preview'), settings, result.puzzles)
-    /* 扫码登记：纸角二维码 + 打印时记下这张（太简单 / 刚好 / 太难 → 下一张升降关，见 mark 页） */
-    if (S.sheets) {
-      S.sheets.use({
-        module: 'migong',
-        title: S.sheetsCore.MODULE_LABEL.migong + ' · ' + S.sheetsCore.gameLevelText('migong', settings),
-        idParts: JSON.stringify(settings),
-        units: [{ key: 'all', label: '整张' }],
-        items: [],
-        ref: { settings: settings }
-      })
-    }
     S.shell.fit()
 
     $('level-hint').textContent = LEVEL_HINTS[settings.level] || ''

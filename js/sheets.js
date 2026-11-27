@@ -5,7 +5,8 @@
  * 真正写记录是在打印那一刻（beforeprint，连 Ctrl/Cmd+P 也接得住）——只渲染不打印的纸不留痕。
  * 写完立刻盖「现在」的时间戳：store.set 首次写入记的是 1（播种），不盖会被 60 天清理当成旧纸删掉。
  *
- * 顶栏另加一个「登记」按钮：电脑上也能直接去登记页（/mark?id=…）。
+ * 顶栏另加一个「打分」按钮：电脑上也能直接去打分页（/mark?module=…，只看这个板块的待打分和历史）。
+ * 只给练习四板块用（口算、奥数、识字、拼音）；游戏 2026-11-27 起不打分、不印二维码。
  *
  * qrSvg 无 DOM 依赖，node 下由 tools/check-sheets.js 校验；其余部分只在浏览器里跑。
  */
@@ -121,15 +122,14 @@
   }
 
   function use(info) {
+    if (!C().isPractice(info.module)) return null
     var date = today()
     var id = C().makeId(info.module + '|' + info.idParts + '|' + date)
     current = { id: id, info: info, date: date }
     if (root.document) {
       hookLogin()
       if (signedIn()) placeQr(root.document, id)
-      /* 识字、拼音本页就能逐字 / 逐题登记，不加「登记」按钮（拼音的登记页本身就跳回这里） */
-      var kind = C().MODULE_KIND[info.module]
-      if (kind === 'three' || kind === 'game') ensureButton(root.document)
+      ensureButton(root.document, info.module)
     }
     return id
   }
@@ -174,6 +174,20 @@
     S.set(key, rec)
   }
 
+  /* 板块页上撤销登记（识字「撤销登记」）：当前这张纸回到没打分，打分页的待办里重新出现 */
+  function markUndone(id) {
+    id = id || (current && current.id)
+    if (!id) return
+    var S = root.SumSum.store
+    var key = C().keyOf(id)
+    var rec = C().parse(S.getString(key))
+    if (!rec || !rec.done) return
+    delete rec.done
+    delete rec.doneAt
+    rec.wrong = null
+    S.set(key, rec)
+  }
+
   /* 打印后提示纸有没有存上云端（sync.js 的待推清单会自动重试）。只在本页打印过才提示 */
   var toastWatching = false
   var toastHide = null
@@ -215,7 +229,7 @@
   }
   var toastHooked = false
 
-  function ensureButton(doc) {
+  function ensureButton(doc, module) {
     if (doc.getElementById('btn-mark')) return
     var print = doc.getElementById('btn-print')
     if (!print || !print.parentNode) return
@@ -223,7 +237,7 @@
     b.type = 'button'
     b.id = 'btn-mark'
     b.className = 'btn'
-    b.title = '孩子做完后打分：会了 / 一般 / 不会，或点做错的题'
+    b.title = '孩子做完后打分：全对选「全对」，有错点出来，再提交'
     b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3 8-8M20 12v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h11"/></svg>打分'
     b.addEventListener('click', function () {
       if (!signedIn()) {
@@ -231,8 +245,9 @@
         if (ui && ui.open) ui.open('login', '登录后就能打分：孩子做完，手机扫一下纸角的二维码点一下哪里错了，下一张就专练这些。')
         return
       }
-      var id = ensureSaved()
-      if (id) root.location.href = '/mark?id=' + id
+      /* 屏幕上这张打印过才带上它（没打印过的纸不记录，见 ensureSaved），否则只看这个板块 */
+      var id = current && root.SumSum.store.get(C().keyOf(current.id)) ? current.id : ''
+      root.location.href = '/mark?module=' + module + (id ? '&id=' + id : '')
     })
     /* 口算页「打印」左边还有「打印帮助」「附答案页」（2026-11-25）：打分放在它们前面，让「附答案页」紧挨着「打印」 */
     var anchor = print.parentNode.querySelector('.head-help, .head-check') || print
@@ -250,6 +265,7 @@
     use: use,
     ensureSaved: ensureSaved,
     markDone: markDone,
+    markUndone: markUndone,
     current: function () { return current },
     qrSvg: qrSvg,
     signedIn: signedIn,

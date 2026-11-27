@@ -1,13 +1,18 @@
 /**
- * 登记页（/mark?id=<纸号>）：家长扫纸角二维码打开，手机优先，电脑也能用。
+ * 打分页（/mark?id=<纸号> 或 /mark?module=<板块>）：家长扫纸角二维码打开，手机优先，电脑也能用
+ * （各练习板块页上的「打分」按钮也进这里）。2026-11-27 改版，设计稿
+ * docs/superpowers/specs/2026-11-27-practice-loop-design.md：
  *
- * 上面是扫的这张纸，下面接着列「今天还没登记的纸」（今天和昨天打印、还没登记的），一页点完。
- * 登记方式按板块（sheets-core MODULE_KIND）：
- *   three：会了 / 一般 / 不会，可展开逐题点错（点过就按错题比例自动选档）——口算、奥数（复习卷每课一行）
- *   game ：太简单 / 刚好 / 太难 → 下一张自动升降关
- *   chars：点没认出的字 → 「登记结果」，与识字页同一套结算（shizi-mark）
- *   link ：拼音规则多，跳回拼音页这张卷的登记区
- * 点了就存（sheets-core saveRating：改档先撤回再作用，不叠加），没有「提交」按钮。
+ *   上面：扫的这一张；
+ *   中间：同一个板块里还没打分的（打印后 2 天内），一个板块一个板块地打，不再混在一起；
+ *   下面：这个板块的历史（60 天内的纸），点一行展开补打 / 改；
+ *   最后：其他板块还有几张没打分，点了去那个板块。
+ *
+ * 每张纸只有一种打法：选「全对」或点错题 → 提交（js/rate.js）。提交后：
+ *   口算 / 奥数 → sheetsCore.submit（档位按错题比例自动算）；
+ *   识字 → shiziMark.settle（与识字页「登记结果」同一套，规则不动）；
+ *   拼音 → sheetsCore.pinyinResults 换成每题结果写 pinyin:mark（与拼音页同一套）。
+ * 游戏 2026-11-27 起不打分。
  *
  * 必须等登录与同步完成再画（accountUI.initialSync）：电脑刚打印的纸要先从云端拉下来。
  */
@@ -17,30 +22,16 @@
   var doc = root.document
   var S = root.SumSum
   var SC = S.sheetsCore
+  var R = S.rate
   var page = doc.getElementById('mark-page')
   var params = new URLSearchParams(root.location.search)
   var mainId = params.get('id') || ''
+  var askedModule = params.get('module') || ''
 
-  var THREE = [
-    { lv: 'good', text: '会了' },
-    { lv: 'ok', text: '一般' },
-    { lv: 'bad', text: '不会' }
-  ]
-  var GAME = [
-    { lv: 'good', text: '太简单' },
-    { lv: 'ok', text: '刚好' },
-    { lv: 'bad', text: '太难' }
-  ]
+  var opened = {} /* 历史里展开的纸 */
+  var listIds = [] /* 本页列过的待打分纸：打完分留在原位显示「已打分」，不会一点就消失 */
 
-  /* 每张纸在本页的临时状态：{ levels, wrong:Set, open } */
-  var ui = {}
-  var listIds = [] /* 下半部列表里出现过的纸（登记完也留着） */
-
-  function esc(str) {
-    return String(str).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]
-    })
-  }
+  var esc = R.esc
 
   function md(d) {
     var p = String(d).split('-')
@@ -60,207 +51,203 @@
     return SC.parse(S.store.getString(SC.keyOf(id)))
   }
 
-  /* 识字每日卷：按日期找回那张卷（shizi-mark 的 papers） */
+  /* 识字每日卷：按日期 + 字找回那张卷（shizi-mark 的 papers）。只按日期会认错：
+     同一天作废重出的卷日期一样、字不一样，打旧纸的分不能结到新卷上 */
   function shiziPaper(rec) {
     var M = S.shiziMark
     if (!M || !rec.ref || rec.ref.kind !== 'daily') return null
+    var chars = (rec.items || []).map(function (it) { return it.key }).join('')
     for (var i = M.paperCount() - 1; i >= 0; i--) {
       var p = M.paperAt(i)
-      if (p && p.d === rec.ref.d) return p
+      if (p && p.d === rec.ref.d && Array.from(p.chars).join('') === chars) return p
     }
     return null
   }
 
-  function isDone(rec) {
-    if (SC.rated(rec) || rec.done) return true
-    if (rec.module === 'shizi') {
-      var p = shiziPaper(rec)
-      return !!(p && p.settled)
-    }
-    return false
+  /* 拼音这张卷每题的结果（sumsum:pinyin:mark:v1:<卷号>:<题号>）；拼音页和这里打分写的都是它 */
+  var PY_MARK = 'sumsum:pinyin:mark:v1:'
+  function pinyinMarks(sheetId) {
+    var out = {}
+    var pre = PY_MARK + sheetId + ':'
+    S.store.keys().forEach(function (k) {
+      if (k.indexOf(pre) !== 0) return
+      var v = S.store.get(k)
+      if (v && v.result) out[k.slice(pre.length)] = v.result
+    })
+    return out
+  }
+  function pinyinSheetHere(rec) {
+    return !!S.store.getString('sumsum:pinyin:sheet:v1:' + rec.ref.date + ':' + rec.ref.sheetId)
   }
 
-  function stateOf(rec) {
-    if (!ui[rec.id]) {
-      var levels = {}
-      Object.keys(rec.rating || {}).forEach(function (u) {
-        levels[u] = { level: rec.rating[u].level, auto: rec.rating[u].auto }
-      })
-      ui[rec.id] = { levels: levels, wrong: new Set(rec.wrong || []), open: !!(rec.wrong && rec.wrong.length) }
+  /* 打过分没有，以板块自己的数据为准（不信纸记录上的 done：识字页撤销登记、拼音页打分都不一定回写纸记录）：
+     识字每日卷看那张卷 settled；拼音看这张卷有没有每题结果。只给这页看，不写回 */
+  function withDone(rec) {
+    if (rec.module === 'shizi' && rec.ref && rec.ref.kind === 'daily') {
+      var p = shiziPaper(rec)
+      if (p) return Object.assign({}, rec, { done: !!p.settled })
+      return rec
     }
-    return ui[rec.id]
+    if (rec.module === 'pinyin' && rec.ref && rec.ref.sheetId && !pinyinLegacy(rec)) {
+      var mk = pinyinMarks(rec.ref.sheetId)
+      var keys = Object.keys(mk)
+      return Object.assign({}, rec, {
+        done: keys.length > 0,
+        wrong: keys.filter(function (k) { return mk[k] === 'miss' || mk[k] === 'hint' }),
+        draftId: 'py-' + rec.ref.sheetId
+      })
+    }
+    return rec
+  }
+
+  /* 拼音的老纸记录（2026-11-27 前打印的）没有题目清单，只能回拼音页 */
+  function pinyinLegacy(rec) {
+    return rec.module === 'pinyin' && !(rec.items && rec.items.length)
   }
 
   /* ---------- 卡片 ---------- */
 
-  function segHTML(rec, unit, opts, chosen) {
-    return '<div class="seg3" role="group">' + opts.map(function (o) {
-      return '<button type="button" class="seg3-btn' + (chosen === o.lv ? ' on' : '') + '" data-sheet="' + rec.id +
-        '" data-unit="' + esc(unit) + '" data-lv="' + o.lv + '" aria-pressed="' + (chosen === o.lv) + '">' + o.text + '</button>'
-    }).join('') + '</div>'
-  }
-
-  function itemsHTML(rec, st) {
-    var units = rec.units || []
-    var multi = units.length > 1
-    var groups = multi ? units.map(function (u) {
-      return { unit: u, items: rec.items.filter(function (it) { return it.unit === u.key }) }
-    }) : [{ unit: null, items: rec.items }]
-    return groups.map(function (g) {
-      return (g.unit ? '<p class="items-unit">' + esc(g.unit.label) + '</p>' : '') +
-        '<div class="items ' + (rec.module === 'kousuan' ? 'items-kousuan' : 'items-no') + '">' +
-        g.items.map(function (it) {
-          var on = st.wrong.has(it.key)
-          return '<button type="button" class="item' + (on ? ' on' : '') + '" data-sheet="' + rec.id +
-            '" data-item="' + esc(it.key) + '" aria-pressed="' + on + '">' + esc(it.label) + '</button>'
-        }).join('') + '</div>'
-    }).join('')
-  }
-
-  function threeBody(rec, st) {
-    var units = rec.units || []
-    var html = ''
-    if (units.length <= 1) {
-      var u = units[0] ? units[0].key : 'all'
-      html += segHTML(rec, u, THREE, st.levels[u] && st.levels[u].level)
-    } else {
-      html += units.map(function (unit) {
-        return '<div class="unit-row"><span class="unit-name">' + esc(unit.label) + '</span>' +
-          segHTML(rec, unit.key, THREE, st.levels[unit.key] && st.levels[unit.key].level) + '</div>'
-      }).join('')
-    }
-    html += '<p class="rule">会了：全对或只错 1 题　一般：错了几题　不会：错一半以上，或做不下去</p>'
-    if (rec.items && rec.items.length) {
-      html += '<button type="button" class="link-btn" data-sheet="' + rec.id + '" data-expand>' +
-        (st.open ? '收起错题' : '展开点错题（更准）') + '</button>'
-      if (st.open) {
-        html += '<p class="rule">点做错的题，档位会按错题多少自动选好。点错了再点一下取消。</p>' + itemsHTML(rec, st)
-      }
-    }
-    return html
-  }
-
-  function gameBody(rec, st) {
-    var cur = (rec.ref && rec.ref.settings) || {}
-    return segHTML(rec, 'all', GAME, st.levels.all && st.levels.all.level) +
-      '<p class="rule">这张是「' + esc(SC.gameLevelText(rec.module, cur)) + '」。太简单下一张升一档，太难降一档，刚好不变。</p>'
-  }
-
-  function charsBody(rec) {
-    var M = S.shiziMark
-    var chars = (rec.items || []).map(function (it) { return it.key })
-    if (isDone(rec)) {
-      return '<p class="rule">这张卷已经登记过了。没认出的字会自动安排复习。</p>'
-    }
-    var paper = shiziPaper(rec)
-    if (rec.ref && rec.ref.kind === 'daily' && !paper) {
-      return '<p class="rule">这张每日卷在这台设备上找不到了（可能已经作废）。到识字页看看。</p>'
-    }
-    return '<p class="rule">点孩子<b>没认出</b>的字，再点「登记结果」。没点的算认出。</p>' +
-      '<div class="chars">' + chars.map(function (ch) {
-        var on = M.picked(ch)
-        return '<button type="button" class="ch' + (on ? ' on' : '') + '" data-sheet="' + rec.id + '" data-ch="' + esc(ch) +
-          '" aria-pressed="' + on + '">' + esc(ch) + '</button>'
-      }).join('') + '</div>' +
-      '<button type="button" class="btn btn-primary btn-block" data-sheet="' + rec.id + '" data-settle>登记结果</button>'
-  }
-
-  function linkBody(rec) {
-    var sid = rec.ref && rec.ref.sheetId
-    return '<p class="rule">拼音要逐题登记（顺的不点、提示了、没读出、停在哪题），在拼音页这张卷上点。</p>' +
-      '<a class="btn btn-primary btn-block" href="pinyin.html?sheet=' + encodeURIComponent(sid || '') + '#mark">去拼音页登记</a>'
-  }
-
   /* 存好以后告诉家长：下一张会怎么变 */
   function effectHTML(rec) {
     if (!SC.rated(rec)) return ''
-    var msg = ''
     if (rec.module === 'kousuan') {
       var nx = SC.kousuanNext(rec, S.store.get('sumsum:settings:v1') || { carryMode: 'random' })
       var parts = []
       if (nx.mustInclude.length) parts.push('再出这 ' + nx.mustInclude.length + ' 道错题')
       if (nx.carryOverride) parts.push('多出进位、退位的题')
-      msg = parts.length ? '下一张口算会' + parts.join('，') + '。' : '下一张口算照常出。'
-    } else if (rec.module === 'aoshu') {
-      msg = (rec.units || []).map(function (u) {
+      return parts.length ? '下一张口算会' + parts.join('，') + '。' : '下一张口算照常出。'
+    }
+    if (rec.module === 'aoshu') {
+      return (rec.units || []).map(function (u) {
         var lv = SC.levelOf(rec, u.key)
         if (!lv) return ''
-        return esc(u.label) + '：' + (lv === 'good' ? '已标为学过' : lv === 'ok' ? '已标为学过，放进待复习' : '先不标学过，「今天」页可以再练一张')
+        return esc(u.label) + '：' + (lv === 'good' ? '记为学会了' : lv === 'ok' ? '记为学过，过几天复习' : '还没学会，「今天」页可以再练一张')
       }).filter(Boolean).join('；') + '。'
-    } else if (SC.MODULE_KIND[rec.module] === 'game') {
-      var a = rec.applied
-      var cur = Object.assign({}, rec.ref && rec.ref.settings)
-      var f = rec.module === 'shudu' ? 'clues' : 'level'
-      if (a && a.changed) {
-        cur[f] = a.next
-        msg = '下一张自动' + (rec.rating.all.level === 'good' ? '加难' : '降难') + '到「' + SC.gameLevelText(rec.module, cur) + '」。'
-      } else {
-        msg = '下一张难度不变。'
-      }
     }
-    return msg ? '<p class="effect">' + msg + '</p>' : ''
+    return ''
   }
 
-  function cardHTML(rec) {
-    var st = stateOf(rec)
+  function bodyHTML(rec) {
     var kind = SC.MODULE_KIND[rec.module]
-    var done = isDone(rec)
-    var body = kind === 'three' ? threeBody(rec, st)
-      : kind === 'game' ? gameBody(rec, st)
-      : kind === 'chars' ? charsBody(rec)
-      : linkBody(rec)
-    return '<section class="mcard" data-card="' + rec.id + '">' +
+    var done = SC.isDone(rec)
+    if (pinyinLegacy(rec)) {
+      return done ? '<p class="rule">这张卷已经打过分了。</p>'
+        : '<p class="rule">这张是改版前打印的拼音卷，到拼音页打分。</p>' +
+          '<a class="btn btn-primary btn-block" href="pinyin.html?sheet=' + encodeURIComponent((rec.ref && rec.ref.sheetId) || '') + '">去拼音页打分</a>'
+    }
+    if (rec.module === 'shizi' && !done && rec.ref && rec.ref.kind === 'daily' && !shiziPaper(rec)) {
+      return '<p class="rule">这张每日卷在这台设备上找不到了（可能已经作废）。到识字页看看。</p>'
+    }
+    if (rec.module === 'pinyin' && !done && !pinyinSheetHere(rec)) {
+      return '<p class="rule">这张拼音卷还没同步到这台设备。稍等一会儿刷新，或者到出卷的那台电脑上的拼音页打分。</p>'
+    }
+    /* 识字页上已经点过的字带过来，别在这里提交时被清掉 */
+    if (rec.module === 'shizi' && !done && S.shiziMark) {
+      var d0 = R.draft(rec)
+      var picked = S.shiziMark.pickedIn((rec.items || []).map(function (it) { return it.key }))
+      if (!d0.all && !d0.wrong.length && picked.length) R.setDraft(R.keyOf(rec), { all: false, wrong: picked, editing: false })
+    }
+    return R.body(rec, {
+      kind: kind,
+      done: done,
+      result: SC.resultText(rec),
+      canEdit: rec.module !== 'shizi',
+      editHint: '识字要改，到识字页点「撤销登记」再重打。',
+      effect: effectHTML(rec) || (rec.module === 'shizi' ? '没认出的字会自动安排复习。' : rec.module === 'pinyin' ? '卡住的内容会安排到后面的卷里再练。' : '')
+    })
+  }
+
+  function cardHTML(rec, main) {
+    var done = SC.isDone(rec)
+    return '<section class="mcard' + (main ? ' mcard-main' : '') + '" data-card="' + rec.id + '">' +
       '<header class="mcard-head"><span class="tag">' + esc(SC.MODULE_LABEL[rec.module] || '') + '</span>' +
       '<b class="mcard-title">' + esc(rec.title) + '</b>' +
       '<span class="mcard-date">' + md(rec.date) + (done ? ' · <span class="ok">已打分</span>' : '') + '</span></header>' +
-      body + effectHTML(rec) +
-      /* 打印了没做（预览、重印、换一批）的纸：一点就从列表里拿掉，免得越积越多 */
-      (rec.id !== mainId && !done && !hasPicks(rec)
-        ? '<button type="button" class="link-btn skip-btn" data-sheet="' + rec.id + '" data-skip>这张没做，不用打分</button>' : '') +
-      '</section>'
+      bodyHTML(rec) + '</section>'
   }
-  function hasPicks(rec) {
-    var st = ui[rec.id]
-    return !!(st && (st.wrong.size || Object.keys(st.levels).length))
+
+  /* 历史一行：日期 · 标题 · 结论；点开就地展开成卡片 */
+  function histRow(rec) {
+    var r = SC.resultText(rec)
+    var open = opened[rec.id]
+    return '<li class="hrow' + (open ? ' is-open' : '') + '">' +
+      '<button type="button" class="hrow-btn" data-open="' + rec.id + '" aria-expanded="' + !!open + '">' +
+        '<span class="hrow-date">' + md(rec.date) + '</span><span class="hrow-title">' + esc(rec.title) + '</span>' +
+        '<span class="hrow-st' + (r === '没打分' ? ' is-none' : r === '全对' ? ' is-ok' : ' is-bad') + '">' + r + '</span></button>' +
+      (open ? cardHTML(rec) : '') + '</li>'
   }
 
   /* ---------- 整页 ---------- */
 
   function render() {
-    var recs = SC.records(S.store)
-    var main = SC.validId(mainId) ? load(mainId) : null
+    var recs = SC.records(S.store).map(withDone)
+    var byId = {}
+    recs.forEach(function (r) { byId[r.id] = r })
+    var main = SC.validId(mainId) ? byId[mainId] || null : null
+    var module = main ? main.module : SC.isPractice(askedModule) ? askedModule : ''
     var html = ''
-    if (!SC.validId(mainId)) {
+
+    if (mainId && !SC.validId(mainId)) {
       html += notice('这个二维码看不懂', '请对着纸角的二维码重新扫一次。')
-    } else if (!main && tSync == null) {
+    } else if (mainId && !main && tSync == null) {
       /* 同步还没回来（国内连海外服务器常要十几秒）：别说「电脑没同步好」吓人，读到了会自动重画 */
       html += notice('网络有点慢，还在读取', '读到了会自动显示，不用刷新。')
-    } else if (!main && !waitGaveUp) {
+    } else if (mainId && !main && !waitGaveUp) {
       /* 同步完了还没有：多半是电脑刚打印、还在上传。自动隔几秒再查，查到直接显示 */
       startWait()
       html += notice('电脑那边还在上传这张纸', '正在自动等，传上来了会直接显示，不用刷新。已等 ' +
         Math.round((Date.now() - waitStart) / 1000) + ' 秒。')
-    } else if (!main) {
+    } else if (mainId && !main) {
       html += notice('找不到这张纸',
         '等了两分钟，电脑那边还是没把这张纸传上来。请看电脑上打印后有没有出现「已存到云端」：没有的话，在电脑上刷新页面，再点一次打印。' +
         '如果这张纸是别的账号打印的，要换成那个账号登录再扫。', true)
-    } else {
-      html += cardHTML(main)
+    } else if (main && !SC.isPractice(main.module)) {
+      html += notice('游戏不用打分了', '数独、火柴这些游戏纸，孩子玩得开心就好。想换难度，在游戏页上直接调。')
+      module = ''
+    } else if (main) {
+      html += cardHTML(main, true)
     }
-    var pend = SC.pending(recs.map(function (r) {
-      return isDone(r) ? Object.assign({}, r, { done: true }) : r
-    }), today()).filter(function (r) { return r.id !== mainId })
-    /* 本页登记过的卡片留在原位（显示「已登记」，还能改档），不会一点就消失 */
-    pend.forEach(function (r) { if (listIds.indexOf(r.id) < 0) listIds.push(r.id) })
-    var rest = listIds.map(load).filter(Boolean)
-    var left = rest.filter(function (r) { return !isDone(r) }).length
-    var total = left + (main && !isDone(main) ? 1 : 0)
-    if (rest.length) {
-      html += '<h2 class="mark-sub">最近打印的其他纸' + (left ? ' · ' + left + ' 张没打分' : '') + '</h2>' + rest.map(cardHTML).join('')
+
+    var label = SC.MODULE_LABEL[module] || ''
+    if (module) {
+      var pend = SC.pending(recs, today(), module).filter(function (r) { return r.id !== mainId })
+      pend.forEach(function (r) { if (listIds.indexOf(r.id) < 0) listIds.push(r.id) })
+      var rest = listIds.map(function (id) { return byId[id] }).filter(Boolean)
+      var left = rest.filter(function (r) { return !SC.isDone(r) }).length
+      if (rest.length) {
+        html += '<h2 class="mark-sub">' + label + (main ? '还有' : '') + '没打分的纸' + (left ? ' · ' + left + ' 张' : '') + '</h2>' +
+          rest.map(function (r) { return cardHTML(r) }).join('')
+      } else if (!main) {
+        html += '<p class="mark-all">' + label + '最近两天打印的纸都打好分了。</p>'
+      }
+      var shown = {}
+      if (main) shown[main.id] = true
+      rest.forEach(function (r) { shown[r.id] = true })
+      var hist = SC.history(recs, module).filter(function (r) { return !shown[r.id] })
+      if (hist.length) {
+        html += '<h2 class="mark-sub">' + label + '历史<small>60 天内打印的纸，点开可以补打、改分</small></h2>' +
+          '<ul class="hist">' + hist.map(histRow).join('') + '</ul>'
+      }
+    } else if (!mainId) {
+      html += '<p class="mark-all">选一个板块打分。</p>'
     }
-    if (main && !total) html += '<p class="mark-all">今天的纸都打好分了。</p>'
+
+    /* 其他板块还有几张没打分 */
+    var others = SC.PRACTICE.filter(function (m) { return m !== module }).map(function (m) {
+      return { m: m, n: SC.pending(recs, today(), m).length }
+    })
+    var links = others.filter(function (o) { return o.n || !module }).map(function (o) {
+      return '<a class="omod" href="/mark?module=' + o.m + '"><b>' + SC.MODULE_LABEL[o.m] + '</b>' +
+        '<span>' + (o.n ? o.n + ' 张没打分' : '去看历史') + '</span></a>'
+    })
+    if (links.length) html += '<h2 class="mark-sub">' + (module ? '其他板块' : '板块') + '</h2><div class="omods">' + links.join('') + '</div>'
+
     page.innerHTML = html
-    doc.getElementById('work-sum').textContent = total ? '还有 ' + total + ' 张没打分' : '孩子做完后，点一下哪里卡住了'
+    var total = (main && SC.isPractice(main.module) && !SC.isDone(main) ? 1 : 0) +
+      (module ? SC.pending(recs, today(), module).filter(function (r) { return r.id !== mainId }).length : 0)
+    doc.getElementById('work-sum').textContent = module
+      ? (total ? label + '还有 ' + total + ' 张没打分' : label + '：全对选「全对」，有错点出来，再提交')
+      : '孩子做完后，全对选「全对」，有错点出来'
   }
 
   function notice(title, text, retry) {
@@ -268,13 +255,33 @@
       (retry ? '<button type="button" class="btn btn-primary" data-retry>刷新</button>' : '') + '</section>'
   }
 
-  function save(rec, st) {
-    var levels = {}
-    Object.keys(st.levels).forEach(function (u) { levels[u] = st.levels[u] })
-    var saved = SC.saveRating(S.store, rec, levels, Array.from(st.wrong), Date.now(), {
-      clueRange: S.shudu && S.shudu.clueRange
-    })
-    return saved
+  /* ---------- 提交 ---------- */
+
+  function submit(rec, wrong) {
+    var now = Date.now()
+    if (rec.module === 'kousuan' || rec.module === 'aoshu') {
+      SC.submit(S.store, rec, wrong, now)
+      return
+    }
+    if (rec.module === 'shizi') {
+      var M = S.shiziMark
+      var chars = (rec.items || []).map(function (it) { return it.key })
+      /* 点选集换成这次点的字，再走识字页同一个结算 */
+      M.clearPicks(chars)
+      wrong.forEach(function (ch) { if (!M.picked(ch)) M.togglePick(ch) })
+      M.settle(chars, shiziPaper(rec) || undefined)
+    } else if (rec.module === 'pinyin') {
+      if (!pinyinSheetHere(rec)) return
+      var res = SC.pinyinResults(rec, wrong)
+      var sheet = { id: rec.ref.sheetId, date: rec.ref.date }
+      Object.keys(res).forEach(function (k) { S.pinyinStorage.saveMark(sheet, k, { result: res[k] }) })
+    }
+    var fresh = load(rec.id) || rec
+    fresh.done = true
+    fresh.doneAt = now
+    fresh.wrong = wrong.slice()
+    delete fresh.skipped
+    S.store.set(SC.keyOf(rec.id), fresh)
   }
 
   page.addEventListener('click', function (e) {
@@ -287,39 +294,18 @@
       root.location.reload()
       return
     }
-    var b = e.target.closest('[data-sheet]')
-    if (!b) return
-    var rec = load(b.dataset.sheet)
-    if (!rec) return
-    var st = stateOf(rec)
-    if (b.hasAttribute('data-lv')) {
-      st.levels[b.dataset.unit] = { level: b.dataset.lv, auto: false }
-      save(rec, st)
-    } else if (b.hasAttribute('data-expand')) {
-      st.open = !st.open
-    } else if (b.hasAttribute('data-item')) {
-      var key = b.dataset.item
-      if (st.wrong.has(key)) st.wrong.delete(key)
-      else st.wrong.add(key)
-      st.levels = SC.autoLevel(rec, st.levels, st.wrong, key) /* 只重算这道题所在的那一课 */
-      save(rec, st)
-    } else if (b.hasAttribute('data-skip')) {
-      rec.done = true
-      rec.skipped = true
-      rec.doneAt = Date.now()
-      S.store.set(SC.keyOf(rec.id), rec)
-      listIds = listIds.filter(function (x) { return x !== rec.id })
-    } else if (b.hasAttribute('data-ch')) {
-      S.shiziMark.togglePick(b.dataset.ch)
-    } else if (b.hasAttribute('data-settle')) {
-      var chars = (rec.items || []).map(function (it) { return it.key })
-      var paper = shiziPaper(rec)
-      S.shiziMark.settle(chars, paper || undefined)
-      rec.done = true
-      rec.doneAt = Date.now()
-      S.store.set(SC.keyOf(rec.id), rec)
+    var o = e.target.closest('[data-open]')
+    if (o) {
+      var id = o.getAttribute('data-open')
+      opened[id] = !opened[id]
+      render()
+      return
     }
-    render()
+    R.click(e, {
+      load: function (id) { var r = load(id); return r && withDone(r) },
+      submit: submit,
+      render: render
+    })
   })
 
   /* ---------- 等电脑上传：每 4 秒只拉一次云端补纸，最多等 2 分钟 ---------- */

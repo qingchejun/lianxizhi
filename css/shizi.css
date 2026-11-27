@@ -721,3 +721,10 @@
   src: url("../fonts/pinyin-kids.woff2?v=755afe08ef") format("woff2");
   font-display: block;
 }
+
+/* 每日一卷「全对」（2026-11-27）：选中时变绿，和打分页的「全对」一个样子 */
+.daily-allok.on {
+  background: var(--green-tint);
+  border-color: var(--green);
+  color: var(--green);
+}

@@ -1,12 +1,15 @@
 /**
- * 纸记录（扫码登记）核心：纸号、记录结构、60 天清理、按错题定档、待登记列表，
- * 以及打完分怎么作用到下一张（口算 / 奥数 / 游戏）。
+ * 纸记录（扫码打分）核心：纸号、记录结构、60 天清理、按错题定档、待打分列表与历史，
+ * 以及打完分怎么作用到下一张（口算 / 奥数；识字、拼音各有自己的规则）。
+ *
+ * 2026-11-27 起打分只有一种手感（docs/superpowers/specs/2026-11-27-practice-loop-design.md）：
+ * 选「全对」或点错题 → 提交。只给练习四板块（口算、奥数、识字、拼音）打分，游戏不打分。
  *
  * 每张打印出去的纸一个同步键 sumsum:sheet:v1:<纸号>（按键合并：电脑出新纸、手机打分互不覆盖）。
  * 同步不传播删除，所以清理要服务器（拉取时）和本机（同步前）按同一条规则各删一次，
  * 见 server/auth-core.js dataPull 与 js/sync.js。
  *
- * 打分值统一 good / ok / bad：口算、奥数显示「会了 / 一般 / 不会」，游戏显示「太简单 / 刚好 / 太难」。
+ * 记录里的档位 good / ok / bad 由错题比例自动算（levelFromWrong），家长看不到，奥数用它决定已学 / 待复习。
  *
  * 无 DOM 依赖，node 下由 tools/check-sheets.js 校验。
  */
@@ -19,18 +22,18 @@
   var ID_CHARS = '23456789abcdefghjkmnpqrstuvwxyz'
   var ID_RE = /^[23456789abcdefghjkmnpqrstuvwxyz]{6}$/
 
-  /* 各板块的登记方式：three = 三档（可展开点错题）；game = 太简单/刚好/太难；
-     chars = 点没认出的字；link = 回板块页登记 */
+  /* 各板块打分卡的格子长什么样：three = 题（口算算式 / 奥数题号）；chars = 字；pinyin = 按组排的音节。
+     游戏不在这里：2026-11-27 起游戏不打分 */
   var MODULE_KIND = {
     kousuan: 'three',
     aoshu: 'three',
-    shudu: 'game',
-    huochai: 'game',
-    mima: 'game',
-    migong: 'game',
-    zhizhi: 'game',
     shizi: 'chars',
-    pinyin: 'link'
+    pinyin: 'pinyin'
+  }
+  var PRACTICE = ['kousuan', 'aoshu', 'shizi', 'pinyin']
+
+  function isPractice(module) {
+    return PRACTICE.indexOf(module) >= 0
   }
 
   var MODULE_LABEL = {
@@ -153,14 +156,82 @@
     return t.getUTCFullYear() + '-' + pad(t.getUTCMonth() + 1) + '-' + pad(t.getUTCDate())
   }
 
-  /* 今天和昨天打印、还没登记的纸，新的在前。识字 / 拼音是否登记过由调用方按板块数据填 rec.done */
-  function pending(records, today) {
+  /* 一张纸打过分没有：口算 / 奥数看 rating，识字 / 拼音由调用方按板块数据填 rec.done */
+  function isDone(rec) {
+    return !!(rec && (rated(rec) || rec.done))
+  }
+
+  /* 待打分：练习四板块、打印后 2 天内（今天和昨天）、还没打分的纸，新的在前。module 给了就只看这个板块。
+     更早没打的不催（站长 11-27 定：不累积），到历史里能补 */
+  function pending(records, today, module) {
     var y = prevDate(today)
     return records.filter(function (r) {
-      return r && (r.date === today || r.date === y) && !rated(r) && !r.done
+      return r && isPractice(r.module) && (!module || r.module === module) &&
+        (r.date === today || r.date === y) && !isDone(r) && !r.skipped
     }).sort(function (x, z) {
       return (z.printedAt || 0) - (x.printedAt || 0)
     })
+  }
+
+  /* 某板块的历史：60 天内打印过的全部纸（含打过分的），新的在前 */
+  function history(records, module) {
+    return records.filter(function (r) {
+      return r && r.module === module
+    }).sort(function (x, z) {
+      return (z.printedAt || 0) - (x.printedAt || 0)
+    })
+  }
+
+  /* 卡片上的结论：全对 / 错 N 题 / 没打分 */
+  function resultText(rec) {
+    if (!isDone(rec) || rec.skipped) return '没打分'
+    var n = Array.isArray(rec.wrong) ? rec.wrong.length : 0
+    return n ? '错 ' + n + ' 题' : '全对'
+  }
+
+  /* 错题 → 每个打分单位的档位（全对 = 每个单位都 good）。units 为空时整张一个单位 all */
+  function levelsFor(rec, wrong) {
+    var units = rec.units && rec.units.length ? rec.units : [{ key: 'all' }]
+    var set = {}
+    ;(wrong || []).forEach(function (k) { set[k] = true })
+    var out = {}
+    units.forEach(function (u) {
+      var mine = (rec.items || []).filter(function (it) { return units.length === 1 || it.unit === u.key })
+      var n = mine.filter(function (it) { return set[it.key] }).length
+      out[u.key] = { level: mine.length ? levelFromWrong(mine.length, n) : 'good', auto: true }
+    })
+    return out
+  }
+
+  /* 口算 / 奥数提交：wrong 为空 = 全对。档位自动算，再走 saveRating（改分先撤回再作用，不叠加） */
+  function submit(store, rec, wrong, now) {
+    var w = (wrong || []).filter(function (k) {
+      return (rec.items || []).some(function (it) { return it.key === k })
+    })
+    return saveRating(store, rec, levelsFor(rec, w), w, now)
+  }
+
+  /* 拼音提交 → 每题的结果（拼音页 / 打分页共用；写进 pinyin:mark 由调用方做）。
+     units = 纸上的组 { key, phase, parent }，items = 题 { key, unit }。规则（设计稿 1.1 第 6 条）：
+       独立组：点了 = miss，没点 = ok；
+       换题再试（check，卡住时才做）：它跟着的那组或它自己有错题才算做过，否则全组 unpracticed；
+       试一试（observe，有余量再做）：自己有错题才算做过，否则 unpracticed。 */
+  function pinyinResults(rec, wrong) {
+    var set = {}
+    ;(wrong || []).forEach(function (k) { set[k] = true })
+    var hasWrong = {}
+    ;(rec.items || []).forEach(function (it) { if (set[it.key]) hasWrong[it.unit] = true })
+    var unitOf = {}
+    ;(rec.units || []).forEach(function (u) { unitOf[u.key] = u })
+    var out = {}
+    ;(rec.items || []).forEach(function (it) {
+      var u = unitOf[it.unit] || {}
+      var done = u.phase === 'check' ? !!(hasWrong[it.unit] || (u.parent && hasWrong[u.parent]))
+        : u.phase === 'observe' ? !!hasWrong[it.unit]
+          : true
+      out[it.key] = !done ? 'unpracticed' : set[it.key] ? 'miss' : 'ok'
+    })
+    return out
   }
 
   /* 一张纸最后一次打分的时间（没打过分为 0） */
@@ -306,75 +377,21 @@
     return { learned: learned, due: due }
   }
 
-  /* ---------- 游戏 ---------- */
-
-  var GAME_LEVELS = ['L1', 'L2', 'L3', 'L4']
-
-  /* 太简单（good）→ 升一档；太难（bad）→ 降一档；刚好不变；到顶到底不动。
-     数独的难度是提示数：少给提示更难，每步 = 范围的约 1/6 */
-  function gameStep(module, settings, level, clueRange) {
-    var prev = Object.assign({}, settings)
-    var next = Object.assign({}, settings)
-    var dir = level === 'good' ? 1 : level === 'bad' ? -1 : 0
-    if (module === 'shudu') {
-      var r = clueRange || { min: 5, max: 12 }
-      var step = Math.max(1, Math.ceil((r.max - r.min) / 6))
-      var c = Number(settings.clues)
-      var nc = Math.min(r.max, Math.max(r.min, c - dir * step))
-      next.clues = nc
-      return { prev: prev, next: next, changed: nc !== c }
-    }
-    var i = GAME_LEVELS.indexOf(settings.level)
-    if (i < 0) i = 0
-    var ni = Math.min(GAME_LEVELS.length - 1, Math.max(0, i + dir))
-    next.level = GAME_LEVELS[ni]
-    return { prev: prev, next: next, changed: ni !== i }
-  }
-
-  function gameLevelText(module, settings) {
-    if (module === 'shudu') return settings.clues + ' 个提示数'
-    /* 游戏四档难度（2026-11-25 起不叫「第几关」） */
-    return ['入门', '简单', '中等', '挑战'][Number(String(settings.level || 'L1').replace('L', '')) - 1] || '入门'
-  }
-
-  /* ---------- 保存打分（登记页、今天页用） ---------- */
+  /* ---------- 保存打分（打分页用） ---------- */
 
   var AOSHU_LEARNED = 'sumsum:aoshu:learned:v1'
   var AOSHU_DUE = 'sumsum:aoshu:review-due:v1'
-
-  function gameKey(module) {
-    return 'sumsum:' + module + ':v1'
-  }
-
-  function gameField(module) {
-    return module === 'shudu' ? 'clues' : 'level'
-  }
 
   function arr(v) {
     return Array.isArray(v) ? v.slice() : []
   }
 
-  /* 撤回上一次游戏升降关：只有当前设置还停在那次改出来的值上才撤（家长之后手动改过就不动） */
-  function revertGame(store, rec) {
-    var a = rec.applied
-    if (!a || !a.changed || a.undone) return false
-    var key = gameKey(rec.module)
-    var f = gameField(rec.module)
-    var cur = store.get(key)
-    if (!cur || cur[f] !== a.next) return false
-    var back = Object.assign({}, cur)
-    back[f] = a.prev
-    store.set(key, back)
-    return true
-  }
-
   /*
    * 保存一张纸的打分并作用到板块进度。levels: { 单位 key: { level, auto } }，wrong: 点过的错题 key。
-   * 改档时先撤回上一次的作用再重新作用，不叠加。opts.clueRange(shape) 给数独用（shudu-core.clueRange）。
+   * 改档时先撤回上一次的作用再重新作用，不叠加。
    * 口算不在这里作用：出下一张时读最近一次打分（kousuanNext）。返回写好的记录。
    */
-  function saveRating(store, rec, levels, wrong, now, opts) {
-    opts = opts || {}
+  function saveRating(store, rec, levels, wrong, now) {
     rec = Object.assign({}, rec)
     var rating = {}
     Object.keys(levels).forEach(function (u) {
@@ -385,7 +402,7 @@
     })
     rec.rating = rating
     rec.wrong = Array.isArray(wrong) ? wrong.slice() : []
-    var kind = MODULE_KIND[rec.module]
+    delete rec.skipped
 
     if (rec.module === 'aoshu') {
       var state = { learned: arr(store.get(AOSHU_LEARNED)), due: arr(store.get(AOSHU_DUE)) }
@@ -400,47 +417,10 @@
       store.set(AOSHU_LEARNED, next.learned)
       store.set(AOSHU_DUE, next.due)
       rec.applied = aoshuDiff(base, next)
-    } else if (kind === 'game') {
-      revertGame(store, rec)
-      var key = gameKey(rec.module)
-      var f = gameField(rec.module)
-      var cur = store.get(key) || Object.assign({}, rec.ref && rec.ref.settings)
-      var level = rating.all ? rating.all.level : 'ok'
-      var range = rec.module === 'shudu' && opts.clueRange ? opts.clueRange(cur.shape) : undefined
-      /* 只在当前难度还是这张纸打印时的难度才升降（终审 I1）：同一天几张同关卡的纸都点「太简单」只升一档；
-         别的纸已经改过、或家长手动改过，这张就不再动 */
-      var printed = rec.ref && rec.ref.settings && rec.ref.settings[f]
-      var step = printed == null || cur[f] === printed
-        ? gameStep(rec.module, cur, level, range)
-        : { changed: false, prev: cur, next: cur }
-      if (step.changed) store.set(key, Object.assign({}, cur, step.next))
-      rec.applied = { changed: step.changed, prev: step.prev[f], next: step.next[f], undone: false }
     }
 
     store.set(keyOf(rec.id), rec)
     return rec
-  }
-
-  /* 登记页展开点错题：只按「这道题所在的那一课」重算档位（自动），别的课家长手动选的档不动。
-     levels 为 { 单位: { level, auto } }，返回新对象 */
-  function autoLevel(rec, levels, wrongSet, itemKey) {
-    var units = rec.units && rec.units.length ? rec.units : [{ key: 'all' }]
-    var item = (rec.items || []).filter(function (it) { return it.key === itemKey })[0]
-    var unit = units.length === 1 ? units[0].key : item && item.unit
-    var out = Object.assign({}, levels)
-    if (!unit) return out
-    var mine = (rec.items || []).filter(function (it) { return units.length === 1 || it.unit === unit })
-    var wrong = mine.filter(function (it) { return wrongSet.has(it.key) }).length
-    out[unit] = { level: levelFromWrong(mine.length, wrong), auto: true }
-    return out
-  }
-
-  /* 今天页「撤销」自动升降关 */
-  function undoGame(store, rec) {
-    if (!revertGame(store, rec)) return false
-    rec = Object.assign({}, rec, { applied: Object.assign({}, rec.applied, { undone: true }) })
-    store.set(keyOf(rec.id), rec)
-    return true
   }
 
   /* 本机全部纸记录（坏的跳过） */
@@ -469,17 +449,14 @@
     records: records,
     AOSHU_LEARNED: AOSHU_LEARNED,
     AOSHU_DUE: AOSHU_DUE,
-    gameKey: gameKey,
     saveRating: saveRating,
-    autoLevel: autoLevel,
-    undoGame: undoGame,
+    submit: submit,
+    levelsFor: levelsFor,
+    pinyinResults: pinyinResults,
     lastRatedUnused: lastRatedUnused,
     aoshuApply: aoshuApply,
     aoshuDiff: aoshuDiff,
     aoshuRevert: aoshuRevert,
-    GAME_LEVELS: GAME_LEVELS,
-    gameStep: gameStep,
-    gameLevelText: gameLevelText,
     ratedAt: ratedAt,
     levelOf: levelOf,
     kousuanCat: kousuanCat,
@@ -490,6 +467,8 @@
     KEEP_DAYS: KEEP_DAYS,
     MODULE_KIND: MODULE_KIND,
     MODULE_LABEL: MODULE_LABEL,
+    PRACTICE: PRACTICE,
+    isPractice: isPractice,
     makeId: makeId,
     validId: validId,
     keyOf: keyOf,
@@ -500,7 +479,10 @@
     staleKeys: staleKeys,
     levelFromWrong: levelFromWrong,
     rated: rated,
+    isDone: isDone,
+    resultText: resultText,
     prevDate: prevDate,
-    pending: pending
+    pending: pending,
+    history: history
   }
 })(typeof window !== 'undefined' ? window : globalThis)

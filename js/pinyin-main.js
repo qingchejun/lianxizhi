@@ -2,11 +2,13 @@
  * 拼音板块：按全站骨架排（2026-11 改版）。
  *   中间 = 纸卷预览（pinyin-render.print，已定稿不改）；
  *   右边 = 今日 / 专题 / 课程 / 历史 四个页签。
- *     今日：为什么练这个 → 分组进度 → 当前组逐题登记 → 组底部操作 → 家长教学卡 → 字号、孩子视图；
- *     专题 / 课程：目录，每项标状态（没练过 / 待复核 + 日期 / 已稳固），点一项中间出该项纸卷、右边转登记；
- *     历史：出过的卷，卷号醒目，点开补登记。
+ *     今日：为什么练这个 → 打分卡（全对或点卡住的题 → 提交，js/rate.js，与扫码打分页同一套）→
+ *           家长教学卡、孩子视图 → 字号；
+ *     专题 / 课程：目录，每项标状态（没练过 / 待复核 + 日期 / 已稳固），点一项中间出该项纸卷、右边转打分；
+ *     历史：出过的卷，卷号醒目，点开补打分。
  * 网址决定看哪张卷（?sheet= / ?topic= / ?lesson=&focus= / ?view=），换卷就是换网址——刷新、收藏都还在原处。
- * 登记规则（顺的题不点、提示了 / 没读出 / 跳过、做到一半停在哪题）与改版前一致，存储格式不变。
+ * 2026-11-27 打分改成一步：点了的记 miss，独立组没点的记 ok，选做组按 sheetsCore.pinyinResults 的规则
+ * 记没做或 ok（不再分「提示了 / 读成了什么 / 声调错 / 停在哪题」）。pinyin:mark 存储格式不变，derive 照旧。
  */
 ;(async function (root) {
   'use strict'
@@ -39,8 +41,6 @@
   const data = DB.read(storage)
   let sheet = data.sheets.find(entry => entry.id === query.get('sheet'))
   let group
-  let stopOpen = false
-  let saved = ''
 
   /* ---------- 页签：哪一个亮 ---------- */
 
@@ -123,24 +123,22 @@
         '<p class="hint">输入纸上右上角印的卷号，比如 1121-K7QM。</p>' +
         '<input class="input" type="search" id="py-find" placeholder="卷号" autocomplete="off" spellcheck="false"></section>'
       if (!data.sheets.length) {
-        catalogPage('出过的卷', '每打印一张都会记在这里，可以按卷号找回来补登记。',
+        catalogPage('出过的卷', '每打印一张都会记在这里，可以按卷号找回来补打分。',
           '<div class="empty">' + ICON.paper + '<b>还没有出过卷</b><p>到「今日」打印第一张。</p>' +
           '<a class="btn btn-sm btn-primary" href="pinyin.html">去今日</a></div>')
         return
       }
       const rows = data.sheets.slice().sort((a, b) => b.date.localeCompare(a.date)).map(entry => {
-        const groups = entry.groups.filter(g => g.phase !== 'check')
-        const done = groups.filter(g => groupState(entry, g).marked).length
+        const result = resultOf(entry)
         return '<tr data-id="' + esc(entry.id.toUpperCase()) + '"><td>' + esc(md(entry.date)) + '</td>' +
           '<td><span class="py-hist-no">' + esc(entry.id) + '</span></td>' +
           '<td><a href="' + href({ sheet: entry.id }) + '">' + esc(entry.title) + '</a></td>' +
           '<td>' + (entry.mode === 'topic' ? '专题' : entry.mode === 'lesson' ? '课程' : '每日') + '</td>' +
-          '<td><span class="py-hist-prog' + (done === groups.length ? ' is-done' : '') + '">' +
-            (done ? '已练 ' + done + ' / ' + groups.length + ' 组' : '未登记') + '</span></td>' +
+          '<td><span class="py-hist-prog' + (result ? ' is-done' : '') + '">' + (result || '没打分') + '</span></td>' +
           '<td class="py-td-act"><a class="btn btn-sm" href="' + href({ sheet: entry.id }) + '">打开</a></td></tr>'
       }).join('')
-      catalogPage('出过的卷', '点开一张，中间显示那张卷的原样，可以重印，也可以补登记。',
-        '<table class="py-table"><thead><tr><th>日期</th><th>卷号</th><th>内容</th><th>类型</th><th>进度</th><th></th></tr></thead>' +
+      catalogPage('出过的卷', '点开一张，中间显示那张卷的原样，可以重印，也可以补打分。',
+        '<table class="py-table"><thead><tr><th>日期</th><th>卷号</th><th>内容</th><th>类型</th><th>打分</th><th></th></tr></thead>' +
         '<tbody>' + rows + '</tbody></table><p class="py-none" hidden>没有找到这个卷号。</p>')
       const find = doc.getElementById('py-find')
       find.addEventListener('input', () => {
@@ -169,7 +167,7 @@
     }
     sumEl.textContent = '专题 · ' + D.topics.length + ' 类'
     const topicIds = Object.values(D.directions).filter(entry => !entry.id.startsWith('lesson-')).map(entry => entry.id)
-    host.innerHTML = overview('专题进度', '发现孩子哪里容易错，就挑对应的一项。状态会随登记自动更新。', topicIds)
+    host.innerHTML = overview('专题进度', '发现孩子哪里容易错，就挑对应的一项。状态会随打分自动更新。', topicIds)
     catalogPage('按专题练', '十类常见难点，每一项一张卷：先独立做，卡住了按教学卡讲，再换题试。',
       '<div class="py-topic-grid">' + D.topics.map((topic, index) => {
         const list = Object.values(D.directions).filter(entry => entry.topic === index && !entry.id.startsWith('lesson-'))
@@ -179,7 +177,7 @@
       }).join('') + '</div>')
   }
 
-  /* ---------- 登记 ---------- */
+  /* ---------- 打分 ---------- */
 
   function marksOf(entry) {
     return data.marks[entry.id] ||= Object.create(null)
@@ -188,86 +186,68 @@
     return marksOf(sheet)
   }
 
-  function save(id, value) {
-    const prior = savedMarks()[id]
-    if (prior?.result === value.result && prior.heard === value.heard && prior.tone === value.tone && Boolean(prior.skipped) === Boolean(value.skipped) && prior.previousResult === value.previousResult) return
-    savedMarks()[id] = DB.saveMark(sheet, id, value)
-    if (S.sheets) S.sheets.markDone() /* 登记过就不再出现在扫码登记页的待办里 */
-  }
-
-  /* 一组的状态：记了几题、是不是做完了（「本组做完」会给每题都写上结果） */
-  function groupState(entry, g) {
-    const marks = marksOf(entry)
-    const counted = rec => rec && (rec.result !== 'unpracticed' || rec.skipped)
-    const marked = g.items.filter(it => counted(marks[it.id])).length
-    const done = marked === g.items.length && g.items.every(it => marks[it.id])
-    const stuckN = g.items.filter(it => ['hint', 'miss'].includes(marks[it.id]?.result)).length
-    /* 整组登记成「没做」（「这组没做」或「做到一半停了 → 这组还没练」）：算登记过了，不算对也不算错 */
-    const skippedAll = !marked && g.items.every(it => marks[it.id]?.result === 'unpracticed')
-    return { marked, done, stuck: stuckN > 0, stuckN, skippedAll }
-  }
-
-  function firstOpen() {
-    return sheet.groups.find(g => g.phase !== 'check' && !groupState(sheet, g).done && !groupState(sheet, g).skippedAll)
-  }
-
-  /* 「登记好了」之后去哪一组：卡住了且有换题再试就去那组；选做的「换题再试」之后收工；否则下一组。没有下一组 = 收工 */
-  function nextAfter(current) {
-    const failed = groupState(sheet, current).stuck
-    const followUp = failed && sheet.cards.find(entry => entry.startsAt === current.id)
-    if (followUp) return sheet.groups.find(entry => entry.id === followUp.group)
-    if (current.phase === 'check') return undefined
-    const normal = sheet.groups.filter(entry => entry.phase !== 'check')
-    return normal[normal.indexOf(current) + 1]
-  }
+  /* ---------- 打分（rate.js）：这张卷换成打分卡要的样子 ---------- */
 
   const KIND = { check: '换题再试', observe: '试一试' }
   const WHEN = { check: '卡住时才做', observe: '有余量再做' }
 
-  function progress() {
-    let n = 0
-    return '<ol class="py-steps">' + sheet.groups.map(g => {
-      const st = groupState(sheet, g)
-      const normal = !g.phase || g.phase === 'independent'
-      if (normal) n++
-      const label = g.label.replace(/^(复习|试一试) · /, '')
-      /* 状态直接说记成了什么：全对 / 几题卡住 / 没做，家长一眼看出登记得对不对 */
-      const status = st.done ? (st.stuckN ? st.stuckN + ' 题卡住' : '全对') : st.skippedAll ? '没做'
-        : st.marked ? '已记 ' + st.marked + '/' + g.items.length : '未练'
-      return '<li><button type="button" class="py-step' + (group === g ? ' is-on' : '') + (st.done ? ' is-done' : '') +
-        (normal ? '' : ' is-' + g.phase) + '" data-group="' + esc(g.id) + '"' + (group === g ? ' aria-current="step"' : '') + '>' +
-        '<span class="py-dot">' + (st.done ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12.5l4 4 8-9"/></svg>' : normal ? n : '') + '</span>' +
-        '<span class="py-step-main"><b>' + (normal ? '第 ' + n + ' 组 · ' : KIND[g.phase] + ' · ') + esc(label) + '</b>' +
-        (normal ? '' : '<small>' + WHEN[g.phase] + '</small>') + '</span>' +
-        '<span class="py-step-st' + (st.stuck ? ' is-stuck' : '') + '">' + status + '</span></button></li>'
-    }).join('') + '</ol>'
+  function groupName(entry, g) {
+    const normalIdx = entry.groups.filter(x => x.phase !== 'check').indexOf(g)
+    const label = g.label.replace(/^(复习|试一试) · /, '')
+    return g.phase === 'check' || g.phase === 'observe' ? KIND[g.phase] + ' · ' + label : '第 ' + (normalIdx + 1) + ' 组 · ' + label
   }
 
-  function row(it) {
-    const mark = savedMarks()[it.id]
-    const r = mark?.result
-    const open = r === 'hint' || r === 'miss'
-    const reading = !['write', 'shape', 'letter'].includes(it.kind)
-    const btn = (value, label) => '<button type="button" class="py-mark is-' + value + '" data-mark="' + value + '"' +
-      ' aria-pressed="' + (r === value && (value !== 'unpracticed' || mark?.skipped) ? 'true' : 'false') + '">' + label + '</button>'
-    return '<li class="py-row' + (open ? ' is-open' : '') + (mark?.skipped ? ' is-skip' : '') + '" data-item="' + esc(it.id) + '">' +
-      '<span class="py-row-no">' + esc(it.id) + '</span>' +
-      '<span class="pinyin-text py-row-text">' + esc(it.text) + '</span>' +
-      '<span class="py-row-btns">' + btn('hint', '提示了') + btn('miss', it.kind === 'write' ? '没写对' : '没读出') + btn('unpracticed', '跳过') + '</span>' +
-      (open ? '<span class="py-row-more"><label><span>读成什么</span><input class="input" type="text" maxlength="80" data-heard value="' + esc(mark.heard) + '" placeholder="比如 d"></label>' +
-        (reading ? '<label class="py-tone"><input type="checkbox" data-tone' + (mark.tone ? ' checked' : '') + '><span>是声调错</span></label>' : '') + '</span>' : '') +
-      '</li>'
+  /* units / items 与印在纸上的一致；check 组记下它跟着哪一组（卡住才做） */
+  function rateShape(entry) {
+    return {
+      units: entry.groups.map(g => {
+        const card = entry.cards.find(c => c.group === g.id)
+        return { key: g.id, label: groupName(entry, g), phase: g.phase || 'independent', parent: card?.startsAt || null, when: WHEN[g.phase] || '' }
+      }),
+      items: entry.groups.flatMap(g => g.items.map(it => ({ key: it.id, label: it.text, unit: g.id })))
+    }
   }
 
-  function teachCard() {
+  function rateRec(entry) {
+    return { id: 'py-' + entry.id, draftId: 'py-' + entry.id, module: 'pinyin', ...rateShape(entry) }
+  }
+
+  /* 打过分没有：这张卷上有任何一题记过结果（提交会给每题都写上） */
+  function rated(entry) {
+    return Object.keys(marksOf(entry)).length > 0
+  }
+  function stuckKeys(entry) {
+    const marks = marksOf(entry)
+    return Object.keys(marks).filter(k => ['hint', 'miss'].includes(marks[k]?.result))
+  }
+
+  function submit(wrong) {
+    const res = S.sheetsCore.pinyinResults(rateShape(sheet), wrong)
+    for (const id of Object.keys(res)) savedMarks()[id] = DB.saveMark(sheet, id, { result: res[id] })
+    /* 这张卷打印过的纸记录（可能不止一条：隔天重印纸号不同）都标成已打分，打分页的待办里就不再出现 */
+    if (S.sheetsCore) {
+      for (const rec of S.sheetsCore.records(S.store)) {
+        if (rec.module !== 'pinyin' || rec.ref?.sheetId !== sheet.id) continue
+        S.store.set(S.sheetsCore.keyOf(rec.id), { ...rec, done: true, doneAt: Date.now(), wrong: wrong.slice() })
+      }
+    }
+  }
+
+  /* 教学卡：每组一行（孩子视图 + 卡住时看的教学卡），这一组有卡住的题就默认展开 */
+  function teachHTML() {
+    const stuck = new Set(stuckKeys(sheet))
     const lessonCard = sheet.mode === 'lesson' ? sheet.cards[0] : null
-    const card = lessonCard || sheet.cards.find(entry => entry.group === group.id || entry.startsAt === group.id)
-    if (!card) return ''
-    const st = groupState(sheet, group)
-    const open = st.stuck || group.phase === 'check' || Boolean(lessonCard)
-    return '<details class="py-teach"' + (open ? ' open' : '') + '><summary>家长教学卡 · ' + esc(card.label) +
-      (open && !lessonCard ? '<small>卡住了，先讲再换题</small>' : '<small>卡住时再看</small>') + '</summary>' +
-      '<div class="py-teach-body">' + R.teaching(card) + '</div></details>'
+    return sheet.groups.map(g => {
+      const card = lessonCard && g === sheet.groups[0] ? lessonCard
+        : !lessonCard ? sheet.cards.find(entry => entry.group === g.id || entry.startsAt === g.id) : null
+      const open = Boolean(lessonCard && card) || g.items.some(it => stuck.has(it.id))
+      return '<div class="py-teach-row"><div class="py-teach-head"><b>' + esc(groupName(sheet, g)) + '</b>' +
+        '<button type="button" class="btn btn-sm" data-kid="' + esc(g.id) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="11.5" rx="2"/><path d="M9 20h6M12 16.5V20"/></svg>孩子视图</button></div>' +
+        (card ? '<details class="py-teach"' + (open ? ' open' : '') + '><summary>家长教学卡 · ' + esc(card.label) +
+          '<small>' + (open && !lessonCard ? '卡住了，先讲再换题' : '卡住时再看') + '</small></summary>' +
+          '<div class="py-teach-body">' + R.teaching(card) + '</div></details>' : '') +
+        '</div>'
+    }).join('')
   }
 
   function sizeOf() {
@@ -275,55 +255,32 @@
     return [26, 32, 40].includes(setting?.size) ? setting.size : 32
   }
 
+  function resultOf(entry) {
+    if (!rated(entry)) return ''
+    const n = stuckKeys(entry).length
+    return n ? '卡住 ' + n + ' 题' : '全对'
+  }
+
   function summary() {
     const normal = sheet.groups.filter(g => g.phase !== 'check')
-    const done = normal.filter(g => groupState(sheet, g).marked).length
-    sumEl.textContent = [sheet.title, normal.length + ' 组', done ? '已练 ' + done + ' 组' : '未练', '卷号 ' + sheet.id].join(' · ')
+    sumEl.textContent = [sheet.title, normal.length + ' 组', resultOf(sheet) || '没打分', '卷号 ' + sheet.id].join(' · ')
   }
 
   function render() {
     if (!sheet) return
     const size = sizeOf()
     summary()
-    const keys = group ? R.answers([group]) : ''
-    const st = group ? groupState(sheet, group) : null
-    const branch = group && sheet.cards.find(entry => entry.startsAt === group.id)
+    const keys = R.answers(sheet.groups)
     const back = tab !== 'today' && !query.has('sheet')
       ? '<a class="link-btn py-back" href="pinyin.html?view=' + tab + '">‹ 回' + (tab === 'topics' ? '专题' : '课程') + '目录</a>'
       : tab === 'history' ? '<a class="link-btn py-back" href="pinyin.html?view=history">‹ 回历史卷</a>' : ''
-
-    let body = ''
-    if (group) {
-      const normalIdx = sheet.groups.filter(g => g.phase !== 'check').indexOf(group)
-      const optional = group.phase === 'check' || group.phase === 'observe'
-      const doneLabel = nextAfter(group) ? '登记好了，下一组' : '登记好了，收工'
-      const name = group.phase === 'check' ? '换题再试 · ' + group.label.replace(/^复习 · /, '')
-        : group.phase === 'observe' ? group.label : '第 ' + (normalIdx + 1) + ' 组 · ' + group.label.replace(/^复习 · /, '')
-      body = '<section class="group py-now" style="--pinyin-size:' + size + 'px">' +
-        '<div class="py-now-head"><div class="group-title">' + esc(name) + '</div>' +
-        '<button type="button" class="btn btn-sm" data-action="child-view"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="11.5" rx="2"/><path d="M9 20h6M12 16.5V20"/></svg>孩子视图</button></div>' +
-        '<p class="hint">顺利的题什么都不点。孩子读不出来、要提示，才点对应的按钮。</p>' +
-        '<ol class="py-rows">' + group.items.map(row).join('') + '</ol>' +
-        (keys ? '<details class="py-keys"><summary>答案</summary><p>' + keys + '</p></details>' : '') +
-        '<p class="hint py-foot-hint">没点按钮的题，都记为读对了。</p>' +
-        '<div class="py-group-foot">' +
-          (branch && st.stuck ? '<button type="button" class="btn btn-primary" data-action="teach" data-target="' + esc(branch.group) + '">转教学，换题再试</button>' +
-            '<button type="button" class="btn" data-action="next">' + doneLabel + '</button>'
-            : '<button type="button" class="btn btn-primary" data-action="next">' + doneLabel + '</button>') +
-          /* 选做的两组（试一试 / 换题再试）：没做就一键记「没做」，别被当成全对 */
-          (optional ? '<button type="button" class="btn" data-action="skip">这组没做</button>' : '') +
-          '<button type="button" class="link-btn quiet" data-action="half">做到一半停了</button>' +
-        '</div>' +
-        (stopOpen ? '<div class="py-stop"><label class="field"><span>最后做到哪一题？</span><select class="input" id="pinyin-last">' +
-          '<option value="">这组还没练</option>' + group.items.map(it => '<option value="' + esc(it.id) + '">第 ' + esc(it.id) + ' 题</option>').join('') +
-          '</select></label><button type="button" class="btn btn-sm btn-primary" data-action="stop">保存并收工</button></div>' : '') +
-        '</section>' + teachCard()
-    } else {
+    const done = rated(sheet)
+    const editing = S.rate.draft(rateRec(sheet)).editing
+    let after = ''
+    if (done && !editing) {
       const next = P.makeSheet(P.addDays(today, 1), P.derive(data.sheets, data.marks, P.addDays(today, 1)))
-      body = '<section class="group py-done"><p class="tip ok"><b>已保存</b>　' + esc(saved || '这张卷的登记都记下了。') + '</p>' +
-        '<div class="py-next"><span>下次建议</span><b>' + (next ? esc(next.title) : '休息一天') + '</b>' +
-        '<p>' + (next ? esc(next.reason) : '明天没有到期要复核的内容。') + '</p></div>' +
-        '<p class="hint">想补登记或改结果，点上面任意一组。</p></section>'
+      after = '<div class="py-next"><span>下次建议</span><b>' + (next ? esc(next.title) : '休息一天') + '</b>' +
+        '<p>' + (next ? esc(next.reason) : '明天没有到期要复核的内容。') + '</p></div>'
     }
 
     host.innerHTML =
@@ -332,8 +289,19 @@
         '<p class="py-reason"><span>为什么练这个</span>' + esc(sheet.reason) + '</p>' +
         '<p class="py-meta">' + esc(md(sheet.date)) + ' · 卷号 <b>' + esc(sheet.id) + '</b></p>' +
       '</section>' +
-      '<section class="group"><div class="group-title">分组<span class="sub">点一组登记</span></div>' + progress() + '</section>' +
-      body +
+      '<section class="group py-rate" id="py-rate"><div class="group-title">打分</div>' +
+        S.rate.body(rateRec(sheet), {
+          kind: 'pinyin',
+          done: done,
+          result: resultOf(sheet),
+          canEdit: true,
+          effect: '卡住的内容会安排到后面的卷里再练。'
+        }) +
+        (keys ? '<details class="py-keys"><summary>答案</summary><p>' + keys + '</p></details>' : '') +
+        after +
+      '</section>' +
+      '<section class="group" style="--pinyin-size:' + size + 'px"><div class="group-title">上课用<span class="sub">孩子视图、卡住时的教学卡</span></div>' +
+        teachHTML() + '</section>' +
       '<section class="group"><div class="row-between"><span class="lbl">题目字号</span>' +
         '<div class="seg-ctl py-size" role="group" aria-label="题目字号">' + [26, 32, 40].map(v =>
           '<button type="button" data-size="' + v + '" class="' + (v === size ? 'on' : '') + '">' + v + '</button>').join('') +
@@ -343,15 +311,14 @@
 
   function renderPaper() {
     paper.innerHTML = R.print(sheet)
-    /* 扫码登记：拼音的登记规则多（顺 / 提示了 / 没读出 / 停在哪题），手机扫码后跳回本页这张卷登记 */
+    /* 扫码打分：纸记录带上分组和每题，手机打分页直接画同一张打分卡（rate.js） */
     if (S.sheets) {
       S.sheets.use({
         module: 'pinyin',
         title: '拼音练习 · ' + sheet.title,
         idParts: sheet.id,
-        units: [],
-        items: [],
-        ref: { sheetId: sheet.id }
+        ...rateShape(sheet),
+        ref: { sheetId: sheet.id, date: sheet.date }
       })
     }
     if (S.shell && S.shell.fit) S.shell.fit()
@@ -364,20 +331,11 @@
       return
     }
     kid.innerHTML = '<div class="py-kid-bar"><span>' + esc(group.label) + '</span>' +
-      '<button type="button" class="btn" data-action="adult-view">返回登记</button></div>' +
+      '<button type="button" class="btn" data-action="adult-view">返回</button></div>' +
       '<ol class="py-kid-items">' + group.items.map(it => '<li><span class="pinyin-text">' + esc(it.text) + '</span></li>').join('') + '</ol>'
     kid.hidden = false
     doc.body.style.overflow = 'hidden'
     kid.querySelector('button').focus()
-  }
-
-  function confirm(last) {
-    const skipped = group.items.filter(it => savedMarks()[it.id]?.skipped).map(it => it.id)
-    const confirmed = P.confirmRange(group, savedMarks(), last, skipped)
-    for (const it of group.items) {
-      const value = confirmed[it.id]
-      save(it.id, skipped.includes(it.id) ? { ...value, skipped: true } : value)
-    }
   }
 
   function create(focus, mode) {
@@ -411,11 +369,10 @@
       }
     }
     if (sheet) {
-      group = firstOpen()
       renderPaper()
       render()
-      /* 从扫码登记页跳过来（#mark）：手机上纸在上、登记区在下，直接滚到登记区 */
-      if (root.location.hash === '#mark') host.scrollIntoView({ block: 'start' })
+      /* 从扫码打分页跳过来（#mark）：手机上纸在上、打分区在下，直接滚到打分区 */
+      if (root.location.hash === '#mark') doc.getElementById('py-rate')?.scrollIntoView({ block: 'start' })
     } else {
       sumEl.textContent = '今天没有到期的内容'
       host.innerHTML = '<section class="group"><div class="empty">' + ICON.rest + '<b>今天可以休息</b>' +
@@ -436,54 +393,17 @@
       render()
       return
     }
-    if (button.dataset.group) {
-      group = sheet.groups.find(entry => entry.id === button.dataset.group)
-      stopOpen = false
+    if (button.dataset.kid) {
+      group = sheet.groups.find(entry => entry.id === button.dataset.kid)
+      if (group) showKid(true)
+      return
     }
-    let marked
-    if (button.dataset.mark !== undefined) {
-      marked = button.closest('[data-item]').dataset.item
-      const prior = savedMarks()[marked]
-      const result = button.dataset.mark
-      /* 再点一次已按下的按钮 = 撤销 */
-      if (button.getAttribute('aria-pressed') === 'true') save(marked, { result: prior?.previousResult || 'unpracticed' })
-      else {
-        save(marked, { result, skipped: result === 'unpracticed',
-          previousResult: prior?.previousResult || (prior?.result === 'ok' ? 'ok' : 'unpracticed') })
-      }
-    }
-
-    const action = button.dataset.action
-    if (action === 'child-view') return showKid(true)
-    if (action === 'half') stopOpen = !stopOpen
-    if (action === 'stop' || action === 'teach' || action === 'next' || action === 'skip') {
-      const current = group
-      const last = action === 'stop' ? doc.getElementById('pinyin-last').value : action === 'skip' ? '' : current.items.at(-1).id
-      confirm(last)
-      const normal = sheet.groups.filter(entry => entry.phase !== 'check')
-      group = action === 'teach' ? sheet.groups.find(entry => entry.id === button.dataset.target) :
-        action === 'next' ? nextAfter(current) :
-          action === 'skip' && current.phase !== 'check' ? normal[normal.indexOf(current) + 1] : undefined
-      stopOpen = false
-      if (!group) {
-        saved = action === 'stop'
-          ? (last ? '这组做到第 ' + last + ' 题，后面的记为没练。' : '这组记为没练。')
-          : '这张卷的登记都记下了。'
-      }
-    }
-    render()
-    if (marked) host.querySelector('[data-item="' + marked + '"] .py-mark[aria-pressed="true"], [data-item="' + marked + '"] .py-mark')?.focus()
-    if (action === 'teach' || action === 'next' || action === 'skip') host.querySelector('.py-now, .py-done')?.scrollIntoView({ block: 'nearest' })
-  })
-
-  host.addEventListener('change', event => {
-    const field = event.target
-    const itemEl = field.closest('[data-item]')
-    if (!itemEl) return
-    const id = itemEl.dataset.item
-    const current = savedMarks()[id]
-    if (field.matches('[data-heard]')) save(id, { ...current, heard: field.value.trim() })
-    if (field.matches('[data-tone]')) save(id, { ...current, tone: field.checked })
+    S.rate.click(event, {
+      load: () => rateRec(sheet),
+      submit: (rec, wrong) => submit(wrong),
+      startEdit: () => stuckKeys(sheet),
+      render
+    })
   })
 
   kid.addEventListener('click', event => {

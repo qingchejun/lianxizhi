@@ -66,17 +66,6 @@
 
     var result = S.huochai.generate(settings)
     S.huochaiRender.render($('preview'), settings, result.puzzles)
-    /* 扫码登记：纸角二维码 + 打印时记下这张（太简单 / 刚好 / 太难 → 下一张升降关，见 mark 页） */
-    if (S.sheets) {
-      S.sheets.use({
-        module: 'huochai',
-        title: S.sheetsCore.MODULE_LABEL.huochai + ' · ' + S.sheetsCore.gameLevelText('huochai', settings),
-        idParts: JSON.stringify(settings),
-        units: [{ key: 'all', label: '整张' }],
-        items: [],
-        ref: { settings: settings }
-      })
-    }
     S.shell.fit()
 
     $('level-hint').textContent = LEVEL_HINTS[settings.level] || ''

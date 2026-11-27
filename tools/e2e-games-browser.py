@@ -64,13 +64,9 @@ with sync_playwright() as p:
         page.emulate_media(media='print')
         check(path + ' 打印时介绍文字、提示条不上纸', not page.is_visible('.board-intro') and not page.is_visible('[data-guest-note]'))
         page.emulate_media(media='screen')
-        mark = page.query_selector('#btn-mark')
-        if mark:
-            mark.click()
-            page.wait_for_selector('dialog.account-dialog[open] form[data-view="login"]', timeout=5000)
-            check(path + ' 点「打分」→ 弹出登录框', True)
-        else:
-            check(path + ' 有「打分」按钮', False)
+        # 2026-11-27 起游戏不打分：没有「打分」按钮，纸上不印二维码
+        check(path + ' 游戏没有「打分」按钮、不印二维码',
+              page.query_selector('#btn-mark') is None and not page.query_selector('#preview .sheet-qr'))
 
         if path == '/migong':
             for lv in ['L1', 'L2', 'L3', 'L4']:

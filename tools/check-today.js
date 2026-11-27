@@ -326,15 +326,17 @@ Object.keys(V.list).forEach(function (id) {
     return r
   }
   var empty = T.markNotes(memStore(), '2026-11-23')
-  check(empty.pending === 0 && !empty.kousuanUp && !empty.aoshuRetry && empty.games.length === 0, '没有纸记录时没有提示')
+  check(empty.pending === 0 && empty.pendingBy.length === 0 && !empty.kousuanUp && !empty.aoshuRetry && !('games' in empty), '没有纸记录时没有提示')
   check(T.markNotes(null, '2026-11-23').pending === 0, 'store 不可用不报错')
 
   var st = memStore()
   put(st, 'p00001', 'kousuan', '2026-11-23', T0)
-  put(st, 'p00002', 'huochai', '2026-11-22', T0 - 86400000)
-  put(st, 'p00003', 'mima', '2026-11-20', T0 - 3 * 86400000)
+  put(st, 'p00002', 'shizi', '2026-11-22', T0 - 86400000)
+  put(st, 'p00003', 'kousuan', '2026-11-20', T0 - 3 * 86400000)
+  put(st, 'p00004', 'huochai', '2026-11-23', T0)
   var n1 = T.markNotes(st, '2026-11-23')
-  check(n1.pending === 2 && n1.pendingId === 'p00001', '待登记：今天和昨天的、最新的在前 ' + JSON.stringify(n1))
+  check(n1.pending === 2 && JSON.stringify(n1.pendingBy) === JSON.stringify([{ module: 'kousuan', label: '口算', n: 1 }, { module: 'shizi', label: '识字', n: 1 }]),
+    '待打分按板块：只算 2 天内、游戏不算 ' + JSON.stringify(n1))
 
   /* 口算连续两张会了 → 提示升档；已经换过去就不提示 */
   put(st, 'k00001', 'kousuan', '2026-11-22', T0 - 5000, { ref: { preset: '10以内加减' }, rating: { all: { level: 'good', at: T0 - 4000 } } })
@@ -352,15 +354,6 @@ Object.keys(V.list).forEach(function (id) {
   check(T.markNotes(st, '2026-11-23').aoshuRetry === null, '之后学会了就不提')
   st.set(SC.AOSHU_DUE, ['coushi', 'daxiao', 3])
   check(T.markNotes(st, '2026-11-23').aoshuDue.join() === 'coushi,daxiao', '待复习列表（脏数据跳过）')
-
-  /* 游戏：上次自动升关 → 提示 + 可撤销；家长手动改过就不提 */
-  st.set('sumsum:huochai:v1', { level: 'L1' })
-  var hc = put(st, 'h00001', 'huochai', '2026-11-23', T0)
-  SC.saveRating(st, hc, { all: { level: 'good' } }, [], T0 + 1)
-  var g = T.markNotes(st, '2026-11-23').games
-  check(g.length === 1 && g[0].module === 'huochai' && g[0].text === '火柴按上次反馈加难到「简单」', '游戏升关提示 ' + JSON.stringify(g))
-  SC.undoGame(st, st.get(SC.keyOf('h00001')))
-  check(T.markNotes(st, '2026-11-23').games.length === 0 && st.get('sumsum:huochai:v1').level === 'L1', '撤销后不再提示')
 
   /* 奥数换一批：保留 sig、换种子 */
   st.set('sumsum:aoshu:batches:v1', { coushi: { seed: 5, sig: 'x' } })

@@ -11,7 +11,7 @@
   <meta name="description" content="给孩子打印 A4 练习纸 · 识字：按学习顺序每周复习 100 个字，只印字不印拼音，孩子念家长听，错字集反复练。" />
   <link rel="stylesheet" href="css/app.css?v=033d220bb2" />
   <link rel="stylesheet" href="css/sheet.css?v=239fc79b03" />
-  <link rel="stylesheet" href="css/shizi.css?v=0c4bddc500" />
+  <link rel="stylesheet" href="css/shizi.css?v=b4a7d084d2" />
   <!-- 识字页固定 A4 纵向（字格是方的，横竖都能排，纵向一页装得下 100 字就够了） -->
   <style>@page { size: A4 portrait; margin: 15mm; }</style>
 </head>
@@ -110,7 +110,8 @@
       <section class="group" id="sec-daily" hidden>
         <p class="hint" id="daily-status"></p>
         <div class="week-nav">
-          <button type="button" id="btn-daily-settle" class="btn btn-sm btn-primary">登记结果</button>
+          <button type="button" id="btn-daily-allok" class="btn btn-sm daily-allok" aria-pressed="false">全对</button>
+          <button type="button" id="btn-daily-settle" class="btn btn-sm btn-primary" disabled>提交</button>
           <button type="button" id="btn-daily-undo" class="btn btn-sm" hidden>撤销登记</button>
           <button type="button" id="btn-daily-drop" class="btn btn-sm" hidden>作废重来</button>
         </div>
@@ -253,9 +254,9 @@
 
 <!-- render.js 只为取 parts 零件与 refreshDates，不会渲染口算内容 -->
 <script src="js/store.js?v=c6aac93871"></script>
-<script src="js/sheets-core.js?v=a708637534"></script>
+<script src="js/sheets-core.js?v=d8d190961b"></script>
 <script src="js/vendor/qrcode.js?v=18ae399f81"></script>
-<script src="js/sheets.js?v=bfb71ef38f"></script>
+<script src="js/sheets.js?v=7a2984381a"></script>
 <script src="js/shell.js?v=6972c54f86"></script>
 <script src="js/render.js?v=7ee86eb2c8"></script>
 <script src="js/shizi-data.js?v=c3c3176849"></script>
@@ -266,10 +267,10 @@
 <script src="js/shizi-xie-data.js?v=090d7d3f5a"></script>
 <script src="js/vendor/hanzi-writer.min.js?v=17b11a1e02"></script>
 <script src="js/shizi-xie.js?v=8e8b3dc002"></script>
-<script src="js/shizi-mark.js?v=827be5d2a9"></script>
-<script src="js/shizi-main.js?v=51b35f21ea"></script>
+<script src="js/shizi-mark.js?v=99a04d2600"></script>
+<script src="js/shizi-main.js?v=62a98453d0"></script>
 <script src="js/backup.js?v=f21895fa7e"></script>
-<script src="js/help.js?v=14785111cc"></script>
+<script src="js/help.js?v=a7a6089288"></script>
 <script src="js/account.js?v=9790a36543"></script>
 <script src="js/account-ui.js?v=f7ca87a050"></script>
 <script src="js/sync-core.js?v=5f4122b899"></script>

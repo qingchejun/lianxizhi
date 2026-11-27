@@ -106,7 +106,7 @@ async def main():
         release.set()  # 电脑的上传放行
         found = False
         for _ in range(30):
-            if await m.query_selector('[data-card="%s"] [data-lv]' % sid):
+            if await m.query_selector('[data-card="%s"] [data-rate-all]' % sid):
                 found = True
                 break
             await asyncio.sleep(1)

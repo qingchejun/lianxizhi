@@ -523,6 +523,7 @@
     picked: picked,
     pickCount: pickCount,
     togglePick: togglePick,
+    clearPicks: clearPicks,
     settle: settle,
     undoSettle: undoSettle,
     canUndo: canUndo,

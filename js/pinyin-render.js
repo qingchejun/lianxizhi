@@ -67,7 +67,7 @@
         (when[group.phase] ? '<small>' + when[group.phase] + '</small>' : '') +
         '</h3><ol class="py-cells">' + group.items.map(cell).join('') + '</ol></section>'
       ).join('') + '<aside class="py-parent"><h3>给家长</h3><p>' + instructions + '</p>' +
-      '<p>每题右边的小方框：顺的不用标，提示过画 ∨，没读出画 ×。中途停止圈最后一题，跳过的题画横线。</p>' +
+      '<p>每题右边的小方框：顺的不用标，卡住的（要提示或读不出）画 ×。做完扫右上角二维码打分：全对选「全对」，有 × 的点出来再提交。</p>' +
       (keys ? '<p><b>答案</b>　' + keys + '</p>' : '') +
       sheet.cards.map(card => {
         const group = sheet.groups.find(entry => entry.id === card.group)

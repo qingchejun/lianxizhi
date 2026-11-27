@@ -108,17 +108,6 @@
 
     var result = S.shudu.generate(settings)
     S.shuduRender.render($('preview'), settings, result.puzzles)
-    /* 扫码登记：纸角二维码 + 打印时记下这张（太简单 / 刚好 / 太难 → 下一张升降关，见 mark 页） */
-    if (S.sheets) {
-      S.sheets.use({
-        module: 'shudu',
-        title: '数独 · ' + ({ s4: '四宫', s6: '六宫', s9: '九宫' }[settings.shape] || '') + ' · ' + S.sheetsCore.gameLevelText('shudu', settings),
-        idParts: JSON.stringify(settings),
-        units: [{ key: 'all', label: '整张' }],
-        items: [],
-        ref: { settings: settings }
-      })
-    }
     S.shuduPlay.attach($('preview'), settings, result.puzzles)
     fitPreview()
 
