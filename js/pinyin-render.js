@@ -28,7 +28,18 @@
   }
 
   // Teaching card as labelled lines: what to watch, how to explain, a demo, then numbered guide steps.
+  /* 课本每课一张的教学卡（2026-11-27）：发音、口诀、易错、书写、例词；老卷子存的卡没有 teach，照旧画三行 */
   function teachingLines(card) {
+    const t = card.teach
+    if (t) {
+      return (card.probe ? '<p><b>先观察</b>　' + latin(card.probe) + '</p>' : '') +
+        '<p><b>发音</b>　' + latin(t.sound) + '</p>' +
+        '<p><b>口诀</b>　' + latin(t.rhyme) + '</p>' +
+        '<p><b>易错</b>　' + latin(t.pitfall) + '</p>' +
+        '<p><b>书写</b>　' + latin(t.write) + '</p>' +
+        '<p><b>例词</b>　' + t.words.map(([py, hz]) => latin(py) + (hz ? ' ' + escape(hz) : '')).join('　') + '</p>' +
+        '<p><b>引导</b>　' + steps(card.guide) + '</p>'
+    }
     return (card.probe ? '<p><b>先观察</b>　' + latin(card.probe) + '</p>' : '') +
       '<p><b>怎么讲</b>　' + latin(card.tip) + '</p>' +
       '<p><b>示范</b>　' + latin(card.demo) + '</p>' +

@@ -154,13 +154,13 @@
       return
     }
     if (view === 'lessons') {
-      sumEl.textContent = '课程 · 20 课'
+      sumEl.textContent = '课程 · ' + D.lessons.length + ' 课'
       const ids = Array.from(new Set(D.lessons.flatMap(lesson => lesson.directions)))
       host.innerHTML = overview('课程进度', '照一年级课本顺序排，可以跳着学、回头看。每课先讲后练。', ids)
-      catalogPage('拼音课程', '跟着课本，从 a o e 到词句应用，一共 20 课。',
+      catalogPage('拼音课程', '照 2024 年新版一年级上册课本，从 a o e 到 ang eng ing ong，一共 ' + D.lessons.length + ' 课。每课一张教学卡：怎么发音、口诀、易错、怎么写、例词。',
         '<ol class="py-lesson-grid">' + D.lessons.map((lesson, index) =>
           '<li class="py-card"><h3><span class="py-lesson-no">' + (index + 1) + '</span><span class="py-lesson-name">' + esc(lesson.label) + '</span></h3><ul class="py-items">' +
-          lesson.directions.map(focus => item(D.directions[focus].label === lesson.label ? '本课练习' : D.directions[focus].label,
+          lesson.directions.map((focus, i) => item(i === 0 ? '本课练习' : D.directions[focus].label,
             href({ lesson: lesson.id, focus }), focus)).join('') +
           '</ul></li>').join('') + '</ol>')
       return
@@ -243,7 +243,7 @@
       const open = Boolean(lessonCard && card) || g.items.some(it => stuck.has(it.id))
       return '<div class="py-teach-row"><div class="py-teach-head"><b>' + R.latin(groupName(sheet, g)) + '</b>' +
         '<button type="button" class="btn btn-sm" data-kid="' + esc(g.id) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="11.5" rx="2"/><path d="M9 20h6M12 16.5V20"/></svg>孩子视图</button></div>' +
-        (card ? '<details class="py-teach"' + (open ? ' open' : '') + '><summary>家长教学卡 · ' + R.latin(card.label) +
+        (card ? '<details class="py-teach"' + (open ? ' open' : '') + '><summary><span>家长教学卡 · ' + R.latin(card.label) + '</span>' +
           '<small>' + (open && !lessonCard ? '卡住了，先讲再换题' : '卡住时再看') + '</small></summary>' +
           '<div class="py-teach-body">' + R.teaching(card) + '</div></details>' : '') +
         '</div>'
@@ -373,7 +373,9 @@
     catalog()
   } else {
     if (!sheet) {
-      const lesson = D.lessons.find(entry => entry.id === query.get('lesson'))
+      /* 老课号（lesson-N，2026-11-27 前的 20 课）的收藏链接：按 focus 找到现在含它的课 */
+      const lesson = !query.has('lesson') ? null : D.lessons.find(entry => entry.id === query.get('lesson')) ||
+        D.lessons.find(entry => entry.directions.includes(query.get('focus')))
       const focus = lesson?.directions.includes(query.get('focus')) ? query.get('focus') : query.get('topic')
       if (D.directions[focus]) {
         const mode = lesson ? 'lesson' : 'topic'

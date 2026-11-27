@@ -93,7 +93,22 @@ assert.equal(reopened.letters.due, P.addDays(errorDate, 1))
 const D = globalThis.SumSum.pinyinData
 const S = globalThis.SumSum.pinyinSyllables
 assert.equal(Object.keys(S.syllables).length, 407)
-assert.equal(D.lessons.length, 20)
+assert.equal(D.lessons.length, 14)
+// 课本 14 课（2026-11-27）：每课第一项有教学卡五样，补上了 un ün，老课号 lesson-13 留着（老卷子能打开）但不再当新内容出
+assert.deepEqual(D.lessons.map(lesson => lesson.label), ['a o e', 'i u ü', 'b p m f', 'd t n l', 'g k h', 'j q x', 'z c s',
+  'zh ch sh r', 'y w', 'ai ei ui', 'ao ou iu', 'ie üe er', 'an en in un ün', 'ang eng ing ong'])
+for (const lesson of D.lessons) {
+  const teach = D.directions[lesson.directions[0]].teach
+  assert.ok(teach && teach.sound && teach.rhyme && teach.pitfall && teach.write && teach.words.length >= 3, lesson.label)
+  for (const focus of lesson.directions) assert.ok(D.directions[focus] && D.order.includes(focus), lesson.label + ' ' + focus)
+  const sheet = P.makeSheet(d, {}, { focus: lesson.directions[0], mode: 'lesson' })
+  assert.equal(sheet.cards[0].teach.label, lesson.label)
+}
+assert.ok(D.directions['lesson-an'].samples.flat().includes('ün'))
+assert.ok(D.directions['lesson-13'] && !D.order.includes('lesson-13'))
+for (let i = 1; i <= 14; i++) if (i !== 6 && i < 9 || i === 12 || i === 13 || i === 14) assert.ok(D.directions['lesson-' + i], 'lesson-' + i)
+// 到期的老课号照样排进今日卷
+assert.equal(P.makeSheet(d, { 'lesson-13': { observed: true, due: d } }).focus, 'lesson-13')
 assert.equal(D.topics.length, 10)
 assert.equal(new Set(D.vocabulary.map(word => word.hanzi)).size, D.vocabulary.length)
 assert.ok(D.vocabulary.length >= 200 && D.vocabulary.length <= 300)

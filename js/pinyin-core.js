@@ -19,7 +19,7 @@
   }
 
   function makeSheet(date, state, options = {}) {
-    const due = D.order.filter(id => state[id]?.due && state[id].due <= date)
+    const due = D.order.concat(D.legacy || []).filter(id => state[id]?.due && state[id].due <= date)
       .sort((a, b) => state[a].due.localeCompare(state[b].due))
     const unseen = D.order.filter(id => !state[id]?.observed)
     const focus = options.focus || due[0] || unseen[0]
@@ -74,7 +74,8 @@
       }
       const items = candidates.slice(0, size)
       const entry = group(directionId, dir.label, items, 'check')
-      cards.push({ group: entry.id, startsAt: ref?.id, label: dir.label, tip: dir.tip, demo: dir.demo, guide: dir.guide })
+      cards.push({ group: entry.id, startsAt: ref?.id, label: dir.label, tip: dir.tip, demo: dir.demo, guide: dir.guide,
+        ...(dir.teach ? { teach: dir.teach } : {}) })
       if (firstLetters) {
         cards.at(-1).probe = '从四个备选字母里挑两个复核，优先选刚才卡住的字母及容易和它混的字母。其余题可跳过。'
       }
@@ -106,7 +107,8 @@
     }
 
     if (leadsWithTeaching) {
-      cards.push({ label: direction.label, tip: direction.tip, demo: direction.demo, guide: direction.guide })
+      cards.push({ label: direction.label, tip: direction.tip, demo: direction.demo, guide: direction.guide,
+        ...(direction.teach ? { teach: direction.teach } : {}) })
     } else {
       branch(focus, primary, main)
       if (application) {
