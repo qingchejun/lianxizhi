@@ -144,7 +144,7 @@
     return !!(rec.rating && Object.keys(rec.rating).length)
   }
 
-  /* ---------- 待登记 ---------- */
+  /* ---------- 待打分 ---------- */
 
   function pad(n) {
     return (n < 10 ? '0' : '') + n

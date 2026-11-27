@@ -3,8 +3,9 @@
  * 与其它三个板块一致 —— 任何参数变化都会自动重新渲染（所见即所得），没有「生成」按钮。
  * 这里连生成都算不上：字表是固定的，换一周只是换一段下标。
  *
- * 错字集的标记动作【不走这里】：它由 js/shizi-mark.js 直接改被点那一格的 class，
- * 绕开 refresh()。原因见那个文件的说明 —— 点一下就重渲染会让卷面在手指底下重新流动。
+ * 打分（2026-11-27 打分统一）：不在这页上点卷面、也没有「登记」区了，统一在顶栏「打分」抽屉里
+ * （js/rate-drawer.js + js/mark-panel.js，和手机扫码打分页同一个组件）。提交后抽屉发 sumsum:rated，
+ * 这里 refresh：每日一卷打了分才出下一张。不想做这张就点顶栏「换一张」（原「作废重来」）。
  */
 (function (root) {
   'use strict'
@@ -122,70 +123,37 @@
 
   /* ---------- 每日一卷 ---------- */
 
-  /* browseIdx=null 看最新一张（登记/作废都在它身上）；数字是 papers 数组的下标，
-     只用来翻往期。往期一律只读 —— 卷是「冻住」的，历史卷不能再点。 */
-  var browseIdx = null
-
+  /* 每日一卷：屏幕上永远是最新一张（往期卷在顶栏「打分」抽屉的历史里看）。
+     打分在抽屉里（js/rate-drawer.js），打了分页面收到 sumsum:rated 再 refresh，出下一张 */
   function dailyPaper() {
-    var p = browseIdx != null ? S.shiziMark.paperAt(browseIdx) : null
-    /* 兜底：翻着往期时数组理论上不会变短（作废会先重置 browseIdx），但别让 null 炸渲染 */
-    return p || S.shiziMark.ensurePaper()
+    return S.shiziMark.ensurePaper()
   }
 
   function renderDaily() {
     var p = dailyPaper()
     var todayStr = S.shiziMark.today()
-    var active = browseIdx == null && !p.settled
-    /* data-locked='1' 时 shizi-mark 的点击代理直接忽略（往期卷只读）；
-       今天的活卷必须清掉，否则从往期切回来点不动 */
-    if (active) delete $('preview').dataset.locked
-    else $('preview').dataset.locked = '1'
+    var active = !p.settled
+    $('preview').dataset.locked = '1' // 卷面不再点字打分，统一在打分卡上点
     $('preview').innerHTML = S.shiziRender.renderWrong(settings, Array.from(p.chars), {
       title: '识字 · 每日一卷',
       foot: '每日一卷 · ' + p.chars.length + ' 字'
     }).join('')
     root.document.body.classList.remove('landscape')
     S.shiziMark.paint()
-    if (browseIdx == null) registerSheet('daily', '识字 · 每日一卷', Array.from(p.chars), { kind: 'daily', d: p.d })
+    registerSheet('daily', '识字 · 每日一卷', Array.from(p.chars), { kind: 'daily', d: p.d })
     var status = $('daily-status')
-    var settledToday = browseIdx == null && S.shiziMark.canUndo('daily')
-    if (active) {
-      status.innerHTML = p.d === todayStr
-        ? '今天 ' + p.chars.length + ' 个字，含最多 10 个错字。打印考完，全认识就选「全对」；有<b>没认出</b>的字就在卷面上点出来。再点「提交」。'
-        : p.d > todayStr
-          ? (settledToday ? '今天已登记。' : '') + '明天的 ' + p.chars.length + ' 个字已经出好，含今晚登记的错字，可以先打印。'
-          : md(p.d) + ' 的卷子还没打分。对着那张纸选「全对」或点出没认出的字，再提交；或者作废。'
+    var ratedToday = S.shiziMark.canUndo('daily')
+    if (!active) {
+      status.innerHTML = (p.d === todayStr ? '今天' : md(p.d)) + '的卷子已打分，下一张会自动出好。'
+    } else if (p.d > todayStr) {
+      status.innerHTML = (ratedToday ? '今天的卷子已打分。' : '') + '明天的 ' + p.chars.length + ' 个字已经出好，含今晚没认出的字，可以先打印。'
+    } else if (p.d === todayStr) {
+      status.innerHTML = '今天 ' + p.chars.length + ' 个字，含最多 10 个错字。打印考完，点顶栏「打分」：全认识选「全对」，有<b>没认出</b>的字就点出来，再提交。打了分才出下一张。'
     } else {
-      status.innerHTML = (p.d === todayStr ? '今天' : md(p.d)) + '的卷子已登记。' +
-        (browseIdx == null ? '下一张会自动出好。' : '（往期卷只读）')
+      status.innerHTML = md(p.d) + ' 的卷子还没打分。点顶栏「打分」给它打分；不想做了就点「换一张」。'
     }
-    $('btn-daily-settle').hidden = !active
-    $('btn-daily-allok').hidden = !active
-    paintDailyBtns()
-    /* 撤销登记：看着「今天已登记的那张」时亮；登记完顶上来的是明日预览卷，那也得亮 */
-    $('btn-daily-undo').hidden = !(browseIdx == null && ((p.settled && p.d === todayStr) || p.d > todayStr) && S.shiziMark.canUndo('daily'))
-    $('btn-daily-drop').hidden = !active
-    var n = S.shiziMark.paperCount()
-    $('daily-browse').hidden = n < 2
-    $('paper-which').textContent = n ? md(p.d) + ' · 第 ' + (browseIdx == null ? n : browseIdx + 1) + '/' + n + ' 张' : ''
-    /* ◀ 往旧翻：停在最早一张时才禁用；▶ 往回走：停在最新一张时禁用 */
-    $('btn-paper-prev').disabled = browseIdx != null && browseIdx <= 0
-    $('btn-paper-next').disabled = browseIdx == null
-  }
-
-  /* 每日一卷的「全对 / 提交」（2026-11-27，与打分页同一种手感）：
-     全对和点字二选一；什么都没选时「提交」是灰的，免得一碰就把整张记成全认识 */
-  var dailyAllOk = false
-  function paintDailyBtns() {
-    var p = browseIdx == null ? S.shiziMark.paperAt(S.shiziMark.paperCount() - 1) : null
-    var n = p && !p.settled ? S.shiziMark.pickedIn(Array.from(p.chars)).length : 0
-    if (n) dailyAllOk = false
-    var all = $('btn-daily-allok')
-    all.classList.toggle('on', dailyAllOk)
-    all.setAttribute('aria-pressed', String(dailyAllOk))
-    var go = $('btn-daily-settle')
-    go.disabled = !(dailyAllOk || n)
-    go.textContent = '提交' + (n ? '（没认出 ' + n + ' 个）' : '')
+    /* 换一张：只在这张还没打分时能用（原来的「作废重来」）。统编版按课本顺序出的卷，重出还是同样的字，不给这个按钮 */
+    $('btn-swap').hidden = !active || (isRj(settings) && settings.order === 'seq')
   }
 
   function fillTabs(s) {
@@ -266,7 +234,7 @@
     if (isRj(s)) {
       $('week-now').textContent = sl.unitName + ' · ' + sl.kind
       $('week-sub').textContent = sl.range + '　·　' + sl.chars.length + ' 字　·　共 ' + sl.weeks + ' 个单元'
-      $('week-hint').textContent = '学完一个单元考一次：整个单元的字印一张，没认出的点一下再登记，错字会进每日一卷。'
+      $('week-hint').textContent = '学完一个单元考一次：整个单元的字印一张，考完点顶栏「打分」把没认出的字点出来，错字会进每日一卷。'
       return
     }
     $('week-now').textContent = '第 ' + sl.week + ' 周'
@@ -313,17 +281,17 @@
          此刻唯一有用的信息都是「去哪儿、怎么把第一个字收进来」。 */
       return '错字集是空的。' +
         (s.mode === 'wrong' ? '在「每日一卷」或「本周复习」里，' : '') +
-        '孩子念不出的字在卷面上点一下，再点「提交」。标记不会印到纸上。'
+        '考完点顶栏「打分」，把孩子念不出的字点出来，再点「提交」。'
     }
     var once = wrongOnce()
     var head = '错字集 <b>' + n + '</b> 个字' + (once ? '，其中 ' + once + ' 个再认出一次就毕业' : '') + '。' +
       '没认出的字第二天接着考，认出后隔 3 天复核，复核认出才毕业。'
     if (s.mode === 'wrong') {
-      return head + '<br>考完点出<b>没认出</b>的字，再点「提交」，没点的算认出。'
+      return head + '<br>考完点顶栏「打分」，点出<b>没认出</b>的字再提交，没点的算认出。'
     }
-    var tail = head + '孩子念不出的字点一下，再点「提交」。'
+    var tail = head + '考完点顶栏「打分」，孩子念不出的字点出来再提交。'
     if (s.withWrong && appendPick.length) {
-      tail += '<br>附页的 ' + appendPick.length + ' 个旧错字：没认出的点一下，考完一并「提交」。'
+      tail += '<br>附页的 ' + appendPick.length + ' 个旧错字也在打分卡上，没认出的一并点出来。'
     }
     return tail
   }
@@ -373,6 +341,7 @@
     fillTabs(settings)
     fillForm(settings)
     markLocks()
+    $('btn-swap').hidden = true // 只有每日一卷有「换一张」，renderDaily 里再打开
     var locked = lockedWhat()
     if (locked) {
       renderLocked(locked)
@@ -393,9 +362,7 @@
       fitPreview()
       var dp = dailyPaper()
       $('pages-hint').textContent = pagesHint(settings, dp ? dp.chars.length : 0, null)
-      /* 翻到往期卷时印的就是那张往期卷，按钮不能还顶着「今日」的名字 */
-      $('btn-print').querySelector('.txt').textContent =
-        browseIdx == null ? PRINT_LABEL.daily : '打印往期卷'
+      $('btn-print').querySelector('.txt').textContent = PRINT_LABEL.daily
       refreshMarkPanel()
       S.shell.summary([
         '每日一卷',
@@ -463,7 +430,7 @@
   /* ---------- 复习结算 ---------- */
 
   /* 卷面上现在有哪些字（去重）。份数 = 2 时同一个字有两格 */
-  /* 扫码登记：纸角二维码 + 打印时记下这张。手机登记页按字点「没认出」，结算和这里的「登记结果」同一套 */
+  /* 扫码打分：纸角二维码 + 打印时记下这张。手机打分页和顶栏「打分」抽屉是同一个组件，结算都走 shiziMark.settle */
   function registerSheet(kind, title, chars, ref) {
     if (!S.sheets || !chars.length) return
     S.sheets.use({
@@ -490,97 +457,41 @@
     return out
   }
 
-  /*
-   * 登记那一块。三种情况：
-   *   今天登记过                    → 显示今天的结果和「撤销登记」；
-   *   卷面上有在集字或点过字        → 「登记结果」按钮 + 说清楚登记会怎样；
-   *   都没有（纯认识字的一周卷）    → 空，不占地方。
-   * 文案里只有数字，没有用户输入，可以直接进 innerHTML。
-   */
-  function settleHtml() {
-    if (settings.mode === 'history' || settings.mode === 'daily') return ''
-    var chars = sheetChars()
-    var seen = S.shiziMark.onSheet(chars)
-    var picked = S.shiziMark.pickedIn(chars)
-    var row = S.shiziMark.todayLog()
-    var html = ''
-    if (row) {
-      html += '<p class="hint settle-done">今天登记过 <b>' + row.seen.length + '</b> 个旧错字：认出 ' + row.ok +
-        (row.out ? '（其中 ' + row.out + ' 个复核通过毕业）' : '') +
-        '，又错 <b>' + row.miss + '</b> 个。' +
-        (S.shiziMark.canUndo('sheet') ? ' <button type="button" class="link-btn" data-settle="undo">撤销登记</button>' : '') + '</p>'
-    }
-    if (seen.length || picked.length) {
-      html += '<button type="button" class="btn btn-sm settle-btn" data-settle="go">提交</button>' +
-        '<p class="hint">点了 <b>' + picked.length + '</b> 个没认出的；没点的 ' + seen.length +
-        ' 个旧错字算认出（认出记一次，隔 3 天复核过了就毕业）。点错了再点一下就取消。</p>'
-    }
-    return html
+  /* 换一张（2026-11-27，原「作废重来」）：这张卷不算分，按现在的错字重新出一张。
+     已经打印过的那张纸标成「不用打了」，免得打分抽屉里一直挂着 */
+  $('btn-swap').addEventListener('click', function () {
+    var cur = S.sheets && S.sheets.current ? S.sheets.current() : null
+    var rec = cur ? S.sheetsCore.parse(S.store.getString(S.sheetsCore.keyOf(cur.id))) : null
+    var msg = rec ? '换一张？已经打印的这张就不用做了，字的记录不动。' : '换一张？字的记录不动，按现在的错字重新出一张。'
+    if (!root.confirm(msg)) return
+    var last = S.shiziMark.paperAt(S.shiziMark.paperCount() - 1)
+    if (!S.shiziMark.discardPaper()) return
+    skipPaperRecords(last)
+    refresh()
+  })
+
+  /* 卷子换掉了（换一张、换册重出）：打印过的那张纸标成「不用打了」，打分抽屉里不再挂着 */
+  function skipPaperRecords(paper) {
+    if (!paper || !S.sheetsCore) return
+    var chars = Array.from(paper.chars).join('')
+    S.sheetsCore.records(S.store).forEach(function (r) {
+      if (r.module !== 'shizi' || !r.ref || r.ref.kind !== 'daily' || r.ref.d !== paper.d || r.done || r.skipped) return
+      if ((r.items || []).map(function (it) { return it.key }).join('') !== chars) return
+      S.store.set(S.sheetsCore.keyOf(r.id), Object.assign({}, r, { skipped: true }))
+    })
   }
 
-  $('settle').addEventListener('click', function (ev) {
-    var b = ev.target.closest('[data-settle]')
-    if (!b) return
-    if (b.getAttribute('data-settle') === 'go') {
-      S.shiziMark.settle(sheetChars())
-      if (S.sheets) S.sheets.markDone()
-    } else {
-      S.shiziMark.undoSettle()
-      if (S.sheets && S.sheets.markUndone) S.sheets.markUndone()
-    }
-    /* 只改格子的颜色，卷面不重排（理由同 shizi-mark 的文件头）；面板由 onChange 刷 */
-    S.shiziMark.paint()
+  /* 打分抽屉里提交了识字的分：出下一张（每日一卷）、刷新错字集面板 */
+  root.addEventListener('sumsum:rated', function (e) {
+    if (e.detail && e.detail.module === 'shizi') refresh()
   })
-
-  /* ---------- 每日一卷的按钮 ---------- */
-
-  $('btn-daily-allok').addEventListener('click', function () {
-    var p = dailyPaper()
-    if (!p || p.settled) return
-    dailyAllOk = !dailyAllOk
-    if (dailyAllOk) S.shiziMark.clearPicks(Array.from(p.chars))
-    S.shiziMark.paint()
-    paintDailyBtns()
-  })
-
-  $('btn-daily-settle').addEventListener('click', function () {
-    var p = dailyPaper()
-    if (!p || p.settled) return
-    if (!dailyAllOk && !S.shiziMark.pickedIn(Array.from(p.chars)).length) return
-    dailyAllOk = false
-    S.shiziMark.settle(Array.from(p.chars), p)
-    if (S.sheets) S.sheets.markDone()
-    refresh()
-  })
-
-  $('btn-daily-undo').addEventListener('click', function () {
-    S.shiziMark.undoSettle()
-    if (S.sheets && S.sheets.markUndone) S.sheets.markUndone()
-    refresh()
-  })
-
-  $('btn-daily-drop').addEventListener('click', function () {
-    if (!root.confirm('作废这张卷子？字的数据不动，随时可以重新生成一张。')) return
-    S.shiziMark.discardPaper()
-    browseIdx = null
-    refresh()
-  })
-
-  /* ◀ 往旧翻：从最新一张开始，一路翻到最早；▶ 往回走，走出倒数第二张就回到「活卷」视角
-     ——最新那张永远由 null 视角显示（活卷/今天已登记），浏览范围不含它，免得同一张卷
-     出现「可点的」和「锁住的」两个版本 */
-  $('btn-paper-prev').addEventListener('click', function () {
-    var n = S.shiziMark.paperCount()
-    browseIdx = browseIdx == null ? n - 2 : Math.max(0, browseIdx - 1)
-    refresh()
-  })
-
-  $('btn-paper-next').addEventListener('click', function () {
-    if (browseIdx == null) return
-    var n = S.shiziMark.paperCount()
-    browseIdx = browseIdx >= n - 2 ? null : browseIdx + 1
-    refresh()
-  })
+  /* 屏幕上这张没打印也能打分：每日一卷只限今天和以前的卷（明天的预出卷还没到考的时候），本周卷、错字卷随时 */
+  if (S.rateDrawer) {
+    S.rateDrawer.allowUnprinted(function (cur) {
+      var ref = cur.info.ref || {}
+      return ref.kind === 'daily' ? ref.d <= S.shiziMark.today() : true
+    })
+  }
 
   /* ---------- 历史页（只在屏幕上，不印） ---------- */
 
@@ -602,7 +513,7 @@
     var lessonBox = isRj(settings) ? lessonTable(settings, h.marks) : ''
     if (!st.total) {
       box.innerHTML = '<div class="hist">' + lessonBox + '<p class="hist-empty">还没有错过的字。' +
-        '在每日一卷或' + (isRj(settings) ? '单元检查' : '本周复习') + '的卷面上点孩子念不出来的字，登记后就会记到这里。</p></div>'
+        '在每日一卷或' + (isRj(settings) ? '单元检查' : '本周复习') + '考完，点顶栏「打分」把孩子念不出来的字点出来，提交后就会记到这里。</p></div>'
       return
     }
     var cards = [
@@ -681,15 +592,10 @@
   /* 只刷错字集那一块 + 页签徽标。标记动作走这条路，不碰 #preview */
   function refreshMarkPanel() {
     fillTabs(settings)
-    if (settings.mode === 'daily') paintDailyBtns()
     $('mark-hint').innerHTML = markHint(settings)
     var rep = repeatsHtml()
     $('mark-repeats').hidden = !rep
     $('mark-repeats').innerHTML = rep
-    var settle = settleHtml()
-    $('settle').hidden = !settle
-    $('settle').innerHTML = settle
-
     /* 附页开关只在「本周复习」下露面；错字集空的时候留着但点不动，
        比整个藏起来好 —— 至少看得见有这么个东西，攒够字自己会亮。 */
     var n = wrongSize()
@@ -778,7 +684,7 @@
       var last = S.shiziMark.paperCount() ? S.shiziMark.paperAt(S.shiziMark.paperCount() - 1) : null
       if (last && !last.settled && !S.shiziMark.pickCount()) {
         S.shiziMark.discardPaper()
-        browseIdx = null
+        skipPaperRecords(last)
       }
     }
     refresh()
@@ -937,7 +843,6 @@
 
   function gotoMode(mode) {
     if (mode === settings.mode) return
-    browseIdx = null // 离开又回来，先看最新一张，别停在刚才翻的往期上
     settings = S.shiziSettings.sanitize(Object.assign({}, settings, { mode: mode }))
     refresh()
   }
@@ -1001,7 +906,7 @@
    */
   /*
    * 用人教版时，最新那张还没考的卷子上如果有课本外的字（旧版规则下出的卷：某恩的错字也上卷），
-   * 而且还没点过字，就按现在的规则重出一张。点过字的不动，免得丢标记；登记过的卷绝不改。
+   * 而且还没点过字，就按现在的规则重出一张。点过字的不动，免得丢标记；打过分的卷绝不改。
    */
   function refreshStalePaper() {
     if (!isRj(settings)) return
@@ -1009,11 +914,10 @@
     var last = n ? S.shiziMark.paperAt(n - 1) : null
     if (!last || last.settled || S.shiziMark.pickCount()) return
     var off = Array.from(last.chars).some(function (ch) { return !S.shizi.inScope(ch) })
-    if (off) S.shiziMark.discardPaper()
+    if (off && S.shiziMark.discardPaper()) skipPaperRecords(last)
   }
 
   S.shiziMark.onChange(refreshMarkPanel)
-  S.shiziMark.bind()
   refreshStalePaper()
   refresh()
 

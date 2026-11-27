@@ -290,7 +290,7 @@
     if (!SC || !store || !store.keys) return out
     var recs
     try { recs = SC.records(store) } catch (e) { return out }
-    /* 识字、拼音在本页登记过也算：sheets.markDone 会写 done */
+    /* 识字、拼音打过分：mark-panel 提交时写 done */
     SC.PRACTICE.forEach(function (m) {
       var n = SC.pending(recs, today, m).length
       if (n) out.pendingBy.push({ module: m, label: SC.MODULE_LABEL[m], n: n })

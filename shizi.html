@@ -11,6 +11,7 @@
   <meta name="description" content="给孩子打印 A4 练习纸 · 识字：按学习顺序每周复习 100 个字，只印字不印拼音，孩子念家长听，错字集反复练。" />
   <link rel="stylesheet" href="css/app.css?v=5584f5f2b2" />
   <link rel="stylesheet" href="css/sheet.css?v=239fc79b03" />
+  <link rel="stylesheet" href="css/rate.css?v=a9ad659326" />
   <link rel="stylesheet" href="css/shizi.css?v=b4a7d084d2" />
   <!-- 识字页固定 A4 纵向（字格是方的，横竖都能排，纵向一页装得下 100 字就够了） -->
   <style>@page { size: A4 portrait; margin: 15mm; }</style>
@@ -52,6 +53,7 @@
     <h1 class="work-title">识字</h1>
     <span class="work-sum" id="work-sum"></span>
     <span class="work-grow"></span>
+    <button type="button" id="btn-swap" class="btn" hidden title="不想做这张：按现在的错字重新出一张"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/></svg>换一张</button>
     <button type="button" id="btn-print" class="btn btn-primary btn-lg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V4h10v5M7 17H5a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2M7 14h10v6H7z"/></svg><span class="txt">打印复习卷</span></button>
   </header>
 
@@ -107,25 +109,13 @@
         <p class="hint" id="book-hint"></p>
       </section>
 
-      <!-- 每日一卷的状态与操作。卷面在左边纸张区：生成后字固定，登记/作废才出下一张 -->
+      <!-- 每日一卷的状态。打分在顶栏「打分」抽屉里，打了分才出下一张；想换一张在顶栏点「换一张」 -->
       <section class="group" id="sec-daily" hidden>
         <p class="hint" id="daily-status"></p>
-        <div class="week-nav">
-          <button type="button" id="btn-daily-allok" class="btn btn-sm daily-allok" aria-pressed="false">全对</button>
-          <button type="button" id="btn-daily-settle" class="btn btn-sm btn-primary" disabled>提交</button>
-          <button type="button" id="btn-daily-undo" class="btn btn-sm" hidden>撤销登记</button>
-          <button type="button" id="btn-daily-drop" class="btn btn-sm" hidden>作废重来</button>
-        </div>
-        <div class="pair" id="daily-browse" hidden>
-          <button type="button" id="btn-paper-prev" class="btn btn-sm">◀</button>
-          <p class="hint" id="paper-which" style="flex:1;text-align:center;margin:0"></p>
-          <button type="button" id="btn-paper-next" class="btn btn-sm">▶</button>
-        </div>
       </section>
 
       <section class="group mark-legend" id="mark-legend">
         <div class="group-title">卷面标记</div>
-        <span><i class="sw pick"></i>点了：这次没认出，登记时记下</span>
         <span><i class="sw"></i>在错字集里，右上角是还差几次认出</span>
         <span><i class="sw half"></i>认出过一次，3 天后复核</span>
         <span><i class="n">×2</i>累计错过几次</span>
@@ -197,8 +187,6 @@
           <input type="checkbox" id="f-withwrong" /><span>附一页错字（抽 20 个，错得多的优先）</span>
         </label>
         <p class="hint" id="mark-hint"></p>
-        <!-- 复习结算：卷面上有旧错字时出现。内容由 shizi-main.js 填 -->
-        <div class="settle" id="settle" hidden></div>
         <!-- 一行历史摘要 + 去「历史」页签的按钮。一个字都没错过时藏起来 -->
         <div class="hist-link" id="mark-repeats" hidden></div>
         <div class="week-nav">
@@ -255,28 +243,31 @@
 
 <!-- render.js 只为取 parts 零件与 refreshDates，不会渲染口算内容 -->
 <script src="js/store.js?v=c6aac93871"></script>
-<script src="js/sheets-core.js?v=d8d190961b"></script>
+<script src="js/sheets-core.js?v=aa0b516622"></script>
 <script src="js/vendor/qrcode.js?v=18ae399f81"></script>
-<script src="js/sheets.js?v=7a2984381a"></script>
+<script src="js/sheets.js?v=f2ada366ff"></script>
+<script src="js/rate.js?v=b53768e997"></script>
+<script src="js/mark-panel.js?v=67cedc7b9f"></script>
+<script src="js/rate-drawer.js?v=5671b7c0c9"></script>
 <script src="js/shell.js?v=6972c54f86"></script>
 <script src="js/render.js?v=7ee86eb2c8"></script>
 <script src="js/shizi-data.js?v=c3c3176849"></script>
 <script src="js/shizi-rj-data.js?v=ad8f51d677"></script>
 <script src="js/shizi-core.js?v=c1cb54e5fc"></script>
-<script src="js/shizi-settings.js?v=1eac542a09"></script>
+<script src="js/shizi-settings.js?v=00a71ed5ee"></script>
 <script src="js/shizi-render.js?v=ed9452eb5d"></script>
 <script src="js/shizi-xie-data.js?v=3ae3a6ee1a"></script>
 <script src="js/vendor/hanzi-writer.min.js?v=17b11a1e02"></script>
 <script src="js/shizi-xie.js?v=8e8b3dc002"></script>
 <script src="js/shizi-mark.js?v=99a04d2600"></script>
 <script src="js/full-lock.js?v=e23a66afee"></script>
-<script src="js/shizi-main.js?v=3e22054426"></script>
-<script src="js/backup.js?v=f21895fa7e"></script>
-<script src="js/help.js?v=523e87fc5d"></script>
+<script src="js/shizi-main.js?v=d54bf7b173"></script>
+<script src="js/backup.js?v=5af8e1e7ac"></script>
+<script src="js/help.js?v=0e020d312b"></script>
 <script src="js/account.js?v=c12ade27c9"></script>
 <script src="js/account-ui.js?v=61f2ffe1e9"></script>
 <script src="js/sync-core.js?v=5f4122b899"></script>
-<script src="js/sync.js?v=13dd97b911"></script>
+<script src="js/sync.js?v=accb9217c5"></script>
 <script>
 /* 防护：主脚本没跑完（加载失败或新旧文件混跑）时自动刷新一次，仍不行就在顶部提示，避免页面静默空白 */
 (function () {

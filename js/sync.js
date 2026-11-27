@@ -290,8 +290,9 @@
     if (typeof fn === 'function') outboxFns.push(fn)
   }
 
-  /* 只拉取、只补本机没有或更旧的键（登记页等电脑上传那张纸时用）：返回补了几条 */
-  async function pullMissing(filter) {
+  /* 只拉取、只补本机没有或更旧的键（打分页等电脑上传那张纸、打分抽屉打开时用）：返回补了几条。
+     applied 给了就把补上的键名放进去（抽屉据此判断要不要刷新页面） */
+  async function pullMissing(filter, applied) {
     var A = root.SumSum.account
     if (!A || !A.state || !A.state.loggedIn) return 0
     var r = await defaultApi().pull()
@@ -303,6 +304,7 @@
       if (filter && !filter(it.key)) return
       if (store.getString(it.key) !== null && (meta[it.key] || 0) >= it.updated_at) return
       store.applyRemote(it.key, it.value, it.updated_at)
+      if (applied) applied.push(it.key)
       n++
     })
     return n

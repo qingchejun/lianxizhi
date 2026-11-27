@@ -130,7 +130,7 @@ with sync_playwright() as p:
         check('免费版识字：' + name + '显示「完整版功能」、打印按钮不可用', page.query_selector('#preview .full-lock') is not None and page.is_disabled('#btn-print'))
     check('识字页签上有小锁', len(page.query_selector_all('.tab-lock')) >= 3)
     page.goto(BASE + '/pinyin')
-    page.wait_for_selector('#py-rate .rate', timeout=15000)
+    page.wait_for_selector('#py-rate', timeout=15000)
     check('免费版拼音：今日卷能用', page.query_selector('#preview .full-lock') is None)
     page.goto(BASE + '/pinyin?view=topics')
     page.wait_for_selector('#preview .full-lock', timeout=15000)

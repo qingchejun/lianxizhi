@@ -1,11 +1,11 @@
 /**
- * 纸角二维码 + 打印时登记纸记录（扫码登记的电脑端）。
+ * 纸角二维码 + 打印时记下纸记录（扫码打分的电脑端）。
  *
  * 各板块渲染完一张纸就调 SumSum.sheets.use({...})：算纸号、把二维码插进第一张题目页的页眉。
  * 真正写记录是在打印那一刻（beforeprint，连 Ctrl/Cmd+P 也接得住）——只渲染不打印的纸不留痕。
  * 写完立刻盖「现在」的时间戳：store.set 首次写入记的是 1（播种），不盖会被 60 天清理当成旧纸删掉。
  *
- * 顶栏另加一个「打分」按钮：电脑上也能直接去打分页（/mark?module=…，只看这个板块的待打分和历史）。
+ * 顶栏另加一个「打分」按钮：点开右侧打分抽屉（js/rate-drawer.js，和手机扫码打分页同一个组件），按钮上带待打分张数。
  * 只给练习四板块用（口算、奥数、识字、拼音）；游戏 2026-11-27 起不打分、不印二维码。
  *
  * qrSvg 无 DOM 依赖，node 下由 tools/check-sheets.js 校验；其余部分只在浏览器里跑。
@@ -134,14 +134,16 @@
     return id
   }
 
-  /* 把当前这张纸记下来（已有记录就不动，免得重复打印冲掉打分） */
-  function ensureSaved() {
+  /* 把当前这张纸记下来（已有记录就不动，免得重复打印冲掉打分）。
+     quiet：打分抽屉里给没打印过的卷打分时顺手存下，不弹「可以扫码打分了」 */
+  function ensureSaved(quiet) {
+    quiet = quiet === true
     if (!current || !signedIn()) return null
     var S = root.SumSum.store
     var key = C().keyOf(current.id)
     if (S.get(key)) {
       /* 已经记过（重复打印）：不覆盖打分，但再推一次，万一上次没推上去 */
-      pushSheet(key)
+      pushSheet(key, quiet)
       return current.id
     }
     var i = current.info
@@ -156,36 +158,8 @@
     }, Date.now()))
     S.stampNow([key])
     /* 马上推上云：家长打印完常常立刻拿手机扫，不能等普通同步（见 js/sync.js pushNow） */
-    pushSheet(key)
+    pushSheet(key, quiet)
     return current.id
-  }
-
-  /* 在板块页上登记完（识字「登记结果」、拼音逐题登记）：把当前这张纸标成已登记，登记页的待办列表里就不再出现。
-     没打印过（没有记录）就不新建 */
-  function markDone(id) {
-    id = id || (current && current.id)
-    if (!id) return
-    var S = root.SumSum.store
-    var key = C().keyOf(id)
-    var rec = C().parse(S.getString(key))
-    if (!rec || rec.done) return
-    rec.done = true
-    rec.doneAt = Date.now()
-    S.set(key, rec)
-  }
-
-  /* 板块页上撤销登记（识字「撤销登记」）：当前这张纸回到没打分，打分页的待办里重新出现 */
-  function markUndone(id) {
-    id = id || (current && current.id)
-    if (!id) return
-    var S = root.SumSum.store
-    var key = C().keyOf(id)
-    var rec = C().parse(S.getString(key))
-    if (!rec || !rec.done) return
-    delete rec.done
-    delete rec.doneAt
-    rec.wrong = null
-    S.set(key, rec)
   }
 
   /* 打印后提示纸有没有存上云端（sync.js 的待推清单会自动重试）。只在本页打印过才提示 */
@@ -217,14 +191,14 @@
       toastHide = setTimeout(function () { el.hidden = true }, 6000)
     }
   }
-  function pushSheet(key) {
+  function pushSheet(key, quiet) {
     var sync = root.SumSum.sync
     if (!sync || !sync.pushNow) return
     if (!toastHooked && sync.onOutbox) {
       toastHooked = true
       sync.onOutbox(function (info) { toast(info.state) })
     }
-    toastWatching = true
+    if (!quiet) toastWatching = true
     sync.pushNow([key])
   }
   var toastHooked = false
@@ -245,13 +219,15 @@
         if (ui && ui.open) ui.open('login', '登录后就能打分：孩子做完，手机扫一下纸角的二维码点一下哪里错了，下一张就专练这些。')
         return
       }
-      /* 屏幕上这张打印过才带上它（没打印过的纸不记录，见 ensureSaved），否则只看这个板块 */
+      /* 2026-11-27 打分统一：右侧抽屉（js/rate-drawer.js）。没加载抽屉的页面退回打分页 */
+      if (root.SumSum.rateDrawer) return root.SumSum.rateDrawer.open()
       var id = current && root.SumSum.store.get(C().keyOf(current.id)) ? current.id : ''
       root.location.href = '/mark?module=' + module + (id ? '&id=' + id : '')
     })
     /* 口算页「打印」左边还有「打印帮助」「附答案页」（2026-11-25）：打分放在它们前面，让「附答案页」紧挨着「打印」 */
     var anchor = print.parentNode.querySelector('.head-help, .head-check') || print
     print.parentNode.insertBefore(b, anchor)
+    if (root.SumSum.rateDrawer) root.SumSum.rateDrawer.attach(module, b)
   }
 
   if (root.addEventListener && root.document) {
@@ -264,8 +240,6 @@
   root.SumSum.sheets = {
     use: use,
     ensureSaved: ensureSaved,
-    markDone: markDone,
-    markUndone: markUndone,
     current: function () { return current },
     qrSvg: qrSvg,
     signedIn: signedIn,

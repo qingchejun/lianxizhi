@@ -140,7 +140,7 @@
     var papers = Object.keys(data).filter(function (key) {
       return key.indexOf('sumsum:pinyin:sheet:v1:') === 0
     }).length
-    if (papers) lines.push('拼音练习卷：' + papers + ' 张（含已登记的结果）')
+    if (papers) lines.push('拼音练习卷：' + papers + ' 张（含打分结果）')
     var SETTINGS = {
       'sumsum:settings:v1': '口算',
       'sumsum:aoshu:v1': '奥数',

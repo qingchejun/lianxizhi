@@ -2,10 +2,10 @@
  * 拼音板块：按全站骨架排（2026-11 改版）。
  *   中间 = 纸卷预览（pinyin-render.print，已定稿不改）；
  *   右边 = 今日 / 专题 / 课程 / 历史 四个页签。
- *     今日：为什么练这个 → 打分卡（全对或点卡住的题 → 提交，js/rate.js，与扫码打分页同一套）→
+ *     今日：为什么练这个 → 打分状态（打分统一在顶栏「打分」抽屉里，js/rate-drawer.js，与扫码打分页同一个组件）→
  *           家长教学卡、孩子视图 → 字号；
- *     专题 / 课程：目录，每项标状态（没练过 / 待复核 + 日期 / 已稳固），点一项中间出该项纸卷、右边转打分；
- *     历史：出过的卷，卷号醒目，点开补打分。
+ *     专题 / 课程：目录，每项标状态（没练过 / 待复核 + 日期 / 已稳固），点一项中间出该项纸卷；
+ *     历史：出过的卷，卷号醒目，点开可以重印、在抽屉里补打分。
  * 网址决定看哪张卷（?sheet= / ?topic= / ?lesson=&focus= / ?view=），换卷就是换网址——刷新、收藏都还在原处。
  * 2026-11-27 打分改成一步：点了的记 miss，独立组没点的记 ok，选做组按 sheetsCore.pinyinResults 的规则
  * 记没做或 ok（不再分「提示了 / 读成了什么 / 声调错 / 停在哪题」）。pinyin:mark 存储格式不变，derive 照旧。
@@ -137,7 +137,7 @@
           '<td><span class="py-hist-prog' + (result ? ' is-done' : '') + '">' + (result || '没打分') + '</span></td>' +
           '<td class="py-td-act"><a class="btn btn-sm" href="' + href({ sheet: entry.id }) + '">打开</a></td></tr>'
       }).join('')
-      catalogPage('出过的卷', '点开一张，中间显示那张卷的原样，可以重印，也可以补打分。',
+      catalogPage('出过的卷', '点开一张，中间显示那张卷的原样，可以重印，也可以点顶栏「打分」补打。',
         '<table class="py-table"><thead><tr><th>日期</th><th>卷号</th><th>内容</th><th>类型</th><th>打分</th><th></th></tr></thead>' +
         '<tbody>' + rows + '</tbody></table><p class="py-none" hidden>没有找到这个卷号。</p>')
       const find = doc.getElementById('py-find')
@@ -182,9 +182,6 @@
   function marksOf(entry) {
     return data.marks[entry.id] ||= Object.create(null)
   }
-  function savedMarks() {
-    return marksOf(sheet)
-  }
 
   /* ---------- 打分（rate.js）：这张卷换成打分卡要的样子 ---------- */
 
@@ -208,9 +205,6 @@
     }
   }
 
-  function rateRec(entry) {
-    return { id: 'py-' + entry.id, draftId: 'py-' + entry.id, module: 'pinyin', ...rateShape(entry) }
-  }
 
   /* 打过分没有：这张卷上有任何一题记过结果（提交会给每题都写上） */
   function rated(entry) {
@@ -221,17 +215,6 @@
     return Object.keys(marks).filter(k => ['hint', 'miss'].includes(marks[k]?.result))
   }
 
-  function submit(wrong) {
-    const res = S.sheetsCore.pinyinResults(rateShape(sheet), wrong)
-    for (const id of Object.keys(res)) savedMarks()[id] = DB.saveMark(sheet, id, { result: res[id] })
-    /* 这张卷打印过的纸记录（可能不止一条：隔天重印纸号不同）都标成已打分，打分页的待办里就不再出现 */
-    if (S.sheetsCore) {
-      for (const rec of S.sheetsCore.records(S.store)) {
-        if (rec.module !== 'pinyin' || rec.ref?.sheetId !== sheet.id) continue
-        S.store.set(S.sheetsCore.keyOf(rec.id), { ...rec, done: true, doneAt: Date.now(), wrong: wrong.slice() })
-      }
-    }
-  }
 
   /* 教学卡：每组一行（孩子视图 + 卡住时看的教学卡），这一组有卡住的题就默认展开 */
   function teachHTML() {
@@ -275,9 +258,8 @@
       ? '<a class="link-btn py-back" href="pinyin.html?view=' + tab + '">‹ 回' + (tab === 'topics' ? '专题' : '课程') + '目录</a>'
       : tab === 'history' ? '<a class="link-btn py-back" href="pinyin.html?view=history">‹ 回历史卷</a>' : ''
     const done = rated(sheet)
-    const editing = S.rate.draft(rateRec(sheet)).editing
     let after = ''
-    if (done && !editing) {
+    if (done) {
       const next = P.makeSheet(P.addDays(today, 1), P.derive(data.sheets, data.marks, P.addDays(today, 1)))
       after = '<div class="py-next"><span>下次建议</span><b>' + (next ? esc(next.title) : '休息一天') + '</b>' +
         '<p>' + (next ? esc(next.reason) : '明天没有到期要复核的内容。') + '</p></div>'
@@ -289,14 +271,9 @@
         '<p class="py-reason"><span>为什么练这个</span>' + esc(sheet.reason) + '</p>' +
         '<p class="py-meta">' + esc(md(sheet.date)) + ' · 卷号 <b>' + esc(sheet.id) + '</b></p>' +
       '</section>' +
-      '<section class="group py-rate" id="py-rate"><div class="group-title">打分</div>' +
-        S.rate.body(rateRec(sheet), {
-          kind: 'pinyin',
-          done: done,
-          result: resultOf(sheet),
-          canEdit: true,
-          effect: '卡住的内容会安排到后面的卷里再练。'
-        }) +
+      '<section class="group py-rate" id="py-rate"><div class="group-title">这张卷<span class="sub">' +
+        (done ? '已打分：' + esc(resultOf(sheet)) : '还没打分') + '</span></div>' +
+        (done ? '' : '<p class="hint">孩子做完，点顶栏「打分」：全对选「全对」，卡住的题点出来，再提交。手机扫纸角的二维码也行。</p>') +
         (keys ? '<details class="py-keys"><summary>答案</summary><p>' + keys + '</p></details>' : '') +
         after +
       '</section>' +
@@ -392,8 +369,8 @@
     if (sheet) {
       renderPaper()
       render()
-      /* 从扫码打分页跳过来（#mark）：手机上纸在上、打分区在下，直接滚到打分区 */
-      if (root.location.hash === '#mark') doc.getElementById('py-rate')?.scrollIntoView({ block: 'start' })
+      /* 老链接带 #mark（原来从打分页跳过来打分）：直接打开打分抽屉 */
+      if (root.location.hash === '#mark' && S.rateDrawer) root.setTimeout(() => S.rateDrawer.open(), 0)
     } else {
       sumEl.textContent = '今天没有到期的内容'
       host.innerHTML = '<section class="group"><div class="empty">' + ICON.rest + '<b>今天可以休息</b>' +
@@ -419,12 +396,26 @@
       if (group) showKid(true)
       return
     }
-    S.rate.click(event, {
-      load: () => rateRec(sheet),
-      submit: (rec, wrong) => submit(wrong),
-      startEdit: () => stuckKeys(sheet),
-      render
+  })
+
+  /* 打分抽屉（js/rate-drawer.js）：拼音卷是固定的，没打印也能打分；老纸记录（11-27 前打印的，没记题目）
+     按卷号从这台设备的卷里补上题目，照样能打 */
+  if (S.rateDrawer) S.rateDrawer.allowUnprinted(() => true)
+  if (S.markPanel) {
+    S.markPanel.setEnrich(rec => {
+      if (rec.module !== 'pinyin' || rec.items?.length || !rec.ref?.sheetId) return rec
+      const entry = data.sheets.find(x => x.id === rec.ref.sheetId)
+      return entry ? { ...rec, ...rateShape(entry), ref: { sheetId: entry.id, date: entry.date } } : rec
     })
+  }
+  /* 抽屉里提交了拼音的分：每题结果是抽屉写进存储的，这里重读一遍再画右栏和历史 */
+  root.addEventListener('sumsum:rated', event => {
+    if (event.detail?.module !== 'pinyin') return
+    const fresh = DB.read(storage)
+    for (const k of Object.keys(data.marks)) delete data.marks[k]
+    Object.assign(data.marks, fresh.marks)
+    if (sheet) render()
+    else if (['history', 'topics', 'lessons'].includes(view)) catalog()
   })
 
   kid.addEventListener('click', event => {

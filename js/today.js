@@ -159,10 +159,10 @@
       sheetTitle: '拼音练习', face: face,
       title: p.title,
       lines: '<p class="dk-meta">' + (p.printHref
-        ? p.groups + ' 组，' + (p.count ? '已登记 ' + p.count + ' 题' : '还没练') : '也可以按需要手选专题') + '</p>' +
+        ? p.groups + ' 组，' + (p.count ? '已打分 ' + p.count + ' 题' : '还没练') : '也可以按需要手选专题') + '</p>' +
         '',
       printText: p.printHref ? '打印今日卷' : '选专题',
-      more: '去登记'
+      more: '去打分'
     })
   }
 
