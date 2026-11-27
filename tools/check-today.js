@@ -15,6 +15,8 @@
 require("../js/store.js") // 写入收口：各板块 settings 的 save 走它（对缺 localStorage 静默，node 下无害）
 /* 板块脚本都是「挂到 root.SumSum 上」的写法，node 下 root 就是 globalThis */
 require('../js/settings.js')
+require('../js/kousuan-tags.js')
+require('../js/kousuan-mode.js')
 require('../js/aoshu-topics.js')
 require('../js/aoshu-videos.js')
 require('../js/shudu-core.js')
@@ -75,7 +77,9 @@ check(empty.shizi.due === 0, '空浏览器 每日一卷到期数应为 0')
 check(empty.shizi.mode === 'daily', '空浏览器 识字模式应是每日一卷')
 check(empty.shizi.printHref === 'shizi.html#print', '识字打印链接不能带设置参数（带了会忽略本地进度）：' + empty.shizi.printHref)
 
-check(empty.kousuan.title === '加减法混合', '空浏览器 口算标题应是默认模式名：' + empty.kousuan.title)
+var KMd = globalThis.SumSum.kousuanMode
+var defLabel = KMd.resolve(KMd.cleanMode({}, []), []).label
+check(empty.kousuan.title === defLabel && /^人教/.test(defLabel), '空浏览器 口算标题是按教材的默认（人教版、按月份猜的单元）：' + empty.kousuan.title)
 check(empty.kousuan.meta === '20 题 · 3 列 · A4 纵向', '空浏览器 口算摘要：' + empty.kousuan.meta)
 check(empty.kousuan.printHref === 'kousuan.html#print', '口算打印链接：' + empty.kousuan.printHref)
 
@@ -338,13 +342,17 @@ Object.keys(V.list).forEach(function (id) {
   check(n1.pending === 2 && JSON.stringify(n1.pendingBy) === JSON.stringify([{ module: 'kousuan', label: '口算', n: 1 }, { module: 'shizi', label: '识字', n: 1 }]),
     '待打分按板块：只算 2 天内、游戏不算 ' + JSON.stringify(n1))
 
-  /* 口算连续两张会了 → 提示升档；已经换过去就不提示 */
-  put(st, 'k00001', 'kousuan', '2026-11-22', T0 - 5000, { ref: { preset: '10以内加减' }, rating: { all: { level: 'good', at: T0 - 4000 } } })
-  put(st, 'k00002', 'kousuan', '2026-11-23', T0 - 3000, { ref: { preset: '10以内加减' }, rating: { all: { level: 'good', at: T0 - 2000 } } })
-  st.set('sumsum:settings:v1', Object.assign({}, globalThis.SumSum.settings.DEFAULTS, globalThis.SumSum.settings.PRESETS[0].patch))
-  check(T.markNotes(st, '2026-11-23').kousuanUp === '20以内进退位', '口算升档提示')
-  st.set('sumsum:settings:v1', Object.assign({}, globalThis.SumSum.settings.DEFAULTS, globalThis.SumSum.settings.PRESETS[1].patch))
-  check(T.markNotes(st, '2026-11-23').kousuanUp === null, '已经在下一档就不提示')
+  /* 口算同一级连续两张会了 → 提示升到同一类的下一级；已经换过去就不提示；5 级不跳到别的类 */
+  put(st, 'k00001', 'kousuan', '2026-11-22', T0 - 5000, { ref: { preset: 'as1' }, rating: { all: { level: 'good', at: T0 - 4000 } } })
+  put(st, 'k00002', 'kousuan', '2026-11-23', T0 - 3000, { ref: { preset: 'as1' }, rating: { all: { level: 'good', at: T0 - 2000 } } })
+  st.set('sumsum:kousuan:mode:v1', { kind: 'level', pick: 'as1' })
+  var up = T.markNotes(st, '2026-11-23')
+  check(up.kousuanUp === 'as2' && up.kousuanUpName === '加减 2 级 · 20 以内不进位不退位', '口算升级提示 ' + JSON.stringify([up.kousuanUp, up.kousuanUpName]))
+  st.set('sumsum:kousuan:mode:v1', { kind: 'level', pick: 'as2' })
+  check(T.markNotes(st, '2026-11-23').kousuanUp === null, '已经在下一级就不提示')
+  put(st, 'k00001', 'kousuan', '2026-11-22', T0 - 5000, { ref: { preset: 'as5' }, rating: { all: { level: 'good', at: T0 - 4000 } } })
+  put(st, 'k00002', 'kousuan', '2026-11-23', T0 - 3000, { ref: { preset: 'as5' }, rating: { all: { level: 'good', at: T0 - 2000 } } })
+  check(T.markNotes(st, '2026-11-23').kousuanUp === null, '加减 5 级不提示升到乘法')
 
   /* 奥数：上次不会 → 再练；之后标了已学就不提 */
   put(st, 'a00001', 'aoshu', '2026-11-23', T0, { units: [{ key: 'coushi', label: '02 凑十' }], rating: { coushi: { level: 'bad', at: T0 } }, ref: { review: false } })

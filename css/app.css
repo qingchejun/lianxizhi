@@ -1002,6 +1002,104 @@ select.input {
   border-color: var(--blue);
 }
 
+/* ---------- 口算出题方式（2026-11-28）：难度 1–5 级、我的难度 ---------- */
+
+.ks-levels {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.ks-lv-row {
+  display: grid;
+  grid-template-columns: 40px repeat(5, 1fr);
+  align-items: center;
+  gap: 6px;
+}
+
+.ks-lv-row > span {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.ks-lv,
+.ks-chip {
+  height: 32px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.ks-chip {
+  padding: 0 12px;
+  border-radius: 16px;
+}
+
+.ks-lv:hover,
+.ks-chip:hover:not(:disabled) {
+  color: var(--blue);
+  border-color: var(--blue);
+}
+
+.ks-lv.on,
+.ks-chip.on {
+  color: var(--blue);
+  font-weight: 600;
+  background: var(--blue-tint);
+  border-color: var(--blue);
+}
+
+.ks-chip.ks-add {
+  border-style: dashed;
+  color: var(--ink-soft);
+}
+
+.ks-chip:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.ks-mine-h,
+.ks-tags-h {
+  margin: 14px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.ks-mine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ks-edit {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--card-edge);
+  border-radius: 10px;
+  background: var(--field);
+}
+
+.ks-edit .ks-tags-h:first-of-type {
+  margin-top: 8px;
+}
+
+.ks-tags .check {
+  margin: 2px 0;
+}
+
+.ks-edit-act {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 /* 专项练习内页（口算 → 凑十法等）：长得跟预设一样，箭头表示会去另一页 */
 .preset-link { text-decoration: none; }
 .preset-link::after { content: "›"; margin-left: 5px; font-size: 15px; color: var(--ink-faint); }

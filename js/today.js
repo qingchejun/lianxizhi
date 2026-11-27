@@ -270,7 +270,7 @@
       }).join('、') + '。孩子做完后，手机扫纸角的二维码就能打分。</span></p>')
     }
     if (n.kousuanUp) {
-      rows.push('<p><span>口算连续两张都全对或只错 1 题，可以升到「' + esc(n.kousuanUp) + '」。' +
+      rows.push('<p><span>口算连续两张都全对或只错 1 题，可以升到「' + esc(n.kousuanUpName || n.kousuanUp) + '」。' +
         '</span><button type="button" class="btn btn-sm" data-ks-up="' + esc(n.kousuanUp) + '">换到这一档</button></p>')
     }
     if (n.aoshuRetry) {
@@ -289,9 +289,8 @@
       var b = e.target.closest('button')
       if (!b) return
       if (b.dataset.ksUp) {
-        var K = S.settings
-        var p = K.PRESETS.filter(function (x) { return x.label === b.dataset.ksUp })[0]
-        if (p) S.store.set('sumsum:settings:v1', Object.assign({}, K.sanitize(S.store.get('sumsum:settings:v1') || {}), p.patch, { title: '' }))
+        var km = S.store.get('sumsum:kousuan:mode:v1') || {}
+        S.store.set('sumsum:kousuan:mode:v1', Object.assign({}, km, { kind: 'level', pick: b.dataset.ksUp }))
         root.location.reload()
       } else if (b.dataset.aoRetry) {
         S.today.rollAoshu(S.store, b.dataset.aoRetry)

@@ -172,6 +172,22 @@
     var preset = K.presetOf(s)
     var meta = [s.count + ' 题', s.columns + ' 列', PAPER_LABELS[s.paper]]
     if (preset) meta.unshift(mode)
+    /* 2026-11-28 出题方式：按教材 / 按难度。标题用「人教一上 · 20 以内的进位加法」「加减 3 级 · …」或自己难度的名字 */
+    var KM = root.SumSum.kousuanMode
+    var km = readJson(storage, 'sumsum:kousuan:mode:v1')
+    /* 新用户还没存出题方式：口算页默认按教材（老用户第一次打开口算页才迁移，这之前照老设置显示） */
+    if (!isObj(km) && !isObj(raw)) km = {}
+    if (KM && isObj(km)) {
+      var st = { get: function (k) { return readJson(storage, k) } }
+      var plans = KM.readPlans(st)
+      var r = KM.resolve(KM.cleanMode(km, plans), plans)
+      if (r.engine === 'tags') {
+        preset = r.label
+        meta = [s.count + ' 题', s.columns + ' 列', PAPER_LABELS[s.paper]]
+      } else {
+        meta.unshift(r.label)
+      }
+    }
     return {
       title: preset || mode,
       meta: meta.join(' · '),
@@ -297,12 +313,22 @@
       out.pending += n
     })
 
-    var K = root.SumSum.settings
-    if (K) {
-      var label = SC.kousuanUpgrade(recs.filter(function (r) { return r.module === 'kousuan' }), K.PRESETS)
-      var cur = K.sanitize(store.get('sumsum:settings:v1') || {})
-      /* 已经换到那一档了就不再提示 */
-      if (label && K.presetOf(cur) !== label) out.kousuanUp = label
+    /* 升级提示（2026-11-28 改成难度预设）：同一级连着两张全对或只错 1 题 → 提示升到同一类的下一级。
+       各类之间插一个空档，加减 5 级不会提示「乘法 1 级」 */
+    var KT = root.SumSum.kousuanTags
+    if (KT) {
+      var ladder = []
+      ;['as', 'mul', 'div'].forEach(function (g) {
+        for (var n = 1; n <= 5; n++) ladder.push({ label: KT.levelId(g, n) })
+        ladder.push({ label: '' })
+      })
+      var up = SC.kousuanUpgrade(recs.filter(function (r) { return r.module === 'kousuan' }), ladder)
+      var km = store.get('sumsum:kousuan:mode:v1')
+      /* 已经换到那一级了就不再提示 */
+      if (up && !(km && km.kind === 'level' && km.pick === up)) {
+        out.kousuanUp = up
+        out.kousuanUpName = KT.levelName(up)
+      }
     }
 
     var learned = store.get(SC.AOSHU_LEARNED)

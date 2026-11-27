@@ -166,6 +166,12 @@
     S.store.set(SC().keyOf(rec.id), fresh)
   }
 
+  function isParamsPlan(id) {
+    var raw = S.store.get('sumsum:kousuan:plans:v1')
+    var list = raw && Array.isArray(raw.plans) ? raw.plans : []
+    return list.some(function (p) { return p && p.id === id && p.kind === 'params' })
+  }
+
   /* ---------- 面板 ---------- */
 
   /*
@@ -194,7 +200,10 @@
     function effectHTML(rec) {
       if (!SC().rated(rec)) return ''
       if (rec.module === 'kousuan') {
-        var nx = SC().kousuanNext(rec, S.store.get('sumsum:settings:v1') || { carryMode: 'random' })
+        /* 按教材 / 题型出题时没有「多出进位退位」这一调，只再出错题 */
+        var km = S.store.get('sumsum:kousuan:mode:v1')
+        var paramsPlan = !km || (km.kind === 'level' && /^p:/.test(km.pick || '') && isParamsPlan(km.pick.slice(2)))
+        var nx = SC().kousuanNext(rec, paramsPlan ? S.store.get('sumsum:settings:v1') || { carryMode: 'random' } : { carryMode: 'carryonly' })
         var parts = []
         if (nx.mustInclude.length) parts.push('再出这 ' + nx.mustInclude.length + ' 道错题')
         if (nx.carryOverride) parts.push('多出进位、退位的题')
