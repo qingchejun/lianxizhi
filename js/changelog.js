@@ -171,3 +171,4 @@
     root.SumSum.changelog = api
   }
 })(typeof window !== 'undefined' ? window : this)
+/* 2026-11-27 一下上线：换指纹 */

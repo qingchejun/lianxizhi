@@ -11,3 +11,4 @@
   root.SumSum = root.SumSum || {}
   root.SumSum.shiziXieData = { CHARS: CHARS }
 })(typeof window !== 'undefined' ? window : globalThis)
+/* 2026-11-27 一下上线：换指纹 */
