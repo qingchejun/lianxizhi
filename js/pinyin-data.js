@@ -94,7 +94,7 @@
    * 方向号不能改：老卷子按方向号存（group.direction），lesson-1…lesson-14 里和新课内容相同的照用老号，
    * 进度接得上；内容变了的另起新号（lesson-yw / lesson-ai / lesson-ao / lesson-an）。
    * 老课程里不再用的 lesson-13（an en in）留在 directions 里、标 legacy：老卷子能打开、到期的复习照排，但不再当新内容出。
-   * 每课一张教学卡 teach：发音、口诀、易错、书写（四线格）、例词。不做读音。
+   * 每课一张教学卡 teach：发音、口诀、易错、书写（四线格）、例词。不做读音（2026-11-27 上线）。
    */
   function letters(id, topic, label, samples, tip, demo) {
     add(id, topic, label, 'letter', samples, tip, demo, '指着示范项跟读/换个顺序辨读')
