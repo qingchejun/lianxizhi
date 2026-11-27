@@ -240,12 +240,14 @@
       book: els.book.value,
       /* 「学到第几课」只在人教版下从下拉框读；某恩下下拉框是空的，沿用记着的值，
          切回人教版时进度还在（sanitize 会按所选那一册钳位） */
-      lesson: els.book.value === settings.book && isRj(settings) ? els.lesson.value : settings.lesson,
+      lesson: els.book.value === settings.book && isRj(settings) ? els.lesson.value
+        /* 统编版换了一册（一上 ↔ 一下）：课号不通用。换到下册从第 1 课算起，换回上册算整册学过 */
+        : isRj(settings) && els.book.value !== S.shizi.HONGEN ? (rjPrev(els.book.value) ? 1 : 0) : settings.lesson,
       unit: settings.unit,
       order: isRj(settings) && els.order.value ? els.order.value : settings.order,
       pane: settings.pane, // 认字/写字 由顶上的开关管
       /* 写字的三项只在写字面板开着时从表单读（认字时那几个框没填过，读出来是第一个选项） */
-      xieLesson: settings.pane === 'xie' && els.xieLesson.value !== '' ? els.xieLesson.value : settings.xieLesson,
+      xieLesson: els.book.value !== settings.book ? 0 : settings.pane === 'xie' && els.xieLesson.value !== '' ? els.xieLesson.value : settings.xieLesson,
       xieSize: settings.pane === 'xie' ? els.xieSize.value || settings.xieSize : settings.xieSize,
       xieTrace: settings.pane === 'xie' ? els.xieTrace.value || settings.xieTrace : settings.xieTrace,
       mode: settings.mode, // 模式不是表单项，由页签管
@@ -763,6 +765,11 @@
    * 换字表 / 改「学校学到」：今天那张每日卷如果还没点过字，按新字表重出一张
    * （不然切到人教版，卷上还是某恩的字）；点过字的不动，免得把孩子的标记弄丢，下一张自然按新字表出。
    */
+  function rjPrev(book) {
+    var b = S.shiziRjData && S.shiziRjData.BOOKS[book]
+    return b ? b.prev || '' : ''
+  }
+
   function onBookChange() {
     var before = settings.book + ':' + settings.lesson + ':' + settings.order
     settings = readForm()
@@ -883,7 +890,7 @@
     var l = fillXie(settings)
     var box = $('preview')
     if (!l) {
-      box.innerHTML = '<div class="empty"><b>写字要用统编版字表</b><p>在右边「字表」里选「统编版（人教社）一年级上册」，这里就会按课出田字格练字纸。</p></div>'
+      box.innerHTML = '<div class="empty"><b>写字要用统编版字表</b><p>在右边「字表」里选统编版（人教社）一年级上册或下册，这里就会按课出田字格练字纸。</p></div>'
       $('btn-print').disabled = true
       $('pages-hint').textContent = ''
       S.shell.summary(['写字'])

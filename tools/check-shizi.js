@@ -908,6 +908,36 @@ function checkRj() {
   if (all.length - n !== 4) bad('人教版一上：书上蓝字（重复出现的多音字）应为 4 个，实际 ' + (all.length - n))
   if (lessons !== 38) bad('人教版一上：应为 38 课（含语文园地），实际 ' + lessons)
 
+  /* 2026-11-27 对着课本页面图片发现「语文园地八」错录成「旦」，课本是「元」 */
+  if (b.units[7].lessons[3][2] !== '牛羊爪元拼音') bad('人教版一上：语文园地八应为「牛羊爪元拼音」')
+
+  /* 一年级下册（rj1b）：书后「共 410 个生字」、蓝色多音字 9 个、写字表 200 字；已学的字含一上整册 */
+  var b2 = B.rj1b
+  if (!b2) return bad('人教版：没有 rj1b')
+  if (b2.prev !== 'rj1a') bad('一下：prev 应指一上')
+  var all2 = [], set2 = {}
+  b2.units.forEach(function (u) {
+    u.lessons.forEach(function (l) {
+      Array.from(l[2]).forEach(function (ch) { all2.push(ch); set2[ch] = true })
+    })
+  })
+  if (Object.keys(set2).length !== 410 + 3) bad('一下：去重后应为 410 个生字加 3 个一上学过的蓝字（只、了、空；乐得背呀结哪的黑字在本册前面），实际 ' + Object.keys(set2).length)
+  if (all2.length !== 419) bad('一下：识字表应有 419 个字位（410 + 9 个蓝字），实际 ' + all2.length)
+  if (Z.lessonsOf('rj1b').length !== 36) bad('一下：应为 36 课（含语文园地），实际 ' + Z.lessonsOf('rj1b').length)
+  var xie2 = b2.xie.map(function (r) { return r[1] }).join('')
+  if (Array.from(xie2).length !== 200) bad('一下写字表：应为 200 字')
+  var lessonNames = {}
+  Z.lessonsOf('rj1b').forEach(function (l) { lessonNames[l.t] = true })
+  b2.xie.forEach(function (r) { if (!lessonNames[r[0]]) bad('一下写字表：课名「' + r[0] + '」对不上识字表') })
+  var XD = globalThis.SumSum.shiziXieData
+  if (XD) Array.from(xie2 + b.xie.map(function (r) { return r[1] }).join('')).forEach(function (ch) {
+    if (!XD.CHARS[ch]) bad('写字：「' + ch + '」没有笔顺图形')
+  })
+  var l1 = Z.learnedChars('rj1b', 1)
+  if (l1.length !== 280 + 8 || l1.slice(0, 8).join('') !== '霜吹落降飘游池入') bad('一下学到第 1 课：先是识字 1 的 8 个字，再是一上 280 字，实际 ' + l1.length)
+  if (Z.learnedChars('rj1b', 0).length !== 280 + 410) bad('一下整册：一上 280 + 一下 410 个生字，实际 ' + Z.learnedChars('rj1b', 0).length)
+  if (!Z.seqWhere('rj1b', 1, 8, 1).lesson || Z.seqWhere('rj1b', 1, 8, 1).lesson.t !== '识字 1' || Z.seqWhere('rj1b', 1, 8, 1).ch !== '天') bad('seqWhere：一下的进度里一上的字要能找到所在的课')
+
   if (Z.lessonsOf('rj1a').length !== 38) bad('lessonsOf：应为 38 课')
   if (Z.learnedChars('rj1a', 0).length !== 280) bad('learnedChars：0 = 整册，应为 280 字')
   if (Z.learnedChars('rj1a', 1).join('') !== '天地人你我他') bad('learnedChars：学到第 1 课只有识字 1 的字')

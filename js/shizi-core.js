@@ -129,13 +129,16 @@
     })
   }
 
-  /* 学到第 lesson 课为止教过的全部字 */
+  /* 学到第 lesson 课为止教过的全部字。下册（prev 指上册）还算上前面各册整册的字，
+     排在本册的字后面：按课本顺序出卷时先走本册新学的字，再轮到上册的复习 */
   function learnedChars(book, lesson) {
     var ls = lessonsOf(book)
     if (!ls.length) return []
     var n = clampIndex(lesson, ls.length, ls.length)
+    var b = rjBooks()[book]
     var all = []
     ls.slice(0, n).forEach(function (l) { Array.prototype.push.apply(all, l.chars) })
+    if (b.prev && b.prev !== book) Array.prototype.push.apply(all, learnedChars(b.prev, 0))
     return uniq(all)
   }
 
@@ -207,9 +210,12 @@
   function seqWhere(book, lesson, next, round) {
     var list = learnedChars(book, lesson)
     var ch = list[next >= 0 && next < list.length ? next : 0]
-    var ls = lessonsOf(book)
-    for (var k = 0; k < ls.length; k++) {
-      if (ls[k].chars.indexOf(ch) >= 0) return { round: round || 1, lesson: ls[k], ch: ch, at: next, of: list.length }
+    /* 下册的「已学」里也有上册的字：本册找不到就往前面的册找 */
+    for (var bk = book, guard = 0; bk && guard < 12; bk = (rjBooks()[bk] || {}).prev, guard++) {
+      var ls = lessonsOf(bk)
+      for (var k = 0; k < ls.length; k++) {
+        if (ls[k].chars.indexOf(ch) >= 0) return { round: round || 1, lesson: ls[k], ch: ch, at: next, of: list.length }
+      }
     }
     return { round: round || 1, lesson: null, ch: ch, at: next, of: list.length }
   }
