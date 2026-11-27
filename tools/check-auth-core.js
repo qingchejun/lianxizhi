@@ -496,6 +496,34 @@ import('../server/auth-core.js').then(async function (A) {
   W.users[0].banned = 1
   check('通知我：停用的账号 → 401', (await A.wantFull(W, { uid: 'w1', pwver: 2 }, T, true)).status === 401)
 
+  /* --- 7 天完整版体验（2026-11-27）--- */
+  var DAY7 = 7 * 86400 * 1000
+  check('planOf：完整版账号不看到期日', A.planOf({ plan: 'full', full_until: 0 }, T) === 'full')
+  check('planOf：免费账号体验期内算完整版', A.planOf({ plan: 'free', full_until: T + 1 }, T) === 'full')
+  check('planOf：体验到期回免费版', A.planOf({ plan: 'free', full_until: T }, T) === 'free' && A.planOf({ plan: 'free' }, T) === 'free')
+  check('basePlan 只看账号本身', A.basePlan({ plan: 'free', full_until: T + 1 }) === 'free')
+  var gt = gu.full_until - gu.created_at
+  check('谷歌新建的免费账号送 7 天', gt === DAY7, gu)
+  check('trialEmail：Gmail 去点、去 +后缀，googlemail 同 gmail', A.trialEmail('A.B.c+x@GMail.com') === 'abc@gmail.com' && A.trialEmail('ab.c@googlemail.com') === 'abc@gmail.com')
+  check('trialEmail：别的邮箱只去 +后缀、留点', A.trialEmail('a.b+x@qq.com') === 'a.b@qq.com')
+  var R2 = memRepo()
+  await A.googleLogin(R2, T, { email: 'kid.mom@gmail.com' })
+  await A.googleLogin(R2, T, { email: 'kidmom+2@gmail.com' })
+  var r2u = R2.users.find(function (u) { return u.email === 'kidmom+2@gmail.com' })
+  check('同一个 Gmail 的别名不再送体验', R2.users[0].full_until === T + DAY7 && r2u && r2u.full_until === 0, R2.users)
+
+  var P = memRepo()
+  P.users.push({ id: 'p1', email: 'p@x.co', pwver: 1, verified: 1, plan: 'free', full_until: T + DAY7 })
+  var ps = await A.openSession(P, 'p1', T)
+  var pm = await A.meBySession(P, { uid: 'p1', pwver: 1, sid: ps }, T + 1000)
+  check('体验期 /me：plan=full、base=free、带到期日', pm.body.plan === 'full' && pm.body.base === 'free' && pm.body.full_until === T + DAY7, pm.body)
+  var pm2 = await A.meBySession(P, { uid: 'p1', pwver: 1, sid: ps }, T + DAY7 + 1)
+  check('体验结束 /me：plan=free、仍带到期日（页面据此说「体验已结束」）', pm2.body.plan === 'free' && pm2.body.full_until === T + DAY7, pm2.body)
+  P.users.push({ id: 'p2', email: 'p2@x.co', pwver: 1, verified: 1, plan: 'full', full_until: 0 })
+  var ps2 = await A.openSession(P, 'p2', T)
+  var pm3 = await A.meBySession(P, { uid: 'p2', pwver: 1, sid: ps2 }, T)
+  check('完整版 /me：full_until=0', pm3.body.plan === 'full' && pm3.body.base === 'full' && pm3.body.full_until === 0, pm3.body)
+
   console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ auth-core 注册/验证码全部通过')
   process.exit(bad ? 1 : 0)
 }).catch(function (e) { console.error(e); process.exit(1) })

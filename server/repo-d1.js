@@ -8,8 +8,8 @@ export function repo(db) {
       return (await db.prepare('SELECT * FROM users WHERE id=?').bind(id).first()) || null
     },
     async insertUser(u) {
-      await db.prepare('INSERT INTO users(id,email,pw_hash,pw_salt,pwver,verified,admin,invite_id,created_at,plan) VALUES(?,?,?,?,?,?,?,?,?,?)')
-        .bind(u.id, u.email, u.pw_hash, u.pw_salt, u.pwver, u.verified || 0, u.admin || 0, u.invite_id || null, u.created_at, u.plan || 'free').run()
+      await db.prepare('INSERT INTO users(id,email,pw_hash,pw_salt,pwver,verified,admin,invite_id,created_at,plan,full_until) VALUES(?,?,?,?,?,?,?,?,?,?,?)')
+        .bind(u.id, u.email, u.pw_hash, u.pw_salt, u.pwver, u.verified || 0, u.admin || 0, u.invite_id || null, u.created_at, u.plan || 'free', u.full_until || 0).run()
     },
     /* 改账号版本（注册时带的邀请码补认、管理员手动开通）；inviteId 不给就不动 invite_id */
     async setPlan(id, plan, inviteId) {
@@ -113,6 +113,9 @@ export function repo(db) {
           id
         ).run()
     },
+    async setFullUntil(id, t) {
+      await db.prepare('UPDATE users SET full_until=? WHERE id=?').bind(t, id).run()
+    },
     async setVerified(id) {
       await db.prepare('UPDATE users SET verified=1 WHERE id=?').bind(id).run()
     },
@@ -177,7 +180,7 @@ export function repo(db) {
       return r.results || []
     },
     async usersList() {
-      const r = await db.prepare('SELECT id, email, plan, verified, banned, admin, invite_id, created_at FROM users ORDER BY created_at DESC').all()
+      const r = await db.prepare('SELECT id, email, plan, full_until, verified, banned, admin, invite_id, created_at FROM users ORDER BY created_at DESC').all()
       return r.results || []
     },
     async invitesList() {

@@ -7,17 +7,31 @@
     })[char])
   }
 
+  /* 标题、教学卡里夹着的拼音字母也用拼音字体（单层 ɑ、ɡ），不然印出来是英文的双层 a、g（2026-11-27 站长实拍发现）。
+     先切段再转义，免得把 &amp; 这类转义里的字母也包进去 */
+  const LATIN = /[A-Za-zÀ-ʯ\u0300-\u036f]+/g
+  function latin(value) {
+    const text = String(value ?? '')
+    let out = ''
+    let last = 0
+    for (const m of text.matchAll(LATIN)) {
+      out += escape(text.slice(last, m.index)) + '<span class="py-latin">' + escape(m[0]) + '</span>'
+      last = m.index + m[0].length
+    }
+    return out + escape(text.slice(last))
+  }
+
   const circled = ['①', '②', '③', '④', '⑤', '⑥']
 
   function steps(list) {
-    return list.map((text, index) => (circled[index] || (index + 1) + '.') + ' ' + escape(text)).join('　')
+    return list.map((text, index) => (circled[index] || (index + 1) + '.') + ' ' + latin(text)).join('　')
   }
 
   // Teaching card as labelled lines: what to watch, how to explain, a demo, then numbered guide steps.
   function teachingLines(card) {
-    return (card.probe ? '<p><b>先观察</b>　' + escape(card.probe) + '</p>' : '') +
-      '<p><b>怎么讲</b>　' + escape(card.tip) + '</p>' +
-      '<p><b>示范</b>　' + escape(card.demo) + '</p>' +
+    return (card.probe ? '<p><b>先观察</b>　' + latin(card.probe) + '</p>' : '') +
+      '<p><b>怎么讲</b>　' + latin(card.tip) + '</p>' +
+      '<p><b>示范</b>　' + latin(card.demo) + '</p>' +
       '<p><b>引导</b>　' + steps(card.guide) + '</p>'
   }
 
@@ -60,10 +74,10 @@
     const keys = answers(sheet.groups)
     const range = ids => ids.length > 2 ? ids[0] + '–' + ids.at(-1) : ids.join('、')
     return '<article class="sheet pinyin-print"><header class="sheet-head"><div class="sheet-title">拼音练习 · ' +
-      escape(sheet.title) + '</div><div class="sheet-meta">' + escape(sheet.date) + '　卷号 ' + escape(sheet.id) +
+      latin(sheet.title) + '</div><div class="sheet-meta">' + escape(sheet.date) + '　卷号 ' + escape(sheet.id) +
       '</div></header>' +
       sheet.groups.map(group =>
-        '<section class="py-group"><h3>' + (group.phase === 'check' ? '换题再试 · ' : '') + escape(group.label) +
+        '<section class="py-group"><h3>' + (group.phase === 'check' ? '换题再试 · ' : '') + latin(group.label) +
         (when[group.phase] ? '<small>' + when[group.phase] + '</small>' : '') +
         '</h3><ol class="py-cells">' + group.items.map(cell).join('') + '</ol></section>'
       ).join('') + '<aside class="py-parent"><h3>给家长</h3><p>' + instructions + '</p>' +
@@ -71,10 +85,10 @@
       (keys ? '<p><b>答案</b>　' + keys + '</p>' : '') +
       sheet.cards.map(card => {
         const group = sheet.groups.find(entry => entry.id === card.group)
-        return '<div class="py-card"><h4>' + escape(card.label) + (group ? ' · 讲完做第 ' +
+        return '<div class="py-card"><h4>' + latin(card.label) + (group ? ' · 讲完做第 ' +
           range(group.items.map(item => escape(item.id))) + ' 题' : '') + '</h4>' + teachingLines(card) + '</div>'
       }).join('') + '</aside><div class="py-sign">纸和笔 · zhihebi.com</div></article>'
   }
 
-  root.SumSum.pinyinRender = { escape, teaching, prompt, print, answers }
+  root.SumSum.pinyinRender = { escape, latin, teaching, prompt, print, answers }
 })(window)

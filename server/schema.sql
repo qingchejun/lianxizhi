@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS users(
   banned INTEGER NOT NULL DEFAULT 0,
   invite_id TEXT,
   created_at INTEGER NOT NULL,
-  plan TEXT NOT NULL DEFAULT 'free' /* free = 免费版（口算、数独）；full = 完整版。见 tools/migrate-20261124-plan.sql */
+  plan TEXT NOT NULL DEFAULT 'free', /* free = 免费版；full = 完整版（邀请码，永久）。见 tools/migrate-20261124-plan.sql */
+  full_until INTEGER NOT NULL DEFAULT 0 /* 免费账号的完整版到期时间（毫秒）：注册送 7 天体验，以后年卡也写这里。见 tools/migrate-20261127-full-until.sql */
 );
 CREATE TABLE IF NOT EXISTS data(
   user_id TEXT NOT NULL,

@@ -125,9 +125,15 @@ export async function listUsers(repo, session, now) {
   if (gate) return gate
   now = now || Date.now()
   const rows = await repo.usersList()
+  const marked = await markedByUser(repo, now)
   const users = rows.map(function (u) {
+    const free = u.plan === 'free'
+    const until = free ? Number(u.full_until) || 0 : 0
     return {
-      id: u.id, email: u.email, plan: u.plan === 'free' ? 'free' : 'full',
+      id: u.id, email: u.email, plan: free ? 'free' : 'full',
+      /* 免费账号的 7 天体验（2026-11-27）：trial = 还在体验期，ended = 体验已结束 */
+      full_until: until, trial: until > now, ended: until > 0 && until <= now,
+      marked7d: marked[u.id] || 0,
       verified: !!u.verified, banned: !!u.banned, admin: !!u.admin,
       invited: !!u.invite_id, created_at: u.created_at
     }
@@ -139,7 +145,11 @@ export async function listUsers(repo, session, now) {
     full: ok.filter(function (u) { return u.plan === 'full' }).length,
     new1d: ok.filter(function (u) { return u.created_at >= now - DAY_MS }).length,
     new7d: ok.filter(function (u) { return u.created_at >= now - 7 * DAY_MS }).length,
-    unverified: users.length - ok.length
+    unverified: users.length - ok.length,
+    trial: ok.filter(function (u) { return u.trial }).length,
+    ended: ok.filter(function (u) { return u.ended }).length,
+    /* 体验结束后近 7 天还在打分的：4 月决定要不要继续投入时看这个数 */
+    endedActive: ok.filter(function (u) { return u.ended && u.marked7d > 0 }).length
   }
   return { status: 200, body: { ok: true, stats: stats, users: users } }
 }
@@ -153,5 +163,7 @@ export async function setUserPlan(repo, session, now, body) {
   const user = await repo.userById(id)
   if (!user) return { status: 404, body: { ok: false, error: '没有这个账号。' } }
   await repo.setPlan(id, plan)
+  /* 改回免费版就是不给完整版了：7 天体验 / 年卡的到期日一起清掉（审查 11-27） */
+  if (plan === 'free' && repo.setFullUntil) await repo.setFullUntil(id, 0)
   return { status: 200, body: { ok: true } }
 }

@@ -14,6 +14,28 @@ const MAIL_HOUR_MAX = 3
 /* ---- 2026-11-24 放开注册：免费版 / 完整版，发信总量与按地址限流（方案 open-register-full-plan.md） ---- */
 export const PLAN_FREE = 'free'
 export const PLAN_FULL = 'full'
+/* 2026-11-27 站长定：新注册的免费账号送 7 天完整版体验（users.full_until），到期回免费版，数据不动。
+   以后年卡也写 full_until（买的那天 + 一年）；邀请码账号 plan=full，永久完整版，不看 full_until */
+export const TRIAL_DAYS = 7
+
+/* 一个邮箱只送一次体验（审查 11-27）：删号重注册、Gmail 加点 / 加 +后缀的别名都算同一个邮箱。
+   记在 limits 表（按规整后邮箱的哈希，不存明文），until 设到十年后，免得被限流表的定期清理删掉 */
+export function trialEmail(email) {
+  const e = String(email || '').toLowerCase()
+  const at = e.lastIndexOf('@')
+  if (at < 0) return e
+  let local = e.slice(0, at)
+  const domain = e.slice(at + 1)
+  local = local.split('+')[0]
+  if (domain === 'gmail.com' || domain === 'googlemail.com') return local.replace(/\./g, '') + '@gmail.com'
+  return local + '@' + domain
+}
+async function grantTrial(repo, email, now) {
+  const scope = 'trial:' + (await sha256hex(trialEmail(email)))
+  if (await repo.limitGet(scope, 'trial')) return 0
+  await repo.limitSet(scope, 'trial', { n: 1, ts: now, until: now + 3650 * DAY })
+  return now + TRIAL_DAYS * DAY
+}
 const DAY = 86400 * 1000
 const HOUR = 3600 * 1000
 /* 全站每天发信上限（按世界标准时间算天），分两个互不相干的额度：
@@ -195,11 +217,12 @@ export async function register(repo, now, body, ctx) {
     /* 占码在插用户之前：宁可"码占住没用户"（站长作废即可），不可"两个用户抢一张码" */
     if (inv && !(await repo.inviteClaim(inv.id, id, now))) return { status: 422, body: { ok: false, error: BAD_INVITE } }
     const pw_salt = randomHex(16)
+    const fullUntil = inv ? 0 : await grantTrial(repo, email, now)
     await repo.insertUser({
       id: id, email: email,
       pw_hash: await sha256hex(pw_salt + pw), pw_salt: pw_salt,
       pwver: 1, verified: 0, created_at: now, invite_id: inv ? inv.id : null,
-      plan: inv ? PLAN_FULL : PLAN_FREE
+      plan: inv ? PLAN_FULL : PLAN_FREE, full_until: fullUntil
     })
   }
   user = await repo.userByEmail(email)
@@ -213,7 +236,8 @@ export async function redeemInvite(repo, session, now, body, ctx) {
   const user = await repo.userById(session.uid)
   if (!user || user.pwver !== session.pwver || user.banned) return { status: 401, body: { ok: false, error: '先登录。' } }
   if (!user.verified) return { status: 403, body: { ok: false, error: '先验证邮箱。' } }
-  if (planOf(user) === PLAN_FULL) return { status: 200, body: { ok: true, plan: PLAN_FULL } }
+  /* 看账号本身的版本：体验期里（planOf 算完整版）也要能补填邀请码，转成永久完整版 */
+  if (basePlan(user) === PLAN_FULL) return { status: 200, body: { ok: true, plan: PLAN_FULL } }
   const code = normInvite(body && body.invite)
   if (!code) return { status: 422, body: { ok: false, error: '请填邀请码。' } }
   const c = await checkInvite(repo, now, 'uid:' + user.id, code, ctx.ip)
@@ -238,9 +262,22 @@ export async function wantFull(repo, session, now, record) {
   return { status: 200, body: { ok: true, wanted: !!at, email: user.email, plan: planOf(user) } }
 }
 
-/* 账号版本：只认数据库里明写的 free；老账号（加列前就有的）一律算完整版 */
-export function planOf(user) {
+/* 账号本身的版本：只认数据库里明写的 free；老账号（加列前就有的）一律算完整版 */
+export function basePlan(user) {
   return user && user.plan === PLAN_FREE ? PLAN_FREE : PLAN_FULL
+}
+
+/* 现在能用的版本：免费账号在完整版到期日（体验 / 以后的年卡）之前也算完整版 */
+export function planOf(user, now) {
+  if (basePlan(user) === PLAN_FULL) return PLAN_FULL
+  return Number(user && user.full_until) > (now || Date.now()) ? PLAN_FULL : PLAN_FREE
+}
+
+/* 给网页看的版本信息：免费账号带上完整版到期日（体验还剩几天 / 体验已结束），完整版账号是 0 */
+function planBody(user, now) {
+  now = now || Date.now()
+  const base = basePlan(user)
+  return { plan: planOf(user, now), base: base, full_until: base === PLAN_FREE ? Number(user.full_until) || 0 : 0 }
 }
 
 /* ---- 删除账号：要当前密码。练习数据、验证码一起删；用过的邀请码不放回 ---- */
@@ -286,7 +323,7 @@ export async function verify(repo, now, body) {
       await repo.tokenUse(row.token_hash)
       await repo.setVerified(user.id)
       if (user.invite_id) await repo.inviteActivate(user.invite_id, now) /* 老账号 invite_id 为 null，不动 */
-      return { status: 200, body: { ok: true, admin: !!user.admin, plan: planOf(user) }, session: { uid: user.id, pwver: user.pwver } }
+      return { status: 200, body: Object.assign({ ok: true, admin: !!user.admin }, planBody(user)), session: { uid: user.id, pwver: user.pwver } }
     }
   }
   await repo.limitSet(email, 'codefail', { n: (fails ? fails.n : 0) + 1, ts: now, until: 0 })
@@ -330,7 +367,7 @@ export async function login(repo, now, body, ctx) {
     r.body = { ok: false, need_verify: true }
     return r
   }
-  return { status: 200, body: { ok: true, admin: !!user.admin, plan: planOf(user) }, session: { uid: user.id, pwver: user.pwver } }
+  return { status: 200, body: Object.assign({ ok: true, admin: !!user.admin }, planBody(user)), session: { uid: user.id, pwver: user.pwver } }
 }
 
 /* ---- 谷歌登录（2026-11-25）：profile 是 server/google.js 从谷歌换回、已核对过的 {email}（谷歌确认过邮箱属于这个人）。
@@ -352,14 +389,15 @@ export async function googleLogin(repo, now, profile) {
   }
   if (!user) {
     const salt = randomHex(16)
+    const fullUntil = await grantTrial(repo, email, now)
     await repo.insertUser({
       id: crypto.randomUUID(), email: email,
       pw_hash: await sha256hex(salt + randomHex(32)), pw_salt: salt,
-      pwver: 1, verified: 1, created_at: now, invite_id: null, plan: PLAN_FREE
+      pwver: 1, verified: 1, created_at: now, invite_id: null, plan: PLAN_FREE, full_until: fullUntil
     })
     user = await repo.userByEmail(email)
   }
-  return { status: 200, body: { ok: true, admin: !!user.admin, plan: planOf(user) }, session: { uid: user.id, pwver: user.pwver } }
+  return { status: 200, body: Object.assign({ ok: true, admin: !!user.admin }, planBody(user)), session: { uid: user.id, pwver: user.pwver } }
 }
 
 /* ---- 找回密码：发 6 位验证码到邮箱（2026-11 改版：不再发链接，手机微信里不用跳浏览器）。
@@ -435,7 +473,7 @@ export async function reset(repo, now, body) {
     pwver: nextPwver, verified: 1 /* 重设顺带验证（能收到邮件就证明邮箱是本人的） */
   })
   await repo.sessionsEndAll(user.id, now, 'pw') /* 密码写好之后再清设备名额：旧登录态本来就因 pwver 失效，别让它们还占着 3 台的位置 */
-  return { status: 200, body: { ok: true, admin: !!user.admin, plan: planOf(user) }, session: { uid: user.id, pwver: nextPwver } }
+  return { status: 200, body: Object.assign({ ok: true, admin: !!user.admin }, planBody(user)), session: { uid: user.id, pwver: nextPwver } }
 }
 
 /* ---- 改密码：要登录态 + 当前密码；副作用与重设一致（pwver+1，别处登录态全失效）。
@@ -466,7 +504,7 @@ export async function changePassword(repo, session, now, body) {
   await repo.tokensClear(user.id, 'verify')
   await repo.limitSet(user.email, 'loginfail', { n: 0, ts: now, until: 0 })
   await repo.sessionsEndAll(user.id, now, 'pw')
-  return { status: 200, body: { ok: true, admin: !!user.admin, plan: planOf(user) }, session: { uid: user.id, pwver: nextPwver } }
+  return { status: 200, body: Object.assign({ ok: true, admin: !!user.admin }, planBody(user)), session: { uid: user.id, pwver: nextPwver } }
 }
 
 /* ---- 登录设备上限（2026-11-24）：一个账号最多同时 3 台设备登录 ----
@@ -502,7 +540,7 @@ export async function meBySession(repo, session, now) {
   if (!s || s.uid !== user.id) return { status: 401, body: { ok: false } }
   if (s.ended_at) return { status: 401, body: s.ended_reason === 'kicked' ? { ok: false, kicked: true } : { ok: false } }
   if (now - s.last_seen > TOUCH_EVERY) await repo.sessionTouch(s.id, now)
-  return { status: 200, body: { ok: true, email: user.email, verified: !!user.verified, admin: !!user.admin, plan: planOf(user) } }
+  return { status: 200, body: Object.assign({ ok: true, email: user.email, verified: !!user.verified, admin: !!user.admin }, planBody(user, now)) }
 }
 
 /* ---- data 拉取 / 推送 ---- */

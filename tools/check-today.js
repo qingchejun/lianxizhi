@@ -68,8 +68,8 @@ check(empty.aoshu.printHref === empty.aoshu.href + '#print', '奥数打印链接
 check(empty.aoshu.video === null, '第 01 课没有视频，不该标：' + JSON.stringify(empty.aoshu.video))
 check(empty.aoshu.parts === '讲解 + 练习 + 解析', '奥数默认三部分都印：' + empty.aoshu.parts)
 
-check(empty.shizi.week === 1 && empty.shizi.weeks === 16, '空浏览器 识字周次：' + empty.shizi.week + '/' + empty.shizi.weeks)
-check(empty.shizi.from === 1 && empty.shizi.to === 100, '空浏览器 识字字序：' + empty.shizi.from + '–' + empty.shizi.to)
+/* 2026-11-27 起新用户默认统编版：空浏览器是统编版、整册 */
+check(empty.shizi.book === 'rj1a', '空浏览器 识字默认统编版：' + empty.shizi.book)
 check(empty.shizi.wrong === 0 && empty.shizi.repeats === 0, '空浏览器 错字数应为 0')
 check(empty.shizi.due === 0, '空浏览器 每日一卷到期数应为 0')
 check(empty.shizi.mode === 'daily', '空浏览器 识字模式应是每日一卷')
@@ -112,11 +112,11 @@ check(used.shizi.withWrong === true, '识字附错字页的开关要带出来')
 
 /* 人教版：卡片写学到哪一课，单元检查是第几单元 */
 var rjCard = T.build(fakeStorage({ 'sumsum:shizi:v1': JSON.stringify({ book: 'rj1a', lesson: 24, unit: 5 }) }), new Date(2026, 10, 22)).shizi
-check(rjCard.book === 'rj1a' && rjCard.bookShort === '人教一上', '人教版卡片：字表名 ' + rjCard.bookShort)
+check(rjCard.book === 'rj1a' && rjCard.bookShort === '统编一上', '人教版卡片：字表名 ' + rjCard.bookShort)
 check(rjCard.lessonLabel === '课文 4《四季》', '人教版卡片：学到 ' + rjCard.lessonLabel)
 check(rjCard.xie && rjCard.xie.label === '课文 4《四季》' && rjCard.xie.chars === '四小鸟是天', '人教版卡片：写字练课文 4 ' + JSON.stringify(rjCard.xie))
 check(rjCard.xie.href === 'shizi.html?pane=xie', '人教版卡片：写字链接直达写字面板')
-check(T.build(fakeStorage({}), new Date(2026, 10, 22)).shizi.xie === null, '洪恩卡片没有写字')
+check(T.build(fakeStorage({ 'sumsum:shizi:v1': JSON.stringify({ book: 'hongen' }) }), new Date(2026, 10, 22)).shizi.xie === null, '洪恩卡片没有写字')
 check(rjCard.unitName === '第五单元' && rjCard.chars.length === 20, '人教版卡片：单元与缩略字 ' + rjCard.unitName + ' ' + rjCard.chars.length)
 var rjAll = T.build(fakeStorage({ 'sumsum:shizi:v1': JSON.stringify({ book: 'rj1a' }) }), new Date(2026, 10, 22)).shizi
 var lastTab = T.build(fakeStorage({ 'sumsum:shizi:v1': JSON.stringify({ mode: 'history' }) }), new Date(2026, 10, 22)).shizi
@@ -354,6 +354,17 @@ Object.keys(V.list).forEach(function (id) {
   check(T.markNotes(st, '2026-11-23').aoshuRetry === null, '之后学会了就不提')
   st.set(SC.AOSHU_DUE, ['coushi', 'daxiao', 3])
   check(T.markNotes(st, '2026-11-23').aoshuDue.join() === 'coushi,daxiao', '待复习列表（脏数据跳过）')
+
+  /* 7 天体验提醒（2026-11-27） */
+  var D1 = 86400000
+  var TN = T.trialNote
+  check('体验：完整版账号、没登录不提', TN({ ok: true, base: 'full', full_until: 0 }, T0) === null && TN({ ok: false }, T0) === null && TN(null, T0) === null)
+  check('体验：还剩 5 天不提', TN({ ok: true, base: 'free', full_until: T0 + 5 * D1 }, T0) === null)
+  check('体验：还剩 2 天提醒', JSON.stringify(TN({ ok: true, base: 'free', full_until: T0 + 2 * D1 }, T0)) === '{"left":2}')
+  check('体验：还剩半天算 1 天', TN({ ok: true, base: 'free', full_until: T0 + D1 / 2 }, T0).left === 1)
+  check('体验：刚结束说已结束', TN({ ok: true, base: 'free', full_until: T0 - D1 }, T0).ended === true)
+  check('体验：结束一周后不再提', TN({ ok: true, base: 'free', full_until: T0 - 8 * D1 }, T0) === null)
+  check('体验：没有到期日（老免费账号迁移前）不提', TN({ ok: true, base: 'free', full_until: 0 }, T0) === null)
 
   /* 奥数换一批：保留 sig、换种子 */
   st.set('sumsum:aoshu:batches:v1', { coushi: { seed: 5, sig: 'x' } })

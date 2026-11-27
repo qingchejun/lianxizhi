@@ -9,7 +9,7 @@
   <script>try{if(localStorage.getItem("lianxizhi:rail")==="fold")document.documentElement.classList.add("rail-folded")}catch(e){}</script>
   <title>识字 · 纸和笔</title>
   <meta name="description" content="给孩子打印 A4 练习纸 · 识字：按学习顺序每周复习 100 个字，只印字不印拼音，孩子念家长听，错字集反复练。" />
-  <link rel="stylesheet" href="css/app.css?v=033d220bb2" />
+  <link rel="stylesheet" href="css/app.css?v=5584f5f2b2" />
   <link rel="stylesheet" href="css/sheet.css?v=239fc79b03" />
   <link rel="stylesheet" href="css/shizi.css?v=b4a7d084d2" />
   <!-- 识字页固定 A4 纵向（字格是方的，横竖都能排，纵向一页装得下 100 字就够了） -->
@@ -44,7 +44,7 @@
     </div>
   </div>
 </nav>
-<script src="js/sidebar.js?v=5f91aa6edb" defer></script>
+<script src="js/sidebar.js?v=5a8878aef3" defer></script>
 <!-- /rail -->
 
 <div class="work">
@@ -90,8 +90,8 @@
         <div class="group-title">字表</div>
         <label class="field"><span>考哪套字</span>
           <select id="f-book" class="input">
+            <option value="rj1a">统编版（人教社）一年级上册（280 字）</option>
             <option value="hongen">某恩识字（1600 字）</option>
-            <option value="rj1a">人教版 一年级上册（280 字）</option>
           </select>
         </label>
         <label class="field" id="lesson-field" hidden><span>学校学到</span>
@@ -237,7 +237,7 @@
       </section>
 
       <section class="group" id="sec-xie-off" hidden>
-        <p class="hint">写字用的是人教版课本的「写字表」（学校要求会写的字）。请先在上面的「字表」里选人教版。</p>
+        <p class="hint">写字用的是统编版课本的「写字表」（学校要求会写的字）。请先在上面的「字表」里选统编版。</p>
       </section>
 
       <section class="group" id="sec-title">
@@ -260,19 +260,20 @@
 <script src="js/shell.js?v=6972c54f86"></script>
 <script src="js/render.js?v=7ee86eb2c8"></script>
 <script src="js/shizi-data.js?v=c3c3176849"></script>
-<script src="js/shizi-rj-data.js?v=597075cde5"></script>
+<script src="js/shizi-rj-data.js?v=303f946d08"></script>
 <script src="js/shizi-core.js?v=97726de3cf"></script>
-<script src="js/shizi-settings.js?v=90a47d5022"></script>
+<script src="js/shizi-settings.js?v=1eac542a09"></script>
 <script src="js/shizi-render.js?v=ed9452eb5d"></script>
 <script src="js/shizi-xie-data.js?v=090d7d3f5a"></script>
 <script src="js/vendor/hanzi-writer.min.js?v=17b11a1e02"></script>
 <script src="js/shizi-xie.js?v=8e8b3dc002"></script>
 <script src="js/shizi-mark.js?v=99a04d2600"></script>
-<script src="js/shizi-main.js?v=62a98453d0"></script>
+<script src="js/full-lock.js?v=e23a66afee"></script>
+<script src="js/shizi-main.js?v=7813d86d07"></script>
 <script src="js/backup.js?v=f21895fa7e"></script>
-<script src="js/help.js?v=a7a6089288"></script>
-<script src="js/account.js?v=9790a36543"></script>
-<script src="js/account-ui.js?v=f7ca87a050"></script>
+<script src="js/help.js?v=523e87fc5d"></script>
+<script src="js/account.js?v=c12ade27c9"></script>
+<script src="js/account-ui.js?v=61f2ffe1e9"></script>
 <script src="js/sync-core.js?v=5f4122b899"></script>
 <script src="js/sync.js?v=13dd97b911"></script>
 <script>

@@ -635,3 +635,9 @@
   font-family: "Pinyin Kids", system-ui, sans-serif;
   font-size: 17px;
 }
+
+/* 标题、教学卡里的拼音字母：拼音字体（单层 ɑ、ɡ），字号跟着周围的字 */
+.py-latin {
+  font-family: "Pinyin Kids", system-ui, sans-serif;
+  font-weight: inherit;
+}

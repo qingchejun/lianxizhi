@@ -237,8 +237,16 @@
 
   /* 账号页里的版本：免费版能补填邀请码开通完整版 */
   function planBlock() {
+    /* 2026-11-27：免费账号注册送 7 天完整版体验（base=free 且 fullUntil 没过 → plan 算 full） */
+    var until = A.state.fullUntil
+    var md = function (t) { var d = new Date(t); return (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日' }
+    if (A.state.base === 'free' && A.state.plan === 'full' && until) {
+      return '<div class="account-plan"><p><b>完整版体验</b> · 到 ' + md(until) + '，所有板块都能用。到期后回免费版：口算、游戏、识字每日一卷、拼音今日卷照常，孩子的记录都留着。有邀请码现在就可以填，开通后不再到期。</p>' +
+        redeemForm() + '</div>'
+    }
     if (A.state.plan === 'free') {
-      return '<div class="account-plan"><p><b>免费版</b> · 可以用口算、数独、火柴、密码、迷宫、数织，扫码打分、按错题出下一张都有。</p>' +
+      return '<div class="account-plan"><p><b>免费版</b> · 可以用口算、数独和游戏，识字每日一卷、拼音今日卷，扫码打分、错题自动复习都有。' +
+        '奥数第 4 课以后、写字、单元检查、拼音课程和专题要开通完整版。</p>' +
         redeemForm() + '</div>'
     }
     return '<div class="account-plan"><p><b>完整版</b> · 九个板块都能用。</p></div>'
@@ -366,8 +374,8 @@
     }
   }
 
-  function loggedIn(email, admin, plan) {
-    A.setLogin(email, admin, plan)
+  function loggedIn(email, admin, plan, base, fullUntil) {
+    A.setLogin(email, admin, plan, base, fullUntil)
     startSync()
     view = 'account'
     if (!inline) render()
@@ -453,7 +461,7 @@
             view = 'code'
             render()
           } else if (rl.status === 200) {
-            loggedIn(email, rl.body.admin, rl.body.plan)
+            loggedIn(email, rl.body.admin, rl.body.plan, rl.body.base, rl.body.full_until)
           } else say(rl.body.error || '登录没成功。', 'bad')
         }
       } else if (view === 'code') {
@@ -472,13 +480,13 @@
         if (code.length !== 6) return say('验证码是 6 位数字。', 'bad')
         if (!A.validPassword(pw)) return say('新密码至少 8 位。', 'bad')
         var rc = await A.request('/api/auth/reset', { email: mem.email, code: code, password: await A.hashPassword(mem.email, pw) })
-        if (rc.status === 200) loggedIn(mem.email, rc.body.admin, rc.body.plan)
+        if (rc.status === 200) loggedIn(mem.email, rc.body.admin, rc.body.plan, rc.body.base, rc.body.full_until)
         else say(rc.body.error || '没改成，稍后再试。', 'bad')
       } else if (view === 'reset') {
         if (!A.validEmail(email)) return say('邮箱地址看起来不对。', 'bad')
         if (!A.validPassword(pw)) return say('密码至少 8 位。', 'bad')
         var rr = await A.request('/api/auth/reset', { token: resetToken, password: await A.hashPassword(email, pw) })
-        if (rr.status === 200) loggedIn(email, rr.body.admin, rr.body.plan)
+        if (rr.status === 200) loggedIn(email, rr.body.admin, rr.body.plan, rr.body.base, rr.body.full_until)
         else say(rr.body.error || '重设没成功。', 'bad')
       } else if (view === 'delete') {
         var dpw = fd.get('password') || ''

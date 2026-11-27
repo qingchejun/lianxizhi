@@ -1,6 +1,6 @@
 # 完整版说明页「开通时通知我」（2026-11-25）浏览器验收：
 #   没登录的人在识字说明页点「开通时通知我」→ 弹出注册框 → 在框里注册、填验证码 →
-#   页面不刷新，按钮自动变成「已登记」，写明发到哪个邮箱；刷新后仍是已登记；没有脚本报错。
+#   2026-11-27 起识字对免费账号开放（注册还送 7 天完整版）：注册完自动登记「通知我」，页面刷新直接进识字页；没有脚本报错。
 # 用法：先起本机预览（npx wrangler pages dev . --port 8999 --binding SESSION_SECRET=dev-secret --binding DEV_SHOW_CODE=1），
 #   本机 D1 已跑过 tools/migrate-20261125-wants.sql，再 uv run --with playwright python tools/e2e-want-browser.py
 import json, subprocess, sys, time
@@ -44,13 +44,10 @@ with sync_playwright() as p:
     for box, digit in zip(page.query_selector_all('.code-box'), code):
         box.type(digit)
 
-    page.wait_for_selector('[data-want-msg]:not([hidden])', timeout=20000)
-    check('注册完不刷新，自动登记，写明邮箱', page.inner_text('[data-want]') == '已登记' and email in page.inner_text('[data-want-msg]'), page.inner_text('[data-want-msg]'))
-    check('换成免费版的样子：能填邀请码', page.is_visible('.lk-card [data-redeem]') and not page.is_visible('[data-lk-guest] [data-login]'))
-    page.keyboard.press('Escape')
-    page.reload()
-    page.wait_for_selector('[data-want-msg]:not([hidden])', timeout=10000)
-    check('刷新后仍是已登记', page.inner_text('[data-want]') == '已登记')
+    page.wait_for_selector('#preview .sheet', timeout=30000)
+    check('注册完刷新，直接进识字页（不再是说明页）', page.query_selector('.lk-card') is None and '/shizi' in page.url, page.url)
+    w = page.evaluate("fetch('/api/auth/want').then(r => r.json())")
+    check('点过的「开通时通知我」已登记', w.get('wanted') is True and w.get('email') == email, w)
     r = page.evaluate("fetch('/api/auth/want', {method:'POST', credentials:'same-origin'}).then(r => r.status)")
     check('不带 JSON 的 POST → 422（防跨站表单）', r == 422, r)
     check('全程没有脚本报错', not errs, errs)

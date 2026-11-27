@@ -992,8 +992,11 @@ function checkRj() {
   if (t1.lesson !== 38 || t1.unit !== 1) bad('sanitize：lesson/unit 没钳位 ' + t1.lesson + '/' + t1.unit)
   if (T.sanitize({ book: 'hongen', lesson: 24 }).lesson !== 24) bad('sanitize：洪恩下要留着人教版的进度（切回来还在）')
   var t2 = T.sanitize({ book: '<script>', lesson: 5 })
-  if (t2.book !== 'hongen') bad('sanitize：不认识的字表没退回洪恩')
-  if (T.sanitize({}).book !== 'hongen' || T.sanitize({}).lesson !== 0) bad('sanitize：默认应是洪恩、整册')
+  if (t2.book !== 'rj1a') bad('sanitize：不认识的字表没退回默认的统编版')
+  /* 2026-11-27 起新用户默认统编版；字表这一项出现前就存过设置的老用户留在洪恩 */
+  if (T.sanitize({}).book !== 'rj1a' || T.sanitize({}).lesson !== 0) bad('sanitize：默认应是统编版、整册')
+  if (T.sanitize({ perWeek: 100, week: 3 }).book !== 'hongen') bad('sanitize：没存过字表的老用户要留在洪恩')
+  if (T.sanitize({ perWeek: 100, book: 'rj1a' }).book !== 'rj1a') bad('sanitize：存过统编版的照旧')
   var tx = T.sanitize({ pane: 'xie', xieLesson: -5, xieSize: 'huge', xieTrace: 9 })
   if (tx.pane !== 'xie' || tx.xieLesson !== 0 || tx.xieSize !== 'l' || tx.xieTrace !== 4) bad('sanitize：写字设置没钳位 ' + JSON.stringify(tx))
   if (T.sanitize({ pane: 'x' }).pane !== 'ren') bad('sanitize：pane 默认认字')

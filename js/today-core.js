@@ -323,6 +323,20 @@
     return out
   }
 
+  /* 7 天完整版体验（2026-11-27）：me = 中间层写进网页的登录信息（__SUMSUM_ME）。
+     体验期最后 2 天提醒还剩几天；结束后 7 天内说一句「已结束」，之后不再提；完整版账号、没登录的不提 */
+  var DAY_MS = 86400000
+  function trialNote(me, now) {
+    if (!me || !me.ok || me.base !== 'free') return null
+    var until = Number(me.full_until) || 0
+    if (!until) return null
+    if (until > now) {
+      var days = Math.ceil((until - now) / DAY_MS)
+      return days <= 2 ? { left: days } : null
+    }
+    return now - until < 7 * DAY_MS ? { ended: true } : null
+  }
+
   /* 奥数「这一课再练一张」：给这一课的种子账本换个新种子（保留 sig），进奥数页就是新一批题 */
   function rollAoshu(store, topicId) {
     var KEY = 'sumsum:aoshu:batches:v1'
@@ -335,5 +349,5 @@
   }
 
   root.SumSum = root.SumSum || {}
-  root.SumSum.today = { build: build, markNotes: markNotes, rollAoshu: rollAoshu, pinyinCard: pinyinCard, GAME_LEVELS: GAME_LEVELS, minutes: minutes }
+  root.SumSum.today = { build: build, markNotes: markNotes, trialNote: trialNote, rollAoshu: rollAoshu, pinyinCard: pinyinCard, GAME_LEVELS: GAME_LEVELS, minutes: minutes }
 })(typeof window !== 'undefined' ? window : globalThis)

@@ -4,6 +4,7 @@
  * 见 auth-core openSession）；没有 sid 的旧 cookie 一律当没登录。
  * 时间 unix 毫秒。requireSession 额外查 users 表比对 pwver：改密/重置后旧登录态立刻失效。
  */
+import { planOf } from './auth-core.js'
 export const COOKIE = 'sumsum_sess'
 const DAY = 86400 * 1000
 
@@ -84,8 +85,9 @@ export async function requireSession(context) {
   const payload = await verify(raw, context.env.SESSION_SECRET, Date.now())
   if (!payload || typeof payload.sid !== 'string') return null
   const row = await context.env.DB.prepare(
-    'SELECT u.pwver, u.banned, u.plan, s.ended_at FROM users u JOIN sessions s ON s.id=? AND s.uid=u.id WHERE u.id=?'
+    'SELECT u.pwver, u.banned, u.plan, u.full_until, s.ended_at FROM users u JOIN sessions s ON s.id=? AND s.uid=u.id WHERE u.id=?'
   ).bind(payload.sid, payload.uid).first()
   if (!row || row.pwver !== payload.pwver || row.banned || row.ended_at) return null /* 停用账号、被挤掉的设备立即失效 */
-  return Object.assign({}, payload, { plan: row.plan })
+  /* 免费账号在完整版到期日（7 天体验 / 年卡）之前按完整版放行：和 /me 用同一个 planOf */
+  return Object.assign({}, payload, { plan: planOf(row, Date.now()) })
 }

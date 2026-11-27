@@ -57,7 +57,7 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
 
   /* --- 免费版（2026-11-24 放开注册）：白名单，每个网页 × 各种写法都试 --- */
   var fs = require('fs')
-  var FREE_OK = ['index', 'kousuan', 'aoshu', 'shudu', 'huochai', 'mima', 'migong', 'zhizhi', 'mark', 'help', 'privacy', '404']
+  var FREE_OK = ['index', 'kousuan', 'aoshu', 'shizi', 'pinyin', 'shudu', 'huochai', 'mima', 'migong', 'zhizhi', 'mark', 'help', 'privacy', '404']
   var htmls = fs.readdirSync(require('path').join(__dirname, '..')).filter(function (f) { return /\.html$/.test(f) })
   var free = { ok: true, plan: 'free' }, full = { ok: true, plan: 'full' }
   var leaks = []
@@ -94,11 +94,12 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   /* 侧栏的锁（js/sidebar.js FREE_MODULES）要和服务器规则一致：开放给没登录 / 免费版的板块不挂锁，其余挂锁 */
   var sideSrc = require('fs').readFileSync(require('path').join(__dirname, '..', 'js', 'sidebar.js'), 'utf8')
   var freeMods = JSON.parse(/FREE_MODULES = (\[[^\]]*\])/.exec(sideSrc)[1].replace(/'/g, '"'))
+  var guestMods = JSON.parse(/GUEST_MODULES = (\[[^\]]*\])/.exec(sideSrc)[1].replace(/'/g, '"'))
   var BOARD_PATH = { 口算: '/kousuan', 奥数: '/aoshu', 识字: '/shizi', 拼音: '/pinyin', 数独: '/shudu', 火柴: '/huochai', 密码: '/mima', 迷宫: '/migong', 数织: '/zhizhi' }
   check('侧栏的锁和服务器规则一致（没登录、免费版）', Object.keys(BOARD_PATH).every(function (m) {
-    var open = freeMods.indexOf(m) >= 0
-    return (d(BOARD_PATH[m], '', false).action === 'pass') === open && (d(BOARD_PATH[m], '', { ok: true, plan: 'free' }).action === 'pass') === open
-  }), freeMods)
+    return (d(BOARD_PATH[m], '', false).action === 'pass') === (guestMods.indexOf(m) >= 0) &&
+      (d(BOARD_PATH[m], '', { ok: true, plan: 'free' }).action === 'pass') === (freeMods.indexOf(m) >= 0)
+  }), { guestMods: guestMods, freeMods: freeMods })
 
   /* --- 中间件整链 --- */
   var SECRET = 'gate-secret'

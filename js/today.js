@@ -226,11 +226,12 @@
 
   var data = S.today.build(storage(), new Date())
   doc.getElementById('today-date').textContent = data.date + ' · 一页纸，五分钟，挑两三张就够'
-  /* 免费版（2026-11-24 放开注册；11-25 游戏组全部开放）：摆口算和五个游戏；奥数、识字、拼音列在下面，识字拼音点进去是上锁页（能补填邀请码），奥数前三课能直接用（11-25） */
+  /* 免费版（2026-11-24 放开注册；11-25 游戏组全部开放；11-27 识字、拼音开放每日一张）：
+     摆口算、识字、拼音和五个游戏；完整版才有的列在下面 */
   var LOCKED_LIST = [
-    ['/aoshu', '奥数', '前三课免费，全部 54 课开通完整版'],
-    ['/shizi', '识字', '每日一卷，没认出的字自动复习'],
-    ['/pinyin', '拼音', '易混字母、声调、拼读']
+    ['/aoshu', '奥数', '前三课免费，全部 54 课和讲解视频开通完整版'],
+    ['/shizi?pane=xie', '识字 · 写字与单元检查', '田字格练字、单元检查卷、错字集整页打印'],
+    ['/pinyin?view=lessons', '拼音 · 课程与专题', '照课本一课一课讲，难点分类集中练']
   ]
   function lockedShelf() {
     return '<section class="dk-shelf dk-locked" aria-label="完整版"><h2>完整版 · 填邀请码开通</h2><div class="dk-lock-list">' +
@@ -239,12 +240,14 @@
       }).join('') + '</div></section>'
   }
   doc.getElementById('today-cards').innerHTML = root.__SUMSUM_PLAN === 'free'
-    ? shelf('练习', [kousuanCard(data.kousuan)]) + shelf('游戏', [shuduCard(data.shudu)].concat(data.games.map(gameCard))) + lockedShelf()
+    ? shelf('练习', [shiziCard(data.shizi), kousuanCard(data.kousuan), pinyinCard(data.pinyin)]) + shelf('游戏', [shuduCard(data.shudu)].concat(data.games.map(gameCard))) + lockedShelf()
     : shelf('练习', [aoshuCard(data.aoshu), shiziCard(data.shizi), kousuanCard(data.kousuan), pinyinCard(data.pinyin)]) +
       shelf('游戏', [shuduCard(data.shudu)].concat(data.games.map(gameCard)))
 
   /* 打分带来的提醒：各板块没打分的纸、口算升档、奥数再练 / 复习卷 */
   var marksBox = doc.getElementById('today-marks')
+  /* 7 天体验的提醒：中间层写进网页的登录信息，account.js 还没把它清掉（本脚本在 account.js 前面） */
+  var trial = S.today.trialNote ? S.today.trialNote(root.__SUMSUM_ME, Date.now()) : null
   function z2(n) { return (n < 10 ? '0' : '') + n }
   function todayKey() {
     var d = new Date()
@@ -254,6 +257,13 @@
     if (!marksBox || !S.today.markNotes || !S.store) return
     var n = S.today.markNotes(S.store, todayKey())
     var rows = []
+    if (trial && trial.left) {
+      rows.push('<p><span>完整版体验还剩 <b>' + trial.left + '</b> 天。到期后识字每日一卷、拼音今日卷、口算和游戏照常免费；' +
+        '奥数第 4 课以后、写字、单元检查、拼音课程和专题要开通完整版。孩子的记录都会留着。</span></p>')
+    } else if (trial && trial.ended) {
+      rows.push('<p><span>7 天完整版体验已结束。识字每日一卷、拼音今日卷、口算和游戏照常免费，孩子的记录都在；' +
+        '有邀请码可以在账号里填，开通后马上接着用。</span></p>')
+    }
     if (n.pending) {
       rows.push('<p><span>还有纸没打分：' + n.pendingBy.map(function (x) {
         return '<a href="mark?module=' + x.module + '">' + esc(x.label) + ' <b>' + x.n + '</b> 张</a>'

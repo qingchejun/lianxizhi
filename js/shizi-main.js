@@ -330,11 +330,52 @@
   var PRINT_LABEL = { daily: '打印今日卷', week: '打印复习卷', wrong: '打印错字卷', history: '打印' }
 
   /* 主流程：保存设置 → 同步表单 → 渲染 → 把错字标记投影回新 DOM */
+  /* 免费版（2026-11-27）：每日一卷和历史照常；写字、单元检查 / 本周复习、错字集整页打印是完整版功能，
+     纸张区换成说明（js/full-lock.js）。7 天体验期里算完整版 */
+  var LOCKS = {
+    xie: ['写字是完整版功能', '按课本写字表一课出一张田字格练字纸，范字带笔顺，屏幕上还能看笔顺动画。'],
+    week: ['单元检查是完整版功能', '学完一个单元，把整个单元的字印一张考一次，没认出的字自动进每日一卷。'],
+    wrong: ['错字集整页打印是完整版功能', '把还没过关的错字印成一整张专门复习。错字每天照样会进每日一卷，不开通也不耽误。']
+  }
+  function lockedWhat() {
+    var FL = S.fullLock
+    if (!FL || FL.isFull()) return null
+    return settings.pane === 'xie' ? LOCKS.xie : settings.mode === 'week' ? LOCKS.week : settings.mode === 'wrong' ? LOCKS.wrong : null
+  }
+  function markLocks() {
+    var FL = S.fullLock
+    if (!FL) return
+    var free = !FL.isFull()
+    FL.markTab($('mode-tabs').querySelector('[data-mode="week"]'), free)
+    FL.markTab($('mode-tabs').querySelector('[data-mode="wrong"]'), free)
+    FL.markTab($('pane-tabs').querySelector('[data-pane="xie"]'), free)
+  }
+  function renderLocked(what) {
+    var box = $('preview')
+    delete box.dataset.locked
+    $('notice').hidden = true
+    box.innerHTML = S.fullLock.html(what[0], what[1])
+    S.fullLock.bind(box)
+    $('btn-print').disabled = true
+    $('btn-print').hidden = false
+    $('btn-print').querySelector('.txt').textContent = '打印'
+    $('sec-progress').hidden = true /* 单元 / 周次的翻页用不上，别露出个「第 1 周」 */
+    $('pages-hint').textContent = ''
+    S.shell.summary([what[0].replace('是完整版功能', '')])
+    fitPreview()
+  }
+
   function refresh() {
     S.shizi.useBook(settings.book, settings.lesson, settings.order)
     S.shiziSettings.save(settings)
     fillTabs(settings)
     fillForm(settings)
+    markLocks()
+    var locked = lockedWhat()
+    if (locked) {
+      renderLocked(locked)
+      return
+    }
     if (settings.pane === 'xie') {
       renderXie()
       return
@@ -777,7 +818,7 @@
       hint = '按课本顺序：第 ' + w.round + ' 轮，下一张从' + (w.lesson ? S.shizi.lessonLabel(w.lesson) + '的「' + w.ch + '」' : '开头') +
         '接着出，一轮里不重复。' + hint
     }
-    $('book-hint').textContent = hint + '人教版只考课本里的错字。'
+    $('book-hint').textContent = hint + '统编版只考课本里的错字。'
   }
 
   /* ================= 写字（2026-11-22） ================= */
@@ -842,7 +883,7 @@
     var l = fillXie(settings)
     var box = $('preview')
     if (!l) {
-      box.innerHTML = '<div class="empty"><b>写字要用人教版字表</b><p>在右边「字表」里选「人教版 一年级上册」，这里就会按课出田字格练字纸。</p></div>'
+      box.innerHTML = '<div class="empty"><b>写字要用统编版字表</b><p>在右边「字表」里选「统编版（人教社）一年级上册」，这里就会按课出田字格练字纸。</p></div>'
       $('btn-print').disabled = true
       $('pages-hint').textContent = ''
       S.shell.summary(['写字'])

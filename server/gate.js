@@ -15,7 +15,8 @@ const GUEST_PAGES = ['/kousuan', '/shudu', '/huochai', '/mima', '/migong', '/zhi
 export const INNER_PAGES = { '/kousuan/coushifa': '/coushifa', '/kousuan/poshifa': '/poshifa' }
 /* 免费版账号能打开的网页（白名单，2026-11-24 放开注册）：其余网页一律显示上锁说明页。
    用白名单而不是「锁哪几个」：以后新加的板块默认就是完整版专属，不会忘了锁 */
-const FREE_PAGES = ['/', '/index', '/kousuan', '/shudu', '/huochai', '/mima', '/migong', '/zhizhi', '/mark', '/help', '/privacy', '/404', '/kousuan/coushifa', '/kousuan/poshifa', '/aoshu']
+const FREE_PAGES = ['/', '/index', '/kousuan', '/shudu', '/huochai', '/mima', '/migong', '/zhizhi', '/mark', '/help', '/privacy', '/404', '/kousuan/coushifa', '/kousuan/poshifa', '/aoshu',
+  '/shizi', '/pinyin'] /* 2026-11-27：识字、拼音对免费版开放（每日一卷 / 今日卷），写字、单元检查、专题、课程在页面里锁 */
 /* 完整版板块（2026-11-25 整站结构）：没登录的人打开时不再带回首页，在原网址显示「完整版」说明页（不收录），
    侧栏、首页都能点进来看这个板块是什么。开放给没登录的人时，从这里挪到 GUEST_PAGES / FREE_PAGES */
 const FULL_BOARDS = ['/shizi', '/pinyin'] /* 奥数 11-25 起前三课公开（页面里锁后面的课），挪进上面两张表 */

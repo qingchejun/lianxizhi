@@ -53,7 +53,9 @@
     }
   }
 
-  var FREE_MODULES = ['今天', '口算', '奥数', '数独', '火柴', '密码', '迷宫', '数织']
+  /* 没登录能进的板块（server/gate.js GUEST_PAGES）和免费版能进的（FREE_PAGES）：2026-11-27 起识字、拼音只对免费版开放 */
+  var GUEST_MODULES = ['今天', '口算', '奥数', '数独', '火柴', '密码', '迷宫', '数织']
+  var FREE_MODULES = ['今天', '口算', '奥数', '识字', '拼音', '数独', '火柴', '密码', '迷宫', '数织']
   /* 没登录（口算、数独和游戏组免登录出题打印）：点这里直接打开登录框，不弹菜单 */
   function guest() {
     var A0 = root.SumSum && root.SumSum.account
@@ -122,7 +124,7 @@
     if (sub && !out) sub.textContent = free ? '免费版' : '练习进度自动同步'
     Array.prototype.forEach.call(doc.querySelectorAll('.rail-link[data-module]'), function (a) {
       var m = a.getAttribute('data-module')
-      var lock = (free || out) && FREE_MODULES.indexOf(m) < 0
+      var lock = out ? GUEST_MODULES.indexOf(m) < 0 : free && FREE_MODULES.indexOf(m) < 0
       a.classList.toggle('is-locked', lock)
       var icon = a.querySelector('.rail-lock')
       if (lock && !icon) {

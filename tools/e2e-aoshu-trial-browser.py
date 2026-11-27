@@ -123,7 +123,11 @@ with sync_playwright() as p:
     c2 = br.new_context(viewport={'width': 1440, 'height': 900})
     p2 = c2.new_page()
     p2.on('pageerror', lambda e: errs.append('免费版 ' + str(e)))
-    register(p2, 'trial-%d@test.local' % int(time.time()))
+    em2 = 'trial-%d@test.local' % int(time.time())
+    register(p2, em2)
+    # 2026-11-27 起新注册送 7 天完整版：这里测的是体验结束后的免费版，先把体验改成已结束
+    subprocess.run(['npx', 'wrangler', 'd1', 'execute', 'lianxizhi', '--local', '--command',
+                    "UPDATE users SET full_until = 1 WHERE email = '%s'" % em2], check=True, capture_output=True)
     p2.goto(BASE + '/aoshu?topic=shuzimi')
     p2.wait_for_selector('#trial-bar', timeout=15000)
     close_dialogs(p2)

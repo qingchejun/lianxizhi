@@ -1,7 +1,8 @@
-# 放开注册 · 免费版 / 完整版（2026-11-24）浏览器验收：
-#   1. 不填邀请码注册 → 免费版：今天页只有口算、数独，另外七个板块列在下面带锁；侧栏七个板块挂锁；
-#   2. 免费版打开奥数（各种写法）→ 原网址显示上锁页、能补填邀请码；口算照常、纸上有二维码；
-#   3. 免费版看奥数视频 → 403；补填错码报错，好码开通后刷新，奥数页能用、视频能播（含拖动进度条的分段请求）；
+# 放开注册 · 免费版 / 完整版（2026-11-24；11-27 改：注册送 7 天完整版，识字、拼音对免费版开放每日一张）浏览器验收：
+#   1. 不填邀请码注册 → 7 天体验期：账号里写「完整版体验」，能看奥数视频；
+#   2. 把体验改成已结束（本机 D1）→ 免费版：今天页摆识字、口算、拼音和游戏，完整版功能列在下面；侧栏不挂锁；
+#      识字每日一卷能用，单元检查 / 错字集 / 写字显示「完整版功能」；拼音今日卷能用，专题 / 课程上锁；/admin 是上锁页；
+#   3. 免费版看奥数视频 → 403；账号里补填错码报错，好码开通后识字单元检查能用、视频能播（含拖动进度条的分段请求）；
 #   4. 带邀请码注册 → 直接完整版；已注册的邮箱再注册 → 页面不暴露「注册过」；
 #   5. 删除账号。
 # 用法：先起本机预览（npx wrangler pages dev . --port 8999 --binding SESSION_SECRET=dev-secret --binding DEV_SHOW_CODE=1），
@@ -85,32 +86,59 @@ with sync_playwright() as p:
     enter_code(page, body['dev_code'])
     page.wait_for_selector('#today-cards .dk-shelf', timeout=30000)
     close_help(page)
+    # ---------- 7 天体验 ----------
+    v = video(page)
+    check('体验期能看奥数视频', v['status'] == 200, v)
+    page.click('[data-account-menu]')
+    page.click('.rail-menu [data-account]')
+    page.wait_for_selector('dialog.account-dialog[open] .account-plan', timeout=5000)
+    check('账号里写「完整版体验」，也能补填邀请码', '完整版体验' in page.inner_text('.account-plan') and page.query_selector('dialog .account-plan [data-redeem]') is not None, page.inner_text('.account-plan'))
+    page.keyboard.press('Escape')
+    page.goto(BASE + '/shizi?mode=week')
+    page.wait_for_selector('#preview .sheet, #preview .full-lock', timeout=15000)
+    check('体验期识字单元检查不上锁', page.query_selector('#preview .full-lock') is None)
+
+    # ---------- 体验结束 → 免费版 ----------
+    subprocess.run(['npx', 'wrangler', 'd1', 'execute', 'lianxizhi', '--local', '--command',
+                    f"UPDATE users SET full_until = {int(time.time() * 1000) - 86400000} WHERE email = '{email}'"], check=True, capture_output=True)
+    for _ in range(10):  # 本机 D1 由另一个进程改写，预览服务器要过一会儿才读到
+        page.goto(BASE + '/')
+        page.wait_for_selector('#today-cards .dk-shelf', timeout=30000)
+        if page.evaluate('window.__SUMSUM_PLAN') == 'free':
+            break
+        time.sleep(1.5)
+    close_help(page)
     shelves = page.inner_text('#today-cards')
-    check('今天页：免费版摆口算和五个游戏', all(k in shelves for k in ['口算', '数独', '火柴', '密码', '迷宫', '数织']), shelves[:300])
-    check('今天页：奥数、识字、拼音列在「完整版」下面', page.eval_on_selector_all('.dk-lock-list a b', 'els => els.map(e => e.textContent)') == ['奥数', '识字', '拼音'])
+    check('今天页：免费版摆识字、口算、拼音和五个游戏', all(k in shelves for k in ['识字', '口算', '拼音', '数独', '火柴', '密码', '迷宫', '数织']), shelves[:300])
+    locked_list = page.eval_on_selector_all('.dk-lock-list a b', 'els => els.map(e => e.textContent)')
+    check('今天页：完整版功能列在下面', locked_list == ['奥数', '识字 · 写字与单元检查', '拼音 · 课程与专题'], locked_list)
+    check('今天页：说体验已结束', '体验已结束' in page.inner_text('#today-marks'))
     locks = page.eval_on_selector_all('.rail-link.is-locked', 'els => els.map(e => e.dataset.module)')
-    check('侧栏两个完整版板块挂锁（奥数 11-25 起前三课免费，不挂）', sorted(locks) == sorted(['识字', '拼音']), locks)
+    check('侧栏不挂锁（识字、拼音 11-27 起免费版能进）', locks == [], locks)
     for path in ['/huochai', '/mima', '/migong', '/zhizhi']:
         page.goto(BASE + path)
         page.wait_for_selector('#preview .sheet', timeout=15000)
         check('免费版打开 ' + path + ' → 直接能出题', page.query_selector('.lk-card') is None)
 
-    # ---------- 上锁页 ----------
-    for path in ['/shizi', '/shizi/', '/shizi.html', '/pinyin', '/admin']:  # 奥数 11-25 起前三课公开，见 e2e-aoshu-free-browser.py
-        resp = page.goto(BASE + path)
-        ok = page.query_selector('.lk-card') is not None and page.query_selector('[data-redeem]') is not None
-        check('免费版打开 ' + path + ' → 上锁页、能填邀请码', ok and resp.status == 200, [resp.status, page.url])
     page.goto(BASE + '/shizi')
-    check('上锁页按网址显示板块名', '识字' in page.inner_text('#lk-name'))
+    page.wait_for_selector('#preview .sheet', timeout=15000)
+    close_help(page)
+    check('免费版识字：每日一卷能用', page.query_selector('#preview .full-lock') is None and page.query_selector('.lk-card') is None)
+    for q, name in [('mode=week', '单元检查'), ('mode=wrong', '错字集'), ('pane=xie', '写字')]:
+        page.goto(BASE + '/shizi?' + q)
+        page.wait_for_selector('#preview .sheet, #preview .full-lock, #preview .empty', timeout=15000)
+        check('免费版识字：' + name + '显示「完整版功能」、打印按钮不可用', page.query_selector('#preview .full-lock') is not None and page.is_disabled('#btn-print'))
+    check('识字页签上有小锁', len(page.query_selector_all('.tab-lock')) >= 3)
+    page.goto(BASE + '/pinyin')
+    page.wait_for_selector('#py-rate .rate', timeout=15000)
+    check('免费版拼音：今日卷能用', page.query_selector('#preview .full-lock') is None)
+    page.goto(BASE + '/pinyin?view=topics')
+    page.wait_for_selector('#preview .full-lock', timeout=15000)
+    check('免费版拼音：专题上锁', page.is_disabled('#btn-print'))
+
+    resp = page.goto(BASE + '/admin')
+    check('免费版打开 /admin → 上锁页', page.query_selector('.lk-card') is not None and resp.status == 200, [resp.status, page.url])
     check('上锁页不收录', 'noindex' in (page.evaluate("fetch(location.href).then(r => r.headers.get('X-Robots-Tag'))") or ''))
-    check('上锁页有识字样张、两条开通路', page.is_visible('[data-lk-sample="shizi"]') and page.is_visible('[data-want]') and page.is_visible('.lk-card [data-redeem]'))
-    # 「开通时通知我」（2026-11-25）：免费版点一下就登记，刷新后显示已登记
-    page.click('[data-want]')
-    page.wait_for_selector('[data-want-msg]:not([hidden])', timeout=10000)
-    check('点「开通时通知我」→ 已登记，写明发到哪个邮箱', page.is_disabled('[data-want]') and '@' in page.inner_text('[data-want-msg]'), page.inner_text('[data-want-msg]'))
-    page.reload()
-    page.wait_for_selector('[data-want-msg]:not([hidden])', timeout=10000)
-    check('刷新后仍显示已登记', page.inner_text('[data-want]') == '已登记')
     v = video(page)
     check('免费版看奥数视频 → 403', v['status'] == 403, v)
 
@@ -119,26 +147,24 @@ with sync_playwright() as p:
     close_help(page)
     check('免费版口算照常，纸上有二维码', page.query_selector('#preview .sheet-qr') is not None)
 
-    # ---------- 账号弹窗 ----------
-    page.click('[data-account-menu]')
-    page.click('.rail-menu [data-account]')
-    page.wait_for_selector('dialog.account-dialog[open] .account-plan', timeout=5000)
-    check('账号弹窗显示「免费版」和补填邀请码', '免费版' in page.inner_text('.account-plan') and page.query_selector('dialog .account-plan [data-redeem]') is not None)
-    page.keyboard.press('Escape')
-
-    # ---------- 补填邀请码 ----------
-    page.goto(BASE + '/shizi')
-    page.fill('.lk-card [data-redeem] input[name="invite"]', 'ABCD-2345')
-    page.click('.lk-card [data-redeem] button[type="submit"]')
-    page.wait_for_selector('.lk-card [data-redeem-msg]:not([hidden])', timeout=10000)
-    check('补填错码 → 提示不对', '不对' in page.inner_text('.lk-card [data-redeem-msg]'), page.inner_text('.lk-card [data-redeem-msg]'))
+    # ---------- 账号弹窗补填邀请码 ----------
+    page.goto(BASE + '/shizi?mode=week')
+    page.wait_for_selector('#preview .full-lock', timeout=15000)
+    page.click('#preview [data-fl-redeem]')
+    page.wait_for_selector('dialog.account-dialog[open] .account-plan [data-redeem]', timeout=5000)
+    check('锁里点「填邀请码开通」→ 账号弹窗写「免费版」', '免费版' in page.inner_text('.account-plan'))
+    page.fill('dialog .account-plan [data-redeem] input[name="invite"]', 'ABCD-2345')
+    page.click('dialog .account-plan [data-redeem] button[type="submit"]')
+    page.wait_for_selector('dialog .account-plan [data-redeem-msg]:not([hidden])', timeout=10000)
+    check('补填错码 → 提示不对', '不对' in page.inner_text('dialog .account-plan [data-redeem-msg]'))
     code = make_invite()
-    page.fill('.lk-card [data-redeem] input[name="invite"]', code)
-    page.click('.lk-card [data-redeem] button[type="submit"]')
-    page.wait_for_selector('.lk-card', state='detached', timeout=30000)
+    page.fill('dialog .account-plan [data-redeem] input[name="invite"]', code)
+    page.click('dialog .account-plan [data-redeem] button[type="submit"]')
+    time.sleep(4)
+    page.goto(BASE + '/shizi?mode=week')
+    page.wait_for_selector('#preview .sheet', timeout=15000)
     close_help(page)
-    check('补填好码 → 刷新后识字页能用', page.query_selector('.lk-card') is None and '/shizi' in page.url)
-    check('侧栏的锁没了', not page.query_selector_all('.rail-link.is-locked'))
+    check('补填好码 → 识字单元检查能用', page.query_selector('#preview .full-lock') is None)
     v = video(page)
     check('完整版能看视频（整段 200）', v['status'] == 200 and v['len'] > 1000 and v['type'] == 'video/mp4', v)
     v = video(page, 'bytes=0-99')
@@ -149,6 +175,14 @@ with sync_playwright() as p:
     check('分段请求超出文件长度 → 夹到文件末尾', v['status'] in (200, 206) and v['len'] > 1000 and (v['range'] is None or v['range'].endswith('/' + str(v['len']))), v)
     v = video(page, 'bytes=99999999-')
     check('分段请求完全超出 → 416 或整段（按规范都可以）', v['status'] == 416 or (v['status'] == 200 and v['len'] > 1000), v)
+
+    # ---------- 没登录看识字：注册就能用 ----------
+    cg = br.new_context(viewport={'width': 1440, 'height': 900})
+    pg = cg.new_page()
+    pg.goto(BASE + '/shizi')
+    pg.wait_for_selector('.lk-card', timeout=15000)
+    check('没登录打开识字 → 说明页写「注册免费账号就能用」、有样张', '注册免费账号就能用' in pg.inner_text('#lk-kicker') and pg.is_visible('[data-lk-sample="shizi"]'))
+    cg.close()
 
     # ---------- 带码注册、重复注册 ----------
     c2 = br.new_context(viewport={'width': 1440, 'height': 900})

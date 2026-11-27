@@ -62,8 +62,10 @@ export async function onRequest(context) {
     const why = me && !me.ok ? { ok: false, kicked: !!me.kicked, relogin: !!me.relogin } : { ok: false }
     return withCache(withMe(page, why, context.env, url), 'private, no-cache')
   }
-  /* 登录后的页面：同一网址登录前后内容不同，不许进共享缓存，浏览器每次回源确认 */
-  return withCache(withMe(await context.next(), me, context.env, url), 'private, no-cache')
+  /* 登录后的页面：同一网址登录前后内容不同，不许进共享缓存，浏览器每次回源确认。
+     请求里去掉 If-None-Match / If-Modified-Since：网页里写着登录态和账号版本，文件没变不代表这些没变
+     （2026-11-27 体验到期后浏览器拿 304 继续用旧网页，页面还以为是完整版） */
+  return withCache(withMe(await context.next(unconditional(context.request)), me, context.env, url), 'private, no-cache')
 }
 
 /* 只给网页注入；字段与 /api/auth/me 的返回一致（js/account.js init 直接用） */
@@ -73,7 +75,9 @@ function movedTo(location) {
 
 function meScript(me, env) {
   const safe = me && me.ok
-    ? { ok: true, email: String(me.email || ''), verified: !!me.verified, admin: !!me.admin, plan: me.plan === 'free' ? 'free' : 'full' }
+    ? { ok: true, email: String(me.email || ''), verified: !!me.verified, admin: !!me.admin, plan: me.plan === 'free' ? 'free' : 'full',
+        /* 7 天体验（2026-11-27）：账号本身的版本 + 完整版到期日，页面据此写「体验还剩几天 / 已结束」 */
+        base: me.base === 'free' ? 'free' : 'full', full_until: Number(me.full_until) || 0 }
     : { ok: false }
   if (me && !me.ok && me.kicked) safe.kicked = true
   if (me && !me.ok && me.relogin) safe.relogin = true
@@ -92,12 +96,24 @@ function withMe(res, me, env, url) {
   const tag = meScript(me, env)
   /* 访问统计脚本（server/stats.js）：只在正式网址加，扫码打分页、管理页不加 */
   const stats = url && wantsStats(url.hostname, pagePath(url.pathname)) ? statsTag() : ''
-  return new HTMLRewriter().on('head', {
+  const out = new HTMLRewriter().on('head', {
     element(el) {
       el.prepend(tag, { html: true })
       if (stats) el.append(stats, { html: true })
     }
   }).transform(res)
+  /* 写进了登录态的网页不给 ETag / Last-Modified：浏览器下次就不会拿着它来问「变了没有」 */
+  const fresh = new Response(out.body, out)
+  fresh.headers.delete('ETag')
+  fresh.headers.delete('Last-Modified')
+  return fresh
+}
+
+function unconditional(request) {
+  const h = new Headers(request.headers)
+  h.delete('If-None-Match')
+  h.delete('If-Modified-Since')
+  return new Request(request, { headers: h })
 }
 
 function withCache(res, value) {

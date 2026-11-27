@@ -201,6 +201,19 @@ Promise.all([import('../server/auth-core.js'), import('../server/admin-core.js')
   check('补填：已是完整版再填 → 直接 200，不再占码', (await A.redeemInvite(P, sess, t0 + 6, { invite: 'PAYDAY02' })).status === 200 &&
     !P._invites.find(function (v) { return v.code === 'PAYDAY02' }).claimed_by)
   check('me 带出 plan=full', (await A.meBySession(P, sess)).body.plan === 'full')
+  /* 7 天体验期里也能补填邀请码转成永久完整版（2026-11-27：planOf 体验期算完整版，补填要看账号本身的版本） */
+  var Q = memRepo()
+  seedInvite(Q, 'TRIAL001')
+  var tq = Date.now()
+  var rq = await A.register(Q, tq, { email: 'q@m.co', password: pw('q@m.co') }, { ip: '1.2.3.9' })
+  await A.verify(Q, tq + 1, { email: 'q@m.co', code: rq.dev.code })
+  var qu = Q.users.find(function (u) { return u.email === 'q@m.co' })
+  check('免费注册送 7 天体验', qu.plan === 'free' && qu.full_until === tq + 7 * 86400 * 1000, qu)
+  var qs = { uid: qu.id, pwver: qu.pwver, sid: await A.openSession(Q, qu.id, tq + 2) }
+  check('体验期 me：plan=full、base=free', (await A.meBySession(Q, qs)).body.base === 'free')
+  var rq2 = await A.redeemInvite(Q, qs, tq + 3, { invite: 'TRIAL001' })
+  check('体验期补填邀请码 → 永久完整版', rq2.status === 200 && qu.plan === 'full', rq2)
+
   check('老账号（没有 plan 字段）算完整版', A.planOf({ email: 'x' }) === 'full' && A.planOf({ plan: 'free' }) === 'free')
 
   /* 别人抢先用这个邮箱免费注册、没验证；真主人带邀请码来注册 → 照样开成完整版 */

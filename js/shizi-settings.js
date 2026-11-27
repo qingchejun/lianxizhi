@@ -39,7 +39,7 @@
      * lesson：人教版「学校学到第几课」（跨单元连续编号，0 = 整册都算学过）；
      * unit：人教版「单元检查」页签印第几单元。两项在某恩下不起作用。
      */
-    book: 'hongen',
+    book: 'rj1a', /* 2026-11-27 站长定：新用户默认统编版（全国语文课本统一）；已存过设置的照旧 */
     lesson: 0,
     unit: 1,
     /* 人教版每日一卷的认识字：'seq' 按课本顺序往下、一轮内不重复（默认）| 'rand' 随机。某恩不用这项 */
@@ -132,6 +132,9 @@
   /* 把任意来源（表单 / localStorage / URL）的原始值清洗成合法设置对象 */
   function sanitize(raw) {
     var s = Object.assign({}, DEFAULTS, raw)
+    /* 字表默认改成统编版（2026-11-27）之前就存过设置、但存的时候还没有「字表」这一项的老用户：
+       他们一直用的是某恩，别悄悄换掉 */
+    if (raw && typeof raw === 'object' && raw.book == null && raw.perWeek != null) s.book = 'hongen'
     /* 每周字数上限 200：再多就一页放不下、字也小到 6mm 的下限附近了。
        下限 10 是给「这周只挑十个难字过一遍」留的。 */
     var perWeek = clampInt(s.perWeek, 10, 200, DEFAULTS.perWeek)

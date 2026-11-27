@@ -241,9 +241,9 @@
       const card = lessonCard && g === sheet.groups[0] ? lessonCard
         : !lessonCard ? sheet.cards.find(entry => entry.group === g.id || entry.startsAt === g.id) : null
       const open = Boolean(lessonCard && card) || g.items.some(it => stuck.has(it.id))
-      return '<div class="py-teach-row"><div class="py-teach-head"><b>' + esc(groupName(sheet, g)) + '</b>' +
+      return '<div class="py-teach-row"><div class="py-teach-head"><b>' + R.latin(groupName(sheet, g)) + '</b>' +
         '<button type="button" class="btn btn-sm" data-kid="' + esc(g.id) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="11.5" rx="2"/><path d="M9 20h6M12 16.5V20"/></svg>孩子视图</button></div>' +
-        (card ? '<details class="py-teach"' + (open ? ' open' : '') + '><summary>家长教学卡 · ' + esc(card.label) +
+        (card ? '<details class="py-teach"' + (open ? ' open' : '') + '><summary>家长教学卡 · ' + R.latin(card.label) +
           '<small>' + (open && !lessonCard ? '卡住了，先讲再换题' : '卡住时再看') + '</small></summary>' +
           '<div class="py-teach-body">' + R.teaching(card) + '</div></details>' : '') +
         '</div>'
@@ -345,7 +345,26 @@
 
   /* ---------- 开场：按网址挑卷 ---------- */
 
-  if (query.has('sheet') && !sheet) {
+  /* 免费版（2026-11-27）：今日卷和历史照常；专题、课程是完整版功能（7 天体验期里算完整版） */
+  const FL = S.fullLock
+  const pyLocked = FL && !FL.isFull() && (tab === 'topics' || tab === 'lessons')
+  if (FL && !FL.isFull()) {
+    doc.querySelectorAll('#py-tabs [data-tab="topics"], #py-tabs [data-tab="lessons"]').forEach(a => FL.markTab(a, true))
+  }
+
+  if (pyLocked) {
+    const lessonsTab = tab === 'lessons'
+    sumEl.textContent = (lessonsTab ? '课程' : '专题') + ' · 完整版'
+    host.innerHTML = '<section class="group"><p class="hint">' + (lessonsTab
+      ? '课程照课本顺序一课一课讲，每课有教学卡：怎么发音、口诀、容易错在哪。'
+      : '专题按难点分类，孩子哪里老错就挑哪一项集中练。') +
+      '</p><a class="btn btn-sm" href="pinyin.html">回今日卷</a></section>'
+    paper.innerHTML = FL.html(lessonsTab ? '拼音课程是完整版功能' : '拼音专题是完整版功能',
+      lessonsTab ? '跟着课本从 a o e 学到整体认读，每课先讲后练。' : '平舌翘舌、前后鼻音、形近字母这些难点，一项一张卷。')
+    FL.bind(paper)
+    paper.style.zoom = ''
+    printButton.disabled = true
+  } else if (query.has('sheet') && !sheet) {
     host.innerHTML = '<section class="group"><div class="empty">' + ICON.paper + '<b>这台设备上没有这张卷</b>' +
       '<p>卷可能出在另一台设备上。登录同一个账号等它同步过来，或者导入包含这张卷的备份。</p>' +
       '<a class="btn btn-sm" href="pinyin.html?view=history">回历史卷</a></div></section>'

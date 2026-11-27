@@ -2406,3 +2406,41 @@ select.input {
 @media print {
   .work-head .head-check, .work-head .head-help { display: none; }
 }
+
+/* 完整版功能的锁（js/full-lock.js）：识字、拼音免费版里锁住的页签 */
+.full-lock {
+  max-width: 440px;
+  margin: 72px auto;
+}
+
+.full-lock .full-lock-free {
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+
+.full-lock-acts {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.full-lock-msg {
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.tab-lock {
+  display: inline-flex;
+  margin-left: 3px;
+  vertical-align: -1px;
+}
+
+.tab-lock svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  opacity: .6;
+}
