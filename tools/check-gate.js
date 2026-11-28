@@ -57,7 +57,7 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
 
   /* --- 免费版（2026-11-24 放开注册）：白名单，每个网页 × 各种写法都试 --- */
   var fs = require('fs')
-  var FREE_OK = ['index', 'kousuan', 'aoshu', 'shizi', 'pinyin', 'shudu', 'huochai', 'mima', 'migong', 'zhizhi', 'mark', 'help', 'privacy', '404']
+  var FREE_OK = ['index', 'kousuan', 'aoshu', 'shizi', 'pinyin', 'shudu', 'huochai', 'mima', 'migong', 'zhizhi', 'mark', 'help', 'privacy', 'terms', '404']
   var htmls = fs.readdirSync(require('path').join(__dirname, '..')).filter(function (f) { return /\.html$/.test(f) })
   var free = { ok: true, plan: 'free' }, full = { ok: true, plan: 'full' }
   var leaks = []
@@ -76,6 +76,7 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   check('完整版：一切放行', ['/aoshu', '/shizi/', '/admin.html', '/pinyin'].every(function (p) { return d(p, '', full).action === 'pass' }))
   check('上锁页不单独开网址', d('/locked', '', full).action === 'redirect' && d('/locked.html', '', free).action === 'redirect')
   check('隐私说明没登录也能看', d('/privacy', '', false).action === 'pass')
+  check('用户协议和退款说明没登录也能看、免费版也能看', d('/terms', '', false).action === 'pass' && d('/terms', '', { ok: true, plan: 'free' }).action === 'pass')
   check('老调用传 true 仍当完整版', d('/aoshu', '', true).action === 'pass')
 
   /* 源码、脚本、文档、配置：登没登录都不给看（站点根目录就是仓库根目录） */

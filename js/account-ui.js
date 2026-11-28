@@ -235,19 +235,30 @@
     if (tsWidget !== null && root.turnstile) { try { root.turnstile.reset(tsWidget) } catch (e) { /* 框已经不在了 */ } }
   }
 
-  /* 账号页里的版本：免费版能补填邀请码开通完整版 */
+  /* 账号页里的版本：免费版能补填邀请码开通完整版；付费开通上线后（js/pay.js）还能直接买一年 */
   function planBlock() {
-    /* 2026-11-27：免费账号注册送 7 天完整版体验（base=free 且 fullUntil 没过 → plan 算 full） */
+    /* 2026-11-27：免费账号注册送 7 天完整版体验（base=free 且 fullUntil 没过 → plan 算 full）；
+       2026-11-28 年卡也写 fullUntil，所以这里不分体验和年卡，只写用到哪天 */
     var until = A.state.fullUntil
     var md = function (t) { var d = new Date(t); return (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日' }
+    var ymd = function (t) { var d = new Date(t); return d.getFullYear() + ' 年 ' + md(t) }
+    var P = window.SumSum && window.SumSum.pay
+    var buy = P && P.on()
+      ? '<div class="account-buy" data-pay-scope>' + P.button(null, 'btn-primary') +
+        '<p class="account-buy-note">支付宝、微信都能付；已有的天数接着算。付款 7 天内不满意，全额退款（<a href="/terms" target="_blank" rel="noopener">说明</a>）。</p>' +
+        '<p class="redeem-msg" data-pay-msg role="alert" hidden></p></div>'
+      : ''
     if (A.state.base === 'free' && A.state.plan === 'full' && until) {
-      return '<div class="account-plan"><p><b>完整版体验</b> · 到 ' + md(until) + '，所有板块都能用。到期后回免费版：口算、游戏、识字每日一卷、拼音今日卷照常，孩子的记录都留着。有邀请码现在就可以填，开通后不再到期。</p>' +
-        redeemForm() + '</div>'
+      var trialLike = until - Date.now() <= 8 * 86400 * 1000
+      /* 剩不到 8 天的多半是注册送的体验（年卡买完至少一年），照原来的说法 */
+      return '<div class="account-plan"><p><b>' + (trialLike ? '完整版体验' : '完整版') + '</b> · ' + (trialLike ? '到 ' + md(until) : '用到 ' + ymd(until)) + '，所有板块都能用。' +
+        '到期后回免费版：口算、游戏、识字每日一卷、拼音今日卷照常，孩子的记录都留着。</p>' +
+        buy + (buy ? '<p class="account-or">朋友给了邀请码，也可以填码开通（不再到期）：</p>' : '') + redeemForm() + '</div>'
     }
     if (A.state.plan === 'free') {
       return '<div class="account-plan"><p><b>免费版</b> · 可以用口算、数独和游戏，识字每日一卷、拼音今日卷，扫码打分、错题自动复习都有。' +
         '奥数第 4 课以后、写字、单元检查、拼音课程和专题要开通完整版。</p>' +
-        redeemForm() + '</div>'
+        buy + (buy ? '<p class="account-or">朋友给了邀请码，填码开通：</p>' : '') + redeemForm() + '</div>'
     }
     return '<div class="account-plan"><p><b>完整版</b> · 九个板块都能用。</p></div>'
   }

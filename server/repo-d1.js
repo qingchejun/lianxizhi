@@ -92,6 +92,51 @@ export function repo(db) {
       const r = await db.prepare('SELECT created_at FROM wants WHERE uid=?').bind(uid).first()
       return r ? r.created_at : null
     },
+    /* ---- 订单（完整版年卡，2026-11-28，server/pay-core.js） ---- */
+    async orderInsert(o) {
+      await db.prepare('INSERT INTO orders(id,uid,email,amount,currency,days,status,created_at) VALUES(?,?,?,?,?,?,?,?)')
+        .bind(o.id, o.uid, o.email, o.amount, o.currency, o.days, o.status, o.created_at).run()
+    },
+    async orderById(id) {
+      return await db.prepare('SELECT * FROM orders WHERE id=?').bind(id).first()
+    },
+    async orderSetSession(id, sessionId) {
+      await db.prepare('UPDATE orders SET waffo_session=? WHERE id=?').bind(sessionId, id).run()
+    },
+    async ordersPendingSince(uid, since) {
+      const r = await db.prepare("SELECT COUNT(*) AS n FROM orders WHERE uid=? AND status='pending' AND created_at>=?").bind(uid, since).first()
+      return r ? r.n : 0
+    },
+    /* 待付 → 已付 + 账号加天数，一个事务（D1 batch）：记已付只有一次能成功，加天数只跟着那一次走（granted_at 为空才加），
+       到期日用 SQL 原子地算：没过期接着加、过期了从 now 算（安全复审 11-28：别读出来再写回去，并发会丢） */
+    async orderGrant(id, paymentId, now, uid, ms) {
+      await db.batch([
+        db.prepare("UPDATE orders SET status='paid', waffo_payment_id=?, paid_at=? WHERE id=? AND status='pending'").bind(paymentId, now, id),
+        db.prepare("UPDATE users SET full_until = MAX(?, COALESCE(full_until, 0)) + ? WHERE id=? AND EXISTS(SELECT 1 FROM orders WHERE id=? AND status='paid' AND granted_at IS NULL)")
+          .bind(now, ms, uid, id),
+        db.prepare("UPDATE orders SET granted_at=? WHERE id=? AND status='paid' AND granted_at IS NULL").bind(now, id)
+      ])
+      const o = await db.prepare('SELECT granted_at, paid_at FROM orders WHERE id=?').bind(id).first()
+      return !!(o && o.granted_at === now && o.paid_at === now)
+    },
+    async orderMarkMismatch(id, paymentId) {
+      await db.prepare("UPDATE orders SET status='mismatch', waffo_payment_id=? WHERE id=? AND status='pending'").bind(paymentId, id).run()
+    },
+    /* 已付 → 已退 + 扣回天数，一个事务；只扣一次（revoked_at 为空才扣） */
+    async orderRevoke(id, ticket, now, uid, ms) {
+      await db.batch([
+        db.prepare("UPDATE orders SET status='refunded', refund_ticket=?, refunded_at=? WHERE id=? AND status='paid'").bind(ticket || null, now, id),
+        db.prepare("UPDATE users SET full_until = MAX(0, COALESCE(full_until, 0) - ?) WHERE id=? AND EXISTS(SELECT 1 FROM orders WHERE id=? AND status='refunded' AND granted_at IS NOT NULL AND revoked_at IS NULL)")
+          .bind(ms, uid, id),
+        db.prepare("UPDATE orders SET revoked_at=? WHERE id=? AND status='refunded' AND revoked_at IS NULL").bind(now, id)
+      ])
+      const o = await db.prepare('SELECT revoked_at, refunded_at FROM orders WHERE id=?').bind(id).first()
+      return !!(o && o.revoked_at === now && o.refunded_at === now)
+    },
+    async ordersList(limit) {
+      const r = await db.prepare('SELECT o.*, u.email AS user_email FROM orders o LEFT JOIN users u ON u.id=o.uid ORDER BY o.created_at DESC LIMIT ?').bind(limit || 200).all()
+      return r.results || []
+    },
     async deleteUser(id) {
       await db.batch([
         db.prepare('DELETE FROM data WHERE user_id=?').bind(id),

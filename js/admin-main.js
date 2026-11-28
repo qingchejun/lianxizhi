@@ -8,6 +8,7 @@
   var doc = root.document
   var invites = []
   var users = null /* { stats, users } */
+  var orders = null /* 订单列表（2026-11-28） */
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -66,8 +67,29 @@
         '<th>邀请码</th><th>备注</th><th>状态</th><th>生成时间</th><th>占用（邮箱/时间）</th><th>激活时间</th><th title="近 7 天扫码或在板块页打分了几张纸">近 7 天打分</th><th></th>' +
       '</tr></thead><tbody>' +
       (invites.length ? invites.map(rowHTML).join('') : '<tr><td colspan="8" class="admin-note">还没有邀请码，先生成几张。</td></tr>') +
-      '</tbody></table>' + usersHTML()
+      '</tbody></table>' + ordersHTML() + usersHTML()
     doc.getElementById('admin-create').addEventListener('submit', onCreate)
+  }
+
+  /* 订单（2026-11-28 付费开通，server/pay-core.js）：7 天内可以点退款 */
+  var ORDER_LABEL = { pending: '待付', paid: '已付', refunded: '已退款', mismatch: '金额不对' }
+  function ordersHTML() {
+    if (!orders) return ''
+    var paid = orders.filter(function (o) { return o.status === 'paid' })
+    var sum = paid.reduce(function (n, o) { return n + o.amount }, 0)
+    var shown = orders.filter(function (o) { return o.status !== 'pending' }).concat(orders.filter(function (o) { return o.status === 'pending' }).slice(0, 10))
+    return '<h2 class="admin-h2">订单</h2>' +
+      '<p class="admin-stats">已付 <b>' + paid.length + '</b> 单，共 <b>' + (sum / 100).toFixed(2) + '</b> 元（不含已退款）。付款 7 天内可以退款。</p>' +
+      (shown.length ? '<table class="admin-table"><thead><tr><th>订单号</th><th>邮箱</th><th>金额</th><th>状态</th><th>下单</th><th>付款</th><th></th></tr></thead><tbody>' +
+        shown.map(function (o) {
+          var canRefund = o.status === 'paid'
+          var late = o.paid_at && Date.now() - o.paid_at > 7 * 86400 * 1000
+          return '<tr><td><small>' + esc(o.id) + '</small></td><td>' + esc(o.email) + '</td>' +
+            '<td>' + (o.amount / 100).toFixed(2) + ' ' + esc(o.currency) + '</td>' +
+            '<td><span class="badge badge-' + (o.status === 'paid' ? 'activated' : o.status === 'refunded' ? 'revoked' : 'unused') + '">' + (ORDER_LABEL[o.status] || esc(o.status)) + '</span></td>' +
+            '<td>' + fmtTime(o.created_at) + '</td><td>' + (o.paid_at ? fmtTime(o.paid_at) : '—') + '</td>' +
+            '<td class="admin-ops">' + (canRefund ? '<button type="button" class="admin-btn admin-btn-danger" data-refund="' + esc(o.id) + '" data-late="' + (late ? 1 : 0) + '">退款</button>' : '') + '</td></tr>'
+        }).join('') + '</tbody></table>' : '<p class="admin-note">还没有订单。</p>')
   }
 
   /* 账号：免费版 / 完整版统计，手动开通或改回免费版 */
@@ -83,7 +105,7 @@
       users.users.map(function (u) {
         return '<tr><td>' + esc(u.email) + (u.verified ? '' : ' <small>（没验证）</small>') + (u.banned ? ' <span class="badge badge-revoked">已停用</span>' : '') + '</td>' +
           '<td><span class="badge badge-' + (u.plan === 'full' ? 'activated' : 'unused') + '">' + (u.plan === 'full' ? '完整版' : '免费版') + '</span>' +
-            (u.trial ? ' <small>体验到 ' + fmtTime(u.full_until) + '</small>' : u.ended ? ' <small>体验已结束</small>' : '') + '</td>' +
+            (u.trial ? ' <small>到 ' + fmtTime(u.full_until) + '</small>' : u.ended ? ' <small>体验已结束</small>' : '') + '</td>' +
           '<td>' + fmtTime(u.created_at) + '</td>' +
           '<td>' + (u.invited ? '邀请码' : '免费注册') + '</td>' +
           '<td>' + (u.marked7d || 0) + '</td>' +
@@ -96,6 +118,8 @@
   async function load() {
     var ru = await api('/api/admin/users')
     users = ru.status === 200 ? ru.body : null
+    var ro = await api('/api/admin/orders')
+    orders = ro.status === 200 ? ro.body.orders || [] : null
     var r = await api('/api/admin/invites')
     if (r.status !== 200) {
       doc.getElementById('admin-root').innerHTML = '<p class="admin-note">' + esc(r.body.error || '列表没拉到，刷新试试。') + '</p>'
@@ -172,6 +196,17 @@
       if (!root.confirm(full ? '给这个账号开通完整版？' : '把这个账号改回免费版？奥数、识字、拼音会锁上。')) return
       api('/api/admin/users/plan', { id: pl.dataset.uid, plan: pl.dataset.plan }).then(function (r) {
         if (r.status !== 200) root.alert(r.body.error || '操作没成功，稍后再试。')
+        load()
+      })
+      return
+    }
+    var rf = e.target.closest('[data-refund]')
+    if (rf) {
+      var warn = rf.dataset.late === '1' ? '这单付款已经超过 7 天。' : ''
+      if (!root.confirm(warn + '全额退款，并取消这一年的完整版？')) return
+      rf.disabled = true
+      api('/api/admin/orders/refund', { id: rf.dataset.refund }).then(function (r) {
+        if (r.status !== 200) root.alert(r.body.error || '退款没成功，稍后再试。')
         load()
       })
       return

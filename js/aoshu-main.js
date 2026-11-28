@@ -609,11 +609,16 @@
             : '<form class="redeem-form" data-redeem novalidate><input class="input input-code" type="text" name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="如 K7M2-QF9W" aria-label="邀请码">' +
               '<button type="submit" class="btn btn-primary">开通完整版</button><p class="redeem-msg" data-redeem-msg role="alert" hidden></p></form>') +
         '</div>' +
-        '<div class="trial-way"><span>付费开通 2027 年 1 月上线</span>' +
-          '<button type="button" class="btn" data-trial-want>' + (guest ? '注册，开通时通知我' : '开通时通知我') + '</button>' +
-          '<p class="lk-want-msg" data-trial-want-msg role="status" hidden></p></div>' +
+        (S.pay && S.pay.on()
+          /* 2026-11-28 付费开通上线（js/pay.js） */
+          ? '<div class="trial-way" data-pay-scope><span>付费开通 · ' + S.pay.label() + '</span>' +
+            '<button type="button" class="btn btn-primary" data-pay-buy>开通完整版</button>' +
+            '<p class="lk-want-msg" data-pay-msg role="status" hidden></p></div>'
+          : '<div class="trial-way"><span>付费开通 2027 年 1 月上线</span>' +
+            '<button type="button" class="btn" data-trial-want>' + (guest ? '注册，开通时通知我' : '开通时通知我') + '</button>' +
+            '<p class="lk-want-msg" data-trial-want-msg role="status" hidden></p></div>') +
       '</div>'
-    if (guest) return
+    if (guest || (S.pay && S.pay.on())) return
     if (wantEmail) return wantDone(wantEmail)
     if (wantChecked) return
     wantChecked = true

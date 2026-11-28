@@ -4,6 +4,7 @@ import { readCookie, verify, COOKIE } from '../server/session.js'
 import { meBySession } from '../server/auth-core.js'
 import { repo } from '../server/repo-d1.js'
 import { moveDecision } from '../server/move.js'
+import { payInfo } from '../server/pay-core.js'
 
 /* 全站登录门槛。规则见 server/gate.js；验登录沿用 /api/auth/me 的 meBySession（验签 + 改密/停用即失效）。
    验完顺手把登录态写进网页（window.__SUMSUM_ME），页面不用再单独请求一次 /api/auth/me——
@@ -87,7 +88,14 @@ function meScript(me, env) {
   const ts = env && env.TURNSTILE_SITEKEY ? String(env.TURNSTILE_SITEKEY) : ''
   return '<script>window.__SUMSUM_ME=' + JSON.stringify(safe).replace(/</g, '\\u003c') +
     ';window.__SUMSUM_PLAN=' + JSON.stringify(safe.ok ? safe.plan : '') +
-    ';window.__SUMSUM_TS=' + JSON.stringify(ts).replace(/</g, '\\u003c') + '</script>'
+    ';window.__SUMSUM_TS=' + JSON.stringify(ts).replace(/</g, '\\u003c') +
+    /* __SUMSUM_PAY：付费开通开没开（Waffo 密钥配齐才算，2026-11-28 js/pay.js） */
+    ';window.__SUMSUM_PAY=' + JSON.stringify(payPublic(env)) + '</script>'
+}
+
+function payPublic(env) {
+  const p = payInfo(env)
+  return { on: p.on, label: p.label }
 }
 
 function withMe(res, me, env, url) {

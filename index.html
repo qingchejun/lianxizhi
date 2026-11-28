@@ -12,10 +12,10 @@
   <script>
     /* 口算以前就在 index.html，分享出去的链接都是 index.html?mode=…&seed=…。
        首页本身从不带参数，所以带参数的一律是老的口算链接，原样转过去，卷子一模一样。
-       例外：?reset= 是密码重设邮件的落地链接（js/account-ui.js 接管），必须留在首页。 */
-    if (location.search && !/[?&]reset=/.test(location.search)) location.replace('kousuan.html' + location.search)
+       例外：?reset= 是密码重设邮件的落地链接（js/account-ui.js 接管）、?paid= 是付款后回来确认到账（js/pay.js），必须留在首页。 */
+    if (location.search && !/[?&](reset|paid)=/.test(location.search)) location.replace('kousuan.html' + location.search)
   </script>
-  <link rel="stylesheet" href="css/app.css?v=7e2f76d147" />
+  <link rel="stylesheet" href="css/app.css?v=a8932abbdf" />
   <link rel="stylesheet" href="css/today.css?v=bc8b760e03" />
 </head>
 <body data-help-manual>
@@ -122,7 +122,8 @@
 <script src="js/backup.js?v=5af8e1e7ac"></script>
 <script src="js/help.js?v=ca86cf215e"></script>
 <script src="js/account.js?v=c12ade27c9"></script>
-<script src="js/account-ui.js?v=61f2ffe1e9"></script>
+<script src="js/pay.js?v=cfe7fd78a3"></script>
+<script src="js/account-ui.js?v=e4ba816a67"></script>
 <script src="js/sync-core.js?v=5f4122b899"></script>
 <script src="js/sync.js?v=accb9217c5"></script>
 <script>

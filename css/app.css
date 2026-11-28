@@ -2271,6 +2271,36 @@ select.input {
 .account-plan p { margin: 0; }
 .account-plan b { color: var(--ink); }
 .account-plan .redeem-form { margin-top: 10px; }
+.account-buy { margin-top: 10px; }
+.account-buy .btn { width: 100%; }
+.account-buy-note { margin: 6px 0 0 !important; font-size: 12.5px; color: var(--ink-soft); }
+.account-or { margin: 12px 0 0 !important; font-size: 13px; }
+
+/* 付完回来确认到账（js/pay.js） */
+.pay-wait {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(20, 22, 28, 0.45);
+}
+.pay-card {
+  width: min(420px, 100%);
+  padding: 22px 22px 18px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+.pay-card b { display: block; margin-bottom: 6px; font-size: 17px; color: var(--ink); }
+.pay-card p { margin: 0; }
+.pay-acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+@media print { .pay-wait { display: none !important; } }
 .account-foot {
   margin: 14px 0 0;
   font-size: 13px;

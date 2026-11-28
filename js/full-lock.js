@@ -36,16 +36,21 @@
     return !!(st && st.base === 'free' && st.fullUntil && st.fullUntil <= Date.now())
   }
 
+  function payOn() { return !!(S().pay && S().pay.on()) }
+
   function html(title, desc) {
-    return '<div class="empty full-lock">' + LOCK_SVG +
+    return '<div class="empty full-lock" data-pay-scope>' + LOCK_SVG +
       '<b>' + esc(title) + '</b>' +
       '<p>' + esc(desc) + (trialEnded() ? '7 天完整版体验已经结束，孩子练过的记录都还在，开通后马上接着用。' : '') + '</p>' +
       '<p class="full-lock-free">免费版也能用：识字每日一卷、拼音今日卷，打分、错题自动复习都照常。</p>' +
-      '<div class="full-lock-acts">' +
-        '<button type="button" class="btn btn-sm btn-primary" data-fl-redeem>填邀请码开通</button>' +
-        '<button type="button" class="btn btn-sm" data-fl-want>付费开通时通知我</button>' +
+      '<div class="full-lock-acts">' + (payOn()
+        /* 2026-11-28 付费开通上线后：直接买（js/pay.js），邀请码退到第二个 */
+        ? '<button type="button" class="btn btn-sm btn-primary" data-pay-buy>开通完整版 · ' + esc(S().pay.label()) + '</button>' +
+          '<button type="button" class="btn btn-sm" data-fl-redeem>填邀请码开通</button>'
+        : '<button type="button" class="btn btn-sm btn-primary" data-fl-redeem>填邀请码开通</button>' +
+          '<button type="button" class="btn btn-sm" data-fl-want>付费开通时通知我</button>') +
       '</div>' +
-      '<p class="full-lock-msg" data-fl-msg hidden></p></div>'
+      '<p class="full-lock-msg" data-fl-msg data-pay-msg hidden></p></div>'
   }
 
   function bind(box) {
