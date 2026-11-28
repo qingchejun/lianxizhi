@@ -125,6 +125,12 @@
     if (!C().isPractice(info.module)) return null
     var date = today()
     var id = C().makeId(info.module + '|' + info.idParts + '|' + date)
+    /* 同一天、内容一模一样的另一张卷（识字每日一卷学过的字少时，前后两张可能字完全相同；
+       今天还能预出明天的卷）：已有记录是别的卷（ref.d 不同）就另起一个号，免得新卷一打开就显示「已打分」。
+       只在撞上时才换号，平常的号不变，已经印出去的纸照样扫得到 */
+    var St = root.SumSum && root.SumSum.store
+    var old = St && info.ref && info.ref.d ? St.get(C().keyOf(id)) : null
+    if (old && old.ref && old.ref.d && old.ref.d !== info.ref.d) id = C().makeId(info.module + '|' + info.idParts + '|' + date + '|' + info.ref.d)
     current = { id: id, info: info, date: date }
     if (root.document) {
       hookLogin()
