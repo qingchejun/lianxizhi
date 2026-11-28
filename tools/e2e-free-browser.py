@@ -124,6 +124,14 @@ with sync_playwright() as p:
     page.wait_for_selector('#preview .sheet', timeout=15000)
     close_help(page)
     check('免费版识字：每日一卷能用', page.query_selector('#preview .full-lock') is None and page.query_selector('.lk-card') is None)
+    # 拼音闪卡（2026-11-28）：免费版能印第 1、2 课，第 3 课以后和全套是完整版
+    page.goto(BASE + '/pinyin?view=cards&k=2')
+    page.wait_for_selector('#preview .pfc-page, #preview .full-lock', timeout=15000)
+    check('免费版拼音闪卡：第 2 课能印', page.query_selector('#preview .pfc-page') is not None and not page.is_disabled('#btn-print'))
+    for k in ['3', 'all']:
+        page.goto(BASE + '/pinyin?view=cards&k=' + k)
+        page.wait_for_selector('#preview .pfc-page, #preview .full-lock', timeout=15000)
+        check('免费版拼音闪卡：k=' + k + ' 显示「完整版功能」、打印不可用', page.query_selector('#preview .full-lock') is not None and page.is_disabled('#btn-print'))
     for q, name in [('mode=week', '单元检查'), ('mode=wrong', '错字集'), ('pane=xie', '写字')]:
         page.goto(BASE + '/shizi?' + q)
         page.wait_for_selector('#preview .sheet, #preview .full-lock, #preview .empty', timeout=15000)

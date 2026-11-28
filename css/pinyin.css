@@ -645,18 +645,26 @@
 /* ---------- 拼音知识点闪卡（2026-11-28，js/pinyin-flash.js） ----------
    一页 A4：页边 8mm（比练习纸窄，卡片大一点），2 列；每格上半正面、下半背面倒过来印，中间虚线对折。 */
 @page pfc { size: A4 portrait; margin: 8mm; }
-.pfc-page {
+/* 屏幕上是一张 A4 白纸（.sheet 的阴影、白底照用），页边 8mm 与打印一致 */
+.sheet.pfc-page {
   page: pfc;
-  width: 194mm;
-  height: 280mm;
+  width: 210mm;
+  height: 297mm;
+  min-height: 0;
+  padding: 8mm;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
   color: #111;
   font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
-  break-after: page;
 }
-.pfc-page:last-child { break-after: auto; }
+#preview .sheet.pfc-page + .sheet.pfc-page { margin-top: 24px; }
+@media print {
+  /* 打印：页边交给 @page pfc；高度定死，最后一页不多出一张白纸 */
+  .sheet.pfc-page { width: auto; height: 280mm; padding: 0; margin: 0 !important; }
+  .sheet.pfc-page:last-child { break-after: auto; page-break-after: auto; }
+}
+/* 屏幕上「背面摆正」：只是方便家长看，打印照样倒着印 */
+@media screen { .pfc-upright .pfc-back { transform: none; border-bottom: 0; border-top: 0.3mm dashed #999; } }
 .pfc-grid {
   flex: 1;
   display: grid;
@@ -713,3 +721,9 @@
 .pfc-py { font-family: "Pinyin Kids", -apple-system, "PingFang SC", sans-serif; }
 .pfc-how { padding-top: 2mm; font-size: 8pt; color: #444; line-height: 1.4; }
 .pfc-how b { margin-right: 2mm; color: #111; }
+/* 右栏「这一页的卡」 */
+.pfc-list { margin: 0; padding-left: 1.4em; font-size: 13px; line-height: 1.9; }
+.pfc-list li span { font-family: "Pinyin Kids", -apple-system, "PingFang SC", sans-serif; }
+.pfc-list em { margin-left: 6px; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-style: normal; background: #eef1f6; color: #556; }
+.pfc-list em.is-due { background: #fff3d6; color: #8a5a00; }
+.pfc-list em.is-lesson { background: #e6efff; color: #2a55c9; }

@@ -1,0 +1,82 @@
+# 拼音知识点闪卡（2026-11-28）：完整版账号走一遍「闪卡」页签
+#   本地预览（:8999）在跑、账号 preview@local.test / preview123 存在（完整版）时运行：
+#   /opt/homebrew/opt/python@3.10/bin/python3.10 tools/e2e-pinyin-cards-browser.py
+# 免费版只能印第 1、2 课：在 tools/e2e-free-browser.py 里测。
+import sys, time
+from playwright.sync_api import sync_playwright
+
+BASE = 'http://localhost:8999'
+EMAIL, PASSWORD = 'preview@local.test', 'preview123'
+ok_n = 0
+bad = []
+
+
+def check(name, cond, info=''):
+    global ok_n
+    if cond:
+        ok_n += 1
+        print('✓ ' + name)
+    else:
+        bad.append(name)
+        print('✗ ' + name + ('  ' + str(info) if info != '' else ''))
+
+
+def login(page):
+    if not page.is_visible('form[data-view="login"]'):
+        page.click('.sh-act a')
+    page.fill('form[data-view="login"] input[name="email"]', EMAIL)
+    page.fill('form[data-view="login"] input[name="password"]', PASSWORD)
+    page.click('form[data-view="login"] [data-act="submit"]')
+
+
+def cells(page):
+    return page.eval_on_selector_all('#preview .pfc-cell[data-card]', 'els => els.map(e => e.dataset.card)')
+
+
+with sync_playwright() as p:
+    br = p.chromium.launch()
+    errs = []
+    ctx = br.new_context(viewport={'width': 1440, 'height': 900})
+    pg = ctx.new_page()
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    pg.goto(BASE + '/')
+    login(pg)
+    pg.wait_for_url(BASE + '/', timeout=30000)
+    time.sleep(1.5)
+
+    pg.goto(BASE + '/pinyin?view=cards&k=6&size=m')
+    pg.wait_for_selector('#preview .pfc-page', timeout=15000)
+    check('闪卡页签亮着', 'active' in (pg.get_attribute('#py-tabs [data-tab="cards"]', 'class') or ''))
+    ids = cells(pg)
+    check('第 6 课：一页 6 张，本课 3 张在前', len(ids) == 6 and all(i.startswith('k06') for i in ids[:3]), ids)
+    check('右栏列出这一页的卡、标了「本课」', pg.locator('.pfc-list li').count() == 6 and '本课' in pg.inner_text('.pfc-list'))
+    check('打印按钮可用、写「打印闪卡」', not pg.is_disabled('#btn-print') and '打印闪卡' in pg.inner_text('#btn-print'))
+    check('一页没有溢出', pg.evaluate("Array.from(document.querySelectorAll('.pfc-face')).every(f => f.scrollHeight <= f.clientHeight + 1)"))
+    pg.select_option('#pfc-k', 'all')
+    time.sleep(0.4)
+    check('全套：38 张 7 页', len(cells(pg)) == 38 and pg.locator('#preview .pfc-page').count() == 7)
+    check('网址记下 k=all', 'k=all' in pg.url, pg.url)
+    pg.click('[data-pfc-size="l"]')
+    time.sleep(0.4)
+    check('大卡：一页 4 张 → 10 页', pg.locator('#preview .pfc-page').count() == 10 and pg.locator('#preview .pfc-page.is-l').count() == 10)
+    check('大卡也不溢出', pg.evaluate("Array.from(document.querySelectorAll('.pfc-face')).every(f => f.scrollHeight <= f.clientHeight + 1 && f.scrollWidth <= f.clientWidth + 1)"))
+    pg.check('#pfc-upright')
+    time.sleep(0.3)
+    check('背面摆正：屏幕上不再倒着', pg.evaluate("getComputedStyle(document.querySelector('.pfc-back')).transform") in ('none', ''))
+    pg.goto(BASE + '/pinyin?view=cards')
+    pg.wait_for_selector('#preview .pfc-page', timeout=15000)
+    check('大小、摆正都记住了', pg.locator('#preview .pfc-page.is-l').count() >= 1 and pg.is_checked('#pfc-upright'))
+    pg.emulate_media(media='print')
+    check('打印时背面照样倒着印', 'matrix(-1' in pg.evaluate("getComputedStyle(document.querySelector('.pfc-back')).transform"))
+    check('打印时右栏不上纸', not pg.is_visible('#panel') if pg.query_selector('#panel') else True)
+    pg.emulate_media(media='screen')
+    # 还原偏好，别影响下次
+    pg.click('[data-pfc-size="m"]')
+    pg.uncheck('#pfc-upright')
+    check('全程没有脚本报错', not errs, errs)
+    ctx.close()
+    br.close()
+
+print('')
+print('%d / %d 通过' % (ok_n, ok_n + len(bad)))
+sys.exit(1 if bad else 0)

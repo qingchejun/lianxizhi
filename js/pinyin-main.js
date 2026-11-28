@@ -1,7 +1,9 @@
 /**
  * 拼音板块：按全站骨架排（2026-11 改版）。
  *   中间 = 纸卷预览（pinyin-render.print，已定稿不改）；
- *   右边 = 今日 / 专题 / 课程 / 历史 四个页签。
+ *   右边 = 今日 / 专题 / 课程 / 闪卡 / 历史 五个页签。
+ *     闪卡（2026-11-28）：知识点闪卡，一张卡一个知识点，对折卡一页 6 张或 4 张；按课挑卡（本课 + 该练了 + 复习），
+ *           只读拼音进度、不打分。数据 js/pinyin-cards.js，挑卡和纸样 js/pinyin-flash.js。免费版能印第 1、2 课。
  *     今日：为什么练这个 → 打分状态（打分统一在顶栏「打分」抽屉里，js/rate-drawer.js，与扫码打分页同一个组件）→
  *           家长教学卡、孩子视图 → 字号；
  *     专题 / 课程：目录，每项标状态（没练过 / 今天该练、几号再练 / 已掌握），点一项中间出该项纸卷；
@@ -44,7 +46,8 @@
 
   /* ---------- 页签：哪一个亮 ---------- */
 
-  const tab = view === 'topics' || query.has('topic') ? 'topics'
+  const tab = view === 'cards' ? 'cards'
+    : view === 'topics' || query.has('topic') ? 'topics'
     : view === 'lessons' || query.has('lesson') ? 'lessons'
       : view === 'history' || query.has('sheet') ? 'history' : 'today'
   doc.querySelectorAll('#py-tabs [data-tab]').forEach(a => {
@@ -323,6 +326,87 @@
     return P.makeSheet(today, P.derive(data.sheets, data.marks, today), { focus, id, mode })
   }
 
+  /* ---------- 闪卡（2026-11-28） ---------- */
+
+  const CARD_PREF = 'sumsum:pinyin:cards:v1'
+  const WHY = { lesson: '本课', due: '该练了', review: '复习', all: '' }
+
+  function cardsView() {
+    const F = S.pinyinFlash
+    const CARDS = S.pinyinCards.CARDS
+    const state = P.derive(data.sheets, data.marks, today)
+    const pref = (S.store && S.store.get(CARD_PREF)) || {}
+    const q = new URLSearchParams(root.location.search)
+    const size = (q.get('size') || pref.size) === 'l' ? 'l' : 'm'
+    const per = size === 'l' ? 4 : 6
+    let k = q.get('k') || String(F.currentLesson(D.lessons, state))
+    if (k !== 'all' && !(Number(k) >= 1 && Number(k) <= D.lessons.length)) k = '1'
+    const all = k === 'all'
+    const n = Number(k)
+    const free = FL && !FL.isFull()
+    const locked = free && (all || n > 2)
+    const picked = all ? CARDS.map(card => ({ card, why: 'all' })) : F.pick(CARDS, n, state, today, per)
+    const pages = Math.ceil(picked.length / per)
+    const lessonLabel = all ? '全套' : '第 ' + n + ' 课 ' + D.lessons[n - 1].label
+
+    sumEl.textContent = '闪卡 · ' + (all ? '全套 ' + CARDS.length + ' 张 · ' + pages + ' 页' : lessonLabel + ' · ' + picked.length + ' 张')
+    const options = D.lessons.map((l, i) =>
+      '<option value="' + (i + 1) + '"' + (k === String(i + 1) ? ' selected' : '') + '>第 ' + (i + 1) + ' 课　' + esc(l.label) +
+      (free && i + 1 > 2 ? '（完整版）' : '') + '</option>').join('') +
+      '<option value="all"' + (all ? ' selected' : '') + '>全套 ' + CARDS.length + ' 张（' + Math.ceil(CARDS.length / per) + ' 页）' + (free ? '（完整版）' : '') + '</option>'
+    host.innerHTML =
+      '<section class="group"><div class="group-title">知识点闪卡</div>' +
+        '<p class="hint">一张卡一个知识点：正面是孩子要认、要读的，背面是答案、口诀、例词和易错。剪下对折就能用，不用打分。</p>' +
+        '<label class="field"><span>印哪一课</span><select class="input" id="pfc-k">' + options + '</select></label>' +
+        '<p class="hint">按课印：这一课的卡排前面，再放前面课里「该练了」的，不够用前面的卡补满一页。</p>' +
+        '<div class="field"><span>大小</span><div class="seg-ctl" role="group" aria-label="闪卡大小">' +
+          '<button type="button" data-pfc-size="m" class="' + (size === 'm' ? 'on' : '') + '">一页 6 张</button>' +
+          '<button type="button" data-pfc-size="l" class="' + (size === 'l' ? 'on' : '') + '">一页 4 张大卡</button></div></div>' +
+        '<label class="check"><input type="checkbox" id="pfc-upright"' + (pref.upright ? ' checked' : '') + ' /><span>屏幕上把背面摆正看（打印照样倒着印）</span></label>' +
+      '</section>' +
+      (locked ? '' : '<section class="group"><div class="group-title">这' + (pages > 1 ? ' ' + pages + ' 页' : '一页') + '的卡</div><ol class="pfc-list">' +
+        picked.map(x => '<li><span>' + (x.card.lesson ? '第 ' + x.card.lesson + ' 课 · ' : '') + esc(x.card.title) + '</span>' +
+          (WHY[x.why] ? '<em class="is-' + x.why + '">' + WHY[x.why] + '</em>' : '') + '</li>').join('') + '</ol></section>') +
+      '<section class="group"><div class="group-title">怎么用</div><p class="hint">' + esc(F.HOW) +
+        '打印时选「实际大小」或 100%，别选「适合页面」。</p></section>'
+
+    paper.classList.toggle('pfc-upright', !!pref.upright)
+    printButton.querySelector('.txt').textContent = '打印闪卡'
+    if (locked) {
+      paper.innerHTML = FL.html('拼音闪卡第 3 课以后是完整版功能', '免费版可以印第 1、2 课的闪卡试一试；完整版 14 课 38 张全有，还会按孩子的进度把该练的卡放进来。')
+      FL.bind(paper)
+      paper.style.zoom = ''
+      printButton.disabled = true
+    } else {
+      paper.innerHTML = F.sheets(picked.map(x => x.card), { size, title: '拼音闪卡 · ' + lessonLabel }).join('')
+      printButton.disabled = false
+      if (S.shell && S.shell.fit) S.shell.fit()
+    }
+  }
+
+  function cardsGo(change) {
+    const q = new URLSearchParams(root.location.search)
+    Object.entries(change).forEach(([key, v]) => q.set(key, v))
+    root.history.replaceState(null, '', 'pinyin.html?' + q.toString())
+    cardsView()
+  }
+
+  if (tab === 'cards') {
+    host.addEventListener('change', event => {
+      if (event.target.id === 'pfc-k') cardsGo({ k: event.target.value })
+      if (event.target.id === 'pfc-upright') {
+        S.store.set(CARD_PREF, Object.assign({}, S.store.get(CARD_PREF) || {}, { upright: event.target.checked }))
+        cardsView()
+      }
+    })
+    host.addEventListener('click', event => {
+      const b = event.target.closest('[data-pfc-size]')
+      if (!b) return
+      S.store.set(CARD_PREF, Object.assign({}, S.store.get(CARD_PREF) || {}, { size: b.dataset.pfcSize }))
+      cardsGo({ size: b.dataset.pfcSize })
+    })
+  }
+
   /* ---------- 开场：按网址挑卷 ---------- */
 
   /* 免费版（2026-11-27）：今日卷和历史照常；专题、课程是完整版功能（7 天体验期里算完整版） */
@@ -344,6 +428,8 @@
     FL.bind(paper)
     paper.style.zoom = ''
     printButton.disabled = true
+  } else if (tab === 'cards') {
+    cardsView()
   } else if (query.has('sheet') && !sheet) {
     host.innerHTML = '<section class="group"><div class="empty">' + ICON.paper + '<b>这台设备上没有这张卷</b>' +
       '<p>卷可能出在另一台设备上。登录同一个账号等它同步过来，或者导入包含这张卷的备份。</p>' +
@@ -430,7 +516,7 @@
 
   // Wait for the pinyin font so the paper never prints in the fallback double-storey a/g.
   printButton.addEventListener('click', () => {
-    if (!sheet) return
+    if (!sheet && tab !== 'cards') return
     const ready = doc.fonts?.load ? doc.fonts.load('30pt "Pinyin Kids"', 'ɑ') : Promise.resolve()
     ready.catch(() => {}).then(() => root.print())
   })

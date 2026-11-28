@@ -1,73 +1,274 @@
 /**
  * 拼音知识点闪卡（2026-11-28 方案 docs/superpowers/specs/2026-11-28-pinyin-flashcards.md）。
  * 一张卡一个知识点：正面给孩子认读的大号拼音 + 家长念的问题，背面大号答案 + 口诀、例词、易错。
- * lesson：第几课（1–14，照 2024 统编一上）；direction：对上 pinyin-data 的进度方向号（只读，用来挑「该练了」的卡）。
- * 例词只用这一课为止学过的声母韵母（不超纲）。现在只有 6 张样卡，站长看过再写全套。内容手写，改动要过审阅稿 docs/review/pinyin-flashcards.md。
+ *   lesson：第几课（1–14，照 2024 统编一上）；direction：对上 pinyin-data 的进度方向号（只读，用来挑「该练了」的卡），
+ *   总结卡没有 direction。
+ *   back.list：总结卡的「全部」一行（声母表、韵母表）。
+ * 例词只用这一课为止学过的声母韵母（不超纲），tools/check-pinyin-cards.js 逐个音节核对。
+ * 内容手写，改动要同步审阅稿 docs/review/pinyin-flashcards.md。站长 11-28 看过 6 张样卡说「还可以」。
  */
 ;(function (root) {
   'use strict'
 
+  function card(id, lesson, direction, title, front, back) {
+    return { id: id, lesson: lesson, direction: direction, title: title, front: front, back: back }
+  }
+
   var CARDS = [
-    {
-      id: 'k03-bd', lesson: 3, direction: 'bd', title: 'b 和 d',
-      front: { big: 'b　d', ask: '这两个字母怎么分？' },
-      back: {
-        big: 'b 肚子在右，d 肚子在左',
+    /* ---------- 第 1 课 a o e ---------- */
+    card('k01-mouth', 1, 'lesson-1', '三个口形',
+      { big: 'a　o　e', ask: '读这三个，嘴巴分别是什么样？' },
+      { big: '大、圆、扁',
+        rhyme: '张大嘴巴 a a a，圆圆嘴巴 o o o，扁扁嘴巴 e e e。',
+        words: 'ā 啊　ó 哦　é 鹅',
+        pitfall: 'o 和 e 容易读混：o 的嘴是圆的，e 的嘴是扁的。' }),
+    card('k01-tones', 1, 'tones', '四个声调',
+      { big: 'ā　á　ǎ　à', ask: '四个声调，用手势比一比？' },
+      { big: '一平、二扬、三拐弯、四降',
+        rhyme: '一声平，二声扬，三声拐弯，四声降。',
+        words: 'é 鹅　è 饿',
+        pitfall: '二声一路往上扬；三声先往下，再往上。' }),
+
+    /* ---------- 第 2 课 i u ü ---------- */
+    card('k02-uv', 2, 'uv', 'u 和 ü',
+      { big: 'u　ü', ask: '这两个怎么认？嘴巴有什么不一样？' },
+      { big: 'ü 头上两点，嘴撮得更小',
+        rhyme: '嘴巴突出 u u u，吹个口哨 ü ü ü。',
+        words: 'ū　ǔ　ǖ　ǚ',
+        pitfall: 'u 的嘴是圆的、往前突；ü 的嘴更小、更紧。' }),
+    card('k02-idot', 2, 'i-dot', 'i 上标调',
+      { big: 'i + 二声 = ？', ask: '给 i 标二声，上面的点怎么办？' },
+      { big: 'í',
+        rhyme: 'i 上标调，先把点去掉。',
+        words: 'ī　í　ǐ　ì',
+        pitfall: '调号写在原来点的位置，点和调号不能一起写。' }),
+    card('k02-tone23', 2, 'tone23', '二声和三声',
+      { big: 'á　ǎ', ask: '二声和三声，听起来哪里不一样？' },
+      { big: '二声往上扬，三声先降再升',
+        rhyme: '二声一路往上扬，三声先往下再往上。',
+        words: 'í　ǐ　ú　ǔ',
+        pitfall: '这两个声调最容易读混，成对比着读。' }),
+
+    /* ---------- 第 3 课 b p m f ---------- */
+    card('k03-bd', 3, 'bd', 'b 和 d',
+      { big: 'b　d', ask: '这两个字母怎么分？' },
+      { big: 'b 肚子在右，d 肚子在左',
         rhyme: '右下半圆 b b b，左下半圆 d d d。',
         words: 'bà ba 爸爸　bǐ 笔',
-        pitfall: '还要分清 p：p 的竖往下长。'
-      }
-    },
-    {
-      id: 'k03-blend', lesson: 3, direction: 'blend', title: '两拼音节',
-      front: { big: 'b + ā = ？', ask: '声母和韵母，怎么连起来读？' },
-      back: {
-        big: 'bā',
+        pitfall: '还要分清 p：p 的竖往下长。' }),
+    card('k03-bp', 3, 'bp', 'b 和 p',
+      { big: 'b　p', ask: '这两个字母，竖往哪边长？' },
+      { big: 'b 竖往上，p 竖往下',
+        rhyme: '右下半圆 b b b，右上半圆 p p p。',
+        words: 'bà 爸　pà 怕',
+        pitfall: '以后还要分清 d、q：它们的半圆在左边。' }),
+    card('k03-bpsound', 3, 'bp-sound', '有没有气',
+      { big: 'bā　pā', ask: '手放在嘴前读一读，哪个有一股气？' },
+      { big: 'p 有气，b 没有',
+        rhyme: '听广播 b b b，爬山坡 p p p。',
+        words: 'bá 拔　pá 爬',
+        pitfall: '声母要读得轻、短：b 不是拖长的「波——」。' }),
+    card('k03-blend', 3, 'blend', '两拼音节',
+      { big: 'b + ā = ？', ask: '声母和韵母，怎么连起来读？' },
+      { big: 'bā',
         rhyme: '前音轻短后音重，两音相连猛一碰。',
         words: 'bā 八　mā 妈　pà 怕',
-        pitfall: '别读成「波—啊」两个音，b 要读得又轻又短。'
-      }
-    },
-    {
-      id: 'k04-nl', lesson: 4, direction: 'nl', title: 'n 和 l',
-      front: { big: 'n　l', ask: '捏住鼻子读一读，哪个读不出来？' },
-      back: {
-        big: 'n 读不出来',
+        pitfall: '别读成「波—啊」两个音，b 要读得又轻又短。' }),
+
+    /* ---------- 第 4 课 d t n l ---------- */
+    card('k04-nl', 4, 'nl', 'n 和 l',
+      { big: 'n　l', ask: '捏住鼻子读一读，哪个读不出来？' },
+      { big: 'n 读不出来',
         rhyme: 'n 的气从鼻子出来，l 的气从舌头两边出来。',
         words: 'ná 拿　mǎ lù 马路　nǚ 女',
-        pitfall: '很多孩子 n、l 不分，捏鼻子一试就知道。'
-      }
-    },
-    {
-      id: 'k06-vdot', lesson: 6, direction: 'v-dot', title: '小 ü 摘帽',
-      front: { big: 'j + ü = ？', ask: 'ü 碰到 j，头上两点怎么办？' },
-      back: {
-        big: 'ju',
+        pitfall: '很多孩子 n、l 不分，捏鼻子一试就知道。' }),
+    card('k04-dt', 4, 'dt', 'd 和 t',
+      { big: 'dā　tā', ask: '手放在嘴前读一读，哪个有一股气？' },
+      { big: 't 有气，d 没有',
+        rhyme: '左下半圆 d d d，一把雨伞 t t t。',
+        words: 'dà 大　tā 他',
+        pitfall: 'd 和 b 别认反：d 的半圆在左边。' }),
+
+    /* ---------- 第 5 课 g k h ---------- */
+    card('k05-g', 5, 'lesson-5', 'g 怎么写',
+      { big: 'g　9', ask: 'g 和数字 9 哪里不一样？' },
+      { big: 'g 只有一个圈，尾巴向左弯',
+        rhyme: '鸽子 g g g，蝌蚪 k k k，喝水 h h h。',
+        words: 'gē ge 哥哥　hé 河　kū 哭',
+        pitfall: '别写成印刷体那种上下两个圈。' }),
+    card('k05-aspirate', 5, 'gk', '哪些有气',
+      { big: 'b p　d t　g k', ask: '每一对里，哪个读的时候有一股气？' },
+      { big: 'p、t、k 有气',
+        rhyme: '手放嘴前试一试，有气的是 p、t、k。',
+        words: 'pà 怕　tā 他　kū 哭',
+        pitfall: 'g 和 k 最容易读混，手放嘴前一试就知道。' }),
+    card('k05-triple', 5, 'triple', '三拼音节',
+      { big: 'g + u + ā = ？', ask: '三个部分，怎么连起来读？' },
+      { big: 'guā',
+        rhyme: '声轻介快韵母响，三音连读很顺当。',
+        words: 'guā 瓜　huā 花　huǒ 火',
+        pitfall: '别漏了中间的 u：guā 不是 gā。' }),
+
+    /* ---------- 第 6 课 j q x ---------- */
+    card('k06-jqx', 6, 'jqx', 'ju qu xu',
+      { big: 'ju　qu　xu', ask: '这里的 u，读什么？' },
+      { big: '读 ü',
+        rhyme: 'j q x，真淘气，从来不和 u 在一起。',
+        words: 'jǔ 举　qù 去　xǔ 许',
+        pitfall: '看到 ju、qu、xu，要读成 ü，别读成 u。' }),
+    card('k06-vdot', 6, 'v-dot', '小 ü 摘帽',
+      { big: 'j + ü = ？', ask: 'ü 碰到 j，头上两点怎么办？' },
+      { big: 'ju',
         rhyme: '小 ü 有礼貌，见到 j q x 就摘帽。',
         words: 'jǔ 举　qù 去　xǔ 许',
-        pitfall: '摘了帽还读 ü；碰到 n、l 不摘：nǚ 女、lǜ 绿。'
-      }
-    },
-    {
-      id: 'k10-accent', lesson: 10, direction: 'accent', title: '调号标在哪',
-      front: { big: 'bai　gui', ask: 'bai 标二声、gui 标四声，调号写在哪个字母上？' },
-      back: {
-        big: 'bái　guì',
+        pitfall: '摘了帽还读 ü；碰到 n、l 不摘：nǚ 女、lǜ 绿。' }),
+    card('k06-pq', 6, 'pq', 'p 和 q',
+      { big: 'p　q', ask: '这两个字母怎么分？' },
+      { big: 'p 肚子在右，q 肚子在左',
+        rhyme: '右上半圆 p p p，左上半圆 q q q。',
+        words: 'pá 爬　qí 骑',
+        pitfall: 'q 还容易和 g、数字 9 认混。' }),
+
+    /* ---------- 第 7 课 z c s ---------- */
+    card('k07-shape', 7, 'lesson-7', 'z c s 像什么',
+      { big: 'z　c　s', ask: '这三个字母，各像什么？' },
+      { big: '像 2，半个圆，半个 8',
+        rhyme: '像个 2 字 z z z，半个圆圈 c c c，半个 8 字 s s s。',
+        words: 'zì 字　cā 擦　sì 四',
+        pitfall: 's 别写反，c 别和 e、o 认混。' }),
+    card('k07-whole', 7, 'lesson-7', '整体认读 zi ci si',
+      { big: 'zi　ci　si', ask: '这三个，要拼着读吗？' },
+      { big: '不拼，直接读',
+        rhyme: '整体认读音节，整个直接读。',
+        words: 'zì 字　cí 词　sì 四',
+        pitfall: '别拼成「z—i」，整个一口读出来。' }),
+
+    /* ---------- 第 8 课 zh ch sh r ---------- */
+    card('k08-retro', 8, 'zzh', '平舌和翘舌',
+      { big: 'z c s　zh ch sh', ask: '读这两组，舌头有什么不一样？' },
+      { big: '平舌伸平，翘舌翘起来',
+        rhyme: 'z c s 加上 h，舌头翘起读 zh ch sh。',
+        words: 'zì 字 — zhǐ 纸　sì 四 — shì 是',
+        pitfall: '读翘舌时舌尖要往上翘，别偷懒读成平舌。' }),
+    card('k08-r', 8, 'lesson-8', 'r 怎么读',
+      { big: 'r', ask: 'r 怎么读？' },
+      { big: '舌头像读 sh，喉咙要出声',
+        rhyme: '舌头摆得和 sh 一样，声音带着震动。',
+        words: 'rì 日　rè 热',
+        pitfall: 'r 别读成 l 或 y。' }),
+    card('k08-whole', 8, 'whole1', '整体认读 zhi chi shi ri',
+      { big: 'zhi　chi　shi　ri', ask: '这四个，要拼着读吗？' },
+      { big: '不拼，直接读',
+        rhyme: 'zhi chi shi ri，zi ci si，一共七个，都直接读。',
+        words: 'chī 吃　shí 十　rì 日',
+        pitfall: '分清声母 sh 和音节 shi：sh 读得轻短，shi 读得响亮。' }),
+
+    /* ---------- 第 9 课 y w ---------- */
+    card('k09-yw', 9, 'yw', 'yi 和 wu',
+      { big: 'i → ？　u → ？', ask: 'i、u 自己成一个音节，怎么写？' },
+      { big: 'yi　wu',
+        rhyme: '小 i 写成 yi，小 u 写成 wu。',
+        words: 'yī 衣　wǔ 五',
+        pitfall: 'yi、wu 是整体认读音节，直接读，不拼。' }),
+    card('k09-yu', 9, 'lesson-yw', 'yu',
+      { big: 'ü → ？', ask: 'ü 自己成一个音节，怎么写？两点呢？' },
+      { big: 'yu',
+        rhyme: '小 ü 见到 y，擦掉眼泪笑嘻嘻。',
+        words: 'yú 鱼　yǔ 雨',
+        pitfall: 'yu 里的 u 读 ü。' }),
+
+    /* ---------- 第 10 课 ai ei ui ---------- */
+    card('k10-accent', 10, 'accent', '调号标在哪',
+      { big: 'bai　gui', ask: 'bai 标二声、gui 标四声，调号写在哪个字母上？' },
+      { big: 'bái　guì',
         rhyme: '有 a 不放过，没 a 找 o e，i u 并列标在后。',
         words: 'mèi 妹　duì 对　duō 多',
-        pitfall: 'i 上标调先去点：yī、mí。'
-      }
-    },
-    {
-      id: 'k14-nasal', lesson: 14, direction: 'anang', title: '前鼻音和后鼻音',
-      front: { big: 'an　ang', ask: '读完这两个，舌头哪里不一样？' },
-      back: {
-        big: 'an 舌尖顶，ang 舌根抬',
+        pitfall: 'i 上标调先去点：yī、mí。' }),
+    card('k10-glide', 10, 'aiei', '复韵母怎么读',
+      { big: 'ai　ei　ui', ask: '读的时候，中间要停一下吗？' },
+      { big: '不停，一口气滑过去',
+        rhyme: '复韵母，从前一个音滑到后一个音。',
+        words: 'bái 白　mèi 妹　shuǐ 水',
+        pitfall: 'ai 别读成「a—i」两个音。' }),
+
+    /* ---------- 第 11 课 ao ou iu ---------- */
+    card('k11-iuui', 11, 'iuui', 'iu 和 ui 标在哪',
+      { big: 'liu　gui', ask: '都标四声，调号写在哪个字母上？' },
+      { big: 'liù　guì',
+        rhyme: 'i u 并列标在后。',
+        words: 'niú 牛　shuǐ 水',
+        pitfall: 'iu 标在 u 上，ui 标在 i 上：都标在后一个字母。' }),
+    card('k11-aoou', 11, 'aoou', 'ao 和 ou',
+      { big: 'ao　ou', ask: '开头的嘴巴有什么不一样？' },
+      { big: 'ao 先张大，ou 先拢圆',
+        rhyme: 'ao 嘴巴从大到圆，ou 嘴巴越收越小。',
+        words: 'māo 猫　gǒu 狗',
+        pitfall: '两个都要一口气滑过去，中间不停。' }),
+
+    /* ---------- 第 12 课 ie üe er ---------- */
+    card('k12-ieei', 12, 'ieei', 'ie 和 ei',
+      { big: 'ie　ei', ask: '这两个怎么分？' },
+      { big: 'ie 从 i 起，ei 从 e 起',
+        rhyme: '谁在前面，就先读谁。',
+        words: 'yé ye 爷爷　xié 鞋　mèi 妹',
+        pitfall: '写的时候也别把两个字母换了位置。' }),
+    card('k12-ue', 12, 'lesson-12', 'üe 摘帽',
+      { big: 'x + üe = ？', ask: 'üe 碰到 j q x y，两点怎么办？' },
+      { big: 'xue',
+        rhyme: '小 ü 见了 j q x y，去掉两点还读 ü。',
+        words: 'xué xí 学习　yuè 月',
+        pitfall: 'xue、yue 里的 u 读 ü。' }),
+    card('k12-er', 12, 'lesson-12', 'er',
+      { big: 'er', ask: 'er 能和声母拼在一起吗？' },
+      { big: '不能，自己成音节',
+        rhyme: '读 er 时，舌尖往上卷。',
+        words: 'ěr 耳　èr 二',
+        pitfall: 'er 前面不加声母。' }),
+
+    /* ---------- 第 13 课 an en in un ün ---------- */
+    card('k13-front', 13, 'lesson-an', '前鼻韵母',
+      { big: 'an　en　in　un　ün', ask: '读完以后，舌尖在哪儿？' },
+      { big: '舌尖顶住上牙床',
+        rhyme: '前鼻音，舌尖顶，顶住上牙床不放松。',
+        words: 'shān 山　mén 门　lín 林　chūn 春',
+        pitfall: 'ün 碰到 j q x y 也摘帽：jun、qun、xun、yun。' }),
+    card('k13-whole', 13, 'lesson-an', '整体认读 yuan yin yun',
+      { big: 'yuan　yin　yun', ask: '这三个，要拼着读吗？' },
+      { big: '不拼，直接读',
+        rhyme: '整体认读音节，整个直接读。',
+        words: 'yuán 圆　yīn 音　yún 云',
+        pitfall: 'yuan、yun 里的 u 读 ü。' }),
+
+    /* ---------- 第 14 课 ang eng ing ong ---------- */
+    card('k14-nasal', 14, 'anang', '前鼻音和后鼻音',
+      { big: 'an　ang', ask: '读完这两个，舌头哪里不一样？' },
+      { big: 'an 舌尖顶，ang 舌根抬',
         rhyme: '前鼻音，舌尖顶住上牙床；后鼻音，舌根往上抬。',
         words: 'shān 山　shàng 上　mén 门　dēng 灯',
-        pitfall: '成对读：an—ang，en—eng，in—ing。'
-      }
-    }
+        pitfall: '成对读：an—ang，en—eng，in—ing。' }),
+    card('k14-ong', 14, 'lesson-14', 'ong',
+      { big: 'ong', ask: 'ong 能单独成一个音节吗？' },
+      { big: '不能，前面总有声母',
+        rhyme: '后鼻音，舌根抬，嘴巴张开气出来。',
+        words: 'hóng 红　dōng 东',
+        pitfall: 'eng、ing 别读成 en、in：读完舌根往上抬。' }),
+
+    /* ---------- 总结（放在第 14 课后面） ---------- */
+    card('sum-initials', 14, null, '总结 · 声母',
+      { big: '23', ask: '一共有几个声母？背一背。' },
+      { big: '23 个声母',
+        list: 'b p m f d t n l g k h j q x zh ch sh r z c s y w',
+        pitfall: 'y、w 算声母，但读得轻短。' }),
+    card('sum-finals', 14, null, '总结 · 韵母',
+      { big: '24', ask: '一共有几个韵母？背一背。' },
+      { big: '24 个韵母',
+        list: 'a o e i u ü ai ei ui ao ou iu ie üe er an en in un ün ang eng ing ong',
+        pitfall: '6 个单韵母、8 个复韵母、1 个特殊韵母 er、9 个鼻韵母。' }),
+    card('sum-whole', 14, null, '总结 · 整体认读',
+      { big: '16', ask: '一共有几个整体认读音节？背一背。' },
+      { big: '16 个整体认读音节',
+        list: 'zhi chi shi ri zi ci si yi wu yu ye yue yuan yin yun ying',
+        pitfall: '整体认读音节直接读，不拼。' })
   ]
 
   root.SumSum = root.SumSum || {}
