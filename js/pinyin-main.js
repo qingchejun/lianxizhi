@@ -362,7 +362,6 @@
         '<div class="field"><span>大小</span><div class="seg-ctl" role="group" aria-label="闪卡大小">' +
           '<button type="button" data-pfc-size="m" class="' + (size === 'm' ? 'on' : '') + '">一页 6 张</button>' +
           '<button type="button" data-pfc-size="l" class="' + (size === 'l' ? 'on' : '') + '">一页 4 张大卡</button></div></div>' +
-        '<label class="check"><input type="checkbox" id="pfc-upright"' + (pref.upright ? ' checked' : '') + ' /><span>屏幕上把背面摆正看（打印照样倒着印）</span></label>' +
       '</section>' +
       (locked ? '' : '<section class="group"><div class="group-title">这' + (pages > 1 ? ' ' + pages + ' 页' : '一页') + '的卡</div><ol class="pfc-list">' +
         picked.map(x => '<li><span>' + (x.card.lesson ? '第 ' + x.card.lesson + ' 课 · ' : '') + esc(x.card.title) + '</span>' +
@@ -370,7 +369,6 @@
       '<section class="group"><div class="group-title">怎么用</div><p class="hint">' + esc(F.HOW) +
         '打印时选「实际大小」或 100%，别选「适合页面」。</p></section>'
 
-    paper.classList.toggle('pfc-upright', !!pref.upright)
     printButton.querySelector('.txt').textContent = '打印闪卡'
     if (locked) {
       paper.innerHTML = FL.html('拼音闪卡第 3 课以后是完整版功能', '免费版可以印第 1、2 课的闪卡试一试；完整版 14 课 38 张全有，还会按孩子的进度把该练的卡放进来。')
@@ -394,10 +392,6 @@
   if (tab === 'cards') {
     host.addEventListener('change', event => {
       if (event.target.id === 'pfc-k') cardsGo({ k: event.target.value })
-      if (event.target.id === 'pfc-upright') {
-        S.store.set(CARD_PREF, Object.assign({}, S.store.get(CARD_PREF) || {}, { upright: event.target.checked }))
-        cardsView()
-      }
     })
     host.addEventListener('click', event => {
       const b = event.target.closest('[data-pfc-size]')

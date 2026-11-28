@@ -643,7 +643,8 @@
 }
 
 /* ---------- 拼音知识点闪卡（2026-11-28，js/pinyin-flash.js） ----------
-   一页 A4：页边 8mm（比练习纸窄，卡片大一点），2 列；每格上半正面、下半背面倒过来印，中间虚线对折。 */
+   一页 A4：页边 8mm（比练习纸窄，卡片大一点）；一行一张卡，左半正面、右半背面，都正着印（11-28 站长：别倒过来），
+   中间竖虚线往后折，左右翻过来背面就是正的。 */
 @page pfc { size: A4 portrait; margin: 8mm; }
 /* 屏幕上是一张 A4 白纸（.sheet 的阴影、白底照用），页边 8mm 与打印一致 */
 .sheet.pfc-page {
@@ -663,18 +664,17 @@
   .sheet.pfc-page { width: auto; height: 280mm; padding: 0; margin: 0 !important; }
   .sheet.pfc-page:last-child { break-after: auto; page-break-after: auto; }
 }
-/* 屏幕上「背面摆正」：只是方便家长看，打印照样倒着印 */
-@media screen { .pfc-upright .pfc-back { transform: none; border-bottom: 0; border-top: 0.3mm dashed #999; } }
+
 .pfc-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: repeat(3, 1fr);
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(6, 1fr);
 }
-.pfc-page.is-l .pfc-grid { grid-template-rows: repeat(2, 1fr); }
+.pfc-page.is-l .pfc-grid { grid-template-rows: repeat(4, 1fr); }
 .pfc-cell {
   display: grid;
-  grid-template-rows: 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   border: 0.3mm solid #333;
   margin: -0.15mm; /* 相邻格共用一条剪裁线 */
   min-height: 0;
@@ -693,8 +693,8 @@
   overflow: hidden;
   text-align: center;
 }
-/* 背面倒过来印：往后折、左右翻过来就是正的 */
-.pfc-back { transform: rotate(180deg); border-bottom: 0.3mm dashed #999; }
+/* 背面在右半边，和正面之间是对折虚线 */
+.pfc-back { border-left: 0.3mm dashed #999; }
 .pfc-tag {
   position: absolute;
   top: 2.5mm;
