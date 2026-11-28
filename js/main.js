@@ -11,6 +11,9 @@
   var doc = root.document
   var S = root.SumSum
 
+  /* 「闪卡」页签（?view=cards，2026-11-28）：整页交给 js/math-flash-main.js，这里不出口算题 */
+  if (new URLSearchParams(root.location.search).get('view') === 'cards') return
+
   function $(id) {
     return doc.getElementById(id)
   }

@@ -77,7 +77,7 @@
 
   function front(card) {
     return '<div class="pfc-face pfc-front">' +
-      '<div class="pfc-tag">' + (card.lesson ? '第 ' + card.lesson + ' 课 · ' : '') + esc(card.title) + '</div>' +
+      '<div class="pfc-tag">' + (card.tag ? esc(card.tag) : (card.lesson ? '第 ' + card.lesson + ' 课 · ' : '') + esc(card.title)) + '</div>' +
       big(card.front.big) +
       '<div class="pfc-ask">' + esc(card.front.ask) + '</div>' +
       '</div>'
@@ -90,6 +90,7 @@
       '<div class="pfc-lines">' +
       (b.list ? '<p><b>全部</b><span class="pfc-py">' + esc(b.list) + '</span></p>' : '') +
       (b.rhyme ? '<p><b>口诀</b>' + esc(b.rhyme) + '</p>' : '') +
+      (b.how ? '<p><b>方法</b>' + esc(b.how) + '</p>' : '') +
       (b.words ? '<p><b>例</b><span class="pfc-py">' + esc(b.words) + '</span></p>' : '') +
       (b.pitfall ? '<p><b>易错</b>' + esc(b.pitfall) + '</p>' : '') +
       '</div></div>'
@@ -104,7 +105,8 @@
 
   /*
    * cards → 若干页 HTML（每页一个 section.sheet，屏幕上和别的练习纸一样是一张白纸）。
-   * opts：{ size: 'm'（一页 6 张，默认）| 'l'（一页 4 张大卡）, title }
+   * opts：{ size: 'm'（一页 6 张，默认）| 'l'（一页 4 张大卡）, title, kind: 'math'（数学闪卡，数字用普通字体） }
+   * 数学闪卡（js/math-cards.js，2026-11-28）也用这套纸样：卡上有 tag 时角上直接写 tag，背面多一行「方法」。
    */
   function sheets(cards, opts) {
     var o = opts || {}
@@ -113,9 +115,9 @@
     for (var i = 0; i < Math.max(cards.length, 1); i += per) {
       var slice = cards.slice(i, i + per)
       while (slice.length < per) slice.push(null)
-      pages.push('<section class="sheet pfc-page is-' + (per === 4 ? 'l' : 'm') + '">' +
+      pages.push('<section class="sheet pfc-page is-' + (per === 4 ? 'l' : 'm') + (o.kind === 'math' ? ' is-math' : '') + '">' +
         '<div class="pfc-grid">' + slice.map(cell).join('') + '</div>' +
-        '<footer class="pfc-how"><b>' + esc(o.title || '拼音闪卡') + '</b>' + HOW + '</footer>' +
+        '<footer class="pfc-how"><b>' + esc(o.title || '拼音闪卡') + '</b>' + (o.how || HOW) + '</footer>' +
         '</section>')
     }
     return pages

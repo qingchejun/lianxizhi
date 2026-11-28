@@ -1004,6 +1004,15 @@ select.input {
 
 /* ---------- 口算出题方式（2026-11-28）：难度 1–5 级、我的难度 ---------- */
 
+/* 口算页「闪卡」页签（2026-11-28，js/math-flash-main.js）：出题的设置、页面介绍、重新生成、附答案页都收起来 */
+.ks-cards-view #panel > .group:not(#ks-tabs-grp):not(#ks-cards),
+.ks-cards-view .board-intro,
+.ks-cards-view .guest-note,
+.ks-cards-view #btn-regen,
+.ks-cards-view .head-check { display: none !important; }
+#ks-cards .mfc-list-title { margin-top: 14px; }
+#ks-cards .pfc-list li span { font-family: inherit; }
+
 .ks-levels {
   display: grid;
   gap: 6px;
