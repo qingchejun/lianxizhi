@@ -66,3 +66,18 @@
 代码已在本机提交（2b5210b），没上线。Waffo 密钥没配时页面一切照旧（仍是「开通时通知我」）。
 安全复审后的改动：回调只当「去查一下」的提示，开通前用我们的商户钥匙查 Waffo（只查得到我们店的付款）；退款回调不处理，只认管理页发起的退款；WAFFO_ENV 必须写明；记已付和加天数同一事务。
 剩下：站长给商户号 + 私钥 → 用接口建店铺、商品、回调（先测试环境）→ 正式库备份后跑 migrate-20261128-orders.sql → 上线 → 测试环境真付一笔、退一笔 → 切正式环境，站长自己真付 99 元再退。
+
+## 切正式环境步骤（2026-11-28 晚，压缩对话后从这里接着做）
+
+已有：商户 MER_0zSMgFOe4mVAsWwA8cqyQX；店铺「纸和笔」STO_0xGhAWN0NmylHWQlcQFob4；商品 PROD_16sQEv74GhLReIEVWhRN5F（CNY 99.00，test 版）；
+测试回调已加；Cloudflare 密钥 WAFFO_MERCHANT_ID / WAFFO_PRODUCT_ID / WAFFO_PRIVATE_KEY（测试钥匙）/ WAFFO_ENV=test / ASHIP_AGENT_KEY_SHA256。
+测试环境全流程已走通（订单 zh20261128dbhzr4dxzg 付款→开通→管理页退款，Waffo 侧 refunded）。pancake CLI 已登录（浏览器会话，测试环境）。
+
+1. 站长：Waffo 后台生成**正式环境** API Key，私钥放剪贴板（不贴聊天）。
+2. 我：pbpaste 校验能导入、用它调 GraphQL `stores` 确认是正式钥匙能列出店铺；`pancake env prod` 或用正式钥匙：
+   `pancake products publish --type onetime`（PROD_16sQEv74GhLReIEVWhRN5F，要 --confirm-production --yes）；
+   正式回调：CLI 只能加测试的 → 用正式钥匙调 /v1/actions/store/add-webhook {storeId, channel:'http', url:'https://zhihebi.com/api/pay/waffo', events:['order.completed','refund.succeeded','refund.failed'], testMode:false}（server/waffo.js 的 post()）。
+3. 我：`pbpaste | tr -d '\n\r ' | npx wrangler pages secret put WAFFO_PRIVATE_KEY --project-name lianxizhi`，WAFFO_ENV 改 prod，清空剪贴板。
+4. 站长说「上线」后推一次（密钥要新部署才生效；可以顺带改更新记录：付费开通上线）。之后所有家长都能看到「开通完整版 · 99 元/年」，「开通时通知我」名单（wants 表）发邮件通知。
+5. 站长用真实支付宝/微信付 99 → 核对订单、到期日、Waffo 正式付款 → 管理页退款核对。
+留意：Waffo 可能要求身份验证 / 网站审核后才能收真钱；版权（识字字表、视频背景音乐）收费前过一遍。
