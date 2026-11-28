@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-CN" data-view="cards" data-print-name="数学知识点 · 纸和笔">
+<head>
+  <meta charset="utf-8" />
+  <!-- 网址是 /shuxue/zhishi（两级，server/gate.js INNER_PAGES），页面里的相对路径要从根目录算 -->
+  <base href="/" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="icons/favicon.svg?v=31dc11efb7" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=272f952f31" />
+  <meta name="theme-color" content="#f6f7f9" />
+  <script>try{if(localStorage.getItem("lianxizhi:rail")==="fold")document.documentElement.classList.add("rail-folded")}catch(e){}</script>
+  <title>数学知识点闪卡 · 纸和笔</title>
+  <meta name="robots" content="noindex" />
+  <meta name="description" content="一年级数学知识点闪卡：按课本单元挑卡，孩子口算错过的题对应的卡排前面，剪下对折就能用。" />
+  <link rel="stylesheet" href="css/app.css?v=ed4a4cb93b" />
+  <link rel="stylesheet" href="css/sheet.css?v=239fc79b03" />
+  <link rel="stylesheet" href="css/flash.css?v=6cde065936" />
+  <style id="page-style">@page { size: A4 portrait; margin: 15mm; }</style>
+</head>
+<body>
+
+<!-- 数学知识点（2026-11-28）：数学课本每个单元要记的知识点，一张卡一个。
+     归数学这个学科，不归口算专题：卡也连着奥数、以后的应用题。整页由 js/math-flash-main.js 画 -->
+<div class="app">
+<!-- rail:数学知识点 -->
+<nav class="rail" aria-label="板块">
+  <div class="rail-top"><a class="rail-brand" href="/" aria-label="纸和笔 · 今天"><img src="icons/mark.svg?v=31dc11efb7" width="28" height="28" alt=""><span>纸和笔<small>少报班，少看屏</small></span></a><button type="button" class="rail-fold" data-rail-fold aria-label="收起侧栏" title="收起侧栏"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15M15.5 10l-2 2 2 2"/></svg></button></div>
+  <a class="rail-link" href="/" data-module="今天" title="今天"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><rect class="f" x="7" y="12.5" width="4" height="4" rx="1"/></svg><span>今天</span></a>
+  <span class="rail-label">数学</span>
+  <a class="rail-link" href="/kousuan" data-module="口算" title="口算"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7.5h5.5M7.25 4.75v5.5M14 7.5h5.5M5 14.25l4.5 4.5M9.5 14.25L5 18.75M14 15h5.5M14 18.25h5.5"/></svg><span>口算</span></a>
+  <a class="rail-link" href="/aoshu" data-module="奥数" title="奥数"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.75l8.5 15.5h-17z"/><circle cx="12" cy="14" r="2.75"/></svg><span>奥数</span></a>
+  <a class="rail-link active" href="/shuxue/zhishi" data-module="数学知识点" title="数学知识点" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="7" width="13" height="13" rx="2.5"/><path d="M4.5 16.5V6a2 2 0 0 1 2-2h10.5M10 12.5h6M10 15.5h4"/></svg><span>知识点</span></a>
+  <span class="rail-label">语文</span>
+  <a class="rail-link" href="/shizi" data-module="识字" title="识字"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 4 5v13.5c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5zM12 6.5V20"/></svg><span>识字</span></a>
+  <a class="rail-link" href="/xiezi" data-module="写字" title="写字"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 4v16M4 12h16" stroke-dasharray="1.5 2"/><path d="M8.5 15.5l6-6"/></svg><span>写字</span></a>
+  <a class="rail-link" href="/pinyin" data-module="拼音" title="拼音"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="14.25" r="4.25"/><path d="M14.75 10v8.5M7 5.25h8M4 20.25h16"/></svg><span>拼音</span></a>
+  <a class="rail-link" href="/yuwen/zhishi" data-module="语文知识点" title="语文知识点"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="7" width="13" height="13" rx="2.5"/><path d="M4.5 16.5V6a2 2 0 0 1 2-2h10.5M10 12.5h6M10 15.5h4"/></svg><span>知识点</span></a>
+  <span class="rail-label">游戏</span>
+  <a class="rail-link" href="/shudu" data-module="数独" title="数独"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M9.33 4v16M14.67 4v16M4 9.33h16M4 14.67h16"/></svg><span>数独</span></a>
+  <a class="rail-link" href="/huochai" data-module="火柴" title="火柴"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18L15.5 8.5M17.5 6.5h.01M9 19.5h10"/><circle class="f" cx="17" cy="7" r="1.75"/></svg><span>火柴</span></a>
+  <a class="rail-link" href="/mima" data-module="密码" title="密码"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M7.75 10.5V7.75a4.25 4.25 0 0 1 8.5 0v2.75M8.5 15.5h.01M12 15.5h.01M15.5 15.5h.01"/></svg><span>密码</span></a>
+  <a class="rail-link" href="/migong" data-module="迷宫" title="迷宫"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 4H6.5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20h9M12.5 4h5A2.5 2.5 0 0 1 20 6.5V20M8.5 4v4.5h4M16 8.5V16M8 12.5V16h4"/></svg><span>迷宫</span></a>
+  <a class="rail-link" href="/zhizhi" data-module="数织" title="数织"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 4v16M4 12h16"/><rect class="f" x="6.25" y="6.25" width="3.5" height="3.5" rx=".75"/><rect class="f" x="14.25" y="14.25" width="3.5" height="3.5" rx=".75"/></svg><span>数织</span></a>
+  <span class="rail-gap"></span>
+  <a class="rail-link rail-tool" href="/help" data-help title="使用说明"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .9-1 1.6v.3M12 16.75h.01"/></svg><span>使用说明</span></a>
+  <a class="rail-link rail-tool rail-vip" href="/huiyuan" data-vip title="会员"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 8.5l4 3.5L12 6l3.5 6 4-3.5-1.75 10h-11.5z"/><path d="M7.25 21h9.5"/></svg><span>会员</span><small class="rail-tag" data-vip-tag></small></a>
+  <div class="rail-me">
+    <button type="button" class="rail-user" data-account-menu aria-haspopup="menu" aria-expanded="false" title="账号"><span class="rail-avatar" data-account-initial aria-hidden="true"></span><span class="rail-who"><b data-account-email>账号</b><small>练习进度自动同步</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 10l4-4 4 4M8 14l4 4 4-4"/></svg></button>
+    <div class="rail-menu" role="menu" hidden>
+      <button type="button" role="menuitem" data-account=""><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.25" r="3.75"/><path d="M4.75 19.75c1.4-3.3 4.1-4.75 7.25-4.75s5.85 1.45 7.25 4.75"/></svg><span>账号与密码</span></button>
+      <button type="button" role="menuitem" data-backup><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10M8 10.25L12 14l4-3.75M4.5 15v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3"/></svg><span>备份与恢复</span></button>
+      <button type="button" role="menuitem" data-logout><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4.5h3.5a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H14M10 16l-4-4 4-4M6 12h9.5"/></svg><span>退出登录</span></button>
+    </div>
+  </div>
+</nav>
+<script src="js/sidebar.js?v=7251894d82" defer></script>
+<!-- /rail -->
+<div class="work">
+  <header class="work-head">
+    <h1 class="work-title">数学知识点<small class="work-tag"> · 按课本单元印闪卡</small></h1>
+    <span class="work-sum" id="work-sum"></span>
+    <span class="work-grow"></span>
+    <a class="head-help" href="/help#print" target="_blank" rel="noopener">打印帮助</a>
+    <button type="button" id="btn-print" class="btn btn-primary btn-lg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V4h10v5M7 17H5a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2M7 14h10v6H7z"/></svg>打印闪卡</button>
+  </header>
+
+  <div class="work-body">
+    <main class="preview" id="preview-wrap">
+      <div class="notice" id="notice" hidden></div>
+      <div id="preview"><p class="hint" role="status">正在准备闪卡…</p></div>
+      <noscript><p class="notice">请启用 JavaScript 后打开数学知识点闪卡。</p></noscript>
+    </main>
+
+    <aside class="panel" id="panel" aria-label="设置">
+      <section class="group" id="ks-cards"></section>
+    </aside>
+  </div>
+</div>
+</div>
+
+<script src="js/store.js?v=c6aac93871"></script>
+<script src="js/sheets-core.js?v=aa0b516622"></script>
+<script src="js/shell.js?v=6972c54f86"></script>
+<script src="js/kousuan-tags.js?v=5729baea06"></script>
+<script src="js/kousuan-mode.js?v=3cca1fb807"></script>
+<script src="js/generator.js?v=9c5023f4c1"></script>
+<script src="js/settings.js?v=cd7373d7c9"></script>
+<script src="js/pinyin-flash.js?v=35e80ce98a"></script>
+<script src="js/math-cards.js?v=ff28aed860"></script>
+<script src="js/backup.js?v=5af8e1e7ac"></script>
+<script src="js/help.js?v=6e8b204b30"></script>
+<script src="js/account.js?v=5793d08e3d"></script>
+<script src="js/pay.js?v=35dece7482"></script>
+<script src="js/account-ui.js?v=e052998fe9"></script>
+<script src="js/sync-core.js?v=5f4122b899"></script>
+<script src="js/sync.js?v=accb9217c5"></script>
+<script src="js/full-lock.js?v=cb6ea7b926"></script>
+<script src="js/math-flash-main.js?v=63142cb395"></script>
+<script>
+/* 防护：主脚本没跑完（加载失败或新旧文件混跑）时自动刷新一次，仍不行就在顶部提示，避免页面静默空白 */
+(function () {
+  var KEY = 'sumsum:jsretried:' + location.pathname
+  function ready() {
+    return document.documentElement.getAttribute('data-sumsum-ready') === '1'
+  }
+  function fail() {
+    var retried = ''
+    try { retried = sessionStorage.getItem(KEY) || '' } catch (e) {}
+    if (!retried) {
+      try { sessionStorage.setItem(KEY, '1') } catch (e) {}
+      location.reload()
+      return
+    }
+    var bar = document.createElement('div')
+    bar.id = 'js-load-guard'
+    var mac = navigator.platform && navigator.platform.indexOf('Mac') >= 0
+    bar.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:9999;padding:10px 16px;background:#b42318;color:#fff;font-size:14px;line-height:1.6;text-align:center'
+    bar.textContent = '页面没加载全，练习纸出不来。请按 ' + (mac ? 'Cmd+Shift+R' : 'Ctrl+Shift+R') + ' 强制刷新一次；还不行就过几分钟再打开。'
+    document.body.appendChild(bar)
+  }
+  function check() {
+    if (ready()) return
+    if (document.readyState === 'complete') {
+      fail()
+      return
+    }
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        if (!ready()) fail()
+      }, 300)
+    })
+  }
+  check()
+})()
+</script>
+</body>
+</html>

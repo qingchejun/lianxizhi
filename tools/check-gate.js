@@ -47,6 +47,23 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   check('破十法内页：没登录、免费版、会员都放行，文件自己的网址 301', ['/kousuan/poshifa', '/kousuan/poshifa/'].every(function (p) {
     return d(p, '', false).file === '/poshifa' && d(p, '', { ok: true, plan: 'free' }).file === '/poshifa' && d(p, '', true).file === '/poshifa'
   }) && d('/poshifa.html', '?a=1', false).location === '/kousuan/poshifa?a=1')
+  /* --- 2026-11-28 学科 → 专题 + 知识点 --- */
+  check('数学知识点：没登录、免费版、会员都放行，取 shuxue-zhishi', [false, { ok: true, plan: 'free' }, true].every(function (m) {
+    var r = d('/shuxue/zhishi', '', m); return r.action === 'pass' && r.file === '/shuxue-zhishi'
+  }))
+  check('语文知识点：没登录上锁，免费版、会员放行，取 yuwen-zhishi', d('/yuwen/zhishi', '', false).action === 'locked' &&
+    d('/yuwen/zhishi', '', { ok: true, plan: 'free' }).file === '/yuwen-zhishi' && d('/yuwen/zhishi/', '', true).file === '/yuwen-zhishi')
+  check('写字：没登录上锁（同识字），免费版、会员放行', d('/xiezi', '', false).action === 'locked' &&
+    d('/xiezi', '', { ok: true, plan: 'free' }).action === 'pass' && d('/xiezi.html', '', true).action === 'pass')
+  check('知识点文件自己的网址 301 到正式网址', d('/shuxue-zhishi.html', '?k=all', false).location === '/shuxue/zhishi?k=all' &&
+    d('/yuwen-zhishi', '', true).location === '/yuwen/zhishi')
+  check('旧页签网址 301 到新页面，别的参数照带', d('/kousuan', '?view=cards&size=l', false).location === '/shuxue/zhishi?size=l' &&
+    d('/kousuan.html', '?view=cards', true).location === '/shuxue/zhishi' &&
+    d('/pinyin', '?view=cards&k=3', true).location === '/yuwen/zhishi?k=3' &&
+    d('/shizi', '?pane=xie', { ok: true, plan: 'free' }).location === '/xiezi' &&
+    d('/shizi', '?pane=xie', false).location === '/xiezi')
+  check('别的页签不搬', d('/pinyin', '?view=lessons', true).action === 'pass' && d('/kousuan', '?view=x', false).action === 'pass' &&
+    d('/shizi', '?pane=ren', true).action === 'pass')
   check('管理页同样拦', d('/admin.html', '', false).action === 'redirect')
   check('大小写绕不过（/CSS/ 不算静态目录）', d('/CSS/x.css', '', false).action === 'redirect' && d('/CSS/../kousuan.html', '', false).action !== 'pass')
   check('登录后一切放行', ['/', '/kousuan', '/admin.html', '/pinyin.html'].every(function (p) {
@@ -57,14 +74,14 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
 
   /* --- 免费版（2026-11-24 放开注册）：白名单，每个网页 × 各种写法都试 --- */
   var fs = require('fs')
-  var FREE_OK = ['index', 'kousuan', 'aoshu', 'shizi', 'pinyin', 'shudu', 'huochai', 'mima', 'migong', 'zhizhi', 'mark', 'help', 'privacy', 'terms', 'huiyuan', '404']
+  var FREE_OK = ['index', 'kousuan', 'aoshu', 'shizi', 'xiezi', 'pinyin', 'shudu', 'huochai', 'mima', 'migong', 'zhizhi', 'mark', 'help', 'privacy', 'terms', 'huiyuan', '404']
   var htmls = fs.readdirSync(require('path').join(__dirname, '..')).filter(function (f) { return /\.html$/.test(f) })
   var free = { ok: true, plan: 'free' }, full = { ok: true, plan: 'full' }
   var leaks = []
   htmls.forEach(function (f) {
     var base = f.replace(/\.html$/, '')
     if (base === 'welcome' || base === 'locked') return
-    if (base === 'coushifa' || base === 'poshifa') return /* 内页文件：自己的网址 301 到 /kousuan/…，上面单独测 */
+    if (['coushifa', 'poshifa', 'shuxue-zhishi', 'yuwen-zhishi'].indexOf(base) >= 0) return /* 内页文件：自己的网址 301 到正式网址，上面单独测 */
     ;['/' + base, '/' + base + '/', '/' + base + '.html', '/' + base + '.html/', '/' + base + '//'].forEach(function (p) {
       var a = d(p, '', free).action
       var want = FREE_OK.indexOf(base) >= 0 ? 'pass' : 'locked'

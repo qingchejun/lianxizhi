@@ -1,18 +1,17 @@
 /**
- * 口算页「闪卡」页签（2026-11-28，网址 /kousuan?view=cards）：数学知识点闪卡。
+ * 数学知识点页（/shuxue/zhishi，文件 shuxue-zhishi.html）：数学知识点闪卡。
+ *   2026-11-28 先做在口算页的「闪卡」页签里，当天按「学科 → 专题 + 知识点」搬成单独一页，旧网址 /kousuan?view=cards 301 过来。
  *   教材、单元和口算「按教材」是同一个设置（sumsum:kousuan:mode:v1 的 book / unit），这里改了那边也跟着变。
  *   挑卡：最近两周口算点过的错题对应的卡排最前（卡上的例子换成孩子做错的那道题）→ 这个单元的卡 → 前面单元的卡补满。
  *   只读打分记录，闪卡本身不打分、不留记录。卡的内容和挑卡在 js/math-cards.js，纸样 js/pinyin-flash.js。
  *   免费版能印一年级上册前两个单元（人教、北师大），和拼音闪卡「前 2 课」一个口径。
- * 这个页签打开时 js/main.js 什么都不做（不出口算题），整页由这里接管。
  */
 ;(function (root) {
   'use strict'
 
   var doc = root.document
   var S = root.SumSum
-  var query = new URLSearchParams(root.location.search)
-  if (query.get('view') !== 'cards') return
+  if (doc.documentElement.getAttribute('data-view') !== 'cards') return
 
   var MC = S.mathCards
   var F = S.pinyinFlash
@@ -28,14 +27,7 @@
   var WRONG_DAYS = 14
   var FREE_UNITS = { rj1a: 2, bsd1a: 2 }
 
-  doc.documentElement.classList.add('ks-cards-view')
   host.hidden = false
-  doc.querySelectorAll('#ks-tabs [data-tab]').forEach(function (a) {
-    var on = a.dataset.tab === 'cards'
-    a.classList.toggle('active', on)
-    if (on) a.setAttribute('aria-current', 'page')
-    else a.removeAttribute('aria-current')
-  })
   /* 打印按钮上的字：最后一个文字节点（前面是图标） */
   var label = Array.prototype.filter.call(printButton.childNodes, function (n) { return n.nodeType === 3 && n.textContent.trim() }).pop()
   if (label) label.textContent = '打印闪卡'
@@ -115,7 +107,7 @@
       '<p class="hint">一张卡一个知识点：正面是题和家长念的问题，背面是答案、口诀和方法。剪下对折就能用，不用打分。</p>' +
       '<label class="field"><span>教材</span><select class="input" id="mfc-book">' + bookOpts + '</select></label>' +
       '<label class="field"><span>学校学到</span><select class="input" id="mfc-unit">' + unitOpts + '</select></label>' +
-      '<p class="hint">和「出题」里按教材的进度是同一个，改一处两处都变。只出学到这个单元为止教过的内容。</p>' +
+      '<p class="hint">和口算页「按教材」的进度是同一个，改一处两处都变。只出学到这个单元为止教过的内容。</p>' +
       '<p class="hint mfc-wrong-hint">' + esc(wrongHint) + '</p>' +
       '<div class="field"><span>大小</span><div class="seg-ctl" role="group" aria-label="闪卡大小">' +
         '<button type="button" data-mfc-size="m" class="' + (size === 'm' ? 'on' : '') + '">一页 6 张</button>' +

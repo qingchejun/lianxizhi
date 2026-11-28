@@ -29,7 +29,8 @@
   const kid = doc.getElementById('py-kid')
   const query = new URLSearchParams(root.location.search)
   const today = P.dateKey()
-  const view = query.get('view')
+  /* 语文知识点页（yuwen-zhishi.html，2026-11-28）是本页生成的，<html data-view="cards"> 固定显示闪卡 */
+  const view = doc.documentElement.getAttribute('data-view') || query.get('view')
   let storage
   try { storage = root.localStorage } catch (error) { /* Practice is still available. */ }
 
@@ -355,7 +356,7 @@
       (free && i + 1 > 2 ? '（会员）' : '') + '</option>').join('') +
       '<option value="all"' + (all ? ' selected' : '') + '>全套 ' + CARDS.length + ' 张（' + Math.ceil(CARDS.length / per) + ' 页）' + (free ? '（会员）' : '') + '</option>'
     host.innerHTML =
-      '<section class="group"><div class="group-title">知识点闪卡</div>' +
+      '<section class="group"><div class="group-title">拼音闪卡</div>' +
         '<p class="hint">一张卡一个知识点：正面是孩子要认、要读的，背面是答案、口诀、例词和易错。剪下对折就能用，不用打分。</p>' +
         '<label class="field"><span>印哪一课</span><select class="input" id="pfc-k">' + options + '</select></label>' +
         '<p class="hint">按课印：这一课的卡排前面，再放前面课里「该练了」的，不够用前面的卡补满一页。</p>' +
@@ -385,7 +386,7 @@
   function cardsGo(change) {
     const q = new URLSearchParams(root.location.search)
     Object.entries(change).forEach(([key, v]) => q.set(key, v))
-    root.history.replaceState(null, '', 'pinyin.html?' + q.toString())
+    root.history.replaceState(null, '', root.location.pathname + '?' + q.toString())
     cardsView()
   }
 

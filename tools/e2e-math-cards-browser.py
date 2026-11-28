@@ -1,4 +1,4 @@
-# 数学知识点闪卡（2026-11-28）：口算页「闪卡」页签
+# 数学知识点闪卡（2026-11-28）：先在口算页「闪卡」页签，当天搬成单独一页 /shuxue/zhishi（侧栏数学 → 知识点）
 #   本地预览（:8999）在跑、账号 preview@local.test / preview123 存在（会员）时运行：
 #   /opt/homebrew/opt/python@3.10/bin/python3.10 tools/e2e-math-cards-browser.py
 # 游客（免费）：只能印一上前两个单元；会员：按单元挑卡、错题卡排前面并用孩子的题当例子、全套、大卡、打印版式。
@@ -46,12 +46,15 @@ with sync_playwright() as p:
     pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.goto(BASE + '/kousuan')
     pg.wait_for_selector('#preview .sheet', timeout=15000)
-    check('出题页有「出题 / 闪卡」页签，出题亮着', 'active' in (pg.get_attribute('#ks-tabs [data-tab="make"]', 'class') or ''))
-    check('出题页闪卡区藏着', not pg.is_visible('#ks-cards'))
-    pg.click('#ks-tabs [data-tab="cards"]')
-    pg.wait_for_selector('#ks-cards:not([hidden])', timeout=15000)
-    check('闪卡页签亮着', 'active' in (pg.get_attribute('#ks-tabs [data-tab="cards"]', 'class') or ''))
-    check('出题设置、页面介绍、重新生成都收起来', not pg.is_visible('#ks-src') and not pg.is_visible('.board-intro') and not pg.is_visible('#btn-regen'))
+    check('口算页不再有闪卡页签', pg.query_selector('#ks-tabs') is None and pg.query_selector('#ks-cards') is None)
+    pg.click('.rail-link[data-module="数学知识点"]')
+    pg.wait_for_url(BASE + '/shuxue/zhishi', timeout=15000)
+    pg.wait_for_selector('#mfc-book', timeout=15000)
+    check('侧栏「数学 → 知识点」亮着，显示「知识点」', 'active' in (pg.get_attribute('.rail-link[data-module="数学知识点"]', 'class') or '') and
+          pg.inner_text('.rail-link[data-module="数学知识点"] span') == '知识点')
+    check('标题是数学知识点', '数学知识点' in pg.inner_text('h1'))
+    pg.goto(BASE + '/kousuan?view=cards&size=l')
+    check('旧网址 /kousuan?view=cards 跳到新页面', pg.url == BASE + '/shuxue/zhishi?size=l', pg.url)
     pg.select_option('#mfc-book', 'rj1a')
     pg.select_option('#mfc-unit', '1')
     time.sleep(0.3)
@@ -84,8 +87,8 @@ with sync_playwright() as p:
       id, module: 'kousuan', date: '2026-11-28', createdAt: Date.now(), printedAt: Date.now() - 1000,
       items: [{ key: '13 − 9' }, { key: '14 − 6' }, { key: '5 + 3 − 2' }, { key: '9 + 4' }],
       wrong: ['13 − 9', '14 − 6', '5 + 3 − 2'], rating: { all: { level: 'mid', at: Date.now() } } })""", FAKE_ID)
-    pg.goto(BASE + '/kousuan?view=cards')
-    pg.wait_for_selector('#ks-cards:not([hidden])', timeout=15000)
+    pg.goto(BASE + '/shuxue/zhishi')
+    pg.wait_for_selector('#mfc-book', timeout=15000)
     pg.select_option('#mfc-book', 'rj1b')
     pg.select_option('#mfc-unit', '1')
     time.sleep(0.4)
@@ -125,8 +128,8 @@ with sync_playwright() as p:
     check('打印时背面在正面右边', pg.evaluate("(() => { const c = document.querySelector('.pfc-cell'), f = c.querySelector('.pfc-front').getBoundingClientRect(), b = c.querySelector('.pfc-back').getBoundingClientRect(); return Math.abs(f.top - b.top) < 1 && b.left > f.left })()"))
     pg.emulate_media(media='screen')
     pg.click('[data-mfc-size="m"]')
-    # 回出题页：教材设置跟着变了，口算正常出题
-    pg.click('#ks-tabs [data-tab="make"]')
+    # 回口算页：教材设置跟着变了，口算正常出题
+    pg.click('.rail-link[data-module="口算"]')
     pg.wait_for_selector('#preview .sheet .q', timeout=15000)
     check('回到出题页正常出题', pg.locator('#preview .q').count() >= 10)
     # 还原

@@ -122,7 +122,8 @@ with sync_playwright() as p:
               path in gp.url and '/?next=' not in gp.url and gp.is_visible('[data-lk-guest] [data-login]')
               and not gp.is_visible('[data-redeem]') and resp.headers.get('x-robots-tag') == 'noindex', gp.url)
     locks = gp.eval_on_selector_all('.rail-link.is-locked', 'els => els.map(e => e.dataset.module)')
-    check('没登录时侧栏给两个会员板块挂锁', locks == ['识字', '拼音'], locks)
+    # 2026-11-28 语文一组（识字、写字、拼音、知识点）没登录都挂锁；数学知识点没登录也能用
+    check('没登录时侧栏给语文四项挂锁', locks == ['识字', '写字', '拼音', '语文知识点'], locks)
     gp.click('[data-lk-guest] [data-login]')
     gp.wait_for_selector('dialog[open] form[data-view="login"]', timeout=5000)
     check('会员说明页点「登录 / 注册」→ 弹出登录框', gp.is_visible('dialog[open] form[data-view="login"]'))

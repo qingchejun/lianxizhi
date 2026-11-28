@@ -214,7 +214,7 @@
         : isRj(settings) && els.book.value !== S.shizi.HONGEN ? (rjPrev(els.book.value) ? 1 : 0) : settings.lesson,
       unit: settings.unit,
       order: isRj(settings) && els.order.value ? els.order.value : settings.order,
-      pane: settings.pane, // 认字/写字 由顶上的开关管
+      pane: settings.pane, // 认字/写字 由页面决定（shizi.html / xiezi.html 的 <html data-pane>）
       /* 写字的三项只在写字面板开着时从表单读（认字时那几个框没填过，读出来是第一个选项） */
       xieBook: settings.pane === 'xie' ? els.xieBook.value || settings.xieBook : settings.xieBook,
       /* 换了写字那册：课号不通用，回到自动 */
@@ -322,7 +322,6 @@
     var free = !FL.isFull()
     FL.markTab($('mode-tabs').querySelector('[data-mode="week"]'), free)
     FL.markTab($('mode-tabs').querySelector('[data-mode="wrong"]'), free)
-    FL.markTab($('pane-tabs').querySelector('[data-pane="xie"]'), free)
   }
   function renderLocked(what) {
     var box = $('preview')
@@ -705,7 +704,9 @@
     $('lesson-field').hidden = !rj
     $('order-field').hidden = !rj
     var weekTab = $('mode-tabs').querySelector('[data-mode="week"]')
-    if (weekTab) weekTab.textContent = rj ? '单元检查' : '本周复习'
+    /* 只换开头那段字：页签末尾可能挂着会员小锁（js/full-lock.js markTab），整个 textContent 一改锁就没了 */
+    if (weekTab && weekTab.firstChild && weekTab.firstChild.nodeType === 3) weekTab.firstChild.nodeValue = rj ? '单元检查' : '本周复习'
+    else if (weekTab) weekTab.insertBefore(doc.createTextNode(rj ? '单元检查' : '本周复习'), weekTab.firstChild)
     if (!rj) {
       $('book-hint').textContent = '按某恩识字的顺序，每日一卷从全部 1600 字里抽。'
       return
@@ -746,12 +747,6 @@
   /* 认字 / 写字 两大块的显隐；认字里各节自己的显隐照旧在 fillForm 里算，这里只在写字时整块收起 */
   function fillPane(s) {
     var xie = s.pane === 'xie'
-    var tabs = $('pane-tabs').querySelectorAll('.pane-tab')
-    for (var i = 0; i < tabs.length; i++) {
-      var on = tabs[i].dataset.pane === s.pane
-      tabs[i].classList.toggle('active', on)
-      tabs[i].setAttribute('aria-selected', String(on))
-    }
     if (!xie) XIE_SECS.forEach(function (id) { $(id).hidden = true })
     if (!xie) $('sec-book').hidden = false
   }
@@ -821,13 +816,6 @@
     fitPreview()
   }
 
-  $('pane-tabs').addEventListener('click', function (ev) {
-    var b = ev.target.closest('[data-pane]')
-    if (!b || b.dataset.pane === settings.pane) return
-    settings = S.shiziSettings.sanitize(Object.assign({}, settings, { pane: b.dataset.pane }))
-    $('btn-print').disabled = false
-    refresh()
-  })
 
   function xieStep(delta) {
     return function () {

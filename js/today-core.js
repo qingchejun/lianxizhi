@@ -144,7 +144,7 @@
       /* 写字（统编版写字表，2026-11-28 起和认字的字表分开选，认字用某恩也有）：该练哪一课 */
       xie: root.SumSum.shiziXie ? (function () {
         var xl = root.SumSum.shiziXie.pickFor(s)
-        return xl ? { label: xl.label, chars: xl.chars.join(''), href: 'shizi.html?pane=xie' } : null
+        return xl ? { label: xl.label, chars: xl.chars.join(''), href: '/xiezi' } : null
       })() : null,
       chars: slice.chars.slice(0, 20),
       week: slice.week,

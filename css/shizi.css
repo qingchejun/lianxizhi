@@ -553,45 +553,6 @@
   font-size: 17px;
 }
 
-/* ================= 认字 / 写字 开关（面板最上面） ================= */
-
-.pane-switch {
-  padding-bottom: 4px;
-}
-
-.pane-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  border: 1px solid var(--card-edge);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.pane-tab {
-  padding: 10px 0;
-  font: inherit;
-  font-size: 15px;
-  letter-spacing: 4px;
-  color: var(--ink-soft);
-  background: var(--card);
-  border: 0;
-  cursor: pointer;
-}
-
-.pane-tab + .pane-tab {
-  border-left: 1px solid var(--card-edge);
-}
-
-.pane-tab:hover {
-  color: var(--ink);
-}
-
-.pane-tab.active {
-  font-weight: 600;
-  color: #fff;
-  background: var(--blue);
-}
-
 /* ================= 写字：田字格练字纸 ================= */
 
 .sheet-xie .xz-stage {

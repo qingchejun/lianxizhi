@@ -111,7 +111,7 @@ with sync_playwright() as p:
     shelves = page.inner_text('#today-cards')
     check('今天页：免费版摆识字、口算、拼音和五个游戏', all(k in shelves for k in ['识字', '口算', '拼音', '数独', '火柴', '密码', '迷宫', '数织']), shelves[:300])
     locked_list = page.eval_on_selector_all('.dk-lock-list a b', 'els => els.map(e => e.textContent)')
-    check('今天页：会员功能列在下面', locked_list == ['奥数', '识字 · 写字与单元检查', '拼音 · 课程与专题'], locked_list)
+    check('今天页：会员功能列在下面', locked_list == ['奥数', '写字', '识字 · 单元检查与错字集', '拼音 · 课程与专题'], locked_list)
     check('今天页：说体验已结束', '体验已结束' in page.inner_text('#today-marks'))
     locks = page.eval_on_selector_all('.rail-link.is-locked', 'els => els.map(e => e.dataset.module)')
     check('侧栏不挂锁（识字、拼音 11-27 起免费版能进）', locks == [], locks)
@@ -136,7 +136,14 @@ with sync_playwright() as p:
         page.goto(BASE + '/shizi?' + q)
         page.wait_for_selector('#preview .sheet, #preview .full-lock, #preview .empty', timeout=15000)
         check('免费版识字：' + name + '显示「会员功能」、打印按钮不可用', page.query_selector('#preview .full-lock') is not None and page.is_disabled('#btn-print'))
-    check('识字页签上有小锁', len(page.query_selector_all('.tab-lock')) >= 3)
+    # 2026-11-28 写字单独成页（/shizi?pane=xie 301 到 /xiezi，上面已测），识字页上只剩单元检查、错字集两个页签带锁
+    page.goto(BASE + '/shizi')
+    page.wait_for_selector('#preview .sheet, #preview .full-lock, #preview .empty', timeout=15000)
+    try:
+        page.wait_for_selector('#mode-tabs .tab-lock', timeout=8000)
+    except Exception:
+        pass
+    check('识字页签上有小锁（单元检查、错字集）', len(page.query_selector_all('#mode-tabs .tab-lock')) >= 2, page.inner_html('#mode-tabs')[:300])
     page.goto(BASE + '/pinyin')
     page.wait_for_selector('#py-rate', timeout=15000)
     check('免费版拼音：今日卷能用', page.query_selector('#preview .full-lock') is None)

@@ -71,6 +71,12 @@
   /* 只决定「打开哪一块」的参数：网址里只有它们时照常叠加本机设置（见 load） */
   var NAV_ONLY = ['pane', 'mode']
 
+  function pagePane() {
+    var d = root.document && root.document.documentElement
+    var p = d && d.getAttribute('data-pane')
+    return p === 'xie' || p === 'ren' ? p : ''
+  }
+
   var FONTS = ['kai', 'hei']
 
   var MODES = ['daily', 'week', 'wrong', 'history']
@@ -161,7 +167,8 @@
       lesson: clampLesson(s),
       unit: clampUnit(s),
       order: s.order === 'rand' ? 'rand' : 'seq',
-      pane: s.pane === 'xie' ? 'xie' : 'ren',
+      /* 认字、写字 2026-11-28 起分成两页：页面 <html data-pane> 说了算（shizi.html = ren，xiezi.html = xie） */
+      pane: pagePane() || (s.pane === 'xie' ? 'xie' : 'ren'),
       /* 没选过的（分开之前的老设置）：认字用统编版就跟它同一册，用某恩就从一上开始 */
       xieBook: xieBookOf(raw, s),
       xieLesson: clampInt(s.xieLesson, 0, 999, 0),
@@ -228,6 +235,7 @@
       var params = new URLSearchParams()
       Object.keys(DEFAULTS).forEach(function (k) {
         if (LOCAL_ONLY.indexOf(k) >= 0) return
+        if (k === 'pane' && pagePane()) return /* 哪一块由页面决定，网址里不用再写 */
         if (s[k] !== DEFAULTS[k]) params.set(k, String(s[k]))
       })
       var qs = params.toString()

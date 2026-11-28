@@ -8,6 +8,9 @@
 
 2026-11 起分两组：练习（今天/口算/奥数/识字/拼音）与游戏（数独/火柴/密码/迷宫/数织，按受欢迎程度排）——
 给孩子选板块时先分「做题还是玩」，再挑具体项目。
+2026-11-28 练习按学科拆开：数学（口算/奥数/知识点）、语文（识字/写字/拼音/知识点），以后加英语（单词/知识点）。
+专题 = 专门练一种本事的纸，有自己的打分；知识点 = 按课本单元的闪卡，归学科不归专题。
+两个「知识点」显示同名，data-module 用全名（数学知识点 / 语文知识点）区分。
 """
 import pathlib, re
 
@@ -15,13 +18,25 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 # (名称, 页面, 图标)。2026-11 全站改版统一的一套线条图标：24 网格、描边 1.75、圆头圆角，
 # 只有少量「实心小块」（class="f"，填 currentColor）做强调。单独的 SVG 文件由本脚本同步写到 icons/rail/。
+# 知识点闪卡：两张叠放的卡（数学、语文共用）
+CARDS_ICON = '<rect x="6.5" y="7" width="13" height="13" rx="2.5"/><path d="M4.5 16.5V6a2 2 0 0 1 2-2h10.5M10 12.5h6M10 15.5h4"/>'
+# 侧栏上显示的字：和 data-module 不同的写在这里
+SHORT = {'数学知识点': '知识点', '语文知识点': '知识点'}
+
 GROUPS = [
-    ('练习', [
+    (None, [
         ('今天', '/', 'today', '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><rect class="f" x="7" y="12.5" width="4" height="4" rx="1"/>'),
+    ]),
+    ('数学', [
         ('口算', '/kousuan', 'kousuan', '<path d="M4.5 7.5h5.5M7.25 4.75v5.5M14 7.5h5.5M5 14.25l4.5 4.5M9.5 14.25L5 18.75M14 15h5.5M14 18.25h5.5"/>'),
         ('奥数', '/aoshu', 'aoshu', '<path d="M12 3.75l8.5 15.5h-17z"/><circle cx="12" cy="14" r="2.75"/>'),
+        ('数学知识点', '/shuxue/zhishi', 'zhishi', CARDS_ICON),
+    ]),
+    ('语文', [
         ('识字', '/shizi', 'shizi', '<path d="M12 6.5C10 5 7 4.5 4 5v13.5c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5zM12 6.5V20"/>'),
+        ('写字', '/xiezi', 'xiezi', '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 4v16M4 12h16" stroke-dasharray="1.5 2"/><path d="M8.5 15.5l6-6"/>'),
         ('拼音', '/pinyin', 'pinyin', '<circle cx="10.5" cy="14.25" r="4.25"/><path d="M14.75 10v8.5M7 5.25h8M4 20.25h16"/>'),
+        ('语文知识点', '/yuwen/zhishi', 'zhishi', CARDS_ICON),
     ]),
     ('游戏', [
         ('数独', '/shudu', 'shudu', '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M9.33 4v16M14.67 4v16M4 9.33h16M4 14.67h16"/>'),
@@ -88,18 +103,20 @@ PAGES = {
     'shizi.html': '识字', 'shudu.html': '数独', 'mima.html': '密码', 'zhizhi.html': '数织',
     'migong.html': '迷宫', 'huochai.html': '火柴', 'pinyin.html': '拼音', 'help.html': '使用说明', 'admin.html': '邀请码管理', 'mark.html': '打分',
     'locked.html': '上锁', 'huiyuan.html': '会员', 'coushifa.html': '口算', 'poshifa.html': '口算',
+    'xiezi.html': '写字', 'shuxue-zhishi.html': '数学知识点', 'yuwen-zhishi.html': '语文知识点',
 }
 
 
 def rail(current):
     out = ['<nav class="rail" aria-label="板块">\n', BRAND]
     for label, links in GROUPS:
-        out.append('  <span class="rail-label">%s</span>\n' % label)
+        if label:
+            out.append('  <span class="rail-label">%s</span>\n' % label)
         for name, href, _, icon in links:
             on = name == current
             out.append(
                 ('  <a class="rail-link%s" href="%s" data-module="%s" title="%s"%s>' + SVG_OPEN + '%s</svg><span>%s</span></a>\n')
-                % (' active' if on else '', href, name, name, ' aria-current="page"' if on else '', icon, name)
+                % (' active' if on else '', href, name, name, ' aria-current="page"' if on else '', icon, SHORT.get(name, name))
             )
     out.append(tail(current))
     out.append('</nav>\n<script src="js/sidebar.js" defer></script>')
@@ -135,6 +152,12 @@ for page in ['welcome.html', '404.html', 'privacy.html']:
     path = ROOT / page
     path.write_text(head_icons(path.read_text(encoding='utf-8')), encoding='utf-8')
 
+# 写字页、语文知识点页是从识字页、拼音页生成的（tools/derive_pages.py），先生成再填侧栏
+import sys
+sys.path.insert(0, str(ROOT / 'tools'))
+import derive_pages
+derive_pages.main()
+
 for page, current in PAGES.items():
     path = ROOT / page
     text = path.read_text(encoding='utf-8')
@@ -152,7 +175,9 @@ for page, current in PAGES.items():
 #    有侧栏的板块页、内页不放页脚，侧栏就是它们的导航。
 # 页面里只留 <!-- sitehead --> … <!-- /sitehead -->、<!-- sitefoot --> … <!-- /sitefoot --> 标记，内容在这里生成。
 # 链接文字用各页的主词（锚文本 = 目标页关键词）；加内页时往 INNER 里加一行（排在所属板块后面）。
-HEAD_NAMES = [(g, [(n, h) for n, h, *_ in items if n != '今天']) for g, items in GROUPS]
+# 页眉页脚只放能收录的页：写字、知识点要登录才有用、不收录（2026-11-28），不放
+NOT_PUBLIC = ['写字', '数学知识点', '语文知识点']
+HEAD_NAMES = [(g, [(n, h) for n, h, *_ in items if n not in NOT_PUBLIC]) for g, items in GROUPS if g]
 FOOT_NAME = {'口算': '口算题', '奥数': '奥数', '识字': '识字', '拼音': '拼音', '数独': '儿童数独',
              '火柴': '火柴棒等式题', '密码': '密码推理题', '迷宫': '儿童迷宫', '数织': '数织游戏'}
 # 页眉位置窄，大多用短名；单看容易猜错的三个写全（2026-11-25 站长同意）。只改显示文字，侧栏、锁、data-module 仍用短名
