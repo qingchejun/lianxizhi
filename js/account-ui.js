@@ -147,7 +147,7 @@
           field('邀请码（选填）', '<input class="input input-code" type="text" name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="K7M2-QF9W">', '有邀请码就填上，开通完整版；没有就空着，先免费用口算、数独、四个思维游戏和奥数前三课') +
           (tsKey() ? '<div class="ts-box" data-ts></div>' : '') +
           MSG + '<button type="submit" class="btn btn-primary btn-lg auth-submit" data-act="submit">注册，发验证码到邮箱</button>' +
-          '<p class="auth-help">注册即表示同意<a href="/privacy" target="_blank" rel="noopener">隐私说明</a>。</p></form>' + GOOGLE
+          '<p class="auth-help">注册即表示同意<a href="/terms" target="_blank" rel="noopener">服务条款</a>和<a href="/privacy" target="_blank" rel="noopener">隐私说明</a>。</p></form>' + GOOGLE
       },
       code: {
         title: '验证邮箱',
@@ -288,7 +288,7 @@
           '<button type="button" class="btn" data-act="changepw">修改密码</button>' +
           '<button type="button" class="btn btn-danger" data-act="logout">退出登录</button>' +
         '</div>' + MSG +
-        '<p class="account-foot"><a href="/privacy" target="_blank" rel="noopener">隐私说明</a> · <button type="button" class="link-btn quiet" data-act="delete">删除账号</button></p>'
+        '<p class="account-foot"><a href="/terms" target="_blank" rel="noopener">服务条款</a> · <a href="/privacy" target="_blank" rel="noopener">隐私说明</a> · <button type="button" class="link-btn quiet" data-act="delete">删除账号</button></p>'
       return
     }
     var f = forms()[view] || forms().login
