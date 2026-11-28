@@ -3,7 +3,7 @@
 #   2. 没登录：纸上没有二维码，打印不记录、不上传；顶上有提示条，侧栏显示「登录 / 注册」；
 #   3. 点「打分」弹出登录框并说明为什么要登录；在框里登录后不刷新页面，二维码就补上，打印开始记录；
 #   4. 打印时介绍文字和提示条都不上纸，文件名用短名；
-#   5. 其余板块没登录：原网址显示完整版说明页（2026-11-25）；首页九个板块可点、页脚全站链接、面包屑、专项练习入口。
+#   5. 其余板块没登录：原网址显示会员说明页（2026-11-25）；首页九个板块可点、页脚全站链接、面包屑、专项练习入口。
 # 用法：先起本机预览（npx wrangler pages dev . --port 8999 --binding SESSION_SECRET=dev-secret --binding DEV_SHOW_CODE=1），
 #   账号 preview@local.test / preview123 要先存在，再
 #   /opt/homebrew/opt/python@3.10/bin/python3.10 tools/e2e-guest-browser.py
@@ -114,23 +114,23 @@ with sync_playwright() as p:
     gp.click('[data-account-menu]')
     check('点侧栏「登录 / 注册」直接弹登录框', gp.is_visible('dialog.account-dialog[open] form[data-view="login"]'))
 
-    # ---------- 其余板块（完整版）：原网址显示完整版说明页（2026-11-25 起不再拦回首页） ----------
+    # ---------- 其余板块（会员）：原网址显示会员说明页（2026-11-25 起不再拦回首页） ----------
     for path in ['/shizi', '/pinyin']:  # 奥数 11-25 起前三课公开
         resp = gp.goto(BASE + path)
         gp.wait_for_selector('.lk-card', timeout=10000)
-        check('没登录打开 ' + path + ' → 原网址显示完整版说明、有登录按钮、不收录',
+        check('没登录打开 ' + path + ' → 原网址显示会员说明、有登录按钮、不收录',
               path in gp.url and '/?next=' not in gp.url and gp.is_visible('[data-lk-guest] [data-login]')
               and not gp.is_visible('[data-redeem]') and resp.headers.get('x-robots-tag') == 'noindex', gp.url)
     locks = gp.eval_on_selector_all('.rail-link.is-locked', 'els => els.map(e => e.dataset.module)')
-    check('没登录时侧栏给两个完整版板块挂锁', locks == ['识字', '拼音'], locks)
+    check('没登录时侧栏给两个会员板块挂锁', locks == ['识字', '拼音'], locks)
     gp.click('[data-lk-guest] [data-login]')
     gp.wait_for_selector('dialog[open] form[data-view="login"]', timeout=5000)
-    check('完整版说明页点「登录 / 注册」→ 弹出登录框', gp.is_visible('dialog[open] form[data-view="login"]'))
+    check('会员说明页点「登录 / 注册」→ 弹出登录框', gp.is_visible('dialog[open] form[data-view="login"]'))
     gp.goto(BASE + '/')
     hrefs = gp.eval_on_selector_all('#wl-what ~ * a, .wl-stars a, .wl-mods a', 'els => els.map(e => e.getAttribute("href"))')
     check('首页九个板块都能点', all(h in hrefs for h in ['/kousuan', '/aoshu', '/shizi', '/pinyin', '/shudu', '/huochai', '/mima', '/migong', '/zhizhi']), hrefs)
     check('首页页脚列出全部板块和凑十法、破十法内页', gp.query_selector('footer.sf a[href="/kousuan/coushifa"]') is not None and gp.query_selector('footer.sf a[href="/kousuan/poshifa"]') is not None
-          and len(gp.query_selector_all('footer.sf .sf-col a')) == 16)  # 11 个练习游戏 + 关于栏 5 个（11-25 加使用说明、打印与存 PDF）
+          and len(gp.query_selector_all('footer.sf .sf-col a')) == 18)  # 11 个练习游戏 + 关于栏 7 个（11-25 加使用说明、打印与存 PDF；11-28 加会员、服务条款）
     head = gp.eval_on_selector_all('.sh-nav a', 'els => els.map(e => e.getAttribute("href"))')
     check('首页页眉排着九个板块', head == ['/kousuan', '/aoshu', '/shizi', '/pinyin', '/shudu', '/huochai', '/mima', '/migong', '/zhizhi'], head)
     check('首页第一屏没有登录表单，主按钮「免费出一张口算题」去口算页的 20 以内进退位（跟中间那张样张一致）', gp.query_selector('.wl-hero form') is None
@@ -142,8 +142,8 @@ with sync_playwright() as p:
     gp.evaluate("document.querySelectorAll('.wl-gal img').forEach(i => i.loading = 'eager')")
     gp.wait_for_function("[...document.querySelectorAll('.wl-gal img')].every(i => i.complete && i.naturalWidth > 0)", timeout=10000)
     check('样张图片都加载出来了', True)
-    check('页眉只有一个「登录 / 注册」按钮', gp.eval_on_selector_all('.sh-act a', 'els => els.map(e => e.textContent)') == ['登录 / 注册'])
-    gp.click('.sh-act a')
+    check('页眉右边是「会员」和「登录 / 注册」', gp.eval_on_selector_all('.sh-act a', 'els => els.map(e => e.textContent)') == ['会员', '登录 / 注册'])
+    gp.click('.sh-act a.sh-login')
     gp.wait_for_selector('dialog.account-dialog[open] form[data-view="login"]', timeout=5000)
     check('页眉点「登录 / 注册」→ 弹出登录框', True)
     gp.keyboard.press('Escape')
@@ -154,7 +154,7 @@ with sync_playwright() as p:
     gp.wait_for_selector('dialog.account-dialog[open] form[data-view="register"]', timeout=5000)
     check('邀请链接 → 弹出注册框，邀请码已填好', gp.input_value('dialog.account-dialog [name="invite"]') == 'ABCD-2345')
     gp.goto(BASE + '/privacy')
-    gp.click('.sh-act a')
+    gp.click('.sh-act a.sh-login')
     gp.wait_for_selector('dialog.account-dialog[open] form[data-view="login"]', timeout=8000)
     check('隐私说明页点「登录 / 注册」→ 回首页弹出登录框', gp.url.endswith('/#login'))
     gp.goto(BASE + '/privacy')

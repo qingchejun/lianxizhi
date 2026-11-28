@@ -11,11 +11,11 @@ const CODE_MAX_FAILS = 5
 const MAIL_INTERVAL = 60 * 1000
 const MAIL_HOUR_MAX = 3
 
-/* ---- 2026-11-24 放开注册：免费版 / 完整版，发信总量与按地址限流（方案 open-register-full-plan.md） ---- */
+/* ---- 2026-11-24 放开注册：免费版 / 会员，发信总量与按地址限流（方案 open-register-full-plan.md） ---- */
 export const PLAN_FREE = 'free'
 export const PLAN_FULL = 'full'
-/* 2026-11-27 站长定：新注册的免费账号送 7 天完整版体验（users.full_until），到期回免费版，数据不动。
-   以后年卡也写 full_until（买的那天 + 一年）；邀请码账号 plan=full，永久完整版，不看 full_until */
+/* 2026-11-27 站长定：新注册的免费账号送 7 天会员体验（users.full_until），到期回免费版，数据不动。
+   以后年卡也写 full_until（买的那天 + 一年）；邀请码账号 plan=full，永久会员，不看 full_until */
 export const TRIAL_DAYS = 7
 
 /* 一个邮箱只送一次体验（审查 11-27）：删号重注册、Gmail 加点 / 加 +后缀的别名都算同一个邮箱。
@@ -143,7 +143,7 @@ async function issueCode(repo, user, now, kind, opts) {
   }
 }
 
-/* ---- 注册（2026-11-24 放开：邀请码选填。填对 = 完整版；不填 = 免费版；填错 = 不注册，免得家长以为开了完整版） ---- */
+/* ---- 注册（2026-11-24 放开：邀请码选填。填对 = 会员；不填 = 免费版；填错 = 不注册，免得家长以为开了会员） ---- */
 const INVITE_MAX_FAILS = 5
 const INVITE_LOCK_MS = 15 * 60 * 1000
 const BAD_INVITE = '邀请码不对，检查一下；没有邀请码可以清空这一栏，先免费注册。'
@@ -206,7 +206,7 @@ export async function register(repo, now, body, ctx) {
   }
   if (user) {
     /* 未验证过的邮箱重复注册 = 换密码重来（裁定 5）。别人抢先用这个邮箱注册过也没关系：
-       真主人这次带的邀请码照样认，开成完整版（不会被悄悄降成免费版） */
+       真主人这次带的邀请码照样认，开成会员（不会被悄悄降成免费版） */
     await repo.updateUser(user.id, { pw_hash: await sha256hex(user.pw_salt + pw) })
     if (inv && !user.invite_id) {
       if (!(await repo.inviteClaim(inv.id, user.id, now))) return { status: 422, body: { ok: false, error: BAD_INVITE } }
@@ -229,14 +229,14 @@ export async function register(repo, now, body, ctx) {
   return issueCode(repo, user, now, 'verify', { ip: ctx.ip, bucket: (inv || user.invite_id) ? 'invite' : 'new' })
 }
 
-/* ---- 注册后补填邀请码：免费版 → 完整版。要登录、要验证过邮箱；占码和升级一起写，不会码用掉了账号没升级 ---- */
+/* ---- 注册后补填邀请码：免费版 → 会员。要登录、要验证过邮箱；占码和升级一起写，不会码用掉了账号没升级 ---- */
 export async function redeemInvite(repo, session, now, body, ctx) {
   ctx = ctx || {}
   if (!session) return { status: 401, body: { ok: false, error: '先登录。' } }
   const user = await repo.userById(session.uid)
   if (!user || user.pwver !== session.pwver || user.banned) return { status: 401, body: { ok: false, error: '先登录。' } }
   if (!user.verified) return { status: 403, body: { ok: false, error: '先验证邮箱。' } }
-  /* 看账号本身的版本：体验期里（planOf 算完整版）也要能补填邀请码，转成永久完整版 */
+  /* 看账号本身的版本：体验期里（planOf 算会员）也要能补填邀请码，转成永久会员 */
   if (basePlan(user) === PLAN_FULL) return { status: 200, body: { ok: true, plan: PLAN_FULL } }
   const code = normInvite(body && body.invite)
   if (!code) return { status: 422, body: { ok: false, error: '请填邀请码。' } }
@@ -251,7 +251,7 @@ export async function redeemInvite(repo, session, now, body, ctx) {
   return { status: 200, body: { ok: true, plan: PLAN_FULL } }
 }
 
-/* ---- 「开通时通知我」：付费开通上线前，先记下想买完整版的账号（2026-11-25 站长定，付费 2027-01 上线后发邮件通知）。
+/* ---- 「开通时通知我」：付费开通上线前，先记下想买会员的账号（2026-11-25 站长定，付费 2027-01 上线后发邮件通知）。
    record=false 只查不登记；重复登记保留第一次的时间。只记账号 id 和时间，邮箱从 users 表取 ---- */
 export async function wantFull(repo, session, now, record) {
   if (!session) return { status: 401, body: { ok: false, error: '先登录。' } }
@@ -262,18 +262,18 @@ export async function wantFull(repo, session, now, record) {
   return { status: 200, body: { ok: true, wanted: !!at, email: user.email, plan: planOf(user) } }
 }
 
-/* 账号本身的版本：只认数据库里明写的 free；老账号（加列前就有的）一律算完整版 */
+/* 账号本身的版本：只认数据库里明写的 free；老账号（加列前就有的）一律算会员 */
 export function basePlan(user) {
   return user && user.plan === PLAN_FREE ? PLAN_FREE : PLAN_FULL
 }
 
-/* 现在能用的版本：免费账号在完整版到期日（体验 / 以后的年卡）之前也算完整版 */
+/* 现在能用的版本：免费账号在会员到期日（体验 / 以后的年卡）之前也算会员 */
 export function planOf(user, now) {
   if (basePlan(user) === PLAN_FULL) return PLAN_FULL
   return Number(user && user.full_until) > (now || Date.now()) ? PLAN_FULL : PLAN_FREE
 }
 
-/* 给网页看的版本信息：免费账号带上完整版到期日（体验还剩几天 / 体验已结束），完整版账号是 0 */
+/* 给网页看的版本信息：免费账号带上会员到期日（体验还剩几天 / 体验已结束），会员账号是 0 */
 function planBody(user, now) {
   now = now || Date.now()
   const base = basePlan(user)

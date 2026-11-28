@@ -1,7 +1,7 @@
 # 数学知识点闪卡（2026-11-28）：口算页「闪卡」页签
-#   本地预览（:8999）在跑、账号 preview@local.test / preview123 存在（完整版）时运行：
+#   本地预览（:8999）在跑、账号 preview@local.test / preview123 存在（会员）时运行：
 #   /opt/homebrew/opt/python@3.10/bin/python3.10 tools/e2e-math-cards-browser.py
-# 游客（免费）：只能印一上前两个单元；完整版：按单元挑卡、错题卡排前面并用孩子的题当例子、全套、大卡、打印版式。
+# 游客（免费）：只能印一上前两个单元；会员：按单元挑卡、错题卡排前面并用孩子的题当例子、全套、大卡、打印版式。
 import sys, time
 from playwright.sync_api import sync_playwright
 
@@ -61,14 +61,14 @@ with sync_playwright() as p:
     check('游客：提示登录后按错题出卡', '登录后' in pg.inner_text('#ks-cards'))
     pg.select_option('#mfc-unit', '5')
     time.sleep(0.3)
-    check('游客：第五单元是完整版', pg.locator('#preview .full-lock').count() == 1 and pg.is_disabled('#btn-print'))
+    check('游客：第五单元是会员', pg.locator('#preview .full-lock').count() == 1 and pg.is_disabled('#btn-print'))
     pg.select_option('#mfc-unit', '0')
     time.sleep(0.3)
     check('数学游戏单元：左右的卡', 'position' in cells(pg))
     check('游客页没有脚本报错', not errs, errs)
     ctx.close()
 
-    # ---------- 完整版账号 ----------
+    # ---------- 会员账号 ----------
     ctx = br.new_context(viewport={'width': 1440, 'height': 900})
     pg = ctx.new_page()
     pg.on('pageerror', lambda e: errs.append(str(e)))

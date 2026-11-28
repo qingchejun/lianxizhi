@@ -50,7 +50,7 @@ with sync_playwright() as p:
     page = ctx.new_page()
     page.on('pageerror', lambda e: errs.append(str(e)))
 
-    # 带邀请码注册一个完整版账号
+    # 带邀请码注册一个会员账号
     codes = []
     page.on('response', lambda r: codes.append(r) if r.url.endswith('/api/auth/register') else None)
     page.goto(BASE + '/')

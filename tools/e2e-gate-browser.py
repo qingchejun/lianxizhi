@@ -62,7 +62,7 @@ with sync_playwright() as p:
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))
 
-    page.goto(BASE + '/mark')  # 2026-11-25 起没开放的板块显示完整版说明页、使用说明也公开，换扫码打分页测拦截
+    page.goto(BASE + '/mark')  # 2026-11-25 起没开放的板块显示会员说明页、使用说明也公开，换扫码打分页测拦截
     check('没登录打开扫码打分页 → 拦回首页', '/?next=' in page.url, page.url)
     check('首页是介绍页', page.is_visible('.wl-hero'))
     page.wait_for_selector('form[data-view="login"]', timeout=5000)

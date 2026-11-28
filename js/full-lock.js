@@ -1,7 +1,7 @@
 /**
- * 完整版功能的锁（2026-11-27）：识字、拼音对免费版开放「每日一张」，其余功能（写字、单元检查、错字集整页打印、
+ * 会员功能的锁（2026-11-27）：识字、拼音对免费版开放「每日一张」，其余功能（写字、单元检查、错字集整页打印、
  * 拼音专题和课程）在页面里显示这块说明，代替纸张。真正的版本以服务器为准（__SUMSUM_PLAN 由中间层写进网页，
- * 7 天体验期里算完整版）；这里只管显示。
+ * 7 天体验期里算会员）；这里只管显示。
  *
  * 用法：SumSum.fullLock.isFull() 判断；html(标题, 说明) 出一块说明；bind(容器) 接上两个按钮。
  */
@@ -41,11 +41,11 @@
   function html(title, desc) {
     return '<div class="empty full-lock" data-pay-scope>' + LOCK_SVG +
       '<b>' + esc(title) + '</b>' +
-      '<p>' + esc(desc) + (trialEnded() ? '7 天完整版体验已经结束，孩子练过的记录都还在，开通后马上接着用。' : '') + '</p>' +
+      '<p>' + esc(desc) + (trialEnded() ? '7 天会员体验已经结束，孩子练过的记录都还在，开通后马上接着用。' : '') + '</p>' +
       '<p class="full-lock-free">免费版也能用：识字每日一卷、拼音今日卷，打分、错题自动复习都照常。</p>' +
       '<div class="full-lock-acts">' + (payOn()
         /* 2026-11-28 付费开通上线后：直接买（js/pay.js），邀请码退到第二个 */
-        ? '<button type="button" class="btn btn-sm btn-primary" data-pay-buy>开通完整版 · ' + esc(S().pay.label()) + '</button>' +
+        ? '<button type="button" class="btn btn-sm btn-primary" data-pay-buy>开通会员 · ' + esc(S().pay.label()) + '</button>' +
           '<button type="button" class="btn btn-sm" data-fl-redeem>填邀请码开通</button>'
         : '<button type="button" class="btn btn-sm btn-primary" data-fl-redeem>填邀请码开通</button>' +
           '<button type="button" class="btn btn-sm" data-fl-want>付费开通时通知我</button>') +
@@ -91,7 +91,7 @@
     if (on && !icon) {
       icon = doc.createElement('i')
       icon.className = 'tab-lock'
-      icon.setAttribute('aria-label', '完整版')
+      icon.setAttribute('aria-label', '会员')
       icon.innerHTML = LOCK_SVG
       el.appendChild(icon)
     } else if (!on && icon) icon.remove()

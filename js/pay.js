@@ -1,7 +1,7 @@
 /**
- * 付费开通完整版（2026-11-28，Waffo 收款，服务器端 server/pay-core.js）。
+ * 付费开通会员（2026-11-28，Waffo 收款，服务器端 server/pay-core.js）。
  *   SumSum.pay.on()：收款开没开（中间层写进网页的 window.__SUMSUM_PAY；没开就还显示「开通时通知我」）
- *   SumSum.pay.button(文字)：一个「开通完整版 · 99 元/年」按钮的 HTML（data-pay-buy），bind(容器) 接上点击
+ *   SumSum.pay.button(文字)：一个「开通会员 · 99 元/年」按钮的 HTML（data-pay-buy），bind(容器) 接上点击
  *   付完 Waffo 跳回 /?paid=订单号：任何页面加载时看到 ?paid= 就弹一个「正在确认付款」，每 3 秒问一次服务器，
  *   到账了显示到期日、刷新页面（锁就没了）。
  */
@@ -22,7 +22,7 @@
   function label() { return info().label || '99 元/年' }
 
   function button(text, cls) {
-    return '<button type="button" class="btn ' + (cls || 'btn-primary') + '" data-pay-buy>' + esc(text || ('开通完整版 · ' + label())) + '</button>'
+    return '<button type="button" class="btn ' + (cls || 'btn-primary') + '" data-pay-buy>' + esc(text || ('开通会员 · ' + label())) + '</button>'
   }
 
   function loggedIn() {
@@ -40,7 +40,7 @@
     }
     if (!loggedIn()) {
       var ui = S().accountUI
-      if (ui && ui.open) ui.open('register', '先注册一个账号（或登录），再开通完整版。')
+      if (ui && ui.open) ui.open('register', '先注册一个账号（或登录），再开通会员。')
       return
     }
     if (btn) btn.disabled = true
@@ -111,7 +111,7 @@
       root.fetch('/api/pay/status?o=' + encodeURIComponent(order), { credentials: 'same-origin', cache: 'no-store' })
         .then(function (r) { return r.json() }).then(function (d) {
           if (d && d.ok && d.state === 'paid') {
-            title.textContent = '完整版已开通'
+            title.textContent = '会员已开通'
             text.textContent = '用到 ' + fmt(d.full_until) + '。确认邮件已经发到你的邮箱；付款 7 天内不满意，发邮件到 hi@zhihebi.com 就全额退款。'
             okBtn.hidden = false
             box.querySelector('[data-pw-close]').hidden = true

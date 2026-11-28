@@ -352,8 +352,8 @@
     sumEl.textContent = '闪卡 · ' + (all ? '全套 ' + CARDS.length + ' 张 · ' + pages + ' 页' : lessonLabel + ' · ' + picked.length + ' 张')
     const options = D.lessons.map((l, i) =>
       '<option value="' + (i + 1) + '"' + (k === String(i + 1) ? ' selected' : '') + '>第 ' + (i + 1) + ' 课　' + esc(l.label) +
-      (free && i + 1 > 2 ? '（完整版）' : '') + '</option>').join('') +
-      '<option value="all"' + (all ? ' selected' : '') + '>全套 ' + CARDS.length + ' 张（' + Math.ceil(CARDS.length / per) + ' 页）' + (free ? '（完整版）' : '') + '</option>'
+      (free && i + 1 > 2 ? '（会员）' : '') + '</option>').join('') +
+      '<option value="all"' + (all ? ' selected' : '') + '>全套 ' + CARDS.length + ' 张（' + Math.ceil(CARDS.length / per) + ' 页）' + (free ? '（会员）' : '') + '</option>'
     host.innerHTML =
       '<section class="group"><div class="group-title">知识点闪卡</div>' +
         '<p class="hint">一张卡一个知识点：正面是孩子要认、要读的，背面是答案、口诀、例词和易错。剪下对折就能用，不用打分。</p>' +
@@ -371,7 +371,7 @@
 
     printButton.querySelector('.txt').textContent = '打印闪卡'
     if (locked) {
-      paper.innerHTML = FL.html('拼音闪卡第 3 课以后是完整版功能', '免费版可以印第 1、2 课的闪卡试一试；完整版 14 课 38 张全有，还会按孩子的进度把该练的卡放进来。')
+      paper.innerHTML = FL.html('拼音闪卡第 3 课以后是会员功能', '免费版可以印第 1、2 课的闪卡试一试；会员 14 课 38 张全有，还会按孩子的进度把该练的卡放进来。')
       FL.bind(paper)
       paper.style.zoom = ''
       printButton.disabled = true
@@ -403,7 +403,7 @@
 
   /* ---------- 开场：按网址挑卷 ---------- */
 
-  /* 免费版（2026-11-27）：今日卷和历史照常；专题、课程是完整版功能（7 天体验期里算完整版） */
+  /* 免费版（2026-11-27）：今日卷和历史照常；专题、课程是会员功能（7 天体验期里算会员） */
   const FL = S.fullLock
   const pyLocked = FL && !FL.isFull() && (tab === 'topics' || tab === 'lessons')
   if (FL && !FL.isFull()) {
@@ -412,12 +412,12 @@
 
   if (pyLocked) {
     const lessonsTab = tab === 'lessons'
-    sumEl.textContent = (lessonsTab ? '课程' : '专题') + ' · 完整版'
+    sumEl.textContent = (lessonsTab ? '课程' : '专题') + ' · 会员'
     host.innerHTML = '<section class="group"><p class="hint">' + (lessonsTab
       ? '课程照课本顺序一课一课讲，每课有教学卡：怎么发音、口诀、容易错在哪。'
       : '专题按难点分类，孩子哪里老错就挑哪一项集中练。') +
       '</p><a class="btn btn-sm" href="pinyin.html">回今日卷</a></section>'
-    paper.innerHTML = FL.html(lessonsTab ? '拼音课程是完整版功能' : '拼音专题是完整版功能',
+    paper.innerHTML = FL.html(lessonsTab ? '拼音课程是会员功能' : '拼音专题是会员功能',
       lessonsTab ? '跟着课本从 a o e 学到整体认读，每课先讲后练。' : '平舌翘舌、前后鼻音、形近字母这些难点，一项一张卷。')
     FL.bind(paper)
     paper.style.zoom = ''

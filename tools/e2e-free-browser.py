@@ -1,9 +1,9 @@
-# 放开注册 · 免费版 / 完整版（2026-11-24；11-27 改：注册送 7 天完整版，识字、拼音对免费版开放每日一张）浏览器验收：
-#   1. 不填邀请码注册 → 7 天体验期：账号里写「完整版体验」，能看奥数视频；
-#   2. 把体验改成已结束（本机 D1）→ 免费版：今天页摆识字、口算、拼音和游戏，完整版功能列在下面；侧栏不挂锁；
-#      识字每日一卷能用，单元检查 / 错字集 / 写字显示「完整版功能」；拼音今日卷能用，专题 / 课程上锁；/admin 是上锁页；
+# 放开注册 · 免费版 / 会员（2026-11-24；11-27 改：注册送 7 天会员，识字、拼音对免费版开放每日一张）浏览器验收：
+#   1. 不填邀请码注册 → 7 天体验期：账号里写「会员体验」，能看奥数视频；
+#   2. 把体验改成已结束（本机 D1）→ 免费版：今天页摆识字、口算、拼音和游戏，会员功能列在下面；侧栏不挂锁；
+#      识字每日一卷能用，单元检查 / 错字集 / 写字显示「会员功能」；拼音今日卷能用，专题 / 课程上锁；/admin 是上锁页；
 #   3. 免费版看奥数视频 → 403；账号里补填错码报错，好码开通后识字单元检查能用、视频能播（含拖动进度条的分段请求）；
-#   4. 带邀请码注册 → 直接完整版；已注册的邮箱再注册 → 页面不暴露「注册过」；
+#   4. 带邀请码注册 → 直接会员；已注册的邮箱再注册 → 页面不暴露「注册过」；
 #   5. 删除账号。
 # 用法：先起本机预览（npx wrangler pages dev . --port 8999 --binding SESSION_SECRET=dev-secret --binding DEV_SHOW_CODE=1），
 #   本机 D1 已跑过 tools/migrate-20261124-plan.sql，本机 R2 放一个 lianxizhi-video/aoshu/xulie.mp4，再
@@ -92,7 +92,7 @@ with sync_playwright() as p:
     page.click('[data-account-menu]')
     page.click('.rail-menu [data-account]')
     page.wait_for_selector('dialog.account-dialog[open] .account-plan', timeout=5000)
-    check('账号里写「完整版体验」，也能补填邀请码', '完整版体验' in page.inner_text('.account-plan') and page.query_selector('dialog .account-plan [data-redeem]') is not None, page.inner_text('.account-plan'))
+    check('账号里写「会员体验」，也能补填邀请码', '会员体验' in page.inner_text('.account-plan') and page.query_selector('dialog .account-plan [data-redeem]') is not None, page.inner_text('.account-plan'))
     page.keyboard.press('Escape')
     page.goto(BASE + '/shizi?mode=week')
     page.wait_for_selector('#preview .sheet, #preview .full-lock', timeout=15000)
@@ -111,7 +111,7 @@ with sync_playwright() as p:
     shelves = page.inner_text('#today-cards')
     check('今天页：免费版摆识字、口算、拼音和五个游戏', all(k in shelves for k in ['识字', '口算', '拼音', '数独', '火柴', '密码', '迷宫', '数织']), shelves[:300])
     locked_list = page.eval_on_selector_all('.dk-lock-list a b', 'els => els.map(e => e.textContent)')
-    check('今天页：完整版功能列在下面', locked_list == ['奥数', '识字 · 写字与单元检查', '拼音 · 课程与专题'], locked_list)
+    check('今天页：会员功能列在下面', locked_list == ['奥数', '识字 · 写字与单元检查', '拼音 · 课程与专题'], locked_list)
     check('今天页：说体验已结束', '体验已结束' in page.inner_text('#today-marks'))
     locks = page.eval_on_selector_all('.rail-link.is-locked', 'els => els.map(e => e.dataset.module)')
     check('侧栏不挂锁（识字、拼音 11-27 起免费版能进）', locks == [], locks)
@@ -124,18 +124,18 @@ with sync_playwright() as p:
     page.wait_for_selector('#preview .sheet', timeout=15000)
     close_help(page)
     check('免费版识字：每日一卷能用', page.query_selector('#preview .full-lock') is None and page.query_selector('.lk-card') is None)
-    # 拼音闪卡（2026-11-28）：免费版能印第 1、2 课，第 3 课以后和全套是完整版
+    # 拼音闪卡（2026-11-28）：免费版能印第 1、2 课，第 3 课以后和全套是会员
     page.goto(BASE + '/pinyin?view=cards&k=2')
     page.wait_for_selector('#preview .pfc-page, #preview .full-lock', timeout=15000)
     check('免费版拼音闪卡：第 2 课能印', page.query_selector('#preview .pfc-page') is not None and not page.is_disabled('#btn-print'))
     for k in ['3', 'all']:
         page.goto(BASE + '/pinyin?view=cards&k=' + k)
         page.wait_for_selector('#preview .pfc-page, #preview .full-lock', timeout=15000)
-        check('免费版拼音闪卡：k=' + k + ' 显示「完整版功能」、打印不可用', page.query_selector('#preview .full-lock') is not None and page.is_disabled('#btn-print'))
+        check('免费版拼音闪卡：k=' + k + ' 显示「会员功能」、打印不可用', page.query_selector('#preview .full-lock') is not None and page.is_disabled('#btn-print'))
     for q, name in [('mode=week', '单元检查'), ('mode=wrong', '错字集'), ('pane=xie', '写字')]:
         page.goto(BASE + '/shizi?' + q)
         page.wait_for_selector('#preview .sheet, #preview .full-lock, #preview .empty', timeout=15000)
-        check('免费版识字：' + name + '显示「完整版功能」、打印按钮不可用', page.query_selector('#preview .full-lock') is not None and page.is_disabled('#btn-print'))
+        check('免费版识字：' + name + '显示「会员功能」、打印按钮不可用', page.query_selector('#preview .full-lock') is not None and page.is_disabled('#btn-print'))
     check('识字页签上有小锁', len(page.query_selector_all('.tab-lock')) >= 3)
     page.goto(BASE + '/pinyin')
     page.wait_for_selector('#py-rate', timeout=15000)
@@ -174,9 +174,9 @@ with sync_playwright() as p:
     close_help(page)
     check('补填好码 → 识字单元检查能用', page.query_selector('#preview .full-lock') is None)
     v = video(page)
-    check('完整版能看视频（整段 200）', v['status'] == 200 and v['len'] > 1000 and v['type'] == 'video/mp4', v)
+    check('会员能看视频（整段 200）', v['status'] == 200 and v['len'] > 1000 and v['type'] == 'video/mp4', v)
     v = video(page, 'bytes=0-99')
-    check('完整版拖动进度条（分段 206）', v['status'] == 206 and v['len'] == 100 and (v['range'] or '').startswith('bytes 0-99/'), v)
+    check('会员拖动进度条（分段 206）', v['status'] == 206 and v['len'] == 100 and (v['range'] or '').startswith('bytes 0-99/'), v)
     v = video(page, 'bytes=-50')
     check('分段请求「最后 50 字节」也对', v['status'] == 206 and v['len'] == 50, v)
     v = video(page, 'bytes=0-99999999')
@@ -199,7 +199,7 @@ with sync_playwright() as p:
     b2 = register(p2, f'full-{STAMP}@test.local', make_invite())
     enter_code(p2, b2['dev_code'])
     p2.wait_for_selector('#today-cards .dk-shelf', timeout=30000)
-    check('带邀请码注册 → 直接完整版（今天页九个板块）', p2.query_selector('.dk-locked') is None and not p2.query_selector_all('.rail-link.is-locked'))
+    check('带邀请码注册 → 直接会员（今天页九个板块）', p2.query_selector('.dk-locked') is None and not p2.query_selector_all('.rail-link.is-locked'))
 
     c3 = br.new_context()
     p3 = c3.new_page()

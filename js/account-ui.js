@@ -144,7 +144,7 @@
         title: '注册',
         html: tabs('register') + '<form data-view="register" novalidate>' + EMAIL +
           field('密码', '<input class="input" type="password" name="password" required minlength="8" autocomplete="new-password">', '至少 8 位') +
-          field('邀请码（选填）', '<input class="input input-code" type="text" name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="K7M2-QF9W">', '有邀请码就填上，开通完整版；没有就空着，先免费用口算、数独、四个思维游戏和奥数前三课') +
+          field('邀请码（选填）', '<input class="input input-code" type="text" name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="K7M2-QF9W">', '有邀请码就填上，开通会员；没有就空着，先免费用口算、数独、四个思维游戏和奥数前三课') +
           (tsKey() ? '<div class="ts-box" data-ts></div>' : '') +
           MSG + '<button type="submit" class="btn btn-primary btn-lg auth-submit" data-act="submit">注册，发验证码到邮箱</button>' +
           '<p class="auth-help">注册即表示同意<a href="/terms" target="_blank" rel="noopener">服务条款</a>和<a href="/privacy" target="_blank" rel="noopener">隐私说明</a>。</p></form>' + GOOGLE
@@ -235,9 +235,9 @@
     if (tsWidget !== null && root.turnstile) { try { root.turnstile.reset(tsWidget) } catch (e) { /* 框已经不在了 */ } }
   }
 
-  /* 账号页里的版本：免费版能补填邀请码开通完整版；付费开通上线后（js/pay.js）还能直接买一年 */
+  /* 账号页里的版本：免费版能补填邀请码开通会员；付费开通上线后（js/pay.js）还能直接买一年 */
   function planBlock() {
-    /* 2026-11-27：免费账号注册送 7 天完整版体验（base=free 且 fullUntil 没过 → plan 算 full）；
+    /* 2026-11-27：免费账号注册送 7 天会员体验（base=free 且 fullUntil 没过 → plan 算 full）；
        2026-11-28 年卡也写 fullUntil，所以这里不分体验和年卡，只写用到哪天 */
     var until = A.state.fullUntil
     var md = function (t) { var d = new Date(t); return (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日' }
@@ -251,23 +251,23 @@
     if (A.state.base === 'free' && A.state.plan === 'full' && until) {
       var trialLike = until - Date.now() <= 8 * 86400 * 1000
       /* 剩不到 8 天的多半是注册送的体验（年卡买完至少一年），照原来的说法 */
-      return '<div class="account-plan"><p><b>' + (trialLike ? '完整版体验' : '完整版') + '</b> · ' + (trialLike ? '到 ' + md(until) : '用到 ' + ymd(until)) + '，所有板块都能用。' +
+      return '<div class="account-plan"><p><b>' + (trialLike ? '会员体验' : '会员') + '</b> · ' + (trialLike ? '到 ' + md(until) : '用到 ' + ymd(until)) + '，所有板块都能用。' +
         '到期后回免费版：口算、游戏、识字每日一卷、拼音今日卷照常，孩子的记录都留着。</p>' +
         buy + (buy ? '<p class="account-or">朋友给了邀请码，也可以填码开通（不再到期）：</p>' : '') + redeemForm() + '</div>'
     }
     if (A.state.plan === 'free') {
       return '<div class="account-plan"><p><b>免费版</b> · 可以用口算、数独和游戏，识字每日一卷、拼音今日卷，扫码打分、错题自动复习都有。' +
-        '奥数第 4 课以后、写字、单元检查、拼音课程和专题要开通完整版。</p>' +
+        '奥数第 4 课以后、写字、单元检查、拼音课程和专题要开通会员。</p>' +
         buy + (buy ? '<p class="account-or">朋友给了邀请码，填码开通：</p>' : '') + redeemForm() + '</div>'
     }
-    /* 测试环境只有管理员看得到购买（中间层控制 __SUMSUM_PAY.on）：管理员是永久完整版，也给一个按钮走测试付款 */
-    return '<div class="account-plan"><p><b>完整版</b> · 九个板块都能用。</p>' +
+    /* 测试环境只有管理员看得到购买（中间层控制 __SUMSUM_PAY.on）：管理员是永久会员，也给一个按钮走测试付款 */
+    return '<div class="account-plan"><p><b>会员</b> · 九个板块都能用。</p>' +
       (buy && A.state.admin ? '<p class="account-or">管理员测试付款（测试环境，用测试卡）：</p>' + buy : '') + '</div>'
   }
   function redeemForm() {
     return '<form class="redeem-form" data-redeem novalidate>' +
       '<input class="input input-code" type="text" name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="如 K7M2-QF9W" aria-label="邀请码">' +
-      '<button type="submit" class="btn btn-primary">开通完整版</button>' +
+      '<button type="submit" class="btn btn-primary">开通会员</button>' +
       '<p class="redeem-msg" data-redeem-msg role="alert" hidden></p></form>'
   }
 
@@ -612,7 +612,7 @@
     if (btn) btn.disabled = true
     A.request('/api/auth/redeem', { invite: input.value }).then(function (r) {
       if (r.status === 200) {
-        show('已开通完整版，正在刷新…', false)
+        show('已开通会员，正在刷新…', false)
         A.setLogin(A.state.email, A.state.admin, 'full')
         setTimeout(function () { root.location.reload() }, 600)
       } else {

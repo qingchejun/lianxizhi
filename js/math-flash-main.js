@@ -100,9 +100,9 @@
     var unitOpts = B.units.map(function (u, i) {
       var n = MC.unitCards(book, i).length
       return '<option value="' + i + '"' + (!all && i === unit ? ' selected' : '') + '>' + esc(u[0]) +
-        (n ? '（' + n + ' 张）' : '') + (free && !freeOk(book, i) ? '（完整版）' : '') + '</option>'
+        (n ? '（' + n + ' 张）' : '') + (free && !freeOk(book, i) ? '（会员）' : '') + '</option>'
     }).join('') +
-      '<option value="all"' + (all ? ' selected' : '') + '>这一册全套 ' + MC.bookCards(book).length + ' 张' + (free ? '（完整版）' : '') + '</option>'
+      '<option value="all"' + (all ? ' selected' : '') + '>这一册全套 ' + MC.bookCards(book).length + ' 张' + (free ? '（会员）' : '') + '</option>'
 
     var wrongHint = !signedIn()
       ? '登录后，孩子做完口算扫码点出错题，错题对应的卡会排在最前面，卡上的例子就用孩子做错的那道题。'
@@ -131,8 +131,8 @@
       '<div class="group-title mfc-list-title">怎么用</div><p class="hint">' + esc(F.HOW) + '打印时选「实际大小」或 100%，别选「适合页面」。</p>'
 
     if (locked) {
-      paper.innerHTML = FL.html('数学闪卡的这部分是完整版功能',
-        '免费版可以印一年级上册前两个单元的闪卡试一试；完整版每个单元都有，还会按孩子口算的错题出卡。')
+      paper.innerHTML = FL.html('数学闪卡的这部分是会员功能',
+        '免费版可以印一年级上册前两个单元的闪卡试一试；会员每个单元都有，还会按孩子口算的错题出卡。')
       FL.bind(paper)
       paper.style.zoom = ''
       printButton.disabled = true

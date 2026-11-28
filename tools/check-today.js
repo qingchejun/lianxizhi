@@ -369,7 +369,7 @@ Object.keys(V.list).forEach(function (id) {
   /* 7 天体验提醒（2026-11-27） */
   var D1 = 86400000
   var TN = T.trialNote
-  check('体验：完整版账号、没登录不提', TN({ ok: true, base: 'full', full_until: 0 }, T0) === null && TN({ ok: false }, T0) === null && TN(null, T0) === null)
+  check('体验：会员账号、没登录不提', TN({ ok: true, base: 'full', full_until: 0 }, T0) === null && TN({ ok: false }, T0) === null && TN(null, T0) === null)
   check('体验：还剩 5 天不提', TN({ ok: true, base: 'free', full_until: T0 + 5 * D1 }, T0) === null)
   check('体验：还剩 2 天提醒', JSON.stringify(TN({ ok: true, base: 'free', full_until: T0 + 2 * D1 }, T0)) === '{"left":2}')
   check('体验：还剩半天算 1 天', TN({ ok: true, base: 'free', full_until: T0 + D1 / 2 }, T0).left === 1)

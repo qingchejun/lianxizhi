@@ -88,6 +88,6 @@ export async function requireSession(context) {
     'SELECT u.pwver, u.banned, u.plan, u.full_until, s.ended_at FROM users u JOIN sessions s ON s.id=? AND s.uid=u.id WHERE u.id=?'
   ).bind(payload.sid, payload.uid).first()
   if (!row || row.pwver !== payload.pwver || row.banned || row.ended_at) return null /* 停用账号、被挤掉的设备立即失效 */
-  /* 免费账号在完整版到期日（7 天体验 / 年卡）之前按完整版放行：和 /me 用同一个 planOf */
+  /* 免费账号在会员到期日（7 天体验 / 年卡）之前按会员放行：和 /me 用同一个 planOf */
   return Object.assign({}, payload, { plan: planOf(row, Date.now()) })
 }

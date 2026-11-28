@@ -118,7 +118,7 @@
     if (initial) initial.textContent = email ? email.charAt(0).toUpperCase() : ''
     user.title = email ? email + '（点开账号菜单）' : (out ? '登录或注册' : '账号')
     /* 免费版和没登录的人：奥数、识字、拼音挂一把锁（只是提示；真正拦的是服务器，见 server/gate.js FREE_PAGES、FULL_BOARDS）。
-       2026-11-25 起没登录的人点上锁的板块也能进去看这个板块是什么（原网址显示完整版说明页） */
+       2026-11-25 起没登录的人点上锁的板块也能进去看这个板块是什么（原网址显示会员说明页） */
     var plan = (state && state.plan) || root.__SUMSUM_PLAN || ''
     var free = !!email && plan === 'free' || !email && !out && root.__SUMSUM_PLAN === 'free'
     if (sub && !out) sub.textContent = free ? '免费版' : '练习进度自动同步'
@@ -130,11 +130,29 @@
       if (lock && !icon) {
         icon = doc.createElement('i')
         icon.className = 'rail-lock'
-        icon.setAttribute('aria-label', '完整版')
+        icon.setAttribute('aria-label', '会员')
         icon.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5.5" y="10.5" width="13" height="9" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>'
         a.appendChild(icon)
       } else if (!lock && icon) icon.remove()
     })
+    /* 会员入口（2026-11-28）：没登录、免费版着重显示并标价；会员标到期日，永久会员标「永久」 */
+    var vip = doc.querySelector('.rail-vip')
+    if (vip) {
+      var tag = vip.querySelector('[data-vip-tag]')
+      var st = state || {}
+      var base = st.base || (root.__SUMSUM_ME && root.__SUMSUM_ME.base) || ''
+      var until = Number(st.fullUntil || (root.__SUMSUM_ME && root.__SUMSUM_ME.full_until)) || 0
+      var member = !out && !free
+      var text = '99 元/年'
+      if (member && base === 'full') text = '永久'
+      else if (member && until > Date.now()) {
+        var d = new Date(until)
+        text = '到 ' + (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日'
+      }
+      vip.classList.toggle('is-promo', !member)
+      if (tag) tag.textContent = text
+      vip.title = member ? '会员' : '开通会员 · 99 元/年'
+    }
     /* 没登录的人点「今天」看到的是首页介绍，不是每日练习面板，所以叫「首页」（2026-11-25） */
     var today = doc.querySelector('.rail-link[data-module="今天"]')
     if (today) {

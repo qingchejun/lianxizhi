@@ -25,8 +25,8 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   var r = d('/mark', '?a=3', false)
   check('没登录打开要登录的页面 → 跳首页并记住原址', r.action === 'redirect' &&
     r.location === '/?next=' + encodeURIComponent('/mark?a=3'), r.location)
-  /* 2026-11-25 整站结构：没开放的板块不再把没登录的人带回首页，在原网址显示「完整版」说明页（不收录） */
-  check('没登录打开还没开放的板块 → 原网址显示完整版说明页', ['/shizi', '/pinyin.html', '/pinyin/'].every(function (p) {
+  /* 2026-11-25 整站结构：没开放的板块不再把没登录的人带回首页，在原网址显示「会员」说明页（不收录） */
+  check('没登录打开还没开放的板块 → 原网址显示会员说明页', ['/shizi', '/pinyin.html', '/pinyin/'].every(function (p) {
     return d(p, '?seed=3', false).action === 'locked'
   }))
   check('口算、数独、游戏组和奥数（前三课公开，11-25）没登录也放行（免登录出题打印）', ['/kousuan', '/kousuan.html', '/shudu', '/shudu.html', '/huochai', '/mima/', '/migong.html', '/zhizhi', '/aoshu', '/aoshu.html'].every(function (p) {
@@ -40,11 +40,11 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   check('凑十法内页没登录也放行，并带上要取的文件', ['/kousuan/coushifa', '/kousuan/coushifa/', '/kousuan/coushifa.html'].every(function (p) {
     var r = d(p, '', false); return r.action === 'pass' && r.file === '/coushifa'
   }))
-  check('凑十法内页：免费版放行、完整版放行', d('/kousuan/coushifa', '', { ok: true, plan: 'free' }).file === '/coushifa' && d('/kousuan/coushifa', '', true).file === '/coushifa')
+  check('凑十法内页：免费版放行、会员放行', d('/kousuan/coushifa', '', { ok: true, plan: 'free' }).file === '/coushifa' && d('/kousuan/coushifa', '', true).file === '/coushifa')
   check('内页文件自己的网址 301 到正式网址（只留一个网址）', ['/coushifa', '/coushifa.html', '/coushifa/'].every(function (p) {
     var r = d(p, '?x=1', false); return r.action === 'moved' && r.location === '/kousuan/coushifa?x=1'
   }) && d('/coushifa', '', true).action === 'moved')
-  check('破十法内页：没登录、免费版、完整版都放行，文件自己的网址 301', ['/kousuan/poshifa', '/kousuan/poshifa/'].every(function (p) {
+  check('破十法内页：没登录、免费版、会员都放行，文件自己的网址 301', ['/kousuan/poshifa', '/kousuan/poshifa/'].every(function (p) {
     return d(p, '', false).file === '/poshifa' && d(p, '', { ok: true, plan: 'free' }).file === '/poshifa' && d(p, '', true).file === '/poshifa'
   }) && d('/poshifa.html', '?a=1', false).location === '/kousuan/poshifa?a=1')
   check('管理页同样拦', d('/admin.html', '', false).action === 'redirect')
@@ -57,7 +57,7 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
 
   /* --- 免费版（2026-11-24 放开注册）：白名单，每个网页 × 各种写法都试 --- */
   var fs = require('fs')
-  var FREE_OK = ['index', 'kousuan', 'aoshu', 'shizi', 'pinyin', 'shudu', 'huochai', 'mima', 'migong', 'zhizhi', 'mark', 'help', 'privacy', 'terms', '404']
+  var FREE_OK = ['index', 'kousuan', 'aoshu', 'shizi', 'pinyin', 'shudu', 'huochai', 'mima', 'migong', 'zhizhi', 'mark', 'help', 'privacy', 'terms', 'huiyuan', '404']
   var htmls = fs.readdirSync(require('path').join(__dirname, '..')).filter(function (f) { return /\.html$/.test(f) })
   var free = { ok: true, plan: 'free' }, full = { ok: true, plan: 'full' }
   var leaks = []
@@ -73,11 +73,12 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
   })
   check('免费版：只有白名单里的网页能开，其余一律上锁（每个网页 5 种写法）', !leaks.length && htmls.length > 10, leaks)
   check('免费版：首页、今天放行', d('/', '', free).action === 'pass' && d('/index.html', '', free).action === 'pass')
-  check('完整版：一切放行', ['/aoshu', '/shizi/', '/admin.html', '/pinyin'].every(function (p) { return d(p, '', full).action === 'pass' }))
+  check('会员：一切放行', ['/aoshu', '/shizi/', '/admin.html', '/pinyin'].every(function (p) { return d(p, '', full).action === 'pass' }))
   check('上锁页不单独开网址', d('/locked', '', full).action === 'redirect' && d('/locked.html', '', free).action === 'redirect')
   check('隐私说明没登录也能看', d('/privacy', '', false).action === 'pass')
   check('用户协议和退款说明没登录也能看、免费版也能看', d('/terms', '', false).action === 'pass' && d('/terms', '', { ok: true, plan: 'free' }).action === 'pass')
-  check('老调用传 true 仍当完整版', d('/aoshu', '', true).action === 'pass')
+  check('会员页没登录也能看、免费版也能看', d('/huiyuan', '', false).action === 'pass' && d('/huiyuan', '', { ok: true, plan: 'free' }).action === 'pass')
+  check('老调用传 true 仍当会员', d('/aoshu', '', true).action === 'pass')
 
   /* 源码、脚本、文档、配置：登没登录都不给看（站点根目录就是仓库根目录） */
   check('内部文件一律 404', ['/server/session.js', '/tools/migrate-20261120-invites.sql', '/docs/superpowers/specs/x.md',
@@ -142,7 +143,7 @@ Promise.all([import('../server/gate.js'), import('../functions/_middleware.js'),
 
   var c = ctx('/pinyin')
   var res = await M.onRequest(c)
-  check('无 cookie 访问没开放的板块 → 原网址显示完整版说明页、不收录', res.status === 200 && c.calls.next === 0 &&
+  check('无 cookie 访问没开放的板块 → 原网址显示会员说明页、不收录', res.status === 200 && c.calls.next === 0 &&
     c.calls.assets.some(function (u) { return /\/locked$/.test(u) }) && res.headers.get('X-Robots-Tag') === 'noindex')
   c = ctx('/mark')
   res = await M.onRequest(c)

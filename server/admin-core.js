@@ -118,7 +118,7 @@ export async function setBan(repo, session, now, body) {
   return { status: 200, body: { ok: true } }
 }
 
-/* ---- 账号（2026-11-24 放开注册）：统计 + 列表 + 手动设免费版 / 完整版 ---- */
+/* ---- 账号（2026-11-24 放开注册）：统计 + 列表 + 手动设免费版 / 会员 ---- */
 const DAY_MS = 86400 * 1000
 export async function listUsers(repo, session, now) {
   const gate = await requireAdmin(repo, session)
@@ -163,7 +163,7 @@ export async function setUserPlan(repo, session, now, body) {
   const user = await repo.userById(id)
   if (!user) return { status: 404, body: { ok: false, error: '没有这个账号。' } }
   await repo.setPlan(id, plan)
-  /* 改回免费版就是不给完整版了：7 天体验 / 年卡的到期日一起清掉（审查 11-27） */
+  /* 改回免费版就是不给会员了：7 天体验 / 年卡的到期日一起清掉（审查 11-27） */
   if (plan === 'free' && repo.setFullUntil) await repo.setFullUntil(id, 0)
   return { status: 200, body: { ok: true } }
 }

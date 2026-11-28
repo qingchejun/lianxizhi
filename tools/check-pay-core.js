@@ -1,4 +1,4 @@
-/* 完整版年卡收款（server/pay-core.js）：内存 repo + 假 Waffo，node 直跑。
+/* 会员年卡收款（server/pay-core.js）：内存 repo + 假 Waffo，node 直跑。
  *   下单门槛、开通只一次、金额不对不开通、到期日怎么加、轮询兜底、回调验签、退款扣回。 */
 'use strict'
 let ok = 0
@@ -70,7 +70,7 @@ import('../server/pay-core.js').then(async P => {
   check('改过密码的旧登录：401', (await P.createOrder(repo, W, env, { uid: 'u1', pwver: 0 }, now, 'x')).status === 401)
   check('邮箱没验证：403', (await P.createOrder(repo, W, env, { uid: 'u3', pwver: 1 }, now, 'x')).status === 403)
   check('测试环境：普通账号下不了单', (await P.createOrder(repo, W, Object.assign({}, env, { WAFFO_ENV: 'test' }), s1, now, 'x')).status === 503)
-  check('邀请码永久完整版：不卖', (await P.createOrder(repo, W, env, { uid: 'u2', pwver: 1 }, now, 'x')).status === 409)
+  check('邀请码永久会员：不卖', (await P.createOrder(repo, W, env, { uid: 'u2', pwver: 1 }, now, 'x')).status === 409)
   const c1 = await P.createOrder(repo, W, env, s1, now, 'https://zhihebi.com/')
   const id1 = c1.body.order
   check('下单：拿到收银台地址', c1.status === 200 && c1.body.url === 'https://pay.example/' + id1 + '#token=T', c1)
@@ -104,7 +104,7 @@ import('../server/pay-core.js').then(async P => {
   const w2 = await P.webhook(repo, W, env, ev(id1, '99.00', 'PAY_1'), 'good', now + 2000)
   check('同一回调再来一次：不再加', !w2.body.granted && repo.users.u1.full_until === before && !w2.mail)
   s = await P.orderStatus(repo, W, env, s1, id1, now + 3000)
-  check('轮询：已付、完整版、不重复开通', s.body.state === 'paid' && s.body.plan === 'full' && repo.users.u1.full_until === before && !s.mail)
+  check('轮询：已付、会员、不重复开通', s.body.state === 'paid' && s.body.plan === 'full' && repo.users.u1.full_until === before && !s.mail)
 
   // 轮询兜底开通（回调丢了）
   const c2 = await P.createOrder(repo, W, env, s1, now + DAY, 'https://zhihebi.com')

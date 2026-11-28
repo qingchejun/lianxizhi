@@ -1,5 +1,5 @@
-# 拼音知识点闪卡（2026-11-28）：完整版账号走一遍「闪卡」页签
-#   本地预览（:8999）在跑、账号 preview@local.test / preview123 存在（完整版）时运行：
+# 拼音知识点闪卡（2026-11-28）：会员账号走一遍「闪卡」页签
+#   本地预览（:8999）在跑、账号 preview@local.test / preview123 存在（会员）时运行：
 #   /opt/homebrew/opt/python@3.10/bin/python3.10 tools/e2e-pinyin-cards-browser.py
 # 免费版只能印第 1、2 课：在 tools/e2e-free-browser.py 里测。
 import sys, time

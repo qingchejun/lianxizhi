@@ -15,8 +15,8 @@
        例外：?reset= 是密码重设邮件的落地链接（js/account-ui.js 接管）、?paid= 是付款后回来确认到账（js/pay.js），必须留在首页。 */
     if (location.search && !/[?&](reset|paid)=/.test(location.search)) location.replace('kousuan.html' + location.search)
   </script>
-  <link rel="stylesheet" href="css/app.css?v=a8932abbdf" />
-  <link rel="stylesheet" href="css/today.css?v=bc8b760e03" />
+  <link rel="stylesheet" href="css/app.css?v=6adb11d0d1" />
+  <link rel="stylesheet" href="css/today.css?v=84f090784a" />
 </head>
 <body data-help-manual>
 
@@ -38,6 +38,7 @@
   <a class="rail-link" href="/zhizhi" data-module="数织" title="数织"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 4v16M4 12h16"/><rect class="f" x="6.25" y="6.25" width="3.5" height="3.5" rx=".75"/><rect class="f" x="14.25" y="14.25" width="3.5" height="3.5" rx=".75"/></svg><span>数织</span></a>
   <span class="rail-gap"></span>
   <a class="rail-link rail-tool" href="/help" data-help title="使用说明"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .9-1 1.6v.3M12 16.75h.01"/></svg><span>使用说明</span></a>
+  <a class="rail-link rail-tool rail-vip" href="/huiyuan" data-vip title="会员"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 8.5l4 3.5L12 6l3.5 6 4-3.5-1.75 10h-11.5z"/><path d="M7.25 21h9.5"/></svg><span>会员</span><small class="rail-tag" data-vip-tag></small></a>
   <div class="rail-me">
     <button type="button" class="rail-user" data-account-menu aria-haspopup="menu" aria-expanded="false" title="账号"><span class="rail-avatar" data-account-initial aria-hidden="true"></span><span class="rail-who"><b data-account-email>账号</b><small>练习进度自动同步</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 10l4-4 4 4M8 14l4 4 4-4"/></svg></button>
     <div class="rail-menu" role="menu" hidden>
@@ -47,7 +48,7 @@
     </div>
   </div>
 </nav>
-<script src="js/sidebar.js?v=5a8878aef3" defer></script>
+<script src="js/sidebar.js?v=1f1bc287d7" defer></script>
 <!-- /rail -->
 
 <div class="work">
@@ -85,9 +86,9 @@
       <p>一位一年级家长给自己孩子做的练习纸网站：能在家练好的不送去报班，能在纸上做的不让孩子盯屏幕。口算、奥数前三课和纸笔游戏打开就能打印；做完扫一下纸角，下一张专练错的。</p>
       <p>意见反馈：<a href="mailto:hi@zhihebi.com">hi@zhihebi.com</a>，一般一两天内回复。</p>
     </section>
-    <nav class="sf-col" aria-label="练习"><div class="sf-h">练习</div><a href="/kousuan">口算题</a><a href="/kousuan/coushifa">凑十法练习题</a><a href="/kousuan/poshifa">破十法练习题</a><a href="/aoshu">奥数</a><a href="/shizi">识字<small>完整版</small></a><a href="/pinyin">拼音<small>完整版</small></a></nav>
+    <nav class="sf-col" aria-label="练习"><div class="sf-h">练习</div><a href="/kousuan">口算题</a><a href="/kousuan/coushifa">凑十法练习题</a><a href="/kousuan/poshifa">破十法练习题</a><a href="/aoshu">奥数</a><a href="/shizi">识字<small>会员</small></a><a href="/pinyin">拼音<small>会员</small></a></nav>
     <nav class="sf-col" aria-label="游戏"><div class="sf-h">游戏</div><a href="/shudu">儿童数独</a><a href="/huochai">火柴棒等式题</a><a href="/mima">密码推理题</a><a href="/migong">儿童迷宫</a><a href="/zhizhi">数织游戏</a></nav>
-    <nav class="sf-col" aria-label="关于"><div class="sf-h">关于</div><a href="/">纸和笔首页</a><a href="/help">使用说明</a><a href="/help#print">打印与存 PDF</a><a href="/privacy">隐私说明</a><a href="/terms">服务条款</a><a href="mailto:hi@zhihebi.com">意见反馈</a></nav>
+    <nav class="sf-col" aria-label="关于"><div class="sf-h">关于</div><a href="/">纸和笔首页</a><a href="/help">使用说明</a><a href="/help#print">打印与存 PDF</a><a href="/huiyuan">会员</a><a href="/privacy">隐私说明</a><a href="/terms">服务条款</a><a href="mailto:hi@zhihebi.com">意见反馈</a></nav>
   </div>
   <div class="sf-bot"><span>© 2026 纸和笔 · zhihebi.com</span><span>少报班，少看屏 · 一页纸，五分钟</span></div>
 </footer>
@@ -103,7 +104,7 @@
 <script src="js/kousuan-mode.js?v=3cca1fb807"></script>
 <script src="js/settings.js?v=cd7373d7c9"></script>
 <script src="js/aoshu-topics.js?v=1ee83bef9f"></script>
-<script src="js/aoshu-videos.js?v=ab3a78c7cc"></script>
+<script src="js/aoshu-videos.js?v=d21896826a"></script>
 <script src="js/shudu-core.js?v=658de65c54"></script>
 <script src="js/shudu-settings.js?v=8077fece13"></script>
 <script src="js/shizi-data.js?v=c3c3176849"></script>
@@ -116,14 +117,14 @@
 <script src="js/pinyin-data.js?v=18afc20022"></script>
 <script src="js/pinyin-core.js?v=fa75ff3945"></script>
 <script src="js/pinyin-storage.js?v=afad2de8ba"></script>
-<script src="js/today-core.js?v=f69139e2d3"></script>
-<script src="js/changelog.js?v=e42f16a1dc"></script>
-<script src="js/today.js?v=a2dc79b6a4"></script>
+<script src="js/today-core.js?v=324adf361f"></script>
+<script src="js/changelog.js?v=5d4725fc36"></script>
+<script src="js/today.js?v=4b4d1c98e9"></script>
 <script src="js/backup.js?v=5af8e1e7ac"></script>
-<script src="js/help.js?v=ca86cf215e"></script>
-<script src="js/account.js?v=c12ade27c9"></script>
-<script src="js/pay.js?v=cfe7fd78a3"></script>
-<script src="js/account-ui.js?v=dfb2477f57"></script>
+<script src="js/help.js?v=7e37f397df"></script>
+<script src="js/account.js?v=5793d08e3d"></script>
+<script src="js/pay.js?v=35dece7482"></script>
+<script src="js/account-ui.js?v=e052998fe9"></script>
 <script src="js/sync-core.js?v=5f4122b899"></script>
 <script src="js/sync.js?v=accb9217c5"></script>
 <script>

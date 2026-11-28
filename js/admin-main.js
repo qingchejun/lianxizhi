@@ -92,26 +92,26 @@
         }).join('') + '</tbody></table>' : '<p class="admin-note">还没有订单。</p>')
   }
 
-  /* 账号：免费版 / 完整版统计，手动开通或改回免费版 */
+  /* 账号：免费版 / 会员统计，手动开通或改回免费版 */
   function usersHTML() {
     if (!users) return ''
     var st = users.stats
     return '<h2 class="admin-h2">账号</h2>' +
-      '<p class="admin-stats">已验证账号 <b>' + st.total + '</b>：完整版 <b>' + st.full + '</b>，免费版 <b>' + st.free + '</b>；' +
+      '<p class="admin-stats">已验证账号 <b>' + st.total + '</b>：会员 <b>' + st.full + '</b>，免费版 <b>' + st.free + '</b>；' +
       '近 1 天新注册 <b>' + st.new1d + '</b>，近 7 天 <b>' + st.new7d + '</b>；还没验证邮箱 ' + st.unverified + '（48 小时后自动清掉）。</p>' +
       '<p class="admin-stats">免费版里：7 天体验中 <b>' + (st.trial || 0) + '</b>，体验已结束 <b>' + (st.ended || 0) + '</b>，' +
       '其中结束后近 7 天还在打分的 <b>' + (st.endedActive || 0) + '</b>。</p>' +
       '<table class="admin-table"><thead><tr><th>邮箱</th><th>版本</th><th>注册时间</th><th>来源</th><th title="近 7 天扫码或在板块页打分了几张纸">近 7 天打分</th><th></th></tr></thead><tbody>' +
       users.users.map(function (u) {
         return '<tr><td>' + esc(u.email) + (u.verified ? '' : ' <small>（没验证）</small>') + (u.banned ? ' <span class="badge badge-revoked">已停用</span>' : '') + '</td>' +
-          '<td><span class="badge badge-' + (u.plan === 'full' ? 'activated' : 'unused') + '">' + (u.plan === 'full' ? '完整版' : '免费版') + '</span>' +
+          '<td><span class="badge badge-' + (u.plan === 'full' ? 'activated' : 'unused') + '">' + (u.plan === 'full' ? '会员' : '免费版') + '</span>' +
             (u.trial ? ' <small>到 ' + fmtTime(u.full_until) + '</small>' : u.ended ? ' <small>体验已结束</small>' : '') + '</td>' +
           '<td>' + fmtTime(u.created_at) + '</td>' +
           '<td>' + (u.invited ? '邀请码' : '免费注册') + '</td>' +
           '<td>' + (u.marked7d || 0) + '</td>' +
           '<td class="admin-ops">' + (u.admin || !u.verified ? '' : u.plan === 'full'
             ? '<button type="button" class="admin-btn" data-plan="free" data-uid="' + esc(u.id) + '">改回免费版</button>'
-            : '<button type="button" class="admin-btn admin-btn-primary" data-plan="full" data-uid="' + esc(u.id) + '">开通完整版</button>') + '</td></tr>'
+            : '<button type="button" class="admin-btn admin-btn-primary" data-plan="full" data-uid="' + esc(u.id) + '">开通会员</button>') + '</td></tr>'
       }).join('') + '</tbody></table>'
   }
 
@@ -193,7 +193,7 @@
     var pl = e.target.closest('[data-plan]')
     if (pl) {
       var full = pl.dataset.plan === 'full'
-      if (!root.confirm(full ? '给这个账号开通完整版？' : '把这个账号改回免费版？奥数、识字、拼音会锁上。')) return
+      if (!root.confirm(full ? '给这个账号开通会员？' : '把这个账号改回免费版？奥数、识字、拼音会锁上。')) return
       api('/api/admin/users/plan', { id: pl.dataset.uid, plan: pl.dataset.plan }).then(function (r) {
         if (r.status !== 200) root.alert(r.body.error || '操作没成功，稍后再试。')
         load()
@@ -203,7 +203,7 @@
     var rf = e.target.closest('[data-refund]')
     if (rf) {
       var warn = rf.dataset.late === '1' ? '这单付款已经超过 7 天。' : ''
-      if (!root.confirm(warn + '全额退款，并取消这一年的完整版？')) return
+      if (!root.confirm(warn + '全额退款，并取消这一年的会员？')) return
       rf.disabled = true
       api('/api/admin/orders/refund', { id: rf.dataset.refund }).then(function (r) {
         if (r.status !== 200) root.alert(r.body.error || '退款没成功，稍后再试。')

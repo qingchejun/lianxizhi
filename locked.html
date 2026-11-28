@@ -7,12 +7,12 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=272f952f31" />
   <meta name="theme-color" content="#f6f7f9" />
   <script>try{if(localStorage.getItem("lianxizhi:rail")==="fold")document.documentElement.classList.add("rail-folded")}catch(e){}</script>
-  <title>完整版 · 纸和笔</title>
+  <title>会员 · 纸和笔</title>
   <meta name="robots" content="noindex" />
-  <link rel="stylesheet" href="css/app.css?v=a8932abbdf" />
+  <link rel="stylesheet" href="css/app.css?v=6adb11d0d1" />
 </head>
 <body>
-<!-- 免费版、或没登录的人打开完整版的板块时，中间层在原网址上显示这一页（functions/_middleware.js，server/gate.js FREE_PAGES / FULL_BOARDS）。
+<!-- 免费版、或没登录的人打开会员的板块时，中间层在原网址上显示这一页（functions/_middleware.js，server/gate.js FREE_PAGES / FULL_BOARDS）。
      本页没有单独网址；板块名按当前网址填。 -->
 <div class="app">
 <!-- rail:上锁 -->
@@ -32,6 +32,7 @@
   <a class="rail-link" href="/zhizhi" data-module="数织" title="数织"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 4v16M4 12h16"/><rect class="f" x="6.25" y="6.25" width="3.5" height="3.5" rx=".75"/><rect class="f" x="14.25" y="14.25" width="3.5" height="3.5" rx=".75"/></svg><span>数织</span></a>
   <span class="rail-gap"></span>
   <a class="rail-link rail-tool" href="/help" data-help title="使用说明"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .9-1 1.6v.3M12 16.75h.01"/></svg><span>使用说明</span></a>
+  <a class="rail-link rail-tool rail-vip" href="/huiyuan" data-vip title="会员"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 8.5l4 3.5L12 6l3.5 6 4-3.5-1.75 10h-11.5z"/><path d="M7.25 21h9.5"/></svg><span>会员</span><small class="rail-tag" data-vip-tag></small></a>
   <div class="rail-me">
     <button type="button" class="rail-user" data-account-menu aria-haspopup="menu" aria-expanded="false" title="账号"><span class="rail-avatar" data-account-initial aria-hidden="true"></span><span class="rail-who"><b data-account-email>账号</b><small>练习进度自动同步</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 10l4-4 4 4M8 14l4 4 4-4"/></svg></button>
     <div class="rail-menu" role="menu" hidden>
@@ -41,26 +42,26 @@
     </div>
   </div>
 </nav>
-<script src="js/sidebar.js?v=5a8878aef3" defer></script>
+<script src="js/sidebar.js?v=1f1bc287d7" defer></script>
 <!-- /rail -->
 
 <div class="work">
   <header class="work-head">
-    <h1 class="work-title" id="lk-title">完整版</h1>
+    <h1 class="work-title" id="lk-title">会员</h1>
   </header>
   <main class="lk-scroll">
     <section class="lk-card">
-      <p class="lk-kicker" id="lk-kicker">这个板块属于完整版</p>
-      <h2 id="lk-name">完整版板块</h2>
-      <p class="lk-desc" id="lk-desc">开通完整版后就能用。</p>
-      <h3 class="lk-ways-title">怎么开通完整版</h3>
+      <p class="lk-kicker" id="lk-kicker">这个板块属于会员内容</p>
+      <h2 id="lk-name">会员板块</h2>
+      <p class="lk-desc" id="lk-desc">开通会员后就能用。</p>
+      <h3 class="lk-ways-title">怎么开通会员</h3>
       <div class="lk-ways">
         <div class="lk-way">
           <h4>朋友给了邀请码</h4>
           <div data-lk-free>
             <form class="redeem-form" data-redeem novalidate>
               <input class="input input-code" type="text" name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="如 K7M2-QF9W" aria-label="邀请码">
-              <button type="submit" class="btn btn-primary">开通完整版</button>
+              <button type="submit" class="btn btn-primary">开通会员</button>
               <p class="redeem-msg" data-redeem-msg role="alert" hidden></p>
             </form>
             <p class="lk-help">一个码开通一个账号，开通后一直有效。</p>
@@ -74,7 +75,7 @@
         <div class="lk-way" data-lk-pay data-pay-scope hidden>
           <h4>付费开通</h4>
           <p>99 元一年，支付宝、微信都能付。付款 7 天内不满意，全额退款（<a href="/terms">说明</a>）。</p>
-          <button type="button" class="btn btn-primary" data-pay-buy>开通完整版 · 99 元/年</button>
+          <button type="button" class="btn btn-primary" data-pay-buy>开通会员 · 99 元/年</button>
           <p class="lk-want-msg" data-pay-msg role="status" hidden></p>
         </div>
         <div class="lk-way" data-lk-want>
@@ -86,7 +87,7 @@
       </div>
       <figure class="lk-sample" data-lk-sample="shizi" hidden><img src="img/samples/shizi.jpg?v=2eff82f22c" alt="识字每日一卷样张" width="600" height="848" loading="lazy"><figcaption>样张：打印出来就是这样</figcaption></figure>
       <figure class="lk-sample" data-lk-sample="pinyin" hidden><img src="img/samples/pinyin.jpg?v=f4689e4a4c" alt="拼音练习样张" width="600" height="848" loading="lazy"><figcaption>样张：打印出来就是这样</figcaption></figure>
-      <p class="lk-now" data-lk-free>你现在是<b>免费版</b>：口算、数独、四个纸笔游戏、奥数前三课、识字每日一卷、拼音今日卷都能用，扫码打分、错题自动复习、换设备同步也都有。完整版另外还有全部奥数课（带讲解视频）、写字、单元检查、拼音课程和专题。</p>
+      <p class="lk-now" data-lk-free>你现在是<b>免费版</b>：口算、数独、四个纸笔游戏、奥数前三课、识字每日一卷、拼音今日卷都能用，扫码打分、错题自动复习、换设备同步也都有。会员另外还有全部奥数课（带讲解视频）、写字、单元检查、拼音课程和专题，<a href="/huiyuan">两者的区别看这里</a>。</p>
       <p class="lk-now" data-lk-guest hidden>还没有账号也没关系：<a href="/kousuan">口算题</a>、<a href="/aoshu">奥数前三课</a>、<a href="/shudu">儿童数独</a>和四个纸笔游戏不用登录就能出题、打印。</p>
       <p class="lk-back">先去用：<a href="/kousuan">口算题</a> · <a href="/aoshu">奥数前三课</a> · <a href="/shudu">儿童数独</a> · <a href="/">首页</a></p>
     </section>
@@ -124,10 +125,10 @@
   var OPEN_TO_FREE = ['shizi', 'pinyin']
   if (b && OPEN_TO_FREE.indexOf(key) >= 0) {
     document.getElementById('lk-kicker').textContent = '注册免费账号就能用'
-    b = [b[0], b[1] + '注册就送 7 天完整版；到期后' + (key === 'shizi' ? '每日一卷' : '今日卷') + '、打分和错题自动复习一直免费。']
+    b = [b[0], b[1] + '注册就送 7 天会员；到期后' + (key === 'shizi' ? '每日一卷' : '今日卷') + '、打分和错题自动复习一直免费。']
   }
   if (b) {
-    document.title = b[0] + ' · 完整版 · 纸和笔'
+    document.title = b[0] + ' · 会员 · 纸和笔'
     document.getElementById('lk-title').textContent = b[0]
     document.getElementById('lk-name').textContent = b[0]
     document.getElementById('lk-desc').textContent = b[1]
@@ -138,7 +139,7 @@
     if (fig) fig.hidden = false
   }
 
-  /* 付费开通开了：显示「开通完整版」，藏起「开通时通知我」 */
+  /* 付费开通开了：显示「开通会员」，藏起「开通时通知我」 */
   if (window.__SUMSUM_PAY && window.__SUMSUM_PAY.on) {
     document.querySelector('[data-lk-pay]').hidden = false
     document.querySelector('[data-lk-want]').hidden = true
@@ -189,7 +190,7 @@
     else call('GET').then(function (d) { if (d && d.ok && d.wanted) done(d.email) }).catch(function () {})
   }
   if (!guest) settle()
-  /* 在这页的弹框里登录 / 注册完（页面不刷新）：能进这个板块了（完整版 / 7 天体验，或识字拼音对免费版开放）就刷新进板块，
+  /* 在这页的弹框里登录 / 注册完（页面不刷新）：能进这个板块了（会员 / 7 天体验，或识字拼音对免费版开放）就刷新进板块，
      点过「开通时通知我」的先登记上再刷新；还进不去的换成登录后的样子 */
   document.addEventListener('DOMContentLoaded', function () {
     var A = window.SumSum && window.SumSum.account
@@ -212,11 +213,11 @@
 <script src="js/store.js?v=c6aac93871"></script>
 <script src="js/sheets-core.js?v=aa0b516622"></script>
 <script src="js/backup.js?v=5af8e1e7ac"></script>
-<script src="js/changelog.js?v=e42f16a1dc"></script>
-<script src="js/help.js?v=ca86cf215e"></script>
-<script src="js/account.js?v=c12ade27c9"></script>
-<script src="js/pay.js?v=cfe7fd78a3"></script>
-<script src="js/account-ui.js?v=dfb2477f57"></script>
+<script src="js/changelog.js?v=5d4725fc36"></script>
+<script src="js/help.js?v=7e37f397df"></script>
+<script src="js/account.js?v=5793d08e3d"></script>
+<script src="js/pay.js?v=35dece7482"></script>
+<script src="js/account-ui.js?v=e052998fe9"></script>
 <script src="js/sync-core.js?v=5f4122b899"></script>
 <script src="js/sync.js?v=accb9217c5"></script>
 </body>

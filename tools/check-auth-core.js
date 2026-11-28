@@ -496,10 +496,10 @@ import('../server/auth-core.js').then(async function (A) {
   W.users[0].banned = 1
   check('通知我：停用的账号 → 401', (await A.wantFull(W, { uid: 'w1', pwver: 2 }, T, true)).status === 401)
 
-  /* --- 7 天完整版体验（2026-11-27）--- */
+  /* --- 7 天会员体验（2026-11-27）--- */
   var DAY7 = 7 * 86400 * 1000
-  check('planOf：完整版账号不看到期日', A.planOf({ plan: 'full', full_until: 0 }, T) === 'full')
-  check('planOf：免费账号体验期内算完整版', A.planOf({ plan: 'free', full_until: T + 1 }, T) === 'full')
+  check('planOf：会员账号不看到期日', A.planOf({ plan: 'full', full_until: 0 }, T) === 'full')
+  check('planOf：免费账号体验期内算会员', A.planOf({ plan: 'free', full_until: T + 1 }, T) === 'full')
   check('planOf：体验到期回免费版', A.planOf({ plan: 'free', full_until: T }, T) === 'free' && A.planOf({ plan: 'free' }, T) === 'free')
   check('basePlan 只看账号本身', A.basePlan({ plan: 'free', full_until: T + 1 }) === 'free')
   var gt = gu.full_until - gu.created_at
@@ -522,7 +522,7 @@ import('../server/auth-core.js').then(async function (A) {
   P.users.push({ id: 'p2', email: 'p2@x.co', pwver: 1, verified: 1, plan: 'full', full_until: 0 })
   var ps2 = await A.openSession(P, 'p2', T)
   var pm3 = await A.meBySession(P, { uid: 'p2', pwver: 1, sid: ps2 }, T)
-  check('完整版 /me：full_until=0', pm3.body.plan === 'full' && pm3.body.base === 'full' && pm3.body.full_until === 0, pm3.body)
+  check('会员 /me：full_until=0', pm3.body.plan === 'full' && pm3.body.base === 'full' && pm3.body.full_until === 0, pm3.body)
 
   console.log(bad ? '---- 有 ' + bad + ' 条没过' : '✓ auth-core 注册/验证码全部通过')
   process.exit(bad ? 1 : 0)

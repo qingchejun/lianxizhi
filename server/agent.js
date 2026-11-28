@@ -88,7 +88,7 @@ function settingsCatalog() {
     tabs: [{ name: 'site', title: '设置' }],
     groups: [
       { name: 'site', tab: 'site', title: '网站', description: '纸和笔是自己写的站，这里只能看。', link: '', test: null },
-      { name: 'pay', tab: 'site', title: '收款', description: '完整版年卡走 Waffo；价格写在代码里，密钥在 Cloudflare 密钥里，改了要重新部署。', link: '', test: null }
+      { name: 'pay', tab: 'site', title: '收款', description: '会员年卡走 Waffo；价格写在代码里，密钥在 Cloudflare 密钥里，改了要重新部署。', link: '', test: null }
     ],
     fields: SETTING_FIELDS.map(([name, group, title, secret]) => ({
       name, tab: 'site', group, type: secret ? 'password' : 'text', title, placeholder: '',
@@ -113,8 +113,8 @@ function orderItem(o) {
     paymentType: 'one-time',
     paymentProvider: 'waffo',
     productId: 'full-year',
-    productName: '纸和笔完整版 · 一年',
-    description: o.days + ' 天完整版',
+    productName: '纸和笔会员 · 一年',
+    description: o.days + ' 天会员',
     paymentAmount: o.amount,
     subscriptionNo: null,
     refundAmount: refunded ? o.amount : 0,

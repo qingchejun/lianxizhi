@@ -3,7 +3,7 @@
 #   2. 没登录：打开是默认的第 03 课（有视频），纸上没二维码；前三课能切换，后面的课挂锁，点了进试看；
 #      ?topic=后面的课 → 这一课的试看；没有综合复习；H1 不被脚本改掉；
 #   3. 第 03 课视频没登录能看，其他课视频 403；
-#   4. 完整版账号：全部课都开，没有锁，有综合复习，H1 换成课名；
+#   4. 会员账号：全部课都开，没有锁，有综合复习，H1 换成课名；
 #   5. 全程没有脚本报错。
 # 用法：本机预览跑着（npx wrangler pages dev . --port 8999 --binding SESSION_SECRET=dev-secret --binding DEV_SHOW_CODE=1），
 #   本机 R2 放 lianxizhi-video/aoshu/yiduobushao.mp4（随便一个 mp4），再
@@ -94,10 +94,10 @@ with sync_playwright() as p:
     check('侧栏奥数不挂锁', page.query_selector('.rail-link.is-locked[data-module="奥数"]') is None)
     ctx.close()
 
-    # ---------- 完整版 ----------
+    # ---------- 会员 ----------
     c2 = br.new_context(viewport={'width': 1440, 'height': 900})
     p2 = c2.new_page()
-    p2.on('pageerror', lambda e: errs.append('完整版 ' + str(e)))
+    p2.on('pageerror', lambda e: errs.append('会员 ' + str(e)))
     codes = []
     p2.on('response', lambda r: codes.append(r) if r.url.endswith('/api/auth/register') else None)
     p2.goto(BASE + '/')
@@ -120,7 +120,7 @@ with sync_playwright() as p:
       review: getComputedStyle(document.querySelector('[data-review-group]')).display,
       notice: document.getElementById('notice').hidden
     })""")
-    check('完整版：没有锁、能直接上第 08 课、有综合复习、H1 是课名', st2['shut'] == 0 and st2['review'] != 'none' and st2['notice'] and '数列找规律' in st2['h1'], st2)
+    check('会员：没有锁、能直接上第 08 课、有综合复习、H1 是课名', st2['shut'] == 0 and st2['review'] != 'none' and st2['notice'] and '数列找规律' in st2['h1'], st2)
     c2.close()
     check('全程没有脚本报错', not errs, errs)
     br.close()

@@ -99,6 +99,19 @@ body.welcome .wl-main {
   white-space: nowrap;
 }
 
+/* 会员入口（2026-11-28）：登录按钮左边，暖色字，不抢登录按钮 */
+.sh-vip {
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: var(--amber);
+  text-decoration: none;
+}
+
+.sh-vip:hover {
+  background: var(--amber-tint);
+}
+
 
 .wl-main {
   max-width: 1200px;
@@ -1036,7 +1049,7 @@ body.welcome .wl-main {
   border-bottom: 1px solid var(--line-strong);
 }
 .wl-star-name b a:hover { color: var(--blue); border-bottom-color: var(--blue); }
-/* 完整版板块（2026-11-25 起也能点进去看介绍）：名字后面一个灰色小字 */
+/* 会员板块（2026-11-25 起也能点进去看介绍）：名字后面一个灰色小字 */
 .wl-full {
   margin-left: 6px;
   padding: 1px 6px;

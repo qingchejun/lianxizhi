@@ -644,7 +644,7 @@
   margin-left: auto;
 }
 
-/* 免费版：完整版的七个板块列成一排，点进去是上锁页（能补填邀请码） */
+/* 免费版：会员的七个板块列成一排，点进去是上锁页（能补填邀请码） */
 .dk-lock-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));

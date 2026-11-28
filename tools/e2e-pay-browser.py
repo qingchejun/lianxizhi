@@ -1,7 +1,7 @@
-# 付费开通完整版（2026-11-28，Waffo）：用一个假 Waffo 把整套流程在本机走一遍。
+# 付费开通会员（2026-11-28，Waffo）：用一个假 Waffo 把整套流程在本机走一遍。
 #   起一个假 Waffo（:8996，验我们请求的签名、出收银台页、付款后按 Waffo 的规则签名发回调），
 #   再起一个带收款配置的本机预览（:8997，和 :8999 共用本机 D1），浏览器里：
-#   注册免费账号 → 账号页「开通完整版 · 99 元/年」→ 假收银台付款 → 回来「完整版已开通」→ 到期日加一年；
+#   注册免费账号 → 账号页「开通会员 · 99 元/年」→ 假收银台付款 → 回来「会员已开通」→ 到期日加一年；
 #   回调丢了时轮询兜底开通；管理页看到订单、点退款扣回一年；签名不对的回调被拒。
 # 本机 D1 先跑过 tools/migrate-20261128-orders.sql。用法：
 #   /opt/homebrew/opt/python@3.10/bin/python3.10 tools/e2e-pay-browser.py
@@ -89,7 +89,7 @@ def pay(order, hook=True):
         return send_webhook({'id': 'evt_' + order, 'eventType': 'order.completed', 'eventId': payments[order]['id'], 'mode': 'prod',
                              'data': {'orderId': 'ORD_x', 'orderMerchantExternalId': order, 'paymentId': payments[order]['id'], 'paymentStatus': 'succeeded',
                                       'amount': s['priceSnapshot']['amount'], 'total': s['priceSnapshot']['amount'], 'taxAmount': '0.00', 'currency': s['currency'],
-                                      'buyerEmail': s.get('buyerEmail', ''), 'merchantProvidedBuyerIdentity': '', 'productName': '纸和笔完整版'}})
+                                      'buyerEmail': s.get('buyerEmail', ''), 'merchantProvidedBuyerIdentity': '', 'productName': '纸和笔会员'}})
 
 
 class Mock(BaseHTTPRequestHandler):
@@ -207,8 +207,8 @@ try:
 
         # 账号页买
         open_account(pg)
-        check('账号页有「开通完整版 · 99 元/年」', '开通完整版 · 99 元/年' in pg.inner_text('dialog.account-dialog .account-plan'))
-        check('账号页链了退款说明', pg.locator('dialog.account-dialog a[href="/terms"]').count() == 1)
+        check('账号页有「开通会员 · 99 元/年」', '开通会员 · 99 元/年' in pg.inner_text('dialog.account-dialog .account-plan'))
+        check('账号页链了退款说明', pg.locator('dialog.account-dialog a[href="/terms"]').count() >= 1)
         pg.click('dialog.account-dialog [data-pay-buy]')
         pg.wait_for_url(MOCK + '/c/**', timeout=20000)
         check('跳到收银台，金额 99.00 CNY', pg.inner_text('#amt').strip() == '99.00 CNY', pg.inner_text('#amt'))
@@ -225,14 +225,14 @@ try:
             print('DEBUG url', pg.url, 'errs', errs, 'pay', pg.evaluate('typeof SumSum !== "undefined" && !!SumSum.pay'), pg.evaluate('document.title'))
             pg.screenshot(path='/tmp/pay-debug.png')
             raise
-        pg.wait_for_function("() => document.querySelector('.pay-wait [data-pw-title]').textContent === '完整版已开通'", timeout=30000)
+        pg.wait_for_function("() => document.querySelector('.pay-wait [data-pw-title]').textContent === '会员已开通'", timeout=30000)
         txt = pg.inner_text('.pay-wait')
-        check('回来显示「完整版已开通」和到期日', '用到' in txt and '年' in txt, txt)
+        check('回来显示「会员已开通」和到期日', '用到' in txt and '年' in txt, txt)
         after = full_until(email)
         check('到期日 = 原到期日 + 365 天', abs(after - (before + 365 * 86400 * 1000)) < 1000, (after - before) / 86400000)
         rows = d1("SELECT status, amount, currency, waffo_payment_id FROM orders WHERE id='%s'" % order)
         check('订单：已付、9900 分、CNY、记了付款号', rows and rows[0]['status'] == 'paid' and rows[0]['amount'] == 9900 and rows[0]['waffo_payment_id'], rows)
-        check('开通邮件（本机打日志）', any('纸和笔完整版已开通' in l for l in log_lines))
+        check('开通邮件（本机打日志）', any('纸和笔会员已开通' in l for l in log_lines))
         pg.click('.pay-wait [data-pw-ok]')
         pg.wait_for_load_state('load')
         check('点「好的」后网址去掉了 paid', 'paid=' not in pg.url, pg.url)
@@ -244,6 +244,13 @@ try:
         st = send_webhook({'eventType': 'order.completed', 'mode': 'prod', 'data': {'orderMerchantExternalId': order}}, key=fake)
         check('别人签的回调：401', st == 401, st)
 
+        # 会员页（2026-11-28）：付过的会员看到到期日、按钮是「再买一年」；侧栏会员入口标到期日、不再着重
+        pg.goto(BASE + '/huiyuan')
+        pg.wait_for_selector('[data-hy-pay]:not([hidden])', timeout=15000)
+        check('会员页：会员看到用到哪天、按钮是「再买一年」', '用到' in pg.inner_text('[data-hy-state]') and pg.inner_text('[data-hy-pay] [data-pay-buy]').startswith('再买一年') and not pg.is_visible('[data-hy-want]'))
+        vip = pg.get_attribute('.rail-vip', 'class') or ''
+        check('侧栏会员入口：会员标「到 X 月 X 日」、不着重', 'is-promo' not in vip and pg.inner_text('[data-vip-tag]').startswith('到 '), (vip, pg.inner_text('[data-vip-tag]')))
+
         # 回调丢了：轮询兜底
         open_account(pg)
         check('已付用户账号页写用到哪天', '用到' in pg.inner_text('dialog.account-dialog .account-plan'))
@@ -252,7 +259,7 @@ try:
         order2 = pg.url.split('/c/')[1].split('#')[0]
         pg.click('#pay-nohook')
         pg.wait_for_url(BASE + '/?paid=' + order2, timeout=20000)
-        pg.wait_for_function("() => document.querySelector('.pay-wait [data-pw-title]') && document.querySelector('.pay-wait [data-pw-title]').textContent === '完整版已开通'", timeout=30000)
+        pg.wait_for_function("() => document.querySelector('.pay-wait [data-pw-title]') && document.querySelector('.pay-wait [data-pw-title]').textContent === '会员已开通'", timeout=30000)
         after2 = full_until(email)
         check('回调丢了：页面轮询查到已付也开通，再加一年', abs(after2 - (after + 365 * 86400 * 1000)) < 1000, (after2 - after) / 86400000)
         ctx.close()
@@ -286,17 +293,21 @@ try:
         email2 = 'payfree%d@local.test' % STAMP
         register(pg, email2)
         d1("UPDATE users SET full_until=0 WHERE email='%s'" % email2)
+        pg.goto(BASE + '/huiyuan')
+        pg.wait_for_selector('[data-hy-pay]:not([hidden])', timeout=15000)
+        check('会员页：免费账号看到「免费版」和「开通会员 · 99 元/年」', '免费版' in pg.inner_text('[data-hy-state]') and pg.inner_text('[data-hy-pay] [data-pay-buy]') == '开通会员 · 99 元/年')
+        check('侧栏会员入口：免费账号着重显示、标价', 'is-promo' in (pg.get_attribute('.rail-vip', 'class') or '') and pg.inner_text('[data-vip-tag]') == '99 元/年')
         pg.goto(BASE + '/kousuan?view=cards')
         pg.wait_for_selector('#ks-cards:not([hidden])', timeout=15000)
         pg.select_option('#mfc-unit', 'all')
         pg.wait_for_selector('#preview .full-lock [data-pay-buy]', timeout=10000)
-        check('完整版锁上：「开通完整版」在前、邀请码在后，没有「通知我」', pg.locator('#preview [data-fl-want]').count() == 0 and pg.locator('#preview [data-fl-redeem]').count() == 1)
+        check('会员锁上：「开通会员」在前、邀请码在后，没有「通知我」', pg.locator('#preview [data-fl-want]').count() == 0 and pg.locator('#preview [data-fl-redeem]').count() == 1)
         gctx = br.new_context(viewport={'width': 1440, 'height': 900})
         gp = gctx.new_page()
         gp.on('pageerror', lambda e: errs.append(str(e)))
         gp.goto(BASE + '/pinyin')
         gp.wait_for_selector('[data-lk-pay]:not([hidden])', timeout=15000)
-        check('没登录看完整版板块：说明页显示付费开通、藏起「开通时通知我」', gp.is_visible('[data-lk-pay] [data-pay-buy]') and not gp.is_visible('[data-lk-want]'))
+        check('没登录看会员板块：说明页显示付费开通、藏起「开通时通知我」', gp.is_visible('[data-lk-pay] [data-pay-buy]') and not gp.is_visible('[data-lk-want]'))
         gp.click('[data-lk-pay] [data-pay-buy]')
         gp.wait_for_selector('dialog.account-dialog form[data-view="register"]', timeout=5000)
         check('没登录点开通：先弹注册', '先注册' in gp.inner_text('dialog.account-dialog'))

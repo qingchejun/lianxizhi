@@ -424,7 +424,7 @@
   }
 
   /*
-   * 试看（2026-11-25）：免费版、没登录的人点开完整版的课，练习页只露前几道、解析页只露第 1 题。
+   * 试看（2026-11-25）：免费版、没登录的人点开会员的课，练习页只露前几道、解析页只露第 1 题。
    * 后面的题照真题量高度排版（纸面看着和真卷一样满），但网页里只放占位框，不放题目文字。
    */
   function lockedBlockHTML(cls, idx, mm, first, text) {
@@ -684,7 +684,7 @@
       practice = sheetsHTML(container, questions, {
         title: title,
         gridClass: 'aoshu-grid',
-        blockHTML: trial ? trialBlock(questionBlockHTML, 'aq', trial, '开通完整版后，整页题目都能打印') : questionBlockHTML,
+        blockHTML: trial ? trialBlock(questionBlockHTML, 'aq', trial, '开通会员后，整页题目都能打印') : questionBlockHTML,
         probeHTML: questionBlockHTML,
         pad: MM.workMin,
         workMax: MM.workMax,
@@ -698,7 +698,7 @@
       answer = sheetsHTML(container, questions, {
         title: solTitle(s, opts, title),
         gridClass: 'sol-grid',
-        blockHTML: trial ? trialBlock(solutionBlockHTML, 'sol', 1, '开通完整版后，每道题都有分步解析') : solutionBlockHTML,
+        blockHTML: trial ? trialBlock(solutionBlockHTML, 'sol', 1, '开通会员后，每道题都有分步解析') : solutionBlockHTML,
         probeHTML: solutionBlockHTML,
         pad: MM.solPad,
         compact: true,

@@ -1,7 +1,7 @@
 /**
  * 奥数讲解视频登记表：哪一课有视频、多长。
  *
- * 视频不进仓库，放在 Cloudflare R2 的 lianxizhi-video 桶里。视频经本站 /v/aoshu/<id>.mp4 播放（只给完整版），
+ * 视频不进仓库，放在 Cloudflare R2 的 lianxizhi-video 桶里。视频经本站 /v/aoshu/<id>.mp4 播放（只给会员），
  * 封面图放 lianxizhi-poster 桶、经 video.zhihebi.com 公开访问，
  * 路径固定是 aoshu/<知识点 id>.mp4。加一个视频 = 传文件 + 在 LIST 里加一行：
  *   npx wrangler r2 object put lianxizhi-video/aoshu/<id>.mp4 --file=… --content-type=video/mp4 --remote
@@ -17,7 +17,7 @@
   'use strict'
 
   var BASE = 'https://video.zhihebi.com/aoshu/' /* 封面图：公开（首页也用） */
-  var MP4 = '/v/aoshu/' /* 视频本体：只给完整版，见 functions/v（2026-11-24） */
+  var MP4 = '/v/aoshu/' /* 视频本体：只给会员，见 functions/v（2026-11-24） */
 
   /* 知识点 id → 时长 */
   var LIST = Object.freeze({

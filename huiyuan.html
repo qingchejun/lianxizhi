@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="icons/favicon.svg?v=31dc11efb7" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=272f952f31" />
+  <meta name="theme-color" content="#f6f7f9" />
+  <script>try{if(localStorage.getItem("lianxizhi:rail")==="fold")document.documentElement.classList.add("rail-folded")}catch(e){}</script>
+  <title>纸和笔会员：99 元一年，不自动续费 · 纸和笔</title>
+  <meta name="description" content="纸和笔会员 99 元一年，一次性付款、不自动续费，付款 7 天内可全额退款。会员能用全部奥数课和讲解视频、写字、单元检查、拼音课程和专题；口算、数独和纸笔游戏一直免费。" />
+  <link rel="canonical" href="https://zhihebi.com/huiyuan" />
+  <link rel="stylesheet" href="css/app.css?v=6adb11d0d1" />
+</head>
+<body>
+<!-- 会员页（2026-11-28）：价格、免费版和会员的区别、怎么付款和退款；侧栏「会员」进来。
+     按钮和最上面那段按账号变（js/huiyuan.js）：没登录 / 免费版 / 体验中 / 会员 / 永久会员。可收录。 -->
+<div class="app">
+<!-- rail:会员 -->
+<nav class="rail" aria-label="板块">
+  <div class="rail-top"><a class="rail-brand" href="/" aria-label="纸和笔 · 今天"><img src="icons/mark.svg?v=31dc11efb7" width="28" height="28" alt=""><span>纸和笔<small>少报班，少看屏</small></span></a><button type="button" class="rail-fold" data-rail-fold aria-label="收起侧栏" title="收起侧栏"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15M15.5 10l-2 2 2 2"/></svg></button></div>
+  <span class="rail-label">练习</span>
+  <a class="rail-link" href="/" data-module="今天" title="今天"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><rect class="f" x="7" y="12.5" width="4" height="4" rx="1"/></svg><span>今天</span></a>
+  <a class="rail-link" href="/kousuan" data-module="口算" title="口算"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7.5h5.5M7.25 4.75v5.5M14 7.5h5.5M5 14.25l4.5 4.5M9.5 14.25L5 18.75M14 15h5.5M14 18.25h5.5"/></svg><span>口算</span></a>
+  <a class="rail-link" href="/aoshu" data-module="奥数" title="奥数"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.75l8.5 15.5h-17z"/><circle cx="12" cy="14" r="2.75"/></svg><span>奥数</span></a>
+  <a class="rail-link" href="/shizi" data-module="识字" title="识字"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 4 5v13.5c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5zM12 6.5V20"/></svg><span>识字</span></a>
+  <a class="rail-link" href="/pinyin" data-module="拼音" title="拼音"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="14.25" r="4.25"/><path d="M14.75 10v8.5M7 5.25h8M4 20.25h16"/></svg><span>拼音</span></a>
+  <span class="rail-label">游戏</span>
+  <a class="rail-link" href="/shudu" data-module="数独" title="数独"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M9.33 4v16M14.67 4v16M4 9.33h16M4 14.67h16"/></svg><span>数独</span></a>
+  <a class="rail-link" href="/huochai" data-module="火柴" title="火柴"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18L15.5 8.5M17.5 6.5h.01M9 19.5h10"/><circle class="f" cx="17" cy="7" r="1.75"/></svg><span>火柴</span></a>
+  <a class="rail-link" href="/mima" data-module="密码" title="密码"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M7.75 10.5V7.75a4.25 4.25 0 0 1 8.5 0v2.75M8.5 15.5h.01M12 15.5h.01M15.5 15.5h.01"/></svg><span>密码</span></a>
+  <a class="rail-link" href="/migong" data-module="迷宫" title="迷宫"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 4H6.5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20h9M12.5 4h5A2.5 2.5 0 0 1 20 6.5V20M8.5 4v4.5h4M16 8.5V16M8 12.5V16h4"/></svg><span>迷宫</span></a>
+  <a class="rail-link" href="/zhizhi" data-module="数织" title="数织"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 4v16M4 12h16"/><rect class="f" x="6.25" y="6.25" width="3.5" height="3.5" rx=".75"/><rect class="f" x="14.25" y="14.25" width="3.5" height="3.5" rx=".75"/></svg><span>数织</span></a>
+  <span class="rail-gap"></span>
+  <a class="rail-link rail-tool" href="/help" data-help title="使用说明"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .9-1 1.6v.3M12 16.75h.01"/></svg><span>使用说明</span></a>
+  <a class="rail-link rail-tool rail-vip active" href="/huiyuan" data-vip title="会员" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 8.5l4 3.5L12 6l3.5 6 4-3.5-1.75 10h-11.5z"/><path d="M7.25 21h9.5"/></svg><span>会员</span><small class="rail-tag" data-vip-tag></small></a>
+  <div class="rail-me">
+    <button type="button" class="rail-user" data-account-menu aria-haspopup="menu" aria-expanded="false" title="账号"><span class="rail-avatar" data-account-initial aria-hidden="true"></span><span class="rail-who"><b data-account-email>账号</b><small>练习进度自动同步</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 10l4-4 4 4M8 14l4 4 4-4"/></svg></button>
+    <div class="rail-menu" role="menu" hidden>
+      <button type="button" role="menuitem" data-account=""><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.25" r="3.75"/><path d="M4.75 19.75c1.4-3.3 4.1-4.75 7.25-4.75s5.85 1.45 7.25 4.75"/></svg><span>账号与密码</span></button>
+      <button type="button" role="menuitem" data-backup><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10M8 10.25L12 14l4-3.75M4.5 15v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3"/></svg><span>备份与恢复</span></button>
+      <button type="button" role="menuitem" data-logout><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4.5h3.5a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H14M10 16l-4-4 4-4M6 12h9.5"/></svg><span>退出登录</span></button>
+    </div>
+  </div>
+</nav>
+<script src="js/sidebar.js?v=1f1bc287d7" defer></script>
+<!-- /rail -->
+
+<div class="work">
+  <header class="work-head">
+    <h1 class="work-title">会员</h1>
+  </header>
+  <main class="lk-scroll">
+    <section class="lk-card hy-card">
+      <p class="lk-kicker">纸和笔会员</p>
+      <h2>99 元一年，九个板块全部能用</h2>
+      <p class="hy-terms">一次性付款，<b>不会自动续费</b>。付款 7 天内不满意，全额退款。</p>
+
+      <div class="hy-box" data-pay-scope>
+        <p class="hy-state" data-hy-state>注册就送 7 天会员，先用用看。</p>
+        <div data-hy-pay hidden>
+          <button type="button" class="btn btn-primary hy-buy" data-pay-buy>开通会员 · 99 元/年</button>
+          <p class="hy-note">支付宝、微信、银行卡都能付，在 Waffo 收银台完成。</p>
+        </div>
+        <div data-hy-want hidden>
+          <button type="button" class="btn btn-primary hy-buy" data-hy-want-btn>开通时通知我</button>
+          <p class="hy-note">付费开通马上上线。点一下，开通那天发邮件告诉你。</p>
+        </div>
+        <p class="lk-want-msg" data-pay-msg role="status" hidden></p>
+      </div>
+
+      <h3 class="lk-ways-title">免费版和会员有什么不同</h3>
+      <table class="hy-table">
+        <thead><tr><th scope="col">板块</th><th scope="col">免费版</th><th scope="col">会员</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">口算</th><td>全部能用，按课本或按难度出题</td><td>全部能用</td></tr>
+          <tr><th scope="row">数学闪卡</th><td>一年级上册前两个单元</td><td>每个单元都有，按孩子口算的错题出卡</td></tr>
+          <tr><th scope="row">奥数</th><td>前三课，第 03 课讲解视频</td><td>全部 54 课，每课讲解视频和分步解析，综合复习卷</td></tr>
+          <tr><th scope="row">识字</th><td>每日一卷，错字自动复习</td><td>另有写字（田字格练字纸）、单元检查、错字集整页打印</td></tr>
+          <tr><th scope="row">拼音</th><td>今日卷，闪卡前两课</td><td>另有拼音课程、专题，14 课闪卡全有</td></tr>
+          <tr><th scope="row">数独、火柴、密码、迷宫、数织</th><td>全部能用</td><td>全部能用</td></tr>
+          <tr><th scope="row">扫码打分、错题复习、换设备同步</th><td>注册后都有</td><td>都有</td></tr>
+        </tbody>
+      </table>
+
+      <h3 class="lk-ways-title">常见问题</h3>
+      <div class="hy-faq">
+        <h4>到期以后会怎样？</h4>
+        <p>回到免费版，孩子的练习记录和错题都留着。想接着用就再买一年，不会自动扣钱。</p>
+        <h4>还没到期又买了一年，怎么算？</h4>
+        <p>新的一年接在原到期日后面，一天都不浪费。注册送的 7 天体验期里买也一样。</p>
+        <h4>怎么退款？</h4>
+        <p>付款 7 天内发邮件到 <a href="mailto:hi@zhihebi.com">hi@zhihebi.com</a>，写上注册邮箱，全额原路退回。详见<a href="/terms">服务条款和退款说明</a>。</p>
+        <h4>朋友给了邀请码怎么办？</h4>
+        <p>邀请码开通的是永久会员，不用付费。登录后在「账号与密码」里填上就行。</p>
+      </div>
+      <p class="lk-back">先去用：<a href="/kousuan">口算题</a> · <a href="/aoshu">奥数前三课</a> · <a href="/shudu">儿童数独</a> · <a href="/">首页</a></p>
+    </section>
+  </main>
+</div>
+</div>
+
+<script src="js/huiyuan.js?v=0b1ae31121" defer></script>
+<script src="js/store.js?v=c6aac93871"></script>
+<script src="js/sheets-core.js?v=aa0b516622"></script>
+<script src="js/backup.js?v=5af8e1e7ac"></script>
+<script src="js/changelog.js?v=5d4725fc36"></script>
+<script src="js/help.js?v=7e37f397df"></script>
+<script src="js/account.js?v=5793d08e3d"></script>
+<script src="js/pay.js?v=35dece7482"></script>
+<script src="js/account-ui.js?v=e052998fe9"></script>
+<script src="js/sync-core.js?v=5f4122b899"></script>
+<script src="js/sync.js?v=accb9217c5"></script>
+</body>
+</html>

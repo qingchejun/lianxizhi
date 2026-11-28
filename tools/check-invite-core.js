@@ -176,7 +176,7 @@ Promise.all([import('../server/auth-core.js'), import('../server/admin-core.js')
   seedInvite(dbC, 'RACETEST')
   check('原子占码第二个失败', (await dbC.inviteClaim('inv-RACETEST', 'u-a', 1)) === true && (await dbC.inviteClaim('inv-RACETEST', 'u-b', 2)) === false)
 
-  /* ===== 2026-11-24 放开注册：免费版 / 完整版 / 补填邀请码 / 防刷 ===== */
+  /* ===== 2026-11-24 放开注册：免费版 / 会员 / 补填邀请码 / 防刷 ===== */
   var P = memRepo()
   seedInvite(P, 'PAYDAY01')
   seedInvite(P, 'PAYDAY02')
@@ -195,13 +195,13 @@ Promise.all([import('../server/auth-core.js'), import('../server/admin-core.js')
   check('补填：空码 422', (await A.redeemInvite(P, sess, t0 + 3, { invite: '' })).status === 422)
   check('补填：错码 422 不升级', (await A.redeemInvite(P, sess, t0 + 4, { invite: 'NOPE0000' })).status === 422 && pu.plan === 'free')
   var rd = await A.redeemInvite(P, sess, t0 + 5, { invite: 'payday-01' })
-  check('补填：好码 → 完整版', rd.status === 200 && rd.body.plan === 'full' && pu.plan === 'full', rd)
+  check('补填：好码 → 会员', rd.status === 200 && rd.body.plan === 'full' && pu.plan === 'full', rd)
   var iv = P._invites.find(function (v) { return v.code === 'PAYDAY01' })
   check('补填：码被占用并标为已开通', iv.claimed_by === pu.id && iv.activated_at === t0 + 5 && pu.invite_id === iv.id)
-  check('补填：已是完整版再填 → 直接 200，不再占码', (await A.redeemInvite(P, sess, t0 + 6, { invite: 'PAYDAY02' })).status === 200 &&
+  check('补填：已是会员再填 → 直接 200，不再占码', (await A.redeemInvite(P, sess, t0 + 6, { invite: 'PAYDAY02' })).status === 200 &&
     !P._invites.find(function (v) { return v.code === 'PAYDAY02' }).claimed_by)
   check('me 带出 plan=full', (await A.meBySession(P, sess)).body.plan === 'full')
-  /* 7 天体验期里也能补填邀请码转成永久完整版（2026-11-27：planOf 体验期算完整版，补填要看账号本身的版本） */
+  /* 7 天体验期里也能补填邀请码转成永久会员（2026-11-27：planOf 体验期算会员，补填要看账号本身的版本） */
   var Q = memRepo()
   seedInvite(Q, 'TRIAL001')
   var tq = Date.now()
@@ -212,15 +212,15 @@ Promise.all([import('../server/auth-core.js'), import('../server/admin-core.js')
   var qs = { uid: qu.id, pwver: qu.pwver, sid: await A.openSession(Q, qu.id, tq + 2) }
   check('体验期 me：plan=full、base=free', (await A.meBySession(Q, qs)).body.base === 'free')
   var rq2 = await A.redeemInvite(Q, qs, tq + 3, { invite: 'TRIAL001' })
-  check('体验期补填邀请码 → 永久完整版', rq2.status === 200 && qu.plan === 'full', rq2)
+  check('体验期补填邀请码 → 永久会员', rq2.status === 200 && qu.plan === 'full', rq2)
 
-  check('老账号（没有 plan 字段）算完整版', A.planOf({ email: 'x' }) === 'full' && A.planOf({ plan: 'free' }) === 'free')
+  check('老账号（没有 plan 字段）算会员', A.planOf({ email: 'x' }) === 'full' && A.planOf({ plan: 'free' }) === 'free')
 
-  /* 别人抢先用这个邮箱免费注册、没验证；真主人带邀请码来注册 → 照样开成完整版 */
+  /* 别人抢先用这个邮箱免费注册、没验证；真主人带邀请码来注册 → 照样开成会员 */
   await A.register(P, t0 + 100, { email: 'v@m.co', password: pw('v@m.co') }, { ip: '9.9.9.9' })
   var rv2 = await A.register(P, t0 + 200 * 1000, { email: 'v@m.co', password: pw('v@m.co'), invite: 'PAYDAY02' }, { ip: '8.8.8.8' })
   var vu = P.users.find(function (u) { return u.email === 'v@m.co' })
-  check('抢注的邮箱：主人带码注册 → 完整版、占码', rv2.status === 200 && vu.plan === 'full' && vu.invite_id === 'inv-PAYDAY02', rv2)
+  check('抢注的邮箱：主人带码注册 → 会员、占码', rv2.status === 200 && vu.plan === 'full' && vu.invite_id === 'inv-PAYDAY02', rv2)
   check('补填用过的码：别人再填 → 422', (await A.redeemInvite(P, { uid: vu.id, pwver: vu.pwver }, t0 + 1e6, { invite: 'PAYDAY01' })).status !== 200)
 
   /* 48 小时没验证 → 下次有人注册时清掉，占着的码放回 */
@@ -286,8 +286,8 @@ Promise.all([import('../server/auth-core.js'), import('../server/admin-core.js')
   var adm = { uid: 'adm', pwver: 1 }
   check('账号列表：非管理员 403', (await AD.listUsers(U, { uid: 'f1', pwver: 1 }, now)).status === 403)
   var lu = await AD.listUsers(U, adm, now)
-  check('账号统计：已验证 2、完整版 1、免费版 1、未验证 1', lu.body.stats.total === 2 && lu.body.stats.full === 1 && lu.body.stats.free === 1 && lu.body.stats.unverified === 1, lu.body.stats)
-  check('管理员手动开通完整版', (await AD.setUserPlan(U, adm, now, { id: 'f1', plan: 'full' })).status === 200 && U.users[1].plan === 'full')
+  check('账号统计：已验证 2、会员 1、免费版 1、未验证 1', lu.body.stats.total === 2 && lu.body.stats.full === 1 && lu.body.stats.free === 1 && lu.body.stats.unverified === 1, lu.body.stats)
+  check('管理员手动开通会员', (await AD.setUserPlan(U, adm, now, { id: 'f1', plan: 'full' })).status === 200 && U.users[1].plan === 'full')
   check('非管理员不能改版本', (await AD.setUserPlan(U, { uid: 'f1', pwver: 1 }, now, { id: 'f1', plan: 'free' })).status === 403)
   check('版本只认 free / full', (await AD.setUserPlan(U, adm, now, { id: 'f1', plan: 'vip' })).status === 422)
 

@@ -1,8 +1,8 @@
 /**
- * 完整版年卡收款（2026-11-28，方案 docs/superpowers/specs/2026-11-28-payment-waffo.md）：纯逻辑，repo 和 Waffo 从外面传进来，
+ * 会员年卡收款（2026-11-28，方案 docs/superpowers/specs/2026-11-28-payment-waffo.md）：纯逻辑，repo 和 Waffo 从外面传进来，
  * node 直跑测试（tools/check-pay-core.js）；functions/api/pay/* 只做 HTTP 翻译。
  *
- *   下单 createOrder：建一条待付订单 → Waffo 收银台地址。邀请码账号（永久完整版）不卖。
+ *   下单 createOrder：建一条待付订单 → Waffo 收银台地址。邀请码账号（永久会员）不卖。
  *   开通 settle：Waffo 回调 order.completed（验过签）或轮询时 → 都用我们的商户钥匙去 Waffo 查这个订单号的付款（findPayment），
  *       查到已付才开通：Waffo 用同一把平台钥匙给所有商户签回调，别人在自己的店里用我们的订单号付一笔、把回调指到我们这，
  *       签名照样是真的，所以回调里的金额、订单只当「去查一下」的提示（安全复审 11-28）。
@@ -50,7 +50,7 @@ export async function createOrder(repo, W, env, session, now, origin) {
   if (!user) return { status: 401, body: { ok: false, error: '先登录。' } }
   if (!user.verified) return { status: 403, body: { ok: false, error: '先验证邮箱再开通。' } }
   if (env.WAFFO_ENV !== 'prod' && !user.admin) return { status: 503, body: { ok: false, error: '付费开通还没开放。' } } /* 测试环境只给管理员试 */
-  if (basePlan(user) === 'full' && !(env.WAFFO_ENV !== 'prod' && user.admin)) return { status: 409, body: { ok: false, error: '你的账号已经是永久完整版，不用再买。' } }
+  if (basePlan(user) === 'full' && !(env.WAFFO_ENV !== 'prod' && user.admin)) return { status: 409, body: { ok: false, error: '你的账号已经是永久会员，不用再买。' } }
   if ((await repo.ordersPendingSince(user.id, now - 3600 * 1000)) >= 10) {
     return { status: 429, body: { ok: false, error: '下单太多次了，过一会儿再试。' } }
   }
@@ -94,8 +94,8 @@ export async function settle(repo, orderNo, paid, now) {
     fullUntil: until,
     mail: {
       to: user.email,
-      subject: '纸和笔完整版已开通',
-      text: '你好：\n\n纸和笔完整版已经开通，到期日是 ' + fmtDate(until) + '。\n\n' +
+      subject: '纸和笔会员已开通',
+      text: '你好：\n\n纸和笔会员已经开通，到期日是 ' + fmtDate(until) + '。\n\n' +
         '订单号：' + orderNo + '\n金额：' + (order.amount / 100).toFixed(2) + ' 元\n\n' +
         '付款 ' + REFUND_DAYS + ' 天内不满意，发邮件到 hi@zhihebi.com（写上订单号）就给你全额退款。\n\n' +
         '打开 https://zhihebi.com 就能用。\n\n纸和笔'

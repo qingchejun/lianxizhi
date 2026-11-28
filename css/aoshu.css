@@ -891,7 +891,7 @@
   display: none;
 }
 
-/* ============ 试看（2026-11-25）：完整版的课，免费版、没登录的人点开能看讲解页和前两道题（js/aoshu-main.js paintTrial） ============ */
+/* ============ 试看（2026-11-25）：会员的课，免费版、没登录的人点开能看讲解页和前两道题（js/aoshu-main.js paintTrial） ============ */
 
 .topic-legend .lock {
   width: 13px;
@@ -1016,7 +1016,7 @@
   .aoshu-trial #preview,
   .aoshu-trial .trial-bar { display: none !important; }
   .aoshu-trial body::after {
-    content: '这一课是纸和笔完整版内容，开通后可以整课打印：zhihebi.com/aoshu';
+    content: '这一课是纸和笔会员内容，开通后可以整课打印：zhihebi.com/aoshu';
     display: block;
     padding: 40mm 20mm;
     font-size: 16px;

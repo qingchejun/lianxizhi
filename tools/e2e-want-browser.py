@@ -1,6 +1,6 @@
-# 完整版说明页「开通时通知我」（2026-11-25）浏览器验收：
+# 会员说明页「开通时通知我」（2026-11-25）浏览器验收：
 #   没登录的人在识字说明页点「开通时通知我」→ 弹出注册框 → 在框里注册、填验证码 →
-#   2026-11-27 起识字对免费账号开放（注册还送 7 天完整版）：注册完自动登记「通知我」，页面刷新直接进识字页；没有脚本报错。
+#   2026-11-27 起识字对免费账号开放（注册还送 7 天会员）：注册完自动登记「通知我」，页面刷新直接进识字页；没有脚本报错。
 # 用法：先起本机预览（npx wrangler pages dev . --port 8999 --binding SESSION_SECRET=dev-secret --binding DEV_SHOW_CODE=1），
 #   本机 D1 已跑过 tools/migrate-20261125-wants.sql，再 uv run --with playwright python tools/e2e-want-browser.py
 import json, subprocess, sys, time

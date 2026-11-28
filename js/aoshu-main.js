@@ -37,14 +37,14 @@
   }
 
   /* 前三课公开（2026-11-25 站长定）：没登录、免费版只能出公开的几课，后面的课在目录里挂锁，点了说明怎么开通；
-     综合复习卷要混好几课，也只给完整版。服务器只认 /aoshu 整页放行，锁哪几课由这里管（视频另由 functions/v 把关） */
+     综合复习卷要混好几课，也只给会员。服务器只认 /aoshu 整页放行，锁哪几课由这里管（视频另由 functions/v 把关） */
   var LOGGED_IN = !!root.__SUMSUM_PLAN
   var FULL = root.__SUMSUM_PLAN === 'full'
   var FREE_IDS = S.aoshu.FREE || []
   function isOpen(id) {
     return FULL || !!FIXED || FREE_IDS.indexOf(id) >= 0
   }
-  /* 试看（2026-11-25）：完整版的课，免费版、没登录的人也能点开看——讲解页看全，练习只露前两道、解析只露第 1 题，不能打印。
+  /* 试看（2026-11-25）：会员的课，免费版、没登录的人也能点开看——讲解页看全，练习只露前两道、解析只露第 1 题，不能打印。
      打开页面时不自动落在试看课上（上次看的是试看课就回第 01 课）；点目录、点「接着学」、打开带课号的网址才进试看 */
   var TRIAL_KEEP = 2
   if (!isOpen(settings.topic)) {
@@ -55,7 +55,7 @@
   }
   if (!FULL && !FIXED) {
     var legend = doc.querySelector('.topic-legend')
-    if (legend) legend.insertAdjacentHTML('afterend', '<p class="topic-legend topic-legend-lock"><svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>= 完整版，点开可以试看</p>')
+    if (legend) legend.insertAdjacentHTML('afterend', '<p class="topic-legend topic-legend-lock"><svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>= 会员，点开可以试看</p>')
   }
   function inTrial(s) {
     return !s.review && !isOpen(s.topic)
@@ -145,7 +145,7 @@
   var CAM_SVG =
     '<svg class="cam" viewBox="0 0 24 24" aria-label="有讲解视频"><rect x="3" y="6" width="13" height="12" rx="2"/>' +
     '<path d="M16 10l5-3v10l-5-3z"/></svg>'
-  var LOCK_SVG = '<svg class="lock" viewBox="0 0 24 24" aria-label="完整版"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>'
+  var LOCK_SVG = '<svg class="lock" viewBox="0 0 24 24" aria-label="会员"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>'
   var TICK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>'
 
   /* 目录文字全来自大纲常量（OUTLINE），没有用户输入，可以直接拼 HTML */
@@ -400,12 +400,12 @@
     }
     group.hidden = false
     if (!isOpen(s.topic)) {
-      /* 试看：视频只给完整版（服务器 functions/v 也拦着），这里放封面和时长 */
+      /* 试看：视频只给会员（服务器 functions/v 也拦着），这里放封面和时长 */
       group.innerHTML =
         '<div class="row-between"><div class="group-title">讲解视频</div>' +
-          '<span class="lbl">' + durText(v.dur) + ' · 完整版可看</span></div>' +
+          '<span class="lbl">' + durText(v.dur) + ' · 会员可看</span></div>' +
         '<div class="video-locked">' + (v.poster ? '<img src="' + v.poster + '" alt="" loading="lazy">' : '') +
-          '<span>' + LOCK_SVG + '第 ' + o.no + ' 课讲解视频 · 开通完整版后可看</span></div>'
+          '<span>' + LOCK_SVG + '第 ' + o.no + ' 课讲解视频 · 开通会员后可看</span></div>'
       return
     }
     /* 文字来自大纲常量和视频登记表，没有用户输入 */
@@ -548,7 +548,7 @@
 
   /* ---------- 试看条：纸张上方说明 + 两种开通方式 ---------- */
   var PRINT_HTML = $('btn-print').innerHTML
-  var WANT_KEY = 'zhihebi:lk-want' /* 跟完整版说明页同一个记号：弹框里注册完回来自动登记 */
+  var WANT_KEY = 'zhihebi:lk-want' /* 跟会员说明页同一个记号：弹框里注册完回来自动登记 */
   var trialTracked = {}
   function isGuest() {
     var A = S.account
@@ -591,7 +591,7 @@
             if (S.accountUI && S.accountUI.open) S.accountUI.open('register', '注册一个免费账号，付费开通上线那天发邮件告诉你。')
           } else wantRecord()
         }
-        if (ev.target.closest('[data-trial-login]') && S.accountUI && S.accountUI.open) S.accountUI.open('register', '先注册或登录，再填邀请码开通完整版。')
+        if (ev.target.closest('[data-trial-login]') && S.accountUI && S.accountUI.open) S.accountUI.open('register', '先注册或登录，再填邀请码开通会员。')
       })
     }
     var guest = isGuest()
@@ -600,19 +600,19 @@
     bar.setAttribute('data-key', key)
     /* 文字来自大纲常量，没有用户输入 */
     bar.innerHTML =
-      '<div class="trial-head"><b>第 ' + o.no + ' 课「' + o.name + '」是完整版内容，现在是试看</b>' +
-        '<p>讲解页能看全；练习题只显示前 ' + TRIAL_KEEP + ' 道，解析只显示第 1 题。开通完整版后，54 课都能整课打印，带讲解视频。</p></div>' +
+      '<div class="trial-head"><b>第 ' + o.no + ' 课「' + o.name + '」是会员内容，现在是试看</b>' +
+        '<p>讲解页能看全；练习题只显示前 ' + TRIAL_KEEP + ' 道，解析只显示第 1 题。开通会员后，54 课都能整课打印，带讲解视频。</p></div>' +
       '<div class="trial-ways">' +
         '<div class="trial-way"><span>朋友给了邀请码</span>' +
           (guest
             ? '<button type="button" class="btn" data-trial-login>注册 / 登录后填码</button>'
             : '<form class="redeem-form" data-redeem novalidate><input class="input input-code" type="text" name="invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="如 K7M2-QF9W" aria-label="邀请码">' +
-              '<button type="submit" class="btn btn-primary">开通完整版</button><p class="redeem-msg" data-redeem-msg role="alert" hidden></p></form>') +
+              '<button type="submit" class="btn btn-primary">开通会员</button><p class="redeem-msg" data-redeem-msg role="alert" hidden></p></form>') +
         '</div>' +
         (S.pay && S.pay.on()
           /* 2026-11-28 付费开通上线（js/pay.js） */
           ? '<div class="trial-way" data-pay-scope><span>付费开通 · ' + S.pay.label() + '</span>' +
-            '<button type="button" class="btn btn-primary" data-pay-buy>开通完整版</button>' +
+            '<button type="button" class="btn btn-primary" data-pay-buy>开通会员</button>' +
             '<p class="lk-want-msg" data-pay-msg role="status" hidden></p></div>'
           : '<div class="trial-way"><span>付费开通 2027 年 1 月上线</span>' +
             '<button type="button" class="btn" data-trial-want>' + (guest ? '注册，开通时通知我' : '开通时通知我') + '</button>' +
@@ -634,12 +634,12 @@
     if (trial) buildTrialBar(outlineOf(s.topic))
     else if (bar) bar.remove()
     var pb = $('btn-print')
-    var label = trial ? '开通完整版' : '打印'
+    var label = trial ? '开通会员' : '打印'
     if (pb.textContent !== label) {
       if (trial) pb.textContent = label
       else pb.innerHTML = PRINT_HTML
     }
-    pb.title = trial ? '这一课是完整版内容，试看不能打印' : ''
+    pb.title = trial ? '这一课是会员内容，试看不能打印' : ''
     var mark = $('btn-mark')
     if (mark) mark.hidden = trial
     /* 记一笔试看了哪一课（访问统计的自定义事件，只记课号，不记账号）：12-08 定收费时看家长最常点开哪几课 */
@@ -648,7 +648,7 @@
       try { if (root.rybbit && root.rybbit.event) root.rybbit.event('aoshu_trial', { lesson: outlineOf(s.topic).no }) } catch (e) { /* 统计没加载就算了 */ }
     }
   }
-  /* 在弹框里注册、登录完（页面不刷新）：完整版直接刷新；免费版把试看条换成登录后的样子 */
+  /* 在弹框里注册、登录完（页面不刷新）：会员直接刷新；免费版把试看条换成登录后的样子 */
   doc.addEventListener('DOMContentLoaded', function () {
     var A = S.account
     if (!A || !A.onChange) return

@@ -1,6 +1,6 @@
 import { requireSession } from '../../server/session.js'
 
-/* 奥数讲解视频（2026-11-24 起只给完整版）：/v/aoshu/<id>.mp4
+/* 奥数讲解视频（2026-11-24 起只给会员）：/v/aoshu/<id>.mp4
    先验登录 + 版本，再从 R2（lianxizhi-video 桶）取。支持拖动进度条（Range），
    并放进 Cloudflare 节点缓存：同一个节点第二个人看就不用再回 R2，国内播放不变慢。
    封面图（.jpg）仍走 video.zhihebi.com 公开地址（首页要用），这里只管 mp4。 */
@@ -32,7 +32,7 @@ export async function onRequestGet(context) {
   const url = new URL(context.request.url)
   const m = url.pathname.match(OK_PATH)
   if (!m) return deny(404, 'Not found')
-  if (!FREE_VIDEOS.includes(m[1]) && !(await fullUser(context))) return deny(403, '奥数讲解视频属于完整版，登录完整版账号后再看。')
+  if (!FREE_VIDEOS.includes(m[1]) && !(await fullUser(context))) return deny(403, '奥数讲解视频属于会员内容，登录会员账号后再看。')
   const bucket = context.env.VIDEO
   if (!bucket) return deny(503, '视频暂时打不开，稍后再试。')
 

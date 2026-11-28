@@ -51,7 +51,7 @@ export async function onRequest(context) {
     return new Response(null, { status: 302, headers: { Location: r.location, 'Cache-Control': 'private, no-store' } })
   }
   if (r.action === 'locked') {
-    /* 免费版打开完整版的板块：原网址上显示上锁说明页（能补填邀请码），不跳转、不收录 */
+    /* 免费版打开会员的板块：原网址上显示上锁说明页（能补填邀请码），不跳转、不收录 */
     const page = await context.env.ASSETS.fetch(new URL('/locked', url))
     const out = withCache(withMe(page, me, context.env, url), 'private, no-cache')
     out.headers.set('X-Robots-Tag', 'noindex')
@@ -65,7 +65,7 @@ export async function onRequest(context) {
   }
   /* 登录后的页面：同一网址登录前后内容不同，不许进共享缓存，浏览器每次回源确认。
      请求里去掉 If-None-Match / If-Modified-Since：网页里写着登录态和账号版本，文件没变不代表这些没变
-     （2026-11-27 体验到期后浏览器拿 304 继续用旧网页，页面还以为是完整版） */
+     （2026-11-27 体验到期后浏览器拿 304 继续用旧网页，页面还以为是会员） */
   return withCache(withMe(await context.next(unconditional(context.request)), me, context.env, url), 'private, no-cache')
 }
 
@@ -77,7 +77,7 @@ function movedTo(location) {
 function meScript(me, env) {
   const safe = me && me.ok
     ? { ok: true, email: String(me.email || ''), verified: !!me.verified, admin: !!me.admin, plan: me.plan === 'free' ? 'free' : 'full',
-        /* 7 天体验（2026-11-27）：账号本身的版本 + 完整版到期日，页面据此写「体验还剩几天 / 已结束」 */
+        /* 7 天体验（2026-11-27）：账号本身的版本 + 会员到期日，页面据此写「体验还剩几天 / 已结束」 */
         base: me.base === 'free' ? 'free' : 'full', full_until: Number(me.full_until) || 0 }
     : { ok: false }
   if (me && !me.ok && me.kicked) safe.kicked = true

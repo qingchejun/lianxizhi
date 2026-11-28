@@ -55,8 +55,8 @@
 
   var state = { loggedIn: false, email: '', admin: false, plan: '', base: '', fullUntil: 0 }
   var listeners = []
-  /* plan：free = 免费版（口算、数独和游戏组），full = 完整版；没给就沿用服务器写进网页的 __SUMSUM_PLAN */
-  /* base / fullUntil：账号本身的版本和完整版到期日（2026-11-27 起免费账号注册送 7 天体验），「今天」页写还剩几天 */
+  /* plan：free = 免费版（口算、数独和游戏组），full = 会员；没给就沿用服务器写进网页的 __SUMSUM_PLAN */
+  /* base / fullUntil：账号本身的版本和会员到期日（2026-11-27 起免费账号注册送 7 天体验），「今天」页写还剩几天 */
   function setLogin(email, admin, plan, base, fullUntil) {
     state.base = !email ? '' : (base === 'free' || base === 'full' ? base : (plan === 'free' ? 'free' : 'full'))
     state.fullUntil = !email ? 0 : Number(fullUntil) || 0

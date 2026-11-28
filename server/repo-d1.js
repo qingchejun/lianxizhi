@@ -92,7 +92,7 @@ export function repo(db) {
       const r = await db.prepare('SELECT created_at FROM wants WHERE uid=?').bind(uid).first()
       return r ? r.created_at : null
     },
-    /* ---- 订单（完整版年卡，2026-11-28，server/pay-core.js） ---- */
+    /* ---- 订单（会员年卡，2026-11-28，server/pay-core.js） ---- */
     async orderInsert(o) {
       await db.prepare('INSERT INTO orders(id,uid,email,amount,currency,days,status,created_at) VALUES(?,?,?,?,?,?,?,?)')
         .bind(o.id, o.uid, o.email, o.amount, o.currency, o.days, o.status, o.created_at).run()

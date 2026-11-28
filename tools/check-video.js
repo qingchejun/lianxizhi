@@ -1,4 +1,4 @@
-/* 奥数讲解视频的门槛（functions/v）：公开课的视频谁都能看，其余只给完整版。node 直跑。 */
+/* 奥数讲解视频的门槛（functions/v）：公开课的视频谁都能看，其余只给会员。node 直跑。 */
 'use strict'
 var ok = 0, bad = 0
 function check(name, cond, extra) {

@@ -2232,8 +2232,8 @@ select.input {
   .guest-note, .board-intro { display: none !important; }
 }
 
-/* ---------- 免费版 / 完整版（2026-11-24 放开注册） ---------- */
-/* 侧栏：免费版里完整版板块挂一把小锁 */
+/* ---------- 免费版 / 会员（2026-11-24 放开注册） ---------- */
+/* 侧栏：免费版里会员板块挂一把小锁 */
 .rail-link.is-locked > span { opacity: 0.62; }
 .rail-lock {
   margin-left: auto;
@@ -2553,7 +2553,7 @@ select.input {
   .work-head .head-check, .work-head .head-help { display: none; }
 }
 
-/* 完整版功能的锁（js/full-lock.js）：识字、拼音免费版里锁住的页签 */
+/* 会员功能的锁（js/full-lock.js）：识字、拼音免费版里锁住的页签 */
 .full-lock {
   max-width: 440px;
   margin: 72px auto;
@@ -2589,4 +2589,56 @@ select.input {
   stroke: currentColor;
   stroke-width: 2;
   opacity: .6;
+}
+
+/* ---------- 会员入口（侧栏，2026-11-28）+ 会员页 huiyuan.html ---------- */
+.rail-tag {
+  margin-left: auto;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--ink-faint);
+}
+.rail-vip.is-promo { color: var(--amber); background: var(--amber-tint); }
+.rail-vip.is-promo:hover { color: var(--amber); background: #fdeccb; }
+.rail-vip.is-promo .rail-tag { color: var(--amber); }
+.rail-vip.is-promo.active { color: var(--amber); background: #fdeccb; }
+.rail-vip.is-promo.active svg { color: var(--amber); }
+.rail-folded .rail-tag { display: none; }
+@media (max-width: 1279px) { .rail-tag { display: none; } }
+
+.hy-card { max-width: 720px; }
+.hy-terms b { color: var(--ink); }
+.hy-box {
+  margin: 18px 0 8px;
+  padding: 18px 20px 8px;
+  background: var(--field);
+  border: 1px solid var(--card-edge);
+  border-radius: 10px;
+}
+.lk-card .hy-state { margin-bottom: 12px; }
+.hy-state b { color: var(--ink); }
+.hy-buy { min-width: 220px; }
+.lk-card .hy-note { margin: 8px 0 10px; font-size: 13px; color: var(--ink-soft); }
+.hy-table {
+  width: 100%;
+  margin: 0 0 8px;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.hy-table th, .hy-table td {
+  padding: 9px 10px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--card-edge);
+}
+.hy-table thead th { font-size: 13px; font-weight: 600; color: var(--ink-soft); background: var(--field); }
+.hy-table tbody th { width: 26%; font-weight: 600; color: var(--ink); }
+.hy-table td:last-child { color: var(--ink); }
+.hy-faq h4 { margin: 14px 0 4px; font-size: 15px; color: var(--ink); }
+.lk-card .hy-faq p { margin: 0 0 6px; font-size: 14px; line-height: 1.75; }
+.hy-faq a { color: var(--blue); }
+@media (max-width: 900px) {
+  .hy-buy { width: 100%; min-width: 0; }
+  .hy-table tbody th { width: 30%; }
 }

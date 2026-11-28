@@ -1,11 +1,11 @@
 # 奥数试看（2026-11-25）浏览器验收：
 #   1. 没登录：点第 05 课（没视频）→ 试看条、讲解页完整、练习只有前 2 道真题（后面是占位、网页里没有题目文字）、
-#      解析只有第 1 题；打印按钮换成「开通完整版」、点了不弹打印；没有「标记为已学」；纸上没二维码；
+#      解析只有第 1 题；打印按钮换成「开通会员」、点了不弹打印；没有「标记为已学」；纸上没二维码；
 #      Ctrl+P 打印样式下纸张整块隐藏；改难度后照样是试看；
 #   2. 带视频的课（第 08 课）：视频区只有封面和锁，没有 <video>；
 #   3. 免费版账号：试看条里有邀请码输入框和「开通时通知我」，点了登记成「已登记」；不印二维码、没有打分按钮；
 #      前三课照常能打印；「接着学」学完前三课后指向第 04 课（试看）；
-#   4. 完整版账号：没有试看条，能打印，有二维码；
+#   4. 会员账号：没有试看条，能打印，有二维码；
 #   5. 全程没有脚本报错。
 # 用法：本机预览跑着（npx wrangler pages dev . --port 8999 --binding SESSION_SECRET=dev-secret --binding DEV_SHOW_CODE=1），再
 #   uv run --with playwright python tools/e2e-aoshu-trial-browser.py
@@ -92,10 +92,10 @@ with sync_playwright() as p:
     check('练习页只有前 2 道真题，后面是占位', st['realQ'] == 2 and st['lockQ'] >= 1, st)
     check('解析页只有第 1 题，后面是占位', st['realSol'] == 1 and st['lockSol'] >= 1, st)
     check('占位框里没有题目文字', all(('○' not in t and '=' not in t) for t in st['lockText'].split('|')), st['lockText'][:120])
-    check('打印按钮换成「开通完整版」', st['print'] == '开通完整版', st['print'])
+    check('打印按钮换成「开通会员」', st['print'] == '开通会员', st['print'])
     page.click('#btn-print')
     page.wait_for_timeout(300)
-    check('点「开通完整版」不弹打印', page.evaluate('window.__printed') == 0)
+    check('点「开通会员」不弹打印', page.evaluate('window.__printed') == 0)
     check('没有「标记为已学」，纸上没二维码', st['learned'] == 'none' and not st['qr'], st)
     check('网址带上课号', st['url'] == '?topic=tianfu', st['url'])
     check('游客按钮写「注册，开通时通知我」', '注册，开通时通知我' in st['barText'])
@@ -125,7 +125,7 @@ with sync_playwright() as p:
     p2.on('pageerror', lambda e: errs.append('免费版 ' + str(e)))
     em2 = 'trial-%d@test.local' % int(time.time())
     register(p2, em2)
-    # 2026-11-27 起新注册送 7 天完整版：这里测的是体验结束后的免费版，先把体验改成已结束
+    # 2026-11-27 起新注册送 7 天会员：这里测的是体验结束后的免费版，先把体验改成已结束
     subprocess.run(['npx', 'wrangler', 'd1', 'execute', 'lianxizhi', '--local', '--command',
                     "UPDATE users SET full_until = 1 WHERE email = '%s'" % em2], check=True, capture_output=True)
     p2.goto(BASE + '/aoshu?topic=shuzimi')
@@ -153,16 +153,16 @@ with sync_playwright() as p:
     check('免费版前三课纸上有二维码', st['qr'], st)
     c2.close()
 
-    # ---------- 完整版 ----------
+    # ---------- 会员 ----------
     c3 = br.new_context(viewport={'width': 1440, 'height': 900})
     p3 = c3.new_page()
-    p3.on('pageerror', lambda e: errs.append('完整版 ' + str(e)))
+    p3.on('pageerror', lambda e: errs.append('会员 ' + str(e)))
     register(p3, 'trialf-%d@test.local' % int(time.time()), make_invite())
     p3.goto(BASE + '/aoshu?topic=tianfu')
     p3.wait_for_selector('#preview .sheet', timeout=15000)
     close_dialogs(p3)
     st = p3.evaluate(STATE)
-    check('完整版：没有试看条、能打印、练习题全在、有二维码', not st['bar'] and st['print'] == '打印' and st['lockQ'] == 0 and st['qr'], st)
+    check('会员：没有试看条、能打印、练习题全在、有二维码', not st['bar'] and st['print'] == '打印' and st['lockQ'] == 0 and st['qr'], st)
     c3.close()
 
     check('全程没有脚本报错', not errs, errs)

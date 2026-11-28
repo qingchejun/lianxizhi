@@ -35,7 +35,9 @@ GROUPS = [
 # 栏底：使用说明 + 当前登录的账号（点开是菜单：账号与密码 / 备份与恢复 / 退出登录）。
 # 2026-11 二次改版：账号、备份不再和板块平级摆成按钮，收进账号菜单，像正式产品那样。
 TOOLS = [
-    ('使用说明', 'data-help', 'help', '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .9-1 1.6v.3M12 16.75h.01"/>'),
+    ('使用说明', '/help', 'data-help', 'help', '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .9-1 1.6v.3M12 16.75h.01"/>'),
+    # 2026-11-28 会员入口：放在使用说明下面，免费版 / 没登录时着重显示（js/sidebar.js 按账号改右边的小字）
+    ('会员', '/huiyuan', 'data-vip', 'vip', '<path d="M4.5 8.5l4 3.5L12 6l3.5 6 4-3.5-1.75 10h-11.5z"/><path d="M7.25 21h9.5"/>'),
 ]
 MENU = [
     ('账号与密码', 'data-account=""', 'account', '<circle cx="12" cy="8.25" r="3.75"/><path d="M4.75 19.75c1.4-3.3 4.1-4.75 7.25-4.75s5.85 1.45 7.25 4.75"/>'),
@@ -57,10 +59,15 @@ ME = ('  <div class="rail-me">\n'
 
 def tail(current):
     # 「使用说明」是到帮助页的链接（help.js 会按当前板块补上 #锚点）；在帮助页上它就是当前项
-    return '  <span class="rail-gap"></span>\n' + ''.join(
-        '  <a class="rail-link rail-tool%s" href="/help" %s title="%s"%s>%s%s</svg><span>%s</span></a>\n'
-        % (' active' if name == current else '', attr, name, ' aria-current="page"' if name == current else '', SVG_OPEN, icon, name)
-        for name, attr, _, icon in TOOLS) + ME
+    out = '  <span class="rail-gap"></span>\n'
+    for name, href, attr, slug, icon in TOOLS:
+        on = name == current
+        cls = ' rail-' + slug if slug == 'vip' else ''
+        tag = '<small class="rail-tag" data-vip-tag></small>' if slug == 'vip' else ''
+        out += ('  <a class="rail-link rail-tool%s%s" href="%s" %s title="%s"%s>%s%s</svg><span>%s</span>%s</a>\n'
+                % (cls, ' active' if on else '', href, attr, name, ' aria-current="page"' if on else '', SVG_OPEN, icon, name, tag))
+    return out + ME
+
 
 FOLD = ('<button type="button" class="rail-fold" data-rail-fold aria-label="收起侧栏" title="收起侧栏">'
         + SVG_OPEN + '<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15M15.5 10l-2 2 2 2"/></svg></button>')
@@ -80,7 +87,7 @@ PAGES = {
     'index.html': '今天', 'kousuan.html': '口算', 'aoshu.html': '奥数',
     'shizi.html': '识字', 'shudu.html': '数独', 'mima.html': '密码', 'zhizhi.html': '数织',
     'migong.html': '迷宫', 'huochai.html': '火柴', 'pinyin.html': '拼音', 'help.html': '使用说明', 'admin.html': '邀请码管理', 'mark.html': '打分',
-    'locked.html': '上锁', 'coushifa.html': '口算', 'poshifa.html': '口算',
+    'locked.html': '上锁', 'huiyuan.html': '会员', 'coushifa.html': '口算', 'poshifa.html': '口算',
 }
 
 
@@ -119,7 +126,7 @@ for _, items in GROUPS:
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
             'stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><style>.f{fill:currentColor;stroke:none}</style>'
             + icon + '</svg>\n', encoding='utf-8')
-for name, _, slug, icon in TOOLS + MENU:
+for name, _, slug, icon in [(t[0], t[2], t[3], t[4]) for t in TOOLS] + MENU:
     (out_dir / (slug + '.svg')).write_text(
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
         'stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">' + icon + '</svg>\n', encoding='utf-8')
@@ -150,7 +157,7 @@ FOOT_NAME = {'口算': '口算题', '奥数': '奥数', '识字': '识字', '拼
              '火柴': '火柴棒等式题', '密码': '密码推理题', '迷宫': '儿童迷宫', '数织': '数织游戏'}
 # 页眉位置窄，大多用短名；单看容易猜错的三个写全（2026-11-25 站长同意）。只改显示文字，侧栏、锁、data-module 仍用短名
 HEAD_NAME = {'口算': '口算题', '火柴': '火柴棒', '密码': '密码推理'}
-FULL_ONLY = ['识字', '拼音']  # 奥数 11-25 起前三课免费，不再标  # 完整版才能出题，链接后面标小字
+FULL_ONLY = ['识字', '拼音']  # 奥数 11-25 起前三课免费，不再标  # 会员才能用全的，链接后面标小字
 INNER = {'口算': [('凑十法练习题', '/kousuan/coushifa'), ('破十法练习题', '/kousuan/poshifa')]}
 
 
@@ -161,7 +168,7 @@ def sitehead():
     return ('<header class="sh"><div class="sh-in">\n'
             '  <a class="sh-brand" href="/" aria-label="纸和笔首页"><img src="/icons/mark.svg" width="28" height="28" alt=""><span>纸和笔</span></a>\n'
             '  <nav class="sh-nav" aria-label="板块">' + nav + '</nav>\n'
-            '  <div class="sh-act"><a class="btn btn-primary sh-login" href="/#login">登录 / 注册</a></div>\n'
+            '  <div class="sh-act"><a class="sh-vip" href="/huiyuan">会员</a><a class="btn btn-primary sh-login" href="/#login">登录 / 注册</a></div>\n'
             '</div></header>')
 
 
@@ -170,7 +177,7 @@ def sitefoot():
     for g, items in HEAD_NAMES:
         links = []
         for n, h in items:
-            tag = '<small>完整版</small>' if n in FULL_ONLY else ''
+            tag = '<small>会员</small>' if n in FULL_ONLY else ''
             links.append('<a href="%s">%s%s</a>' % (h, FOOT_NAME[n], tag))
             links += ['<a href="%s">%s</a>' % (u, t) for t, u in INNER.get(n, [])]  # 内页跟板块平起平坐
         cols.append('    <nav class="sf-col" aria-label="%s"><div class="sf-h">%s</div>%s</nav>\n' % (g, g, ''.join(links)))
@@ -180,7 +187,7 @@ def sitefoot():
             '      <p>一位一年级家长给自己孩子做的练习纸网站：能在家练好的不送去报班，能在纸上做的不让孩子盯屏幕。口算、奥数前三课和纸笔游戏打开就能打印；做完扫一下纸角，下一张专练错的。</p>\n'
             '      <p>意见反馈：<a href="mailto:hi@zhihebi.com">hi@zhihebi.com</a>，一般一两天内回复。</p>\n'
             '    </section>\n' + ''.join(cols) +
-            '    <nav class="sf-col" aria-label="关于"><div class="sf-h">关于</div><a href="/">纸和笔首页</a><a href="/help">使用说明</a><a href="/help#print">打印与存 PDF</a><a href="/privacy">隐私说明</a><a href="mailto:hi@zhihebi.com">意见反馈</a></nav>\n'
+            '    <nav class="sf-col" aria-label="关于"><div class="sf-h">关于</div><a href="/">纸和笔首页</a><a href="/help">使用说明</a><a href="/help#print">打印与存 PDF</a><a href="/huiyuan">会员</a><a href="/privacy">隐私说明</a><a href="/terms">服务条款</a><a href="mailto:hi@zhihebi.com">意见反馈</a></nav>\n'
             '  </div>\n'
             '  <div class="sf-bot"><span>© 2026 纸和笔 · zhihebi.com</span><span>少报班，少看屏 · 一页纸，五分钟</span></div>\n'
             '</footer>')
@@ -196,7 +203,7 @@ def fill(page, mark, html):
     print('✓', mark, page)
 
 
-for page in ['welcome.html', 'privacy.html', '404.html']:
+for page in ['welcome.html', 'privacy.html', 'terms.html', '404.html']:
     fill(page, 'sitehead', sitehead())
 for page in ['welcome.html', 'index.html']:
     fill(page, 'sitefoot', sitefoot())
