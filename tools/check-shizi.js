@@ -1047,6 +1047,16 @@ function checkRj() {
 function checkXie() {
   var X = globalThis.SumSum.shiziXie
   var C = globalThis.SumSum.shiziXieData.CHARS
+  /* 2026-11-28 写字和认字的字表分开选 */
+  if (T.sanitize({ book: 'hongen', perWeek: 100 }).xieBook !== 'rj1a') bad('写字字表：认字用某恩的老设置，写字从一上开始')
+  if (T.sanitize({ book: 'rj1b' }).xieBook !== 'rj1b') bad('写字字表：没选过的，跟认字同一册')
+  if (T.sanitize({ book: 'rj1b', xieBook: 'rj1a' }).xieBook !== 'rj1a') bad('写字字表：选过的照选的')
+  if (T.sanitize({ book: 'rj1a', xieBook: 'hongen' }).xieBook !== 'rj1a') bad('写字字表：某恩没有写字表，不能选')
+  if (X.learnedFor({ book: 'rj1a', xieBook: 'rj1a', lesson: 7 }) !== 7) bad('写字自动：同一册跟着学校学到')
+  if (X.learnedFor({ book: 'rj1b', xieBook: 'rj1a', lesson: 3 }) !== 0) bad('写字自动：认字到了下册，写上册算整册学过')
+  if (X.learnedFor({ book: 'hongen', xieBook: 'rj1b', lesson: 3 }) !== 1) bad('写字自动：别的情况从第一课开始')
+  var pf = X.pickFor(T.sanitize({ book: 'hongen', xieBook: 'rj1b' }))
+  if (!pf || pf.i !== X.lessons('rj1b')[0].i) bad('写字自动：某恩 + 一下写字表 → 一下第一课')
   var ls = X.lessons('rj1a')
   var all = []
   ls.forEach(function (l) {

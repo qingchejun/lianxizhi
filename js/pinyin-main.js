@@ -4,7 +4,7 @@
  *   右边 = 今日 / 专题 / 课程 / 历史 四个页签。
  *     今日：为什么练这个 → 打分状态（打分统一在顶栏「打分」抽屉里，js/rate-drawer.js，与扫码打分页同一个组件）→
  *           家长教学卡、孩子视图 → 字号；
- *     专题 / 课程：目录，每项标状态（没练过 / 待复核 + 日期 / 已稳固），点一项中间出该项纸卷；
+ *     专题 / 课程：目录，每项标状态（没练过 / 今天该练、几号再练 / 已掌握），点一项中间出该项纸卷；
  *     历史：出过的卷，卷号醒目，点开可以重印、在抽屉里补打分。
  * 网址决定看哪张卷（?sheet= / ?topic= / ?lesson=&focus= / ?view=），换卷就是换网址——刷新、收藏都还在原处。
  * 2026-11-27 打分改成一步：点了的记 miss，独立组没点的记 ok，选做组按 sheetsCore.pinyinResults 的规则
@@ -80,8 +80,10 @@
   function stateOf(id) {
     const s = state[id]
     if (!s || !s.observed) return { cls: 'new', text: '没练过' }
-    if (s.streak >= 2 && !s.due) return { cls: 'solid', text: '已稳固' }
-    return { cls: 'due', text: '待复核' + (s.due ? ' · ' + md(s.due) : '') }
+    if (s.streak >= 2 && !s.due) return { cls: 'solid', text: '已掌握' }
+    /* 2026-11-28 站长看不懂「待复核 · 11/28」：改成说该干什么。到日子的每日一张会自动先出它 */
+    const when = !s.due || s.due <= today ? '今天该练' : md(s.due) + ' 再练'
+    return { cls: 'due', text: (s.streak === 1 ? '对了 1 次 · ' : '') + when }
   }
 
   function item(label, link, id) {
@@ -104,9 +106,10 @@
     const c = counts(ids)
     const due = ids.filter(id => stateOf(id).cls === 'due')
     return '<section class="group"><div class="group-title">' + title + '</div><p class="hint">' + text + '</p>' +
-      '<dl class="py-stats"><div><dt>已稳固</dt><dd>' + c.solid + '</dd></div><div><dt>待复核</dt><dd>' + c.due + '</dd></div>' +
-      '<div><dt>没练过</dt><dd>' + c.fresh + '</dd></div></dl></section>' +
-      (due.length ? '<section class="group"><div class="group-title">该复核了</div><ul class="py-items">' +
+      '<dl class="py-stats"><div><dt>已掌握</dt><dd>' + c.solid + '</dd></div><div><dt>还在练</dt><dd>' + c.due + '</dd></div>' +
+      '<div><dt>没练过</dt><dd>' + c.fresh + '</dd></div></dl>' +
+      '<p class="hint">一项要隔两天、换不同的题对两次才算掌握；错了第二天再练。到日子的项，每日一张会自动先出，不用自己挑。</p></section>' +
+      (due.length ? '<section class="group"><div class="group-title">还在练的</div><ul class="py-items">' +
         due.map(id => item(D.directions[id].label, href({ topic: id }), id)).join('') + '</ul></section>' : '')
   }
 

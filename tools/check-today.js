@@ -119,7 +119,11 @@ check(rjCard.book === 'rj1a' && rjCard.bookShort === '统编一上', '人教版�
 check(rjCard.lessonLabel === '课文 4《四季》', '人教版卡片：学到 ' + rjCard.lessonLabel)
 check(rjCard.xie && rjCard.xie.label === '课文 4《四季》' && rjCard.xie.chars === '四小鸟是天', '人教版卡片：写字练课文 4 ' + JSON.stringify(rjCard.xie))
 check(rjCard.xie.href === 'shizi.html?pane=xie', '人教版卡片：写字链接直达写字面板')
-check(T.build(fakeStorage({ 'sumsum:shizi:v1': JSON.stringify({ book: 'hongen' }) }), new Date(2026, 10, 22)).shizi.xie === null, '洪恩卡片没有写字')
+/* 2026-11-28 起写字和认字的字表分开：认字用某恩，写字照样有（没选过从统编一上第一课开始） */
+var hx = T.build(fakeStorage({ 'sumsum:shizi:v1': JSON.stringify({ book: 'hongen' }) }), new Date(2026, 10, 22)).shizi.xie
+check(hx && hx.chars.length > 0, '认字用某恩：写字照样有，从一上开始：' + JSON.stringify(hx))
+var hx2 = T.build(fakeStorage({ 'sumsum:shizi:v1': JSON.stringify({ book: 'hongen', xieBook: 'rj1b' }) }), new Date(2026, 10, 22)).shizi.xie
+check(hx2 && hx && hx2.chars !== hx.chars, '写字单独选了一下：练一下的字')
 check(rjCard.unitName === '第五单元' && rjCard.chars.length === 20, '人教版卡片：单元与缩略字 ' + rjCard.unitName + ' ' + rjCard.chars.length)
 var rjAll = T.build(fakeStorage({ 'sumsum:shizi:v1': JSON.stringify({ book: 'rj1a' }) }), new Date(2026, 10, 22)).shizi
 var lastTab = T.build(fakeStorage({ 'sumsum:shizi:v1': JSON.stringify({ mode: 'history' }) }), new Date(2026, 10, 22)).shizi

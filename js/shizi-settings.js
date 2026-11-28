@@ -46,7 +46,9 @@
     order: 'seq',
     /* 认字 / 写字 两大块（写字只用人教版）。和 mode 一样不记：打开识字页永远先是认字 */
     pane: 'ren',
-    /* 写字：练哪一课（识字表课号，0 = 跟着「学校学到」）、格子大小、描红几格 */
+    /* 写字：用哪册写字表（2026-11-28 起和认字的字表分开选，只有统编版有写字表）、
+       练哪一课（识字表课号，0 = 自动）、格子大小、描红几格 */
+    xieBook: 'rj1a',
     xieLesson: 0,
     xieSize: 'l',
     xieTrace: 3
@@ -129,6 +131,12 @@
     return clampInt(s.unit, 1, max, DEFAULTS.unit)
   }
 
+  function xieBookOf(raw, s) {
+    var ok = function (b) { return b !== Z().HONGEN && Z().hasBook(String(b)) }
+    if (raw && ok(raw.xieBook)) return String(raw.xieBook)
+    return ok(s.book) ? String(s.book) : DEFAULTS.xieBook
+  }
+
   /* 把任意来源（表单 / localStorage / URL）的原始值清洗成合法设置对象 */
   function sanitize(raw) {
     var s = Object.assign({}, DEFAULTS, raw)
@@ -154,6 +162,8 @@
       unit: clampUnit(s),
       order: s.order === 'rand' ? 'rand' : 'seq',
       pane: s.pane === 'xie' ? 'xie' : 'ren',
+      /* 没选过的（分开之前的老设置）：认字用统编版就跟它同一册，用某恩就从一上开始 */
+      xieBook: xieBookOf(raw, s),
       xieLesson: clampInt(s.xieLesson, 0, 999, 0),
       xieSize: s.xieSize === 'm' ? 'm' : 'l',
       xieTrace: clampInt(s.xieTrace, 2, 4, 3)

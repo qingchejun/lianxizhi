@@ -28,6 +28,7 @@
     book: $('f-book'),
     lesson: $('f-lesson'),
     order: $('f-order'),
+    xieBook: $('f-xiebook'),
     xieLesson: $('f-xielesson'),
     xieSize: $('f-xiesize'),
     xieTrace: $('f-xietrace')
@@ -215,7 +216,10 @@
       order: isRj(settings) && els.order.value ? els.order.value : settings.order,
       pane: settings.pane, // 认字/写字 由顶上的开关管
       /* 写字的三项只在写字面板开着时从表单读（认字时那几个框没填过，读出来是第一个选项） */
-      xieLesson: els.book.value !== settings.book ? 0 : settings.pane === 'xie' && els.xieLesson.value !== '' ? els.xieLesson.value : settings.xieLesson,
+      xieBook: settings.pane === 'xie' ? els.xieBook.value || settings.xieBook : settings.xieBook,
+      /* 换了写字那册：课号不通用，回到自动 */
+      xieLesson: settings.pane !== 'xie' ? settings.xieLesson
+        : els.xieBook.value !== settings.xieBook ? 0 : els.xieLesson.value !== '' ? els.xieLesson.value : settings.xieLesson,
       xieSize: settings.pane === 'xie' ? els.xieSize.value || settings.xieSize : settings.xieSize,
       xieTrace: settings.pane === 'xie' ? els.xieTrace.value || settings.xieTrace : settings.xieTrace,
       mode: settings.mode, // 模式不是表单项，由页签管
@@ -749,24 +753,27 @@
       tabs[i].setAttribute('aria-selected', String(on))
     }
     if (!xie) XIE_SECS.forEach(function (id) { $(id).hidden = true })
+    if (!xie) $('sec-book').hidden = false
   }
 
   function xieLessonNow(s) {
-    return S.shiziXie.pick(s.book, s.xieLesson, s.lesson)
+    return S.shiziXie.pickFor(s)
   }
 
   var xieFor = ''
   function fillXie(s) {
-    var rj = isRj(s)
     REN_SECS.forEach(function (id) { $(id).hidden = true })
-    $('order-field').hidden = true
-    $('sec-xie').hidden = !rj
-    $('sec-xie-off').hidden = rj
-    if (!rj) return null
-    var ls = S.shiziXie.lessons(s.book)
-    var auto = S.shiziXie.pick(s.book, 0, s.lesson)
-    if (xieFor !== s.book + ':' + s.lesson) {
-      var html = '<option value="0">跟着学校进度（' + (auto ? auto.label : '') + '）</option>'
+    /* 认字的「字表」那一节在写字时收起：写字有自己的「写哪套字」 */
+    $('sec-book').hidden = true
+    $('sec-xie').hidden = false
+    $('sec-xie-off').hidden = true
+    els.xieBook.value = s.xieBook
+    var ls = S.shiziXie.lessons(s.xieBook)
+    var auto = S.shiziXie.pick(s.xieBook, 0, S.shiziXie.learnedFor(s))
+    var key = s.xieBook + ':' + s.book + ':' + s.lesson
+    if (xieFor !== key) {
+      var autoWord = s.xieBook === s.book ? '跟着认字的「学校学到」' : '自动'
+      var html = '<option value="0">' + autoWord + '（' + (auto ? auto.label : '') + '）</option>'
       var unit = ''
       ls.forEach(function (l) {
         if (l.unitName !== unit) {
@@ -776,7 +783,7 @@
         html += '<option value="' + l.i + '">' + l.label + '（' + l.chars.join('') + '）</option>'
       })
       els.xieLesson.innerHTML = html + '</optgroup>'
-      xieFor = s.book + ':' + s.lesson
+      xieFor = key
     }
     els.xieLesson.value = String(s.xieLesson)
     if (els.xieLesson.value === '') els.xieLesson.value = '0'
@@ -785,8 +792,8 @@
     var l = xieLessonNow(s)
     $('xie-now').textContent = l ? l.label : ''
     $('xie-sub').textContent = l ? l.unitName + '　·　' + l.chars.join(' ') + '　·　' + l.chars.length + ' 个字' : ''
-    $('btn-xie-prev').disabled = !l || !S.shiziXie.neighbor(s.book, l.i, -1)
-    $('btn-xie-next').disabled = !l || !S.shiziXie.neighbor(s.book, l.i, 1)
+    $('btn-xie-prev').disabled = !l || !S.shiziXie.neighbor(s.xieBook, l.i, -1)
+    $('btn-xie-next').disabled = !l || !S.shiziXie.neighbor(s.xieBook, l.i, 1)
     return l
   }
 
@@ -825,7 +832,7 @@
   function xieStep(delta) {
     return function () {
       var l = xieLessonNow(settings)
-      var to = l ? S.shiziXie.neighbor(settings.book, l.i, delta) : 0
+      var to = l ? S.shiziXie.neighbor(settings.xieBook, l.i, delta) : 0
       if (!to) return
       settings = S.shiziSettings.sanitize(Object.assign({}, settings, { xieLesson: to }))
       refresh()

@@ -52,6 +52,19 @@
     return hit
   }
 
+  /*
+   * 写字和认字的字表分开选（2026-11-28）。「自动」那一课：
+   *   同一册 → 跟着认字的「学校学到」；写的是认字那册的上册 → 上册整册学过，取最后一课；其余从第一课开始。
+   */
+  function learnedFor(s) {
+    if (s.xieBook === s.book) return s.lesson
+    var b = root.SumSum.shiziRjData && root.SumSum.shiziRjData.BOOKS[s.book]
+    return b && b.prev === s.xieBook ? 0 : 1
+  }
+  function pickFor(s) {
+    return pick(s.xieBook, s.xieLesson, learnedFor(s))
+  }
+
   /* 同一册里前一课 / 后一课（写字表里的），给面板上的 ◀ ▶ */
   function neighbor(book, i, delta) {
     var ls = lessons(book)
@@ -240,6 +253,8 @@
     SIZES: SIZES,
     lessons: lessons,
     pick: pick,
+    pickFor: pickFor,
+    learnedFor: learnedFor,
     neighbor: neighbor,
     cellSvg: cellSvg,
     sheets: sheets,

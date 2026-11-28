@@ -141,9 +141,9 @@
       lessonLabel: at ? (s.lesson ? Z.lessonLabel(at) : '整册') : '',
       bookShort: rj ? (root.SumSum.shiziRjData.BOOKS[s.book] || {}).short || '' : '',
       unitName: rj ? slice.unitName : '',
-      /* 写字（人教版写字表）：跟着学校进度该练哪一课 */
-      xie: rj && root.SumSum.shiziXie ? (function () {
-        var xl = root.SumSum.shiziXie.pick(s.book, s.xieLesson, s.lesson)
+      /* 写字（统编版写字表，2026-11-28 起和认字的字表分开选，认字用某恩也有）：该练哪一课 */
+      xie: root.SumSum.shiziXie ? (function () {
+        var xl = root.SumSum.shiziXie.pickFor(s)
         return xl ? { label: xl.label, chars: xl.chars.join(''), href: 'shizi.html?pane=xie' } : null
       })() : null,
       chars: slice.chars.slice(0, 20),
