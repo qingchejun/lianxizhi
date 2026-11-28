@@ -198,7 +198,7 @@ main()
 - [ ] **Step 2: 建四个空壳 js（让校验器能加载，红转绿的中间态）**
 
 ```bash
-cd /Users/qingche/coding/lianxizhi
+cd /Users/qingche/coding/zhihebi
 for f in mima-core mima-settings mima-render; do
   cat > "js/${f}.js" <<'EOF'
 /**
@@ -1760,7 +1760,7 @@ Expected: 全部通过（导航改动不碰逻辑，但数独/今天两套照跑
 
 - [ ] **Step 3: 浏览器目检**
 
-Run: `cd /Users/qingche/coding/lianxizhi && python3 -m http.server 8123`（后台）
+Run: `cd /Users/qingche/coding/zhihebi && python3 -m http.server 8123`（后台）
 逐项检查 `http://localhost:8123/mima.html`（有头less浏览器就截图自查，没有就 curl 核对资源全 200 + 请站长开页面过目）：
 - 默认（L1、4 题、2 份）：纸上有 2 页题卡、每卡 3 位数字行 + ●/— + 划掉带 + 图例；顶栏摘要在；
 - 切到 L3：线索变句子、划掉带消失；
