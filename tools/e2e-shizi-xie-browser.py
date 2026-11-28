@@ -77,7 +77,7 @@ with sync_playwright() as p:
     pg.wait_for_selector('.py-state', timeout=15000)
     body = pg.inner_text('body')
     check('拼音不再出现「待复核」「已稳固」', '待复核' not in body and '已稳固' not in body)
-    check('拼音状态用「没练过 / 再练 / 今天该练 / 已掌握」', any(w in body for w in ['没练过', '再练', '今天该练', '已掌握']))
+    check('拼音状态用「没练过 / 再练 / 该练了 / 已掌握」', any(w in body for w in ['没练过', '再练', '该练了', '已掌握']))
     check('全程没有脚本报错', not errs, errs)
     ctx.close()
     br.close()

@@ -82,7 +82,7 @@
     if (!s || !s.observed) return { cls: 'new', text: '没练过' }
     if (s.streak >= 2 && !s.due) return { cls: 'solid', text: '已掌握' }
     /* 2026-11-28 站长看不懂「待复核 · 11/28」：改成说该干什么。到日子的每日一张会自动先出它 */
-    const when = !s.due || s.due <= today ? '今天该练' : md(s.due) + ' 再练'
+    const when = !s.due || s.due <= today ? '该练了' : md(s.due) + ' 再练'
     return { cls: 'due', text: (s.streak === 1 ? '对了 1 次 · ' : '') + when }
   }
 
