@@ -47,6 +47,13 @@
   var boot = KM.init(S.store)
   var mode = boot.mode
   var plans = boot.plans
+  /* 孩子档案（js/profile.js）：课本照档案。分享来的链接（?src=book:…）下面 applySrc 再按链接改 */
+  var PF = S.profile
+  var kid = PF && PF.get(S.store)
+  if (kid && KT.BOOKS[PF.mathBook(kid)] && mode.book !== PF.mathBook(kid)) {
+    mode = KM.cleanMode(Object.assign({}, mode, { book: PF.mathBook(kid), unit: undefined }), plans)
+  }
+  if (PF) PF.watch(kid)
   var shared = null /* 别人分享的「挑题型」难度（网址 src=tg:…），只在这次打开里用，不存 */
   ;(function () {
     var q = new URLSearchParams(root.location.search)
@@ -364,13 +371,9 @@
   }
 
   function fillBookSelects() {
-    var bs = $('k-book')
-    if (!bs.options.length) {
-      bs.innerHTML = KT.BOOK_ORDER.map(function (k) {
-        return '<option value="' + k + '">' + esc(KT.BOOKS[k].name) + '</option>'
-      }).join('')
-    }
-    bs.value = mode.book
+    /* 课本只显示（来自孩子档案）；分享来的链接用的课本和档案不同时注明 */
+    var own = kid && PF.mathBook(kid)
+    $('k-book-name').textContent = KT.BOOKS[mode.book].name + (own && own !== mode.book ? '（分享的链接）' : '')
     var us = $('k-unit')
     if (us.dataset.book !== mode.book) {
       us.innerHTML = KT.BOOKS[mode.book].units.map(function (u, i) {
@@ -488,17 +491,21 @@
   $('k-kind').addEventListener('change', function () {
     mode = Object.assign({}, mode, { kind: $('k-kind').value })
     refresh()
-  })
-  $('k-book').addEventListener('change', function () {
-    var b = $('k-book').value
-    /* 换册：同出版社上下册之间换，下册从第一单元算，上册算整册学过 */
-    mode = KM.cleanMode(Object.assign({}, mode, { book: b, unit: KT.BOOKS[b].prev ? 0 : KT.BOOKS[b].units.length - 1 }), plans)
-    boot.first = false
-    refresh()
+    /* 第一次切到按教材、还没有孩子档案：弹档案（顺手问学到哪），设好按新课本重出 */
+    if (mode.kind === 'book' && PF && !PF.get(S.store)) {
+      /* 不走 ensure：上一行刚存了「按教材」+ 猜的课本，ensure 会把猜的当成家长选的推成档案 */
+      PF.open({ first: true, ask: 'math' }).then(function (k) {
+        if (k) return PF.reload()
+        /* 没设档案就关了：退回按难度。不然按月份猜的课本会以「按教材」存下，之后被当成家长选的推成档案（2026-11-28 复审） */
+        mode = Object.assign({}, mode, { kind: 'level' })
+        refresh()
+      })
+    }
   })
   $('k-unit').addEventListener('change', function () {
     mode = Object.assign({}, mode, { unit: Number($('k-unit').value) })
     boot.first = false
+    if (PF) PF.touch(S.store, 'math')
     refresh()
   })
   $('k-blankmid').addEventListener('change', function () {

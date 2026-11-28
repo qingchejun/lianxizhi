@@ -35,6 +35,40 @@
   }
 
   var settings = S.shiziSettings.load()
+  /* 孩子档案（js/profile.js，2026-11-28）：认字用课本字表时、写字一律，照档案的课本（统编哪一册）。
+     认字选了某恩不动。档案里的册和本机不同（别的设备改了档案、同步过来）→ 换过来，课从头算（同手动换册） */
+  var PF = S.profile
+  var kid = PF && PF.get(S.store)
+  var kidBook = kid && S.shizi.hasBook(PF.yuwenBook(kid)) ? PF.yuwenBook(kid) : ''
+  /* 网址带着卷子参数（别人分享的链接）：照链接出，不套档案（同 js/shizi-settings.js load 的规矩） */
+  var sharedLink = false
+  new URLSearchParams(root.location.search).forEach(function (v, k) {
+    if (['pane', 'mode', 'withWrong'].indexOf(k) < 0 && Object.prototype.hasOwnProperty.call(S.shiziSettings.DEFAULTS, k)) sharedLink = true
+  })
+  if (PF && !sharedLink) PF.watch(kid)
+  if (kidBook && !sharedLink) {
+    var fix = {}
+    if (/^rj/.test(settings.book) && settings.book !== kidBook) {
+      fix.book = kidBook
+      fix.lesson = /b$/.test(kidBook) ? 1 : 0
+    }
+    if (settings.xieBook !== kidBook) {
+      fix.xieBook = kidBook
+      fix.xieLesson = 0
+    }
+    if (Object.keys(fix).length) settings = S.shiziSettings.sanitize(Object.assign({}, settings, fix))
+    /* 字表下拉：课本只留档案那一册，写明来自档案；某恩照旧能选 */
+    Array.prototype.forEach.call(els.book.options, function (o) {
+      if (!/^rj/.test(o.value)) return
+      o.hidden = o.value !== kidBook
+      o.disabled = o.value !== kidBook
+      if (o.value === kidBook) o.textContent = '课本：' + PF.yuwenName(kid) + ((o.textContent.match(/（\d+ 字）/) || [''])[0])
+    })
+    $('book-pf').hidden = false
+    els.xieBook.closest('.field').hidden = true
+    $('xie-book-line').hidden = false
+    $('xie-book-name').textContent = PF.yuwenName(kid) + '写字表'
+  }
   S.shizi.useBook(settings.book, settings.lesson, settings.order)
 
   function isRj(s) {
@@ -681,7 +715,9 @@
 
   function onBookChange() {
     var before = settings.book + ':' + settings.lesson + ':' + settings.order
+    var lessonBefore = settings.lesson
     settings = readForm()
+    if (PF && String(settings.lesson) !== String(lessonBefore)) PF.touch(S.store, 'yuwen')
     if (settings.book + ':' + settings.lesson + ':' + settings.order !== before) {
       S.shizi.useBook(settings.book, settings.lesson, settings.order)
       var last = S.shiziMark.paperCount() ? S.shiziMark.paperAt(S.shiziMark.paperCount() - 1) : null
@@ -915,6 +951,8 @@
   S.shiziMark.onChange(refreshMarkPanel)
   refreshStalePaper()
   refresh()
+  /* 第一次来、还没有孩子档案：弹一次（顺手问语文学到哪），设好按新课本重出 */
+  if (PF) PF.ensure({ ask: 'yuwen' }).then(function (r) { if (r.fresh) PF.reload() })
 
   /* 完工标记：上面任何一步抛错都到不了这里；HTML 里的防护脚本据此判断并提示 */
   document.documentElement.setAttribute('data-sumsum-ready', '1')

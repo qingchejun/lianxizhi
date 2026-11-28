@@ -63,8 +63,16 @@
     return out
   }
 
+  var PF = S.profile
+
   function render() {
     var mode = KM.init(S.store).mode
+    /* 课本照孩子档案（js/profile.js）；还没档案时用口算那边存的 */
+    var kid = PF && PF.get(S.store)
+    if (kid && KT.BOOKS[PF.mathBook(kid)] && mode.book !== PF.mathBook(kid)) {
+      saveMode({ book: PF.mathBook(kid), unit: undefined })
+      mode = KM.init(S.store).mode
+    }
     var book = mode.book
     var unit = mode.unit
     var B = KT.BOOKS[book]
@@ -86,9 +94,6 @@
 
     sumEl.textContent = '闪卡 · ' + unitLabel + ' · ' + picked.length + ' 张' + (pages > 1 ? ' · ' + pages + ' 页' : '')
 
-    var bookOpts = KT.BOOK_ORDER.map(function (id) {
-      return '<option value="' + id + '"' + (id === book ? ' selected' : '') + '>' + esc(KT.BOOKS[id].name) + '</option>'
-    }).join('')
     var unitOpts = B.units.map(function (u, i) {
       var n = MC.unitCards(book, i).length
       return '<option value="' + i + '"' + (!all && i === unit ? ' selected' : '') + '>' + esc(u[0]) +
@@ -105,9 +110,10 @@
     host.innerHTML =
       '<div class="group-title">数学知识点闪卡</div>' +
       '<p class="hint">一张卡一个知识点：正面是题和家长念的问题，背面是答案、口诀和方法。剪下对折就能用，不用打分。</p>' +
-      '<label class="field"><span>教材</span><select class="input" id="mfc-book">' + bookOpts + '</select></label>' +
+      '<div class="field"><span>教材</span><div class="pf-line"><b id="mfc-book">' + esc(B.name) + '</b>' +
+        '<button type="button" class="link-btn" data-profile-open="math">改</button></div></div>' +
       '<label class="field"><span>学校学到</span><select class="input" id="mfc-unit">' + unitOpts + '</select></label>' +
-      '<p class="hint">和口算页「按教材」的进度是同一个，改一处两处都变。只出学到这个单元为止教过的内容。</p>' +
+      '<p class="hint">课本来自孩子档案。「学校学到」和口算页「按教材」是同一个，改一处两处都变；只出学到这个单元为止教过的内容。</p>' +
       '<p class="hint mfc-wrong-hint">' + esc(wrongHint) + '</p>' +
       '<div class="field"><span>大小</span><div class="seg-ctl" role="group" aria-label="闪卡大小">' +
         '<button type="button" data-mfc-size="m" class="' + (size === 'm' ? 'on' : '') + '">一页 6 张</button>' +
@@ -156,13 +162,10 @@
 
   host.addEventListener('change', function (e) {
     var t = e.target
-    if (t.id === 'mfc-book') {
-      var cur = KM.init(S.store).mode
-      saveMode({ book: t.value, unit: Math.min(cur.unit, KT.BOOKS[t.value].units.length - 1) })
-      go({ k: null })
-    } else if (t.id === 'mfc-unit') {
+    if (t.id === 'mfc-unit') {
       if (t.value === 'all') return go({ k: 'all' })
       saveMode({ unit: Number(t.value) })
+      if (PF) PF.touch(S.store, 'math')
       go({ k: null })
     }
   })
@@ -178,6 +181,11 @@
   if (S.account && S.account.onChange) S.account.onChange(render)
   root.addEventListener('sumsum:rated', render)
 
+  var bootKid = PF && PF.get(S.store)
   render()
   doc.documentElement.setAttribute('data-sumsum-ready', '1')
+  if (PF && bootKid) PF.watch(bootKid)
+  /* 第一次来、还没有孩子档案：弹一次（老用户能从口算设置推出来就不弹） */
+  /* 同步回来才拿到的档案（fresh 为 false）也要按它重画 */
+  if (PF) PF.ensure({ ask: 'math' }).then(function (r) { if (r.kid) render() })
 })(window)

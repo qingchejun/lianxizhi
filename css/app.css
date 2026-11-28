@@ -2637,3 +2637,16 @@ select.input {
   .hy-buy { width: 100%; min-width: 0; }
   .hy-table tbody th { width: 30%; }
 }
+
+/* ---------- 孩子档案（js/profile.js，2026-11-28） ---------- */
+
+.profile-dialog { width: min(480px, calc(100vw - 32px)); }
+.profile-body { display: flex; flex-direction: column; gap: 14px; padding: 4px 24px 22px; overflow-y: auto; }
+.profile-body .pf-intro { margin: 0; color: var(--ink-soft); line-height: 1.7; }
+.profile-body .seg-ctl { margin-top: 2px; }
+.profile-body .pf-act { display: flex; gap: 10px; margin-top: 4px; }
+.profile-body .pf-act .btn-primary { min-width: 120px; }
+/* 页面上「教材：人教版一年级上册 改」那一行 */
+.pf-line { display: flex; align-items: baseline; gap: 10px; min-height: 36px; padding-top: 6px; }
+.pf-line b { font-weight: 600; }
+.pf-note { display: block; margin-top: 6px; color: var(--ink-soft); font-size: 12.5px; }

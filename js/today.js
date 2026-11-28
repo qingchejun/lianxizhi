@@ -265,6 +265,30 @@
       rows.push('<p><span>7 天会员体验已结束。识字每日一卷、拼音今日卷、口算和游戏照常免费，孩子的记录都在；' +
         '有邀请码可以在账号里填，开通后马上接着用。</span></p>')
     }
+    /* 孩子档案（js/profile.js）：「学到哪」三周没改，问一声还在不在这儿 */
+    var PF = S.profile
+    /* 老用户：口算已经按教材出题的，悄悄推出档案（不弹框） */
+    if (PF && !PF.get(S.store)) {
+      var guess = PF.infer(S.store)
+      if (guess.kid) PF.save(S.store, guess.kid)
+    }
+    ;(PF ? PF.stale(S.store, Date.now()) : []).forEach(function (sub) {
+      var where = ''
+      var go = ''
+      if (sub === 'math') {
+        var km = S.store.get('sumsum:kousuan:mode:v1') || {}
+        var KT = S.kousuanTags
+        var b = KT && KT.BOOKS[km.book]
+        var u = b && b.units[Number(km.unit) || 0]
+        where = '数学还在「' + (u ? esc(u[0]) : '原来的单元') + '」吗？'
+        go = '/kousuan'
+      } else {
+        where = '语文还在「' + esc((data.shizi && data.shizi.lessonLabel) || '原来那一课') + '」吗？'
+        go = '/shizi'
+      }
+      rows.push('<p><span>' + where + '三周没改过「学校学到」了，跟上学校进度，纸上的题才不超纲也不太简单。</span>' +
+        '<a class="btn btn-sm" href="' + go + '">去改</a><button type="button" class="btn btn-sm" data-pf-keep="' + sub + '">还在这儿</button></p>')
+    })
     if (n.pending) {
       rows.push('<p><span>还有纸没打分：' + n.pendingBy.map(function (x) {
         return '<a href="mark?module=' + x.module + '">' + esc(x.label) + ' <b>' + x.n + '</b> 张</a>'
@@ -289,7 +313,10 @@
     marksBox.addEventListener('click', function (e) {
       var b = e.target.closest('button')
       if (!b) return
-      if (b.dataset.ksUp) {
+      if (b.dataset.pfKeep) {
+        S.profile.touch(S.store, b.dataset.pfKeep)
+        paintMarks()
+      } else if (b.dataset.ksUp) {
         var km = S.store.get('sumsum:kousuan:mode:v1') || {}
         S.store.set('sumsum:kousuan:mode:v1', Object.assign({}, km, { kind: 'level', pick: b.dataset.ksUp }))
         root.location.reload()

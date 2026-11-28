@@ -163,6 +163,8 @@ with sync_playwright() as p:
     check('免费版口算照常，纸上有二维码', page.query_selector('#preview .sheet-qr') is not None)
 
     # ---------- 账号弹窗补填邀请码 ----------
+    # 新账号没有孩子档案：识字页会弹档案（2026-11-28），这里等同点了「以后再说」（档案见 tools/e2e-profile-browser.py）
+    page.evaluate("sessionStorage.setItem('sumsum-profile-later', '1')")
     page.goto(BASE + '/shizi?mode=week')
     page.wait_for_selector('#preview .full-lock', timeout=15000)
     page.click('#preview [data-fl-redeem]')

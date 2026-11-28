@@ -74,7 +74,20 @@
     if (!item) return
     openMenu(false)
     if (item.hasAttribute('data-logout')) logout()
+    if (item.hasAttribute('data-profile')) openProfile()
   })
+
+  /* 孩子档案（2026-11-28）：js/profile.js 只在跟课本走的页面上加载，别的页面点到时现取 */
+  function openProfile() {
+    function go() {
+      root.SumSum.profile.open({}).then(function (k) { if (k) root.SumSum.profile.reload() })
+    }
+    if (root.SumSum && root.SumSum.profile) return go()
+    var s = doc.createElement('script')
+    s.src = '/js/profile.js'
+    s.onload = go
+    doc.head.appendChild(s)
+  }
   doc.addEventListener('click', function (e) {
     if (!menu.hidden && !menu.contains(e.target)) openMenu(false)
     var login = e.target.closest && e.target.closest('[data-login]')

@@ -11,7 +11,7 @@
   <title>写字 · 纸和笔</title>
   <meta name="robots" content="noindex" />
   <meta name="description" content="按统编版课本写字表，一课一张田字格练字纸：范字、笔顺分解、描红，再自己写。" />
-  <link rel="stylesheet" href="css/app.css?v=ed4a4cb93b" />
+  <link rel="stylesheet" href="css/app.css?v=f7c0ff5aac" />
   <link rel="stylesheet" href="css/sheet.css?v=239fc79b03" />
   <link rel="stylesheet" href="css/rate.css?v=a9ad659326" />
   <link rel="stylesheet" href="css/shizi.css?v=ff23e5e983" />
@@ -46,13 +46,14 @@
   <div class="rail-me">
     <button type="button" class="rail-user" data-account-menu aria-haspopup="menu" aria-expanded="false" title="账号"><span class="rail-avatar" data-account-initial aria-hidden="true"></span><span class="rail-who"><b data-account-email>账号</b><small>练习进度自动同步</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 10l4-4 4 4M8 14l4 4 4-4"/></svg></button>
     <div class="rail-menu" role="menu" hidden>
+      <button type="button" role="menuitem" data-profile><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3.25"/><path d="M3.75 19c.9-3 2.9-4.5 5.25-4.5s4.35 1.5 5.25 4.5M15 7.5h5.5M15 11h5.5M17 14.5h3.5"/></svg><span>孩子档案</span></button>
       <button type="button" role="menuitem" data-account=""><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.25" r="3.75"/><path d="M4.75 19.75c1.4-3.3 4.1-4.75 7.25-4.75s5.85 1.45 7.25 4.75"/></svg><span>账号与密码</span></button>
       <button type="button" role="menuitem" data-backup><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10M8 10.25L12 14l4-3.75M4.5 15v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3"/></svg><span>备份与恢复</span></button>
       <button type="button" role="menuitem" data-logout><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4.5h3.5a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H14M10 16l-4-4 4-4M6 12h9.5"/></svg><span>退出登录</span></button>
     </div>
   </div>
 </nav>
-<script src="js/sidebar.js?v=7251894d82" defer></script>
+<script src="js/sidebar.js?v=04855601a9" defer></script>
 <!-- /rail -->
 
 <div class="work">
@@ -98,6 +99,7 @@
             <option value="rj1b">统编版（人教社）一年级下册（410 字）</option>
             <option value="hongen">某恩识字（1600 字）</option>
           </select>
+          <small class="pf-note" id="book-pf" hidden>课本来自孩子档案，换学期 <button type="button" class="link-btn" data-profile-open="yuwen">在档案里改</button></small>
         </label>
         <label class="field" id="lesson-field" hidden><span>学校学到</span>
           <select id="f-lesson" class="input"></select>
@@ -206,6 +208,8 @@
             <option value="rj1b">统编版（人教社）一年级下册写字表</option>
           </select>
         </label>
+        <!-- 有孩子档案时（js/profile.js）：写字的课本照档案，上面的下拉框藏起来，只显示这一行 -->
+        <div class="field" id="xie-book-line" hidden><span>写哪套字</span><div class="pf-line"><b id="xie-book-name"></b><button type="button" class="link-btn" data-profile-open="yuwen">改</button></div></div>
         <p class="week-now" id="xie-now"></p>
         <p class="week-sub" id="xie-sub"></p>
         <div class="btn-pair">
@@ -269,9 +273,10 @@
 <script src="js/shizi-xie.js?v=e64b2995d7"></script>
 <script src="js/shizi-mark.js?v=99a04d2600"></script>
 <script src="js/full-lock.js?v=cb6ea7b926"></script>
-<script src="js/shizi-main.js?v=5ef60fd8dc"></script>
+<script src="js/profile.js?v=b9232c42eb"></script>
+<script src="js/shizi-main.js?v=417761cdf2"></script>
 <script src="js/backup.js?v=5af8e1e7ac"></script>
-<script src="js/help.js?v=6e8b204b30"></script>
+<script src="js/help.js?v=417bf3c5fd"></script>
 <script src="js/account.js?v=5793d08e3d"></script>
 <script src="js/pay.js?v=35dece7482"></script>
 <script src="js/account-ui.js?v=e052998fe9"></script>
