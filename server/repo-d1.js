@@ -133,6 +133,28 @@ export function repo(db) {
       const o = await db.prepare('SELECT revoked_at, refunded_at FROM orders WHERE id=?').bind(id).first()
       return !!(o && o.revoked_at === now && o.refunded_at === now)
     },
+    /* aship 读订单、账号（server/agent.js）：新的在前，分页；search 按订单号或邮箱 */
+    async agentOrders(q) {
+      const where = []
+      const args = []
+      if (q.search) { where.push("(o.id LIKE ? ESCAPE '\\' OR u.email LIKE ? ESCAPE '\\' OR o.email LIKE ? ESCAPE '\\')"); const p = '%' + q.search.replace(/[\\%_]/g, c => '\\' + c) + '%'; args.push(p, p, p) }
+      if (q.status) { where.push('o.status = ?'); args.push(q.status) }
+      const w = where.length ? ' WHERE ' + where.join(' AND ') : ''
+      const n = await db.prepare('SELECT COUNT(*) AS n FROM orders o LEFT JOIN users u ON u.id=o.uid' + w).bind(...args).first()
+      const r = await db.prepare('SELECT o.*, u.email AS user_email FROM orders o LEFT JOIN users u ON u.id=o.uid' + w + ' ORDER BY o.created_at DESC, o.id DESC LIMIT ? OFFSET ?')
+        .bind(...args, q.pageSize, (q.page - 1) * q.pageSize).all()
+      return { total: n ? n.n : 0, items: r.results || [] }
+    },
+    async agentUsers(q) {
+      const where = []
+      const args = []
+      if (q.search) { where.push("email LIKE ? ESCAPE '\\'"); args.push('%' + q.search.replace(/[\\%_]/g, c => '\\' + c) + '%') }
+      const w = where.length ? ' WHERE ' + where.join(' AND ') : ''
+      const n = await db.prepare('SELECT COUNT(*) AS n FROM users' + w).bind(...args).first()
+      const r = await db.prepare('SELECT id, email, admin, created_at FROM users' + w + ' ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?')
+        .bind(...args, q.pageSize, (q.page - 1) * q.pageSize).all()
+      return { total: n ? n.n : 0, items: r.results || [] }
+    },
     async ordersList(limit) {
       const r = await db.prepare('SELECT o.*, u.email AS user_email FROM orders o LEFT JOIN users u ON u.id=o.uid ORDER BY o.created_at DESC LIMIT ?').bind(limit || 200).all()
       return r.results || []
