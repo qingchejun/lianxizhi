@@ -1094,6 +1094,15 @@ select.input {
   margin: 2px 0;
 }
 
+/* 「自己设范围」的难度：「出什么题」那组控件挪进编辑框，去掉卡片外框和组标题 */
+.ks-edit #grp-what {
+  margin: 8px 0 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+.ks-edit #grp-what > .group-title { display: none; }
+
 .ks-edit-act {
   display: flex;
   gap: 8px;

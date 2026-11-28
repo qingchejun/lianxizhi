@@ -175,17 +175,19 @@
     /* 2026-11-28 出题方式：按教材 / 按难度。标题用「人教一上 · 20 以内的进位加法」「加减 3 级 · …」或自己难度的名字 */
     var KM = root.SumSum.kousuanMode
     var km = readJson(storage, 'sumsum:kousuan:mode:v1')
-    /* 新用户还没存出题方式：口算页默认按教材（老用户第一次打开口算页才迁移，这之前照老设置显示） */
-    if (!isObj(km) && !isObj(raw)) km = {}
-    if (KM && isObj(km)) {
+    /* 还没存出题方式：口算页默认选「默认难度」（参数就是本机原来的设置或出厂参数） */
+    if (!isObj(km)) km = {}
+    if (KM) {
       var st = { get: function (k) { return readJson(storage, k) } }
       var plans = KM.readPlans(st)
-      var r = KM.resolve(KM.cleanMode(km, plans), plans)
+      KM.withDefault(plans, raw)
+      var cm = KM.cleanMode(km, plans)
+      var r = KM.resolve(cm, plans)
       if (r.engine === 'tags') {
         preset = r.label
         meta = [s.count + ' 题', s.columns + ' 列', PAPER_LABELS[s.paper]]
-      } else {
-        meta.unshift(r.label)
+      } else if (cm.pick !== 'p:' + KM.DEFAULT_ID) {
+        meta.unshift(r.label) /* 默认难度就不写了，跟改版前一样 */
       }
     }
     return {

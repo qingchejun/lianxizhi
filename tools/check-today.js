@@ -78,8 +78,7 @@ check(empty.shizi.mode === 'daily', '空浏览器 识字模式应是每日一卷
 check(empty.shizi.printHref === 'shizi.html#print', '识字打印链接不能带设置参数（带了会忽略本地进度）：' + empty.shizi.printHref)
 
 var KMd = globalThis.SumSum.kousuanMode
-var defLabel = KMd.resolve(KMd.cleanMode({}, []), []).label
-check(empty.kousuan.title === defLabel && /^人教/.test(defLabel), '空浏览器 口算标题是按教材的默认（人教版、按月份猜的单元）：' + empty.kousuan.title)
+check(KMd && empty.kousuan.title === '加减法混合', '空浏览器 口算标题是默认难度（出厂参数 20 以内加减混合）：' + empty.kousuan.title)
 check(empty.kousuan.meta === '20 题 · 3 列 · A4 纵向', '空浏览器 口算摘要：' + empty.kousuan.meta)
 check(empty.kousuan.printHref === 'kousuan.html#print', '口算打印链接：' + empty.kousuan.printHref)
 

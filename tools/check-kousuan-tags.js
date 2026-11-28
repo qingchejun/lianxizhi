@@ -65,6 +65,8 @@ const RULES = {
   mulTable: ([a, op, b]) => op === '×' && a >= 2 && b >= 2 && a <= 9 && b <= 9,
   mulTens: ([a, op, b]) => op === '×' && ((isTens(a) && b >= 2 && b <= 9) || (isTens(b) && a >= 2 && a <= 9)),
   mul2x1: ([a, op, b]) => op === '×' && two(a) && b >= 2 && b <= 9 && a * b <= 200,
+  mul2x2s: ([a, op, b]) => op === '×' && a >= 11 && a <= 19 && b >= 11 && b <= 19,
+  mul2x2: ([a, op, b]) => op === '×' && a >= 11 && a <= 99 && b >= 11 && b <= 99 && (a % 10 !== 0 || b % 10 !== 0),
   divP20: ([a, op, b]) => op === '÷' && b >= 2 && b <= 9 && a % b === 0 && a / b >= 2 && a / b <= 9 && a <= 20,
   divP50: ([a, op, b]) => op === '÷' && b >= 2 && b <= 9 && a % b === 0 && a / b >= 2 && a / b <= 9 && a <= 50,
   divTable: ([a, op, b]) => op === '÷' && b >= 2 && b <= 9 && a % b === 0 && a / b >= 2 && a / b <= 9,
@@ -167,18 +169,26 @@ function fakeStore(init) {
 }
 const fresh = fakeStore()
 const f = M.init(fresh, new Date(2026, 10, 28))
-ok('新用户：按教材，11 月猜人教一上第四单元', f.mode.kind === 'book' && f.mode.book === 'rj1a' && f.mode.unit === 4, f.mode)
-ok('新用户：没有自己存的难度', f.plans.length === 0)
+ok('新用户：按难度、选中「默认难度」', f.mode.kind === 'level' && f.mode.pick === 'p:old', f.mode)
+ok('新用户：只有一套「默认难度」，按数的范围出', f.plans.length === 1 && f.plans[0].name === '默认难度' && f.plans[0].kind === 'params', f.plans)
+ok('新用户：默认难度也先不存', !fresh.data[M.PLANS_KEY])
+ok('切到按教材：11 月猜人教一上第四单元', (m => m.book === 'rj1a' && m.unit === 4)(M.cleanMode({ kind: 'book' }, f.plans)) || new Date().getMonth() !== 10)
 ok('新用户：默认值先不存（等同步回来的老设置）', !fresh.data[M.MODE_KEY] && !f.saved)
 ok('3 月猜人教一下第二单元', M.guessBook(new Date(2027, 2, 1)).book === 'rj1b' && M.guessBook(new Date(2027, 2, 1)).unit === 1)
 const oldStore = fakeStore({ 'sumsum:settings:v1': { mode: 'mul', mulMin: 2, mulMax: 9, count: 30, columns: 4, carryMode: 'random', min: 0, max: 20 } })
 const o = M.init(oldStore)
-ok('老用户：按难度、选中「我原来的设置」', o.mode.kind === 'level' && o.mode.pick === 'p:old', o.mode)
+ok('老用户：按难度、选中「默认难度」', o.mode.kind === 'level' && o.mode.pick === 'p:old', o.mode)
 ok('老用户：原来的出题参数存进这套难度（排版、题量不算）', o.plans[0].kind === 'params' && o.plans[0].s.mode === 'mul' && o.plans[0].s.mulMin === 2 && !('count' in o.plans[0].s) && !('columns' in o.plans[0].s), o.plans[0])
 const r0 = M.resolve(o.mode, o.plans)
 ok('老用户：仍走原来的出题方式', r0.engine === 'params' && r0.params.mode === 'mul')
 const o2 = M.init(oldStore)
 ok('第二次打开不再新建', o2.plans.length === 1 && !o2.first)
+ok('老用户：默认难度和出题方式都存下了', oldStore.data[M.PLANS_KEY].plans[0].name === '默认难度' && oldStore.data[M.MODE_KEY].pick === 'p:old')
+const renamed = M.init(fakeStore({ [M.PLANS_KEY]: { plans: [{ id: 'old', name: '我原来的设置', kind: 'params', s: { mode: 'add' } }] }, [M.MODE_KEY]: { kind: 'level', pick: 'p:old' } }))
+ok('上一版的「我原来的设置」改叫「默认难度」', renamed.plans[0].name === '默认难度' && renamed.plans.length === 1)
+const onlyMine = fakeStore({ [M.PLANS_KEY]: { plans: [{ id: 'c1', name: '乘法', kind: 'tags', tags: ['mulTable'] }] }, [M.MODE_KEY]: { kind: 'book', book: 'rj1b', unit: 2 } })
+const om = M.init(onlyMine)
+ok('只存过自己难度的：补上默认难度放最前，选的不变', om.plans.map(p => p.id).join() === 'old,c1' && om.mode.kind === 'book' && onlyMine.data[M.PLANS_KEY].plans.length === 2)
 const rb = M.resolve({ kind: 'book', book: 'rj1a', unit: 5, pick: 'as1' }, [])
 ok('按教材的标题用单元名', rb.title === '20 以内的进位加法口算', rb.title)
 const rs = M.resolve({ kind: 'book', book: 'rj1a', unit: 3, pick: 'as1' }, [])
@@ -188,9 +198,13 @@ ok('预设：带「两步」「空在中间」，记下预设 id', rl.preset ===
 const plans = [{ id: 'c1', name: '我家的乘法', kind: 'tags', tags: ['mulP20', 'nope'], blankMid: true }]
 const cm = M.cleanMode({ kind: 'level', pick: 'p:c1' }, M.readPlans(fakeStore({ [M.PLANS_KEY]: { plans } })))
 ok('自己的难度能选中', cm.pick === 'p:c1')
-ok('选中的难度被删了 → 回到加减 1 级', M.cleanMode({ kind: 'level', pick: 'p:zz' }, []).pick === 'as1')
+ok('选中的难度被删了 → 回到默认难度', M.cleanMode({ kind: 'level', pick: 'p:zz' }, f.plans).pick === 'p:old')
 const rp = M.resolve(cm, M.readPlans(fakeStore({ [M.PLANS_KEY]: { plans } })))
 ok('自己的难度：不认识的题型丢掉，标题用名字', rp.title === '我家的乘法' && Object.keys(rp.weights).join() === 'mulP20' && rp.blankMid, rp)
+const tt = (tags, name, id) => M.tagsTitle({ id: id || 'c1', name: name || '我的难度 1', tags })
+ok('没改名的难度：标题按题型起', tt(['mul2x2s']) === '两位数乘两位数（20 以内的数）口算' && tt(['mul2x2s', 'mulTable']) === '乘法口算' && tt(['mulTable', 'add10']) === '口算练习')
+ok('分享来的难度：标题按题型起', tt(['divTable'], '分享来的难度', 'share') === '表内除法口算')
+ok('改过名字：标题用名字', tt(['mulTable'], '周末乘法') === '周末乘法')
 ok('坏数据：单元号越界钳回去', M.cleanMode({ kind: 'book', book: 'bsd1a', unit: 99 }, []).unit <= 5)
 ok('新难度编号不撞', M.newId([{ id: 'c1' }, { id: 'c2' }]) === 'c3')
 

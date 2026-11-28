@@ -413,19 +413,21 @@
     var full = plans.filter(function (p) { return p !== shared }).length >= KM.PLAN_MAX
     return chips +
       '<button type="button" class="ks-chip ks-add" data-new="tags"' + (full ? ' disabled' : '') + ' title="照现在选的难度复制一份，再勾题型">＋ 挑题型</button>' +
-      '<button type="button" class="ks-chip ks-add" data-new="params"' + (full ? ' disabled' : '') + ' title="自己定加减乘除、数的范围、进位退位">＋ 定范围</button>'
+      '<button type="button" class="ks-chip ks-add" data-new="params"' + (full ? ' disabled' : '') + ' title="自己选加减乘除、数从几到几、进位退位">＋ 自己设范围</button>'
   }
 
   function editHTML(plan) {
     var name = '<label class="field"><span>名字</span><input type="text" class="input" id="k-pname" maxlength="20" value="' + esc(plan.name) + '" /></label>'
     var act = '<div class="ks-edit-act"><button type="button" class="btn btn-sm" data-act="copy">复制一份</button>' +
-      '<button type="button" class="btn btn-sm btn-danger" data-act="del">删除</button></div>'
+      (plan.id === KM.DEFAULT_ID ? '' : '<button type="button" class="btn btn-sm btn-danger" data-act="del">删除</button>') + '</div>'
     if (plan === shared) {
       return '<p class="hint">这是别人分享的' + (plan.kind === 'tags' ? '难度：' + tagList(plan.tags) : '设置，在下面「出什么题」里能看到') + '。</p>' +
         '<div class="ks-edit-act"><button type="button" class="btn btn-sm" data-act="keep">存成我的难度</button></div>'
     }
     if (plan.kind === 'params') {
-      return name + '<p class="hint">在下面「出什么题」里调，改了自动存进这套难度。</p>' + act
+      /* 「出什么题」那组控件挪进这里（见 paintSource），名字、范围、复制删除在一处 */
+      return name + '<p class="hint">选算什么、数从几到几、进位退位，改了自动存进「' + esc(plan.name) + '」。</p>' +
+        '<div id="k-what-slot"></div>' + act
     }
     var groups = ['as', 'mul', 'div'].map(function (g) {
       var boxes = KT.ORDER.filter(function (t) { return KT.tagGroup(t) === g }).map(function (t) {
@@ -439,6 +441,9 @@
   }
 
   var editingId = ''
+  /* 「出什么题」原来的位置：不选「自己设范围」的难度时放回去（藏着） */
+  var whatHome = doc.createComment('grp-what')
+  $('grp-what').parentNode.insertBefore(whatHome, $('grp-what'))
   function paintSource(r) {
     $('k-kind').value = mode.kind
     var book = mode.kind === 'book'
@@ -453,7 +458,7 @@
     $('k-levels').innerHTML = levelsHTML()
     var lv = KT.parseLevel(mode.pick)
     $('k-level-hint').innerHTML = lv
-      ? esc(KT.levelName(mode.pick)) + '：' + tagList(KT.levelPlan(mode.pick).tags) + '。'
+      ? esc(KT.levelName(mode.pick)) + '。出：' + KT.levelPlan(mode.pick).tags.map(function (t) { return esc(KT.tagLabel(t)) }).join('、') + '。'
       : '用的是「' + esc(plan ? plan.name : '') + '」，在下面改。'
     $('k-level-opts').hidden = !lv
     $('k-chain-row').hidden = !lv || lv.group !== 'as'
@@ -463,8 +468,14 @@
     var box = $('k-edit')
     box.hidden = !plan
     /* 正在打名字时不重画编辑区，免得光标跳走 */
-    if (plan && (editingId !== plan.id || !box.innerHTML)) box.innerHTML = editHTML(plan)
+    var what = $('grp-what')
+    if (plan && (editingId !== plan.id || !box.innerHTML)) {
+      if (box.contains(what)) whatHome.parentNode.insertBefore(what, whatHome)
+      box.innerHTML = editHTML(plan)
+    }
     editingId = plan ? plan.id : ''
+    var slot = $('k-what-slot')
+    if (plan && plan.kind === 'params' && slot && !slot.contains(what)) slot.appendChild(what)
   }
 
   function pick(id) {
@@ -538,7 +549,7 @@
       if (!root.confirm('删掉「' + plan.name + '」？')) return
       plans = plans.filter(function (p) { return p !== plan })
       storePlans()
-      pick('as1')
+      pick('p:' + KM.DEFAULT_ID)
     } else if (act === 'copy' || act === 'keep') {
       var copy = JSON.parse(JSON.stringify(plan))
       copy.id = KM.newId(plans)

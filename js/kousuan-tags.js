@@ -178,6 +178,13 @@
     mulTable: ['表内乘法（九九乘法表）', 'mul', function () { return mul(ri(2, 9), ri(2, 9)) }],
     mulTens: ['整十数乘一位数', 'mul', function () { var t = tens(); var b = ri(2, 9); return coin() ? mul(t, b) : mul(b, t) }],
     mul2x1: ['两位数乘一位数', 'mul', function () { var a = twoDigit(); var b = ri(2, 9); return a * b <= 200 ? mul(a, b) : null }],
+    /* 2026-11-28 站长加：两位数乘两位数。20 以内 = 11～19 互乘（10、20 这种整十不出）；100 以内 = 11～99，两个都是整十的不出 */
+    mul2x2s: ['两位数乘两位数（20 以内的数）', 'mul', function () { return mul(ri(11, 19), ri(11, 19)) }],
+    mul2x2: ['两位数乘两位数（100 以内的数）', 'mul', function () {
+      var a = ri(11, 99)
+      var b = ri(11, 99)
+      return a % 10 === 0 && b % 10 === 0 ? null : mul(a, b)
+    }],
     divP20: ['除法（被除数在 20 以内）', 'div', function () { var d = ri(2, 9); var k = ri(2, 9); return d * k <= 20 ? div(d * k, d) : null }],
     divP50: ['除法（被除数在 50 以内）', 'div', function () { var d = ri(2, 9); var k = ri(2, 9); return d * k <= 50 ? div(d * k, d) : null }],
     divTable: ['表内除法', 'div', function () { var d = ri(2, 9); return div(d * ri(2, 9), d) }],
