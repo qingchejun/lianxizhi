@@ -49,7 +49,8 @@ export async function createOrder(repo, W, env, session, now, origin) {
   const user = await currentUser(repo, session)
   if (!user) return { status: 401, body: { ok: false, error: '先登录。' } }
   if (!user.verified) return { status: 403, body: { ok: false, error: '先验证邮箱再开通。' } }
-  if (basePlan(user) === 'full') return { status: 409, body: { ok: false, error: '你的账号已经是永久完整版，不用再买。' } }
+  if (env.WAFFO_ENV !== 'prod' && !user.admin) return { status: 503, body: { ok: false, error: '付费开通还没开放。' } } /* 测试环境只给管理员试 */
+  if (basePlan(user) === 'full' && !(env.WAFFO_ENV !== 'prod' && user.admin)) return { status: 409, body: { ok: false, error: '你的账号已经是永久完整版，不用再买。' } }
   if ((await repo.ordersPendingSince(user.id, now - 3600 * 1000)) >= 10) {
     return { status: 429, body: { ok: false, error: '下单太多次了，过一会儿再试。' } }
   }

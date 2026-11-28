@@ -86,7 +86,7 @@ def pay(order, hook=True):
     payments[order] = {'id': 'PAY_' + order[-12:], 'status': 'succeeded', 'orderMerchantExternalId': order, 'createdAt': '2026-11-28T00:00:00Z',
                        'snapshotAmountDetails': {'currency': s['currency'], 'total': s['priceSnapshot']['amount']}}
     if hook:
-        return send_webhook({'id': 'evt_' + order, 'eventType': 'order.completed', 'eventId': payments[order]['id'], 'mode': 'test',
+        return send_webhook({'id': 'evt_' + order, 'eventType': 'order.completed', 'eventId': payments[order]['id'], 'mode': 'prod',
                              'data': {'orderId': 'ORD_x', 'orderMerchantExternalId': order, 'paymentId': payments[order]['id'], 'paymentStatus': 'succeeded',
                                       'amount': s['priceSnapshot']['amount'], 'total': s['priceSnapshot']['amount'], 'taxAmount': '0.00', 'currency': s['currency'],
                                       'buyerEmail': s.get('buyerEmail', ''), 'merchantProvidedBuyerIdentity': '', 'productName': '纸和笔完整版'}})
@@ -151,7 +151,7 @@ app = subprocess.Popen(['npx', 'wrangler', 'pages', 'dev', '.', '--port', str(AP
                         '--binding', 'SESSION_SECRET=dev-secret', '--binding', 'DEV_SHOW_CODE=1',
                         '--binding', 'WAFFO_MERCHANT_ID=' + MERCHANT_ID, '--binding', 'WAFFO_PRIVATE_KEY=' + MERCHANT_PK8,
                         '--binding', 'WAFFO_PRODUCT_ID=' + PRODUCT_ID, '--binding', 'WAFFO_API_BASE=' + MOCK,
-                        '--binding', 'WAFFO_WEBHOOK_PUBLIC_KEY=' + WAFFO_PUB, '--binding', 'WAFFO_ENV=test'],
+                        '--binding', 'WAFFO_WEBHOOK_PUBLIC_KEY=' + WAFFO_PUB, '--binding', 'WAFFO_ENV=prod'],
                        cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
 log_lines = []
 threading.Thread(target=lambda: [log_lines.append(l) for l in app.stdout], daemon=True).start()
@@ -241,7 +241,7 @@ try:
         check('同一回调再发一次：不再加天数', pay(order) == 200 and full_until(email) == after)
         # 签名不对的回调
         fake = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-        st = send_webhook({'eventType': 'order.completed', 'mode': 'test', 'data': {'orderMerchantExternalId': order}}, key=fake)
+        st = send_webhook({'eventType': 'order.completed', 'mode': 'prod', 'data': {'orderMerchantExternalId': order}}, key=fake)
         check('别人签的回调：401', st == 401, st)
 
         # 回调丢了：轮询兜底

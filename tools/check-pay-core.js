@@ -69,6 +69,7 @@ import('../server/pay-core.js').then(async P => {
   check('没登录：401', (await P.createOrder(repo, W, env, null, now, 'https://zhihebi.com')).status === 401)
   check('改过密码的旧登录：401', (await P.createOrder(repo, W, env, { uid: 'u1', pwver: 0 }, now, 'x')).status === 401)
   check('邮箱没验证：403', (await P.createOrder(repo, W, env, { uid: 'u3', pwver: 1 }, now, 'x')).status === 403)
+  check('测试环境：普通账号下不了单', (await P.createOrder(repo, W, Object.assign({}, env, { WAFFO_ENV: 'test' }), s1, now, 'x')).status === 503)
   check('邀请码永久完整版：不卖', (await P.createOrder(repo, W, env, { uid: 'u2', pwver: 1 }, now, 'x')).status === 409)
   const c1 = await P.createOrder(repo, W, env, s1, now, 'https://zhihebi.com/')
   const id1 = c1.body.order

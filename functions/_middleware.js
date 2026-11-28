@@ -90,12 +90,14 @@ function meScript(me, env) {
     ';window.__SUMSUM_PLAN=' + JSON.stringify(safe.ok ? safe.plan : '') +
     ';window.__SUMSUM_TS=' + JSON.stringify(ts).replace(/</g, '\\u003c') +
     /* __SUMSUM_PAY：付费开通开没开（Waffo 密钥配齐才算，2026-11-28 js/pay.js） */
-    ';window.__SUMSUM_PAY=' + JSON.stringify(payPublic(env)) + '</script>'
+    ';window.__SUMSUM_PAY=' + JSON.stringify(payPublic(env, safe)) + '</script>'
 }
 
-function payPublic(env) {
+/* 测试环境（WAFFO_ENV=test）只给管理员看到购买按钮：家长点进去是测试收银台，付不了真钱 */
+function payPublic(env, me) {
   const p = payInfo(env)
-  return { on: p.on, label: p.label }
+  const on = p.on && (env.WAFFO_ENV === 'prod' || !!(me && me.ok && me.admin))
+  return { on: on, label: p.label }
 }
 
 function withMe(res, me, env, url) {

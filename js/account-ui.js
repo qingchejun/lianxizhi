@@ -260,7 +260,9 @@
         '奥数第 4 课以后、写字、单元检查、拼音课程和专题要开通完整版。</p>' +
         buy + (buy ? '<p class="account-or">朋友给了邀请码，填码开通：</p>' : '') + redeemForm() + '</div>'
     }
-    return '<div class="account-plan"><p><b>完整版</b> · 九个板块都能用。</p></div>'
+    /* 测试环境只有管理员看得到购买（中间层控制 __SUMSUM_PAY.on）：管理员是永久完整版，也给一个按钮走测试付款 */
+    return '<div class="account-plan"><p><b>完整版</b> · 九个板块都能用。</p>' +
+      (buy && A.state.admin ? '<p class="account-or">管理员测试付款（测试环境，用测试卡）：</p>' + buy : '') + '</div>'
   }
   function redeemForm() {
     return '<form class="redeem-form" data-redeem novalidate>' +
